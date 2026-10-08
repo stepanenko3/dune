@@ -18,14 +18,16 @@
   };
   let view = null;
 
-  const { G, TUN, TOWER } = M.heights;
-  const levelOf = (r) => (r.z0 < G ? 'g' : r.z0 < TUN ? 'u' : r.z0 < TOWER ? 't' : 'r');
-  const LEVEL_NAMES = { g: 'Рівень 0 · земля', u: 'Рівень +5 · ангари, балкон, тераси', t: 'Рівень +8 · наскрізний ангар', r: 'Башти над дахом' };
+  const { G, CAR, TOP } = M.heights;
+  const ALL = 20; // зріз «уся база»
+  const levelOf = (r) => (r.z0 < G ? 'g' : r.z0 < CAR ? 'u' : r.z0 < TOP ? 't' : 'r');
+  const listed = (r) => r.group !== 'crown';
+  const LEVEL_NAMES = { g: 'Рівень 0 · земля', u: 'Рівень +5 · ангари, балкон, двір', t: 'Рівень +8 · ангар грузових', r: 'Дах · вежі, балкони, місток' };
   const CAPTIONS = {
-    g: '<span><strong>Рівень 0.</strong> Заїзд із заокругленим перерізом, гаражі із заїздом тільки із заїзду, цоколі ангарів, Великий зал, склади і переробка. Стрілки — сходи вгору.</span>',
-    u: '<span><strong>Рівень +5.</strong> Ангари з вильотом спереду, з боків і вгору. Балкон над заїздом, тераса, переходи, галерея залу, задня тераса. Штрихування — зали, що проходять крізь рівень.</span>',
-    t: '<span><strong>Рівень +8.</strong> Наскрізний ангар для двох грузових над балконом і Великим залом, дахи бічних корпусів із вітропастками.</span>',
-    r: '<span><strong>Дах.</strong> 20 вітряків на даху наскрізного ангара (+12), 15 вітропасток на задній терасі й дахах корпусів. Над пристроями нічого немає.</span>',
+    g: '<span><strong>Рівень 0.</strong> Заїзд із заокругленим перерізом; заїзди в гаражі 2 плити завширшки на рівні підлоги, без пандусів. Цоколі ангарів, Великий зал, склади і переробка. Стрілки — сходи вгору.</span>',
+    u: '<span><strong>Рівень +5.</strong> Ангари — скляні бокси з пентащитів на цоколях: виліт спереду, з боків і вгору. Балкон над заїздом, переходи, галерея залу, задній двір. Штрихування — зали, що проходять крізь рівень.</span>',
+    t: '<span><strong>Рівень +8.</strong> Широкий ангар грузових на 2 місця поруч, з розтрубами спереду і ззаду. Злітна тераса на даху балкона. Ярусні дахи ангарів орні з пентащитом-світликом, дахи корпусів із пристроями.</span>',
+    r: '<span><strong>Дах.</strong> Ступінчаста піраміда з куполом над центром (скрін 4), обабіч неї 12 вітряків. Балкони веж і місток на +12, ліхтарі веж +14. Над пристроями нічого немає.</span>',
   };
 
   function press(ids, active) {
@@ -58,7 +60,7 @@
   }
 
   function roomName(r) {
-    return r.id === 'terrace' ? M.variants[state.variant].label : r.name;
+    return r.id === 'balcony' ? M.variants[state.variant].label : r.name;
   }
 
   function renderRooms() {
@@ -69,7 +71,7 @@
       h.className = 'grp';
       h.textContent = LEVEL_NAMES[l];
       box.appendChild(h);
-      for (const r of M.rooms.filter((x) => levelOf(x) === l)) {
+      for (const r of M.rooms.filter((x) => listed(x) && levelOf(x) === l)) {
         const b = document.createElement('button');
         b.type = 'button';
         b.setAttribute('aria-pressed', String(state.highlight === r.id));
@@ -87,7 +89,7 @@
     const r = M.rooms.find((x) => x.id === id);
     if (state.highlight && r) {
       const lvl = levelOf(r);
-      if (fromList && lvl !== state.level) state.level = lvl === 'r' ? 't' : lvl;
+      if (fromList && lvl !== state.level) state.level = lvl;
       const items = (r.items || []).filter((it) => it.kind !== 'light' && it.kind !== 'hatch');
       const counts = {};
       for (const it of items) {
@@ -95,7 +97,7 @@
         counts[n] = (counts[n] || 0) + 1;
       }
       const sq = r.tiles.filter((t) => t.k === 's').length, tr = r.tiles.length - sq;
-      const note = r.id === 'terrace' ? `${r.note} ${M.variants[state.variant].note}` : r.note;
+      const note = r.id === 'balcony' ? `${r.note} ${M.variants[state.variant].note}` : r.note;
       $('detail').innerHTML = `<h3></h3><p></p><p>${sq} квадратів · ${tr} трикутників · ${r.h > 0 ? `від +${r.z0} до +${r.z0 + r.h}` : `на висоті +${r.z0}`}</p>` +
         (items.length ? '<ul>' + Object.entries(counts).map(([n, c]) => `<li>${n}${c > 1 ? ' ×' + c : ''}</li>`).join('') + '</ul>' : '');
       $('detail').querySelector('h3').textContent = roomName(r);
@@ -122,18 +124,18 @@
 
   // ---------- 3D ----------
   // Поверхи в 3D: верхня межа зрізу і підлога поверху (для режиму «лише цей поверх»).
-  const CUTS = { 'cut-g': [4.9, 0], 'cut-u': [7.95, G], 'cut-t': [11.95, TUN], 'cut-all': [16, 0] };
+  const CUTS = { 'cut-g': [4.9, 0], 'cut-u': [7.95, G], 'cut-t': [11.55, CAR], 'cut-all': [ALL, 0] };
   function floorFor(v) {
-    if (!$('opt-iso').checked || v >= 16) return -1;
+    if (!$('opt-iso').checked || v >= ALL) return -1;
     const lv = M.levels.filter((l) => l.z0 < v - 0.05);
     const z = (lv[lv.length - 1] || M.levels[0]).z0;
     return z > 0 ? z - 0.05 : -1;
   }
   function setCut(v) {
     $('cut').value = v;
-    $('cut-val').textContent = v >= 16 ? 'усе' : '+' + Number(v).toFixed(2).replace(/\.?0+$/, '');
+    $('cut-val').textContent = v >= ALL ? 'усе' : '+' + Number(v).toFixed(2).replace(/\.?0+$/, '');
     press(Object.keys(CUTS), Object.keys(CUTS).find((k) => Math.abs(CUTS[k][0] - v) < 0.01) || '');
-    if (view) view.setCut(v >= 16 ? 99 : v, floorFor(v));
+    if (view) view.setCut(v >= ALL ? 99 : v, floorFor(v));
   }
   function ensure3D() {
     if (view) return true;

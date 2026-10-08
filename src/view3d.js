@@ -14,7 +14,7 @@
     craft: 0x9b7fc4, power: 0xd6b13a, console: 0xe4572e, stairs: 0x8b8f96, turbine: 0xe3e7ec,
     windtrap: 0xcfd6dc, furniture: 0x6b5b4b, pad: 0xf2f2f2, gate: 0x2dd4bf, light: 0xfff6d8, hatch: 0x30333a,
   };
-  const MINOR = /^(apron|backApron|walkway|gallery|lantern)/;
+  const MINOR = /^(apron|backApron|walkway|gallery|lantern|towerBalcony|pyr)/;
 
   function create(container, opts = {}) {
     const THREE = root.THREE;
@@ -42,7 +42,7 @@
     const VIEWS = {
       quarter: { pos: [-30, 27, 18], target: [0, 3.5, -14] },
       front: { pos: [0, 8, 26], target: [0, 5, -10] },
-      back: { pos: [26, 24, -58], target: [0, 4, -15] },
+      back: { pos: [12, 22, -60], target: [0, 5, -16] },
       top: { pos: [0, 70, -14.9], target: [0, 0, -15] },
     };
     function setView(name) {
@@ -119,7 +119,14 @@
         quad(bucket(mat), a2, b2, b, a);
       }
     }
+    const seenPanes = new Set();
     function wallQuad(a, b, lo, hi, mat) {
+      if (mat.transparent) {
+        // спільна скляна стіна двох приміщень малюється один раз
+        const k = M.edgeKey(a, b) + '@' + lo.toFixed(2) + '-' + hi.toFixed(2);
+        if (seenPanes.has(k)) return;
+        seenPanes.add(k);
+      }
       quad(bucket(mat), v3(a.x, a.y, lo), v3(b.x, b.y, lo), v3(b.x, b.y, hi), v3(a.x, a.y, hi));
     }
 
@@ -157,21 +164,32 @@
         const c = M.centroid(t.p);
         return c.x < p.x0 + p.ch ? -1 : c.x > p.x1 - p.ch ? 1 : 0;
       };
+      // flat: ділянки по y, де нижній пандус прибрано (заїзди в гаражі)
+      const isFlatY = (y) => (p.flat || []).some(([a, b]) => y > a + 1e-6 && y < b - 1e-6);
+      const lowFlat = (t) => !inStrip(t) || isFlatY(M.centroid(t.p).y);
       const flatTiles = r.tiles.filter((t) => inStrip(t) === 0);
-      floorTiles(flatTiles, flat(z0), tileMat);
+      floorTiles(r.tiles.filter(lowFlat), flat(z0), tileMat);
       for (const t of r.tiles) {
         const s = inStrip(t);
         if (!s) continue;
         const frac = (q) => Math.abs(q.x - (s < 0 ? p.x0 + p.ch : p.x1 - p.ch)) / p.ch;
-        floorTiles([t], (q) => z0 + frac(q) * p.lo, tileMat);
+        if (!lowFlat(t)) floorTiles([t], (q) => z0 + frac(q) * p.lo, tileMat);
         floorTiles([t], (q) => z1 - frac(q) * p.hi, () => mats.wallLight, edges, -0.004);
       }
+      // трикутні щічки пандуса біля рівних заїздів
+      for (const [ya, yb] of p.flat || [])
+        for (const y of [ya, yb])
+          for (const [xe, xi] of [[p.x0, p.x0 + p.ch], [p.x1, p.x1 - p.ch]]) {
+            const arr = bucket(mats.wallLight);
+            tri(arr, v3(xi, y, z0), v3(xe, y, z0), v3(xe, y, z0 + p.lo));
+            line(edges, v3(xi, y, z0), v3(xe, y, z0 + p.lo));
+          }
       if (r.roof === 'solid') {
         floorTiles(flatTiles, flat(z1), () => mats.roof, edges, 0.006);
       }
       for (const e of roomEdges) {
         const vertical = Math.abs(e.a.x - e.b.x) < 1e-6 && (Math.abs(e.a.x - p.x0) < 1e-6 || Math.abs(e.a.x - p.x1) < 1e-6);
-        if (vertical) { renderWall(r, e, z0 + p.lo, z1 - p.hi); continue; }
+        if (vertical) { renderWall(r, e, isFlatY((e.a.y + e.b.y) / 2) ? z0 : z0 + p.lo, z1 - p.hi); continue; }
         // торці: відкриті — з порталом, інакше стіна з дверима
         const isOpen = e.open.some((o) => o.type === 'open');
         if (!isOpen) renderWall(r, e, z0, z1);
@@ -204,6 +222,37 @@
       }
     }
 
+    // Рамка відкритого торця ангара грузових (скрін 5): зрізані верхні кути, виступ назовні.
+    function mouth(r, a, b, z0, z1, opt) {
+      const L = Math.hypot(b.x - a.x, b.y - a.y);
+      const u = M.V((b.x - a.x) / L, (b.y - a.y) / L);
+      let n = M.V(u.y, -u.x);
+      const probe = M.V((a.x + b.x) / 2 + n.x * 0.3, (a.y + b.y) / 2 + n.y * 0.3);
+      if (opt.n) n = M.V(opt.n[0], opt.n[1]);
+      else if (r.tiles.some((t) => M.pointInPoly(probe, t.p))) n = M.V(-n.x, -n.y); // рамка виступає назовні
+      const cx = opt.c || 1.2, cz = opt.c || 1.2, g = 0.42;
+      const P = (s, z, off = 0) => v3(a.x + u.x * s + n.x * off, a.y + u.y * s + n.y * off, z);
+      const inner = [[0, z0], [0, z1 - cz], [cx, z1], [L - cx, z1], [L, z1 - cz], [L, z0]];
+      const outer = [[-g, z0], [-g, z1 - cz + g * 0.4], [cx - g * 0.4, z1 + g], [L - cx + g * 0.4, z1 + g], [L + g, z1 - cz + g * 0.4], [L + g, z0]];
+      const arr = bucket(mats.frame);
+      // зрізані кути (якщо дах сам не скошений під рамку)
+      if (opt.fill !== false) {
+        tri(bucket(mats.wall), P(0, z1), P(cx, z1), P(0, z1 - cz));
+        tri(bucket(mats.wall), P(L, z1), P(L, z1 - cz), P(L - cx, z1));
+      }
+      for (const off of [0, 0.45])
+        for (let i = 0; i < inner.length - 1; i++) {
+          const j = i + 1;
+          quad(arr, P(...inner[i], off), P(...inner[j], off), P(...outer[j], off), P(...outer[i], off));
+        }
+      for (const ring of [inner, outer])
+        for (let i = 0; i < ring.length - 1; i++) {
+          const j = i + 1;
+          quad(arr, P(...ring[i], 0), P(...ring[j], 0), P(...ring[j], 0.45), P(...ring[i], 0.45));
+          line(edges, P(...ring[i], 0.45), P(...ring[j], 0.45));
+        }
+    }
+
     const labelPts = [];
     const itemGroups = { base: new THREE.Group(), terrace: new THREE.Group(), entrance: new THREE.Group() };
     const hoverables = [];
@@ -215,9 +264,11 @@
         floorTiles(r.tiles, flat(z0), () => mats.shield, seamsShield, 0.01);
       } else if (r.profile) {
         buildProfile(r, roomEdges);
-      } else {
+      } else if (r.group !== 'crown') {
         floorTiles(r.tiles, flat(z0), tileMat);
-        if (z0 > 0) slabSides(r.tiles, z0, r.solidBase ? z0 * LH : 0.14, r.solidBase ? mats.wall : mats.roof);
+        // високі палуби (балкони веж, місток) — товща плита, щоб читалась знизу
+        const thick = r.solidBase ? z0 * LH : r.h === 0 && z0 > M.heights.CAR ? 0.32 : 0.14;
+        if (z0 > 0) slabSides(r.tiles, z0, thick, r.solidBase ? mats.wall : mats.roof);
       }
 
       const rimKeys = new Set((r.rim || []).map(tileKey));
@@ -225,7 +276,21 @@
       const edgeTile = new Map();
       for (const t of r.tiles) for (let i = 0; i < t.p.length; i++) edgeTile.set(M.edgeKey(t.p[i], t.p[(i + 1) % t.p.length]), t);
 
-      if (r.h > 0 && !r.profile) {
+      // roofSlope: дах опускається від |x| = x до |x| = x + w на drop рівнів (скоси під рамки порталів)
+      const rs = r.roofSlope;
+      const roofZ = (q) => (rs ? z1 - Math.min(1, Math.max(0, (Math.abs(q.x) - rs.x) / rs.w)) * rs.drop : z1);
+      if (r.h > 0 && !r.profile && rs) {
+        for (const e of roomEdges) {
+          const ha = roofZ(e.a), hb = roofZ(e.b), lo = Math.min(ha, hb);
+          if (e.open.some((o) => o.type === 'open')) continue;
+          renderWall(r, e, z0, lo);
+          if (Math.abs(ha - hb) > 1e-6) {
+            const arr = bucket(mats.wall);
+            tri(arr, v3(e.a.x, e.a.y, lo), v3(e.b.x, e.b.y, lo), ha > hb ? v3(e.a.x, e.a.y, ha) : v3(e.b.x, e.b.y, hb));
+          }
+          line(edges, v3(e.a.x, e.a.y, ha), v3(e.b.x, e.b.y, hb));
+        }
+      } else if (r.h > 0 && !r.profile) {
         for (const e of roomEdges) {
           const t = edgeTile.get(M.edgeKey(e.a, e.b));
           const hi = t && rimKeys.has(tileKey(t)) ? z1 - drop : z1;
@@ -248,6 +313,29 @@
           floorTiles(core, flat(z1 - 0.02), () => mats.roof, edges, 0.006);
           for (const e of M.boundaryEdges(core)) if (!outer.has(M.edgeKey(e.a, e.b))) wallQuad(e.a, e.b, z1 - drop - 0.02, z1 - 0.02, mats.wall);
         }
+      } else if (r.roof === 'solid' && rs) {
+        floorTiles(r.tiles, (q) => roofZ(q) - 0.02, () => mats.roof, edges, 0.006);
+        for (const e of M.boundaryEdges(r.tiles)) {
+          const ha = roofZ(e.a) - 0.02, hb = roofZ(e.b) - 0.02;
+          quad(bucket(mats.frame), v3(e.a.x, e.a.y, ha - 0.2), v3(e.b.x, e.b.y, hb - 0.2), v3(e.b.x, e.b.y, hb), v3(e.a.x, e.a.y, ha));
+        }
+      } else if (r.roof === 'solid' && (r.skylight || r.crown)) {
+        // ярусний дах ангара (скріни 1 і 3): нижній ярус, вищий ярус-підкова, пентащит-світлик
+        const sky = new Set((r.skylight || []).map(tileKey));
+        const crown = r.crown ? r.crown.tiles : [];
+        const crownKeys = new Set(crown.map(tileKey));
+        const ch = r.crown ? r.crown.h : 0;
+        floorTiles(r.tiles.filter((t) => !sky.has(tileKey(t)) && !crownKeys.has(tileKey(t))), flat(z1 - 0.02), () => mats.roof, edges, 0.006);
+        slabSides(r.tiles, z1 - 0.02, 0.3, mats.frame);
+        floorTiles(r.tiles.filter((t) => sky.has(tileKey(t))), flat(z1 - 0.04), () => mats.shield, seamsShield, 0.006);
+        if (crown.length) {
+          floorTiles(crown, flat(z1 + ch), () => mats.roof, edges, 0.006);
+          for (const e of M.boundaryEdges(crown)) {
+            wallQuad(e.a, e.b, z1 - 0.02, z1 + ch, mats.wall);
+            line(edges, v3(e.a.x, e.a.y, z1 + ch), v3(e.b.x, e.b.y, z1 + ch));
+          }
+          slabSides(crown, z1 + ch, 0.18, mats.frame);
+        }
       } else if (r.roof === 'solid' && !r.profile) {
         floorTiles(r.tiles, flat(z1 - 0.02), () => mats.roof, edges, 0.006);
         slabSides(r.tiles, z1 - 0.02, 0.16, mats.roof);
@@ -260,8 +348,10 @@
         for (const e of roomEdges) line(edges, v3(e.a.x, e.a.y, z1), apex);
       }
 
+      for (const o of r.open || []) if (o.frame) mouth(r, o.a, o.b, z0, z1, o.frame === true ? {} : o.frame);
+
       const lp = M.labelPoint(r);
-      labelPts.push({ id: r.id, name: r.name, z0, h: r.h, minor: MINOR.test(r.id), at: lp, p: new THREE.Vector3() });
+      labelPts.push({ id: r.id, name: r.name, z0, h: r.h, minor: MINOR.test(r.id), covered: !!r.covered, at: r.label3d || lp, p: new THREE.Vector3() });
       for (const it of r.items || []) addItem(it, z0, itemGroups.base);
     }
 
@@ -407,7 +497,7 @@
       state.variant = k;
       itemGroups.terrace.visible = k === 'terrace';
       itemGroups.entrance.visible = k === 'entrance';
-      const t = labelPts.find((l) => l.id === 'terrace');
+      const t = labelPts.find((l) => l.id === 'balcony');
       if (t) t.el.textContent = M.variants[k].label;
     }
     setVariant(opts.variant || 'terrace');
@@ -450,8 +540,9 @@
     }
     function labelVisible(L) {
       if (L.minor || L.z0 >= state.cut - 0.05 || L.z0 < state.floor - 0.05) return false;
+      if (L.covered && state.cut > L.z0 + L.h + 0.05) return false; // зал під іншим приміщенням
       const lv = activeLevel();
-      const base = state.cut >= M.heights.TOWER ? M.heights.G : lv.z0;
+      const base = state.cut >= M.heights.TOP ? M.heights.G : lv.z0;
       return L.z0 >= base || (L.h >= 6 && L.z0 + L.h > base && state.floor < 0);
     }
     function labelAnchor(L) {

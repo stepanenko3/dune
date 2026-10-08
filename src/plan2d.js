@@ -110,12 +110,17 @@
 
   function tilesSvg(r, asRoof = false) {
     const rim = new Set((r.rim || []).map(tileKey));
+    const sky = new Set(asRoof ? (r.skylight || []).map(tileKey) : []);
+    const crown = new Set(asRoof && r.crown ? r.crown.tiles.map(tileKey) : []);
     const shield = r.group === 'shield' || (asRoof && r.roof === 'shield');
     let s = '';
     for (const t of r.tiles) {
-      const cls = (t.k === 's' ? 'sq' : 'tri') + (rim.has(tileKey(t)) ? ' rim' : '') + (shield ? ' shieldfill' : '');
+      const k = tileKey(t);
+      const cls = (t.k === 's' ? 'sq' : 'tri') + (rim.has(k) ? ' rim' : '') + (crown.has(k) ? ' crown' : '') + (shield || sky.has(k) ? ' shieldfill' : '');
       s += `<polygon class="${cls}" points="${pts(t.p)}"/>`;
     }
+    // уступ вищого ярусу даху
+    if (crown.size) for (const e of M.boundaryEdges(r.crown.tiles)) s += `<line class="step-edge" x1="${px(e.a.x)}" y1="${py(e.a.y)}" x2="${px(e.b.x)}" y2="${py(e.b.y)}"/>`;
     return s;
   }
 
@@ -123,7 +128,7 @@
     const key = opts.level || 'g';
     const variant = M.variants[opts.variant || 'terrace'];
     const sel = roomsFor(key);
-    const L = sel.L || { z0: M.heights.TOWER, z1: 99 };
+    const L = sel.L || { z0: M.heights.TOP, z1: 99 };
     const hl = opts.highlight;
     let s = `<svg class="plan" viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="План бази">`;
     s += `<defs>
@@ -160,9 +165,14 @@
       s += `<g class="room g-${r.group}${dim}" data-room="${r.id}"><title>${esc(r.name)}</title>${tilesSvg(r)}`;
       if (r.profile) {
         const ys = r.tiles.flatMap((t) => t.p.map((p) => p.y));
-        const y0 = Math.min(...ys), y1 = Math.max(...ys), p = r.profile;
-        for (const [a, b] of [[p.x0, p.x0 + p.ch], [p.x1 - p.ch, p.x1]])
-          s += `<rect class="slope" x="${px(a)}" y="${py(y1)}" width="${((b - a) * S).toFixed(1)}" height="${((y1 - y0) * S).toFixed(1)}" fill="url(#slope)"/>`;
+        const p = r.profile;
+        // смуги пандусів, крім рівних заїздів (flat)
+        const cuts = [Math.min(...ys), ...(p.flat || []).flat(), Math.max(...ys)];
+        for (let i = 0; i < cuts.length - 1; i += 2) {
+          const y0 = cuts[i], y1 = cuts[i + 1];
+          for (const [a, b] of [[p.x0, p.x0 + p.ch], [p.x1 - p.ch, p.x1]])
+            s += `<rect class="slope" x="${px(a)}" y="${py(y1)}" width="${((b - a) * S).toFixed(1)}" height="${((y1 - y0) * S).toFixed(1)}" fill="url(#slope)"/>`;
+        }
       }
       s += '</g>';
     }
@@ -193,7 +203,7 @@
           for (const it of r.items || []) if (it.kind !== 'light' && inLevel(it)) { s += itemSvg(it); shownItems.push(it); }
         for (const r of sel.through) for (const it of r.items || []) if (it.kind === 'stairs') s += itemSvg(it);
         for (const it of M.roofItems) if (inLevel(it)) s += itemSvg(it);
-        if (key === 'u') for (const it of variant.items) { s += itemSvg(it); shownItems.push(it); }
+        for (const it of variant.items) if (inLevel(it)) { s += itemSvg(it); shownItems.push(it); }
       }
       s += '</g>';
     }
@@ -205,7 +215,7 @@
       const list = sel.roofMode ? [] : [...sel.draw, ...sel.through.filter((r) => r.group !== 'tower' || key !== 't')];
       for (const r of list) {
         const p = M.labelPoint(r);
-        const name = r.id === 'terrace' ? variant.label : r.short || r.name;
+        const name = r.id === 'balcony' ? variant.label : r.short || r.name;
         const sub = sel.through.includes(r)
           ? `висота до +${top(r)}`
           : r.h > 0 ? `${Math.round(M.roomArea(r))} пл · +${r.z0}…+${top(r)}` : r.group === 'shield' ? 'стеля гаража' : `палуба +${r.z0}`;
@@ -228,8 +238,8 @@
       if (sel.roofMode) {
         const tag = (x, y, t1, t2) =>
           `<text class="lbl" x="${px(x)}" y="${py(y)}">${esc(t1)}</text><text class="lbl-sub" x="${px(x)}" y="${py(y - 0.55)}">${esc(t2)}</text>`;
-        s += tag(0, -0.9, 'Вітряки ×20', 'дах наскрізного ангара, +12');
-        s += tag(0, 30.75, 'Вітропастки ×15', 'задня тераса +5, дахи корпусів +8');
+        s += tag(0, -0.9, 'Вітряки ×20', 'обабіч піраміди +12, дахи корпусів +8, задній двір +5');
+        s += tag(0, 30.75, 'Вітропастки ×15', 'дах гаража багі +5, дахи корпусів +8, за пірамідою +12, двір +5');
       }
       s += '</g>';
     }
@@ -257,13 +267,17 @@
       for (const r of rooms) for (const x of r.tiles) x.k === 's' ? s++ : t++;
       rows.push({ name, s, t });
     };
-    const { G, TUN, BACK, TOWER } = M.heights;
-    add('Фундамент, рівень 0', M.rooms.filter((r) => r.z0 <= 1));
-    add('Підлоги і палуби +5', M.rooms.filter((r) => r.z0 === G));
-    add('Підлога наскрізного ангара +8', M.rooms.filter((r) => r.z0 === TUN));
-    add('Дахи +8', M.rooms.filter((r) => r.roof !== 'none' && r.z0 + r.h === BACK));
-    add('Дах наскрізного ангара +12', M.rooms.filter((r) => r.roof === 'solid' && r.z0 + r.h === TOWER));
-    add('Ліхтарі башт', M.rooms.filter((r) => r.z0 === TOWER));
+    const { G, CAR, BACK, TOWER, DECK, TOP } = M.heights;
+    const body = M.rooms.filter((r) => r.group !== 'crown');
+    add('Фундамент, рівень 0', body.filter((r) => r.z0 === 0));
+    add('Підлоги і палуби +5', body.filter((r) => r.z0 === G));
+    add('Ангар грузових і злітна тераса +8', body.filter((r) => r.z0 === CAR));
+    add('Дахи +8', body.filter((r) => r.roof !== 'none' && r.z0 + r.h === BACK));
+    rows.push({ name: 'Вищий ярус дахів ангарів', s: body.reduce((n, r) => n + (r.crown ? r.crown.tiles.length : 0), 0), t: 0 });
+    add('Балкони веж і місток +12', body.filter((r) => r.z0 === DECK));
+    add('Дах ангара грузових +12', body.filter((r) => r.roof === 'solid' && r.z0 + r.h === TOP));
+    add('Піраміда', M.rooms.filter((r) => r.group === 'crown'));
+    add('Ліхтарі веж', body.filter((r) => r.z0 === TOWER));
     return rows;
   }
 

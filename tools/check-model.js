@@ -81,6 +81,14 @@ for (const r of M.rooms)
     if (bad.length) warn(`${r.id}: «${it.name}» виходить за підлогу (${bad.length} кут.)`);
   }
 
+// 3b. предмети в одному приміщенні не перетинаються (крім світла й люків)
+for (const r of M.rooms) {
+  const its = (r.items || []).filter((it) => !['light', 'hatch'].includes(it.kind));
+  for (let i = 0; i < its.length; i++)
+    for (let j = i + 1; j < its.length; j++)
+      if (overlap(corners(its[i]), corners(its[j]))) warn(`${r.id}: «${its[i].name}» перетинає «${its[j].name}»`);
+}
+
 // 4. вітряки і пастки на дахах
 const roofOf = (it) => M.rooms.filter((r) => (r.roof === 'solid' && Math.abs(r.z0 + r.h - it.z) < 0.01) || (r.h === 0 && Math.abs(r.z0 - it.z) < 0.01));
 const rimOf = (r) => new Set((r.rim || []).map((t) => M.centroid(t.p).x.toFixed(3) + ',' + M.centroid(t.p).y.toFixed(3)));
