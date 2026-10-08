@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- page:start -->
+<title>Цитадель Харконненів</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@500;700&display=swap">
+<style>
+/* Layout: робоче місце кресляра — велике полотно плану/3D ліворуч, довідкова колонка праворуч, нотатки нижче */
+:root {
+  --bg: #e9ecef;
+  --surface: #ffffff;
+  --surface-2: #f4f6f8;
+  --ink: #14161b;
+  --muted: #586070;
+  --line: #d3d8df;
+  --accent: #0d8a7c;
+  --accent-ink: #ffffff;
+  --plan-bg: #fbfbfc;
+  --plan-grid: #e9ebee;
+  --frame: #24222e;
+  --sq: #3b82e6;
+  --tri: #f0963a;
+  --seam: #ffffff;
+  --wall: #191b21;
+  --halo: #fbfbfc;
+  --ghost: #dfe3e8;
+  --hatch-bg: #eef0f3;
+  --hatch-ln: #9aa1ad;
+  --item: #1b1d22;
+  --item-fill: rgba(255, 255, 255, 0.62);
+  --item-ink: #14161b;
+  --glass: #8cc3e6;
+  --sky-top: #f3e3cc;
+  --sky-bottom: #e7c9a2;
+  --font-display: 'Unbounded', 'Golos Text', system-ui, sans-serif;
+  --font-body: 'Golos Text', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101216; --surface: #171a1f; --surface-2: #1d2127; --ink: #e7e9ee; --muted: #9aa3b2; --line: #2a2f37;
+    --accent: #2dd4bf; --accent-ink: #062b27; --plan-bg: #14171c; --plan-grid: #1f232a; --frame: #d4d7de;
+    --seam: #14171c; --wall: #f1f2f5; --halo: #14171c; --ghost: #262b33; --hatch-bg: #1b1f25; --hatch-ln: #4b5361;
+    --item: #0c0d10; --item-fill: rgba(255, 255, 255, 0.7); --item-ink: #111317; --glass: #7fb8dd;
+    --sky-top: #2a2622; --sky-bottom: #4a3b2c; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101216; --surface: #171a1f; --surface-2: #1d2127; --ink: #e7e9ee; --muted: #9aa3b2; --line: #2a2f37;
+  --accent: #2dd4bf; --accent-ink: #062b27; --plan-bg: #14171c; --plan-grid: #1f232a; --frame: #d4d7de;
+  --seam: #14171c; --wall: #f1f2f5; --halo: #14171c; --ghost: #262b33; --hatch-bg: #1b1f25; --hatch-ln: #4b5361;
+  --item: #0c0d10; --item-fill: rgba(255, 255, 255, 0.7); --item-ink: #111317; --glass: #7fb8dd;
+  --sky-top: #2a2622; --sky-bottom: #4a3b2c; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 400 15px/1.55 var(--font-body); }
+.wrap { max-width: 1480px; margin: 0 auto; padding-inline: clamp(16px, 3vw, 36px); padding-block: 24px 56px; display: grid; gap: 22px; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 28px; }
+.brand h1 { font: 700 clamp(22px, 3.2vw, 34px)/1.1 var(--font-display); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.brand p { margin: 6px 0 0; color: var(--muted); max-width: 70ch; }
+.facts { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding: 0; list-style: none; font: 500 13px/1.4 var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.facts b { color: var(--ink); font-weight: 600; }
+
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 20px; align-items: start; }
+@media (max-width: 1020px) { .workspace { grid-template-columns: minmax(0, 1fr); } }
+
+.stage { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; min-width: 0; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+.bar .grow { flex: 1 1 auto; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; background: var(--surface); }
+.seg button { font: 500 13px/1 var(--font-body); color: var(--muted); background: transparent; border: 0; padding: 8px 12px; cursor: pointer; white-space: nowrap; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.seg.tabs button { font-weight: 600; }
+.seg button:focus-visible, .chk input:focus-visible, .rooms button:focus-visible, input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chk { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); cursor: pointer; user-select: none; }
+.chk input { accent-color: var(--accent); }
+.lab { font: 600 11px/1 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+
+.plan-wrap { overflow-x: auto; background: var(--plan-bg); }
+/* план */
+.plan .bg { fill: var(--plan-bg); }
+.plan .grid line { stroke: var(--plan-grid); stroke-width: 1; }
+.plan .ghost polygon { fill: var(--ghost); stroke: none; }
+.plan .sq { fill: var(--sq); stroke: var(--seam); stroke-width: 1; }
+.plan .tri { fill: var(--tri); stroke: var(--seam); stroke-width: 1; }
+.plan .room { cursor: pointer; }
+.plan .room.dim { opacity: 0.25; }
+.plan .through polygon { stroke: var(--hatch-ln); stroke-width: 0.5; }
+.plan .hatch-bg { fill: var(--hatch-bg); }
+.plan .hatch-ln { stroke: var(--hatch-ln); stroke-width: 1.2; }
+.plan .shield-bg { fill: rgba(45, 212, 191, 0.28); }
+.plan .shield-ln { stroke: var(--accent); stroke-width: 1.4; }
+.plan line { stroke-linecap: round; }
+.plan .wall { stroke: var(--wall); stroke-width: 2.4; }
+.plan .parapet { stroke: var(--wall); stroke-width: 1.3; stroke-dasharray: 1.5 3.5; }
+.plan .op-door { stroke: var(--wall); stroke-width: 2.4; stroke-dasharray: 3 4; }
+.plan .op-shield { stroke: var(--accent); stroke-width: 4.5; }
+.plan .op-glass { stroke: var(--glass); stroke-width: 3.5; }
+.plan .hl-edge { stroke: var(--accent); stroke-width: 3.6; }
+.plan .it polygon { fill: var(--item-fill); stroke: var(--item); stroke-width: 1.1; stroke-dasharray: 4 2.5; }
+.plan .it-turbine polygon, .plan .it-windtrap polygon { stroke-dasharray: none; }
+.plan .it .rotor { stroke: var(--item); stroke-width: 2.4; }
+.plan .it .hub { fill: var(--item); fill-opacity: 0.2; stroke: var(--item); stroke-width: 1.2; }
+.plan .it-pad polygon { fill: rgba(255, 255, 255, 0.35); }
+.plan .pad-ring { fill: none; stroke: var(--item); stroke-width: 1.6; }
+.plan .pad-h { font: 700 15px var(--font-display); fill: var(--item-ink); text-anchor: middle; }
+.plan .it-label { font: 600 8.6px/1 var(--font-body); fill: var(--item-ink); text-anchor: middle; pointer-events: none; }
+.plan .lbl { font: 700 11.5px/1 var(--font-body); fill: var(--ink); text-anchor: middle; paint-order: stroke; stroke: var(--halo); stroke-width: 3.6px; stroke-linejoin: round; pointer-events: none; }
+.plan .lbl.hl { fill: var(--accent); }
+.plan .lbl-sub { font: 500 9px/1 var(--font-mono); fill: var(--muted); text-anchor: middle; paint-order: stroke; stroke: var(--halo); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+.plan .claims rect { fill: none; stroke: var(--frame); stroke-width: 2; }
+.plan .claims circle { fill: var(--frame); }
+.plan .anno text { font: 600 11px var(--font-body); fill: var(--muted); }
+.plan .anno .front { font: 700 12px var(--font-body); fill: var(--ink); text-anchor: middle; letter-spacing: 0.06em; }
+.plan-wrap svg { display: block; width: 100%; min-width: 700px; height: auto; }
+.caption { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; padding: 10px 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.caption strong { color: var(--ink); font-weight: 600; }
+
+.three-wrap { position: relative; height: min(72vh, 780px); min-height: 420px; background: linear-gradient(180deg, var(--sky-top), var(--sky-bottom)); overflow: hidden; touch-action: none; }
+.three-wrap canvas.gl { display: block; }
+.labels3d { position: absolute; inset: 0; pointer-events: none; }
+.lbl3d { position: absolute; left: 0; top: 0; font: 600 11.5px/1.2 var(--font-body); color: #f7f4ef; background: rgba(20, 21, 25, 0.72); padding: 3px 7px; border-radius: 4px; white-space: nowrap; }
+.tip3d { position: absolute; left: 0; top: 0; pointer-events: none; font: 600 12px/1.2 var(--font-body); background: #fff; color: #111; border: 1px solid #222; padding: 4px 8px; border-radius: 4px; }
+.three-msg { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--ink); }
+input[type=range] { width: 170px; accent-color: var(--accent); }
+.cutval { font: 600 13px/1 var(--font-mono); min-width: 5ch; font-variant-numeric: tabular-nums; }
+
+aside.side { display: grid; gap: 16px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.card h2 { font: 700 13px/1.3 var(--font-display); letter-spacing: 0.02em; margin: 0 0 10px; }
+.legend { display: grid; grid-template-columns: 26px 1fr; gap: 7px 10px; align-items: center; font-size: 13px; }
+.legend svg { width: 26px; height: 18px; display: block; }
+.rooms { display: grid; gap: 2px; }
+.rooms .grp { font: 600 11px/1 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 10px 0 4px; }
+.rooms .grp:first-child { margin-top: 0; }
+.rooms button { display: grid; grid-template-columns: 1fr auto; gap: 8px; text-align: left; font: 500 13.5px/1.3 var(--font-body); color: var(--ink); background: transparent; border: 0; border-radius: 6px; padding: 6px 8px; cursor: pointer; }
+.rooms button:hover { background: var(--surface-2); }
+.rooms button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.rooms button span:last-child { font: 400 12px/1.3 var(--font-mono); color: inherit; opacity: 0.7; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.detail { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13.5px; }
+.detail h3 { margin: 0 0 4px; font-size: 14px; }
+.detail p { margin: 0 0 6px; color: var(--muted); }
+.detail ul { margin: 0; padding-left: 18px; }
+table.counts { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+table.counts th, table.counts td { padding: 5px 0; border-bottom: 1px solid var(--line); text-align: right; }
+table.counts th:first-child, table.counts td:first-child { text-align: left; padding-right: 8px; }
+table.counts tfoot td { font-weight: 700; border-bottom: 0; }
+.dot { display: inline-block; width: 10px; height: 10px; vertical-align: -1px; margin-right: 4px; }
+
+.notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+@media (max-width: 1100px) { .notes { grid-template-columns: minmax(0, 1fr); } }
+.notes .card { padding: 18px 20px; }
+.notes h2 { font-size: 15px; margin-bottom: 12px; }
+.req { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; font-size: 14px; }
+.req li { display: grid; grid-template-columns: 2.2ch 1fr; gap: 8px; }
+.req .n { font: 600 12.5px/1.6 var(--font-mono); color: var(--muted); text-align: right; }
+.plain { margin: 0; padding-left: 18px; display: grid; gap: 8px; font-size: 14px; }
+.plain li::marker { color: var(--muted); }
+.src { margin-top: 12px; font-size: 12.5px; color: var(--muted); }
+.src a { color: inherit; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+<!-- page:head-end -->
+</head>
+<body>
+<!-- page:body -->
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Цитадель Харконненів</h1>
+      <p>База для Dune: Awakening на 6 ділянок 10×10. Тільки квадратні й трикутні плити, крила під 30°, шестикутний Великий зал, наскрізний ангар. Версія 1.</p>
+    </div>
+    <ul class="facts" aria-label="Основні цифри">
+      <li><b>30 × 20</b> плит</li>
+      <li><b>3</b> ангари · <b>6</b> орні</li>
+      <li><b>2</b> гаражі</li>
+      <li><b>20</b> вітряків · <b>15</b> вітропасток</li>
+      <li>до <b>+11</b> рівнів</li>
+    </ul>
+  </header>
+
+  <div class="workspace">
+    <section class="stage" aria-label="Перегляд бази">
+      <div class="bar">
+        <div class="seg tabs" role="group" aria-label="Вид">
+          <button id="tab-plan" type="button" aria-pressed="true">План</button>
+          <button id="tab-3d" type="button" aria-pressed="false">3D</button>
+        </div>
+        <div class="grow"></div>
+        <span class="lab">Пункт 17</span>
+        <div class="seg" role="group" aria-label="Між нижніми ангарами">
+          <button id="var-terrace" type="button" aria-pressed="true">Тераса</button>
+          <button id="var-entrance" type="button" aria-pressed="false">Дод. вхід</button>
+        </div>
+      </div>
+
+      <div id="plan-panel">
+        <div class="bar">
+          <div class="seg" role="group" aria-label="Рівень">
+            <button id="lvl-g" type="button" aria-pressed="true">Рівень 0</button>
+            <button id="lvl-u" type="button" aria-pressed="false">Рівень +4</button>
+            <button id="lvl-r" type="button" aria-pressed="false">Дах</button>
+          </div>
+          <label class="chk"><input id="opt-items" type="checkbox" checked> Обладнання і техніка</label>
+          <label class="chk"><input id="opt-labels" type="checkbox" checked> Підписи</label>
+        </div>
+        <div class="plan-wrap" id="plan"></div>
+        <div class="caption" id="plan-caption"></div>
+      </div>
+
+      <div id="three-panel" hidden>
+        <div class="bar">
+          <div class="seg" role="group" aria-label="Камера">
+            <button id="cam-quarter" type="button" aria-pressed="true">3/4</button>
+            <button id="cam-front" type="button" aria-pressed="false">Фронт</button>
+            <button id="cam-back" type="button" aria-pressed="false">Тил</button>
+            <button id="cam-top" type="button" aria-pressed="false">Зверху</button>
+          </div>
+          <div class="seg" role="group" aria-label="Зріз">
+            <button id="cut-g" type="button" aria-pressed="false">Рівень 0</button>
+            <button id="cut-u" type="button" aria-pressed="false">До +8</button>
+            <button id="cut-all" type="button" aria-pressed="true">Уся база</button>
+          </div>
+          <label class="chk" for="cut">Зріз <input id="cut" type="range" min="0.5" max="14" step="0.25" value="14"> <span class="cutval" id="cut-val">усе</span></label>
+          <label class="chk"><input id="opt-tiles" type="checkbox" checked> Кольори плиток</label>
+          <label class="chk"><input id="opt-labels3d" type="checkbox" checked> Підписи</label>
+        </div>
+        <div class="three-wrap" id="three"></div>
+        <div class="caption"><span>Тягни мишею — обертання, колесо — масштаб, права кнопка — зсув. Наведи на техніку, щоб побачити назву.</span><span>Висота рівня в 3D умовна: 0,85 сторони плити.</span></div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="card" aria-labelledby="h-legend">
+        <h2 id="h-legend">Легенда</h2>
+        <div class="legend">
+          <svg viewBox="0 0 26 18" aria-hidden="true"><rect x="4" y="1" width="16" height="16" fill="var(--sq)" stroke="var(--seam)"/></svg><span>Квадратна плита</span>
+          <svg viewBox="0 0 26 18" aria-hidden="true"><polygon points="3,16 21,16 12,1" fill="var(--tri)" stroke="var(--seam)"/></svg><span>Трикутна плита</span>
+          <svg viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--wall)" stroke-width="2.4"/></svg><span>Стіна</span>
+          <svg viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--wall)" stroke-width="2.4" stroke-dasharray="3 4"/></svg><span>Двері</span>
+          <svg viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--accent)" stroke-width="4.5"/></svg><span>Пентащит (проїзд, проліт)</span>
+          <svg viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--glass)" stroke-width="3.5"/></svg><span>Скло / вікна в заїзд</span>
+          <svg viewBox="0 0 26 18" aria-hidden="true"><rect x="3" y="3" width="20" height="12" fill="var(--item-fill)" stroke="var(--item)" stroke-dasharray="4 2.5"/></svg><span>Техніка й обладнання</span>
+          <svg viewBox="0 0 26 18" aria-hidden="true"><defs><pattern id="lg-h" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="var(--hatch-bg)"/><line x1="0" y1="0" x2="0" y2="5" stroke="var(--hatch-ln)"/></pattern></defs><rect x="3" y="2" width="20" height="14" fill="url(#lg-h)" stroke="var(--wall)"/></svg><span>Висота залу йде крізь рівень</span>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="h-rooms">
+        <h2 id="h-rooms">Приміщення</h2>
+        <div class="rooms" id="rooms"></div>
+        <div class="detail" id="detail"><p>Обери приміщення, щоб підсвітити його на плані й побачити, що в ньому.</p></div>
+      </section>
+
+      <section class="card" aria-labelledby="h-count">
+        <h2 id="h-count">Кошторис плит</h2>
+        <table class="counts" id="counts"></table>
+      </section>
+    </aside>
+  </div>
+
+  <div class="notes">
+    <section class="card" aria-labelledby="h-req">
+      <h2 id="h-req">Вимоги → рішення</h2>
+      <ol class="req">
+        <li><span class="n">1</span><span>Тільки квадрати й трикутники. Поворот на 30° зроблено як у грі: квадрат → трикутник → повернутий квадрат.</span></li>
+        <li><span class="n">2</span><span>6 ділянок 10×10, сітка 3×2. Фронт потребує 30 плит: ангар 7,5 + гараж 5 + заїзд 5 + гараж 5 + ангар 7,5. У 2×3 (20 у ширину) гаражі не влазять поруч із крилами.</span></li>
+        <li><span class="n">3</span><span>План у стилі скріна 1 — вкладка «План», три рівні.</span></li>
+        <li><span class="n">4</span><span>Як на скріні 2: два крила з ангарами по боках, вищий центральний корпус, посередині заїзд, над ним паща наскрізного ангара.</span></li>
+        <li><span class="n">5</span><span>Заїзд 3 + 2 = 5 плит: три рівні й дві похилі. З боків гаражі, прямо виїзд, позаду центральний вхід у Великий зал.</span></li>
+        <li><span class="n">6</span><span>Три ангари: скаути, асаулти, наскрізний на два грузові.</span></li>
+        <li><span class="n">7</span><span>Об'ємна модель — вкладка «3D» зі зрізом по висоті.</span></li>
+        <li><span class="n">9</span><span>Великий зал — шестикутник 5-3-3-5-3-3 з трикутників, ніші й неф, як на скріні 4. У центрі консоль суб-фіфу.</span></li>
+        <li><span class="n">10</span><span>Дві башти зі сходами між рівнями. Над дахом — круглі ліхтарі з трикутників під пірамідальним дахом.</span></li>
+        <li><span class="n">11</span><span>Ліва половина — спайс: гараж краулера → склад піску → зал меланжу (7 рівнів) + вода. Права — руда: гараж багі → склад руди → рудний цех. Фабрикатори під ангаром асаултів, фабрикатор техніки над рудним цехом, головний склад і енергоблок за залом.</span></li>
+        <li><span class="n">12</span><span>Стіни стоять тільки на швах плиток, тому колони можна ставити у вузлах сітки, а об'єм нарощувати без переробок плану.</span></li>
+        <li><span class="n">13</span><span>2 скаути, 2 асаулти, 2 грузові — кожен має своє місце.</span></li>
+        <li><span class="n">14</span><span>Гараж багі + піскоцикла. Гараж краулера зі стелею-пентащитом 5×9: грузовий спускається крізь неї і забирає краулер.</span></li>
+        <li><span class="n">15</span><span>20 спрямованих вітряків на дахах бічних корпусів (+7) і 15 великих вітропасток на даху наскрізного ангара (+8). Над ними нічого немає.</span></li>
+        <li><span class="n">16</span><span>Нижні ангари — крила спереду, як на скрінах 1–2. Грузовий ангар наскрізний, як на скріні 5: влітаєш з тераси, вилітаєш позаду.</span></li>
+        <li><span class="n">17</span><span>Між нижніми ангарами — тераса або додатковий вхід, перемикач угорі.</span></li>
+      </ol>
+    </section>
+
+    <section class="card" aria-labelledby="h-assume">
+      <h2 id="h-assume">Розміри, які я прийняв</h2>
+      <ul class="plain">
+        <li>1 плита = квадратний фундамент, 1 рівень = висота стіни.</li>
+        <li>Великий переробник спайсу: 3×2 плити, 5 стін. Зал меланжу має 7 рівнів із запасом.</li>
+        <li>Великий рудний переробник: прийняв 3×3, 3 стіни. Не перевірено.</li>
+        <li>Скаут ≈ 3,6×2,5, асаулт ≈ 4,1×2,8. За словами гравців, колізію має тільки корпус, і в 5 плит ширини влазять скаут з асаултом. Ангари мають 4 рівні при потрібних 3.</li>
+        <li>Грузовий ≈ 9×4,5. Це найбільше невідоме: смуга в наскрізному ангарі 7,5×10.</li>
+        <li>Краулер ≈ 7×3,5, багі 3×2, піскоцикл 2×1.</li>
+        <li>Вітряк і вітропастка: місце 2×2. Обом потрібне відкрите небо, тому вони стоять на найвищих дахах.</li>
+        <li>Горизонтальний пентащит над краулером. Гравці такі ставлять, але треба перевірити, що грузовий з краулером проходить крізь нього.</li>
+      </ul>
+      <p class="src">Джерела: <a href="https://duneawakening.wiki.fextralife.com/Large+Spice+Refinery" target="_blank" rel="noopener">Large Spice Refinery (Fextralife)</a> · <a href="https://steamcommunity.com/app/1172710/discussions/0/563626883365760733/" target="_blank" rel="noopener">Steam: проріз ангара</a> · <a href="https://steamcommunity.com/app/1172710/discussions/0/574921762383506540/" target="_blank" rel="noopener">Steam: розміри під орні</a> · <a href="https://steamcommunity.com/app/1172710/discussions/0/596287304340032968/" target="_blank" rel="noopener">Steam: горизонтальний пентащит</a></p>
+    </section>
+
+    <section class="card" aria-labelledby="h-next">
+      <h2 id="h-next">Що уточнити для версії 2</h2>
+      <ul class="plain">
+        <li>Довжина грузового орні в плитах. Від неї залежить глибина наскрізного ангара: зараз 10, більше в 20 плит глибини не влізе.</li>
+        <li>Розмір великого рудного переробника і кількість середніх переробників.</li>
+        <li>Межа висоти суб-фіфу. Зараз корпус має +8, башти +11.</li>
+        <li>Чи підходить розподіл сторін: краулер і меланж ліворуч, багі й руда праворуч.</li>
+        <li>Тераса чи додатковий вхід: залежить від того, куди дивиться фронт.</li>
+        <li>Де потрібні колони й декор: фасад крил, паща ангара, Великий зал.</li>
+      </ul>
+    </section>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="src/model.js"></script>
+<script src="src/plan2d.js"></script>
+<script src="src/view3d.js"></script>
+<script src="src/app.js"></script>
+<!-- page:end -->
+</body>
+</html>
