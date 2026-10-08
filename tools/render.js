@@ -43,12 +43,12 @@ const threeDir = process.env.THREE_DIR;
   await page.waitForTimeout(1500);
   const three = page.locator('#three');
   const shots = [
-    ['3d-quarter', 'quarter', 20],
-    ['3d-front', 'front', 20],
-    ['3d-back', 'back', 20],
+    ['3d-quarter', 'quarter', 22],
+    ['3d-front', 'front', 22],
+    ['3d-back', 'back', 22],
     ['3d-cut-ground', 'quarter', 4.9],
-    ['3d-cut-upper', 'quarter', 7.95],
-    ['3d-cut-carrier', 'quarter', 11.55],
+    ['3d-cut-upper', 'quarter', 8.95],
+    ['3d-cut-carrier', 'quarter', 12.55],
   ];
   for (const [name, cam, cut] of shots) {
     await page.evaluate(([c, k]) => { window.CITADEL.view().setView(c); window.CITADEL.setCut(k); }, [cam, cut]);

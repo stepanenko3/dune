@@ -13,6 +13,7 @@
   const pts = (arr) => arr.map((p) => px(p.x) + ',' + py(p.y)).join(' ');
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const top = (r) => r.z0 + r.h;
+  const roofTop = (r) => top(r) + (r.crown ? r.crown.h : 0); // з верхнім ярусом даху
   const levelOf = (key) => M.levels.find((l) => l.key === key) || M.levels[0];
   const tileKey = (t) => M.centroid(t.p).x.toFixed(3) + ',' + M.centroid(t.p).y.toFixed(3);
 
@@ -39,7 +40,7 @@
       L,
       draw: M.rooms.filter((r) => r.z0 >= L.z0 && r.z0 < L.z1),
       through: M.rooms.filter((r) => r.h > 0 && r.z0 < L.z0 && top(r) > L.z0),
-      roofs: M.rooms.filter((r) => r.h > 0 && (r.roof === 'solid' || r.roof === 'shield') && top(r) >= L.z0 && top(r) < L.z1 && r.z0 < L.z0),
+      roofs: M.rooms.filter((r) => r.h > 0 && (r.roof === 'solid' || r.roof === 'shield') && roofTop(r) >= L.z0 && roofTop(r) < L.z1 && r.z0 < L.z0),
       ghost: L.z0 > 0 ? M.rooms.filter((r) => top(r) <= L.z0 && r.h > 0) : [],
     };
   }
@@ -186,6 +187,12 @@
       for (const r of sel.through) s += wallSvg(r, 'wall', L.z0, L.z1);
       for (const r of sel.draw) s += wallSvg(r, r.h > 0 ? 'wall' : 'parapet', r.z0, r.h > 0 ? Math.min(top(r), L.z1) : r.z0 + 1);
     }
+    // колони Харконненів на зубчастих боках
+    for (const dc of M.decor || [])
+      if (dc.kind === 'pillar' && dc.z1 > L.z0 && (sel.roofMode || dc.z0 < L.z1)) {
+        const h = 0.24 * S;
+        s += `<rect class="pillar" x="${(+px(dc.c.x) - h).toFixed(1)}" y="${(+py(dc.c.y) - h).toFixed(1)}" width="${(2 * h).toFixed(1)}" height="${(2 * h).toFixed(1)}"><title>${esc(dc.name)}</title></rect>`;
+      }
     if (hl) {
       const r = [...sel.draw, ...sel.through, ...sel.roofs].find((x) => x.id === hl);
       if (r) for (const e of M.boundaryEdges(r.tiles)) s += `<line class="hl-edge" x1="${px(e.a.x)}" y1="${py(e.a.y)}" x2="${px(e.b.x)}" y2="${py(e.b.y)}"/>`;
@@ -238,8 +245,8 @@
       if (sel.roofMode) {
         const tag = (x, y, t1, t2) =>
           `<text class="lbl" x="${px(x)}" y="${py(y)}">${esc(t1)}</text><text class="lbl-sub" x="${px(x)}" y="${py(y - 0.55)}">${esc(t2)}</text>`;
-        s += tag(0, -0.9, 'Вітряки ×20', 'обабіч піраміди +12, дахи корпусів +8, задній двір +5');
-        s += tag(0, 30.75, 'Вітропастки ×15', 'дах гаража багі +5, дахи корпусів +8, за пірамідою +12, двір +5');
+        s += tag(0, -0.9, 'Вітряки ×20', 'за горою на ангарі грузових +13, дахи корпусів +9, двір і майданчики +5');
+        s += tag(0, 30.75, 'Вітропастки ×15', 'дах гаража багі +5, дахи корпусів +9, задній двір +5');
       }
       s += '</g>';
     }
@@ -271,11 +278,11 @@
     const body = M.rooms.filter((r) => r.group !== 'crown');
     add('Фундамент, рівень 0', body.filter((r) => r.z0 === 0));
     add('Підлоги і палуби +5', body.filter((r) => r.z0 === G));
-    add('Ангар грузових і злітна тераса +8', body.filter((r) => r.z0 === CAR));
-    add('Дахи +8', body.filter((r) => r.roof !== 'none' && r.z0 + r.h === BACK));
-    rows.push({ name: 'Вищий ярус дахів ангарів', s: body.reduce((n, r) => n + (r.crown ? r.crown.tiles.length : 0), 0), t: 0 });
-    add('Балкони веж і місток +12', body.filter((r) => r.z0 === DECK));
-    add('Дах ангара грузових +12', body.filter((r) => r.roof === 'solid' && r.z0 + r.h === TOP));
+    add('Ангар грузових і злітна тераса +9', body.filter((r) => r.z0 === CAR));
+    add('Дахи корпусів +9 і ангарів +8', body.filter((r) => r.roof !== 'none' && (r.z0 + r.h === BACK || r.crown)));
+    add('Верхній ярус дахів ангарів +9', body.filter((r) => r.crown).map((r) => ({ tiles: r.crown.tiles })));
+    add('Балкони веж і місток +13', body.filter((r) => r.z0 === DECK));
+    add('Дах ангара грузових +13', body.filter((r) => r.roof === 'solid' && r.z0 + r.h === TOP));
     add('Піраміда', M.rooms.filter((r) => r.group === 'crown'));
     add('Ліхтарі веж', body.filter((r) => r.z0 === TOWER));
     return rows;

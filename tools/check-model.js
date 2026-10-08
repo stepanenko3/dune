@@ -75,10 +75,19 @@ const corners = (it) => {
   );
 };
 const inTiles = (p, tiles) => tiles.some((t) => M.pointInPoly(p, shrink(t.p, -0.001)));
+// точки по периметру предмета: ловлять і западини зубчастих стін між кутами
+const rim = (it) => {
+  const c = corners(it), out = [];
+  for (let i = 0; i < 4; i++) {
+    const a = c[i], b = c[(i + 1) % 4], n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 0.2));
+    for (let k = 0; k < n; k++) out.push(M.V(a.x + ((b.x - a.x) * k) / n, a.y + ((b.y - a.y) * k) / n));
+  }
+  return out;
+};
 for (const r of M.rooms)
   for (const it of r.items || []) {
-    const bad = corners(it).filter((p) => !inTiles(p, r.tiles));
-    if (bad.length) warn(`${r.id}: «${it.name}» виходить за підлогу (${bad.length} кут.)`);
+    const bad = rim(it).filter((p) => !inTiles(p, r.tiles));
+    if (bad.length) warn(`${r.id}: «${it.name}» виходить за підлогу (${bad.length} точ.)`);
   }
 
 // 3b. предмети в одному приміщенні не перетинаються (крім світла й люків)

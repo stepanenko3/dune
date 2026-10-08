@@ -111,6 +111,49 @@
       }
     }
     const flat = (z) => () => z;
+    const pkey = (q) => q.x.toFixed(3) + ',' + q.y.toFixed(3);
+    // Зовнішні ребра набору плиток з нормаллю назовні.
+    function outerEdges(tiles) {
+      const m = new Map();
+      for (const t of tiles)
+        for (let i = 0; i < t.p.length; i++) {
+          const a = t.p[i], b = t.p[(i + 1) % t.p.length], k = M.edgeKey(a, b);
+          if (m.has(k)) m.get(k).n++;
+          else m.set(k, { a, b, t, n: 1 });
+        }
+      return [...m.values()].filter((e) => e.n === 1).map(({ a, b, t }) => {
+        const L = Math.hypot(b.x - a.x, b.y - a.y);
+        let n = M.V((b.y - a.y) / L, -(b.x - a.x) / L);
+        const c = M.centroid(t.p), mid = M.V((a.x + b.x) / 2, (a.y + b.y) / 2);
+        if ((mid.x - c.x) * n.x + (mid.y - c.y) * n.y < 0) n = M.V(-n.x, -n.y);
+        return { a, b, n };
+      });
+    }
+    // Скошений карниз (скріни 1 і 3): від краю даху на z вниз-назовні.
+    function eave(tiles, z, out, drop, mat) {
+      const es = outerEdges(tiles);
+      const at = new Map();
+      const arr = bucket(mat);
+      for (const e of es) {
+        const a2 = M.V(e.a.x + e.n.x * out, e.a.y + e.n.y * out), b2 = M.V(e.b.x + e.n.x * out, e.b.y + e.n.y * out);
+        quad(arr, v3(e.a.x, e.a.y, z), v3(e.b.x, e.b.y, z), v3(b2.x, b2.y, z - drop), v3(a2.x, a2.y, z - drop));
+        quad(arr, v3(a2.x, a2.y, z - drop), v3(b2.x, b2.y, z - drop), v3(b2.x, b2.y, z - drop - 0.12), v3(a2.x, a2.y, z - drop - 0.12));
+        line(edges, v3(a2.x, a2.y, z - drop), v3(b2.x, b2.y, z - drop));
+        for (const [q, q2] of [[e.a, a2], [e.b, b2]]) {
+          const k = pkey(q);
+          if (!at.has(k)) at.set(k, []);
+          at.get(k).push({ q, q2 });
+        }
+      }
+      // клинці на кутах між сусідніми скатами
+      for (const list of at.values())
+        if (list.length === 2) {
+          const [u, w] = list;
+          tri(arr, v3(u.q.x, u.q.y, z), v3(u.q2.x, u.q2.y, z - drop), v3(w.q2.x, w.q2.y, z - drop));
+          quad(arr, v3(u.q2.x, u.q2.y, z - drop), v3(w.q2.x, w.q2.y, z - drop), v3(w.q2.x, w.q2.y, z - drop - 0.12), v3(u.q2.x, u.q2.y, z - drop - 0.12));
+        }
+    }
+    const TIER_S = 0.5; // висота скошеного уступу ярусу піраміди
     function slabSides(tiles, z, thick, mat) {
       for (const e of M.boundaryEdges(tiles)) {
         const a = v3(e.a.x, e.a.y, z), b = v3(e.b.x, e.b.y, z);
@@ -293,7 +336,8 @@
       } else if (r.h > 0 && !r.profile) {
         for (const e of roomEdges) {
           const t = edgeTile.get(M.edgeKey(e.a, e.b));
-          const hi = t && rimKeys.has(tileKey(t)) ? z1 - drop : z1;
+          const top1 = r.roof === 'tier' ? z1 - TIER_S : z1;
+          const hi = t && rimKeys.has(tileKey(t)) ? top1 - drop : top1;
           renderWall(r, e, z0, hi);
         }
       } else if (r.h === 0 && r.group !== 'shield') {
@@ -320,30 +364,39 @@
           quad(bucket(mats.frame), v3(e.a.x, e.a.y, ha - 0.2), v3(e.b.x, e.b.y, hb - 0.2), v3(e.b.x, e.b.y, hb), v3(e.a.x, e.a.y, ha));
         }
       } else if (r.roof === 'solid' && (r.skylight || r.crown)) {
-        // ярусний дах ангара (скріни 1 і 3): нижній ярус, вищий ярус-підкова, пентащит-світлик
+        // дах ангара у 2 яруси (скріни 1 і 3): нижній на весь контур, верхній з відступом, у ньому світлик
         const sky = new Set((r.skylight || []).map(tileKey));
         const crown = r.crown ? r.crown.tiles : [];
         const crownKeys = new Set(crown.map(tileKey));
-        const ch = r.crown ? r.crown.h : 0;
-        floorTiles(r.tiles.filter((t) => !sky.has(tileKey(t)) && !crownKeys.has(tileKey(t))), flat(z1 - 0.02), () => mats.roof, edges, 0.006);
-        slabSides(r.tiles, z1 - 0.02, 0.3, mats.frame);
-        floorTiles(r.tiles.filter((t) => sky.has(tileKey(t))), flat(z1 - 0.04), () => mats.shield, seamsShield, 0.006);
+        const ch = r.crown ? r.crown.h : 0, zc = z1 + ch - 0.03;
+        floorTiles(r.tiles.filter((t) => !crownKeys.has(tileKey(t))), flat(z1 - 0.02), () => mats.roof, edges, 0.006);
+        if (r.eave) eave(r.tiles, z1, 0.32, 0.4, mats.frame);
+        else slabSides(r.tiles, z1 - 0.02, 0.3, mats.frame);
         if (crown.length) {
-          floorTiles(crown, flat(z1 + ch), () => mats.roof, edges, 0.006);
-          for (const e of M.boundaryEdges(crown)) {
-            wallQuad(e.a, e.b, z1 - 0.02, z1 + ch, mats.wall);
-            line(edges, v3(e.a.x, e.a.y, z1 + ch), v3(e.b.x, e.b.y, z1 + ch));
-          }
-          slabSides(crown, z1 + ch, 0.18, mats.frame);
+          floorTiles(crown.filter((t) => !sky.has(tileKey(t))), flat(zc), () => mats.roof, edges, 0.006);
+          for (const e of M.boundaryEdges(crown)) wallQuad(e.a, e.b, z1 - 0.02, zc, mats.wall);
+          if (r.eave) eave(crown, zc, 0.24, 0.3, mats.frame);
+        }
+        const skyTiles = r.tiles.filter((t) => sky.has(tileKey(t)));
+        floorTiles(skyTiles, flat(zc - 0.01), () => mats.shield, seamsShield, 0.006);
+        // світна рамка світлика
+        for (const e of M.boundaryEdges(skyTiles)) {
+          wallQuad(e.a, e.b, zc, zc + 0.14, mats.frame);
+          line(seamsShield, v3(e.a.x, e.a.y, zc + 0.15), v3(e.b.x, e.b.y, zc + 0.15));
         }
       } else if (r.roof === 'solid' && !r.profile) {
         floorTiles(r.tiles, flat(z1 - 0.02), () => mats.roof, edges, 0.006);
         slabSides(r.tiles, z1 - 0.02, 0.16, mats.roof);
       } else if (r.roof === 'shield') {
         floorTiles(r.tiles, flat(z1 - 0.02), () => mats.shield, seamsShield, 0.006);
+      } else if (r.roof === 'tier') {
+        // ярус піраміди: по периметру скошений уступ на 1 плиту, посередині рівно
+        const rimPts = new Set(M.boundaryEdges(r.tiles).flatMap((e) => [pkey(e.a), pkey(e.b)]));
+        const onRim = (t) => t.p.some((q) => rimPts.has(pkey(q)));
+        floorTiles(r.tiles, (q) => (rimPts.has(pkey(q)) ? z1 - TIER_S : z1), (t) => (onRim(t) ? mats.wallLight : mats.roof), edges, 0.006);
       } else if (r.roof === 'pyramid') {
         const c = M.labelPoint(r);
-        const apex = v3(c.x, c.y, z1 + 2.4);
+        const apex = v3(c.x, c.y, z1 + (r.apex || 2.4));
         for (const e of roomEdges) tri(bucket(mats.roof), v3(e.a.x, e.a.y, z1), v3(e.b.x, e.b.y, z1), apex);
         for (const e of roomEdges) line(edges, v3(e.a.x, e.a.y, z1), apex);
       }
@@ -437,6 +490,29 @@
     }
 
     for (const r of M.rooms) buildRoom(r);
+    // декор: колони Харконненів і карнизи на зубчастих боках
+    for (const dc of M.decor || []) {
+      const g = new THREE.Group();
+      const m = mats.frame;
+      const add = (geo, x, y, z) => {
+        const mesh = new THREE.Mesh(geo, m);
+        mesh.position.set(x, y, z);
+        mesh.castShadow = mesh.receiveShadow = true;
+        mesh.userData.name = dc.name;
+        hoverables.push(mesh);
+        g.add(mesh);
+      };
+      if (dc.kind === 'pillar') {
+        const h = (dc.z1 - dc.z0) * LH;
+        add(new THREE.BoxGeometry(0.42, h, 0.42), dc.c.x, dc.z0 * LH + h / 2, -dc.c.y);
+        add(new THREE.BoxGeometry(0.62, 0.22, 0.62), dc.c.x, dc.z0 * LH + 0.11, -dc.c.y);
+        add(new THREE.BoxGeometry(0.62, 0.16, 0.62), dc.c.x, dc.z1 * LH - 0.08, -dc.c.y);
+      } else if (dc.kind === 'cornice') {
+        const w = Math.abs(dc.x1 - dc.x0), d = dc.y1 - dc.y0, h = dc.h * LH;
+        add(new THREE.BoxGeometry(w, h, d), (dc.x0 + dc.x1) / 2, dc.z * LH + h / 2, -(dc.y0 + dc.y1) / 2);
+      }
+      itemGroups.base.add(g);
+    }
     for (const it of M.roofItems) addItem(it, it.z, itemGroups.base);
     for (const key of ['terrace', 'entrance']) for (const it of M.variants[key].items) addItem(it, it.z, itemGroups[key]);
 
@@ -627,7 +703,14 @@
     }
     function stop() { state.running = false; }
 
-    return { start, stop, setCut, setVariant, setTileColors, setLabels, setView, LH };
+    // довільна камера (для знімків): pos і target у координатах three
+    function setCamera(pos, target) {
+      camera.position.set(...pos);
+      controls.target.set(...target);
+      controls.update();
+    }
+
+    return { start, stop, setCut, setVariant, setTileColors, setLabels, setView, setCamera, LH };
   }
 
   root.VIEW3D = { create };

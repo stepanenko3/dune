@@ -109,6 +109,7 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .plan polygon.shieldfill { fill: url(#shieldHatch); fill-opacity: 1; }
 .plan .roofs .crown { fill-opacity: 1; stroke-width: 1.6; }
 .plan .step-edge { stroke: var(--wall); stroke-width: 2; opacity: 0.85; }
+.plan .pillar { fill: var(--wall); stroke: var(--bg, #fff); stroke-width: 0.8; }
 .plan .roof-under .sq, .plan .roof-under .tri { fill-opacity: 0.45; }
 .plan .slope-ln { stroke: var(--seam); stroke-width: 1.2; opacity: 0.85; }
 .plan .it-stairs polygon { fill: var(--item-fill); stroke: var(--item); stroke-width: 1.2; stroke-dasharray: none; }
@@ -188,14 +189,14 @@ table.counts tfoot td { font-weight: 700; border-bottom: 0; }
   <header class="top">
     <div class="brand">
       <h1>Цитадель Харконненів</h1>
-      <p>База для Dune: Awakening на 6 ділянок 10×10. Тільки квадратні й трикутні плити. Шестикутний Великий зал, скляні ангари-рукави під 30°, заокруглений заїзд, широкий ангар грузових із пірамідою над ним, вежі з балконами й містком. Версія 3.</p>
+      <p>База для Dune: Awakening на 6 ділянок 10×10. Тільки квадратні й трикутні плити. Шестикутний Великий зал, скляні ангари-рукави під 30°, заокруглений заїзд, широкий ангар грузових із пірамідою над ним, вежі з балконами й містком. Версія 4.</p>
     </div>
     <ul class="facts" aria-label="Основні цифри">
       <li><b>20 × 30</b> плит</li>
       <li><b>3</b> ангари · <b>6</b> орні</li>
       <li><b>2</b> гаражі</li>
       <li><b>20</b> вітряків · <b>15</b> вітропасток</li>
-      <li>ангари до <b>+12</b>, вежі <b>+14</b></li>
+      <li>центр до <b>+16</b>, вежі <b>+15</b></li>
     </ul>
   </header>
 
@@ -219,7 +220,7 @@ table.counts tfoot td { font-weight: 700; border-bottom: 0; }
           <div class="seg" role="group" aria-label="Рівень">
             <button id="lvl-g" type="button" aria-pressed="true">Рівень 0</button>
             <button id="lvl-u" type="button" aria-pressed="false">+5</button>
-            <button id="lvl-t" type="button" aria-pressed="false">+8</button>
+            <button id="lvl-t" type="button" aria-pressed="false">+9</button>
             <button id="lvl-r" type="button" aria-pressed="false">Дах</button>
           </div>
           <label class="chk"><input id="opt-items" type="checkbox" checked> Обладнання і техніка</label>
@@ -240,11 +241,11 @@ table.counts tfoot td { font-weight: 700; border-bottom: 0; }
           <div class="seg" role="group" aria-label="Поверх">
             <button id="cut-g" type="button" aria-pressed="false">Рівень 0</button>
             <button id="cut-u" type="button" aria-pressed="false">+5</button>
-            <button id="cut-t" type="button" aria-pressed="false">+8</button>
+            <button id="cut-t" type="button" aria-pressed="false">+9</button>
             <button id="cut-all" type="button" aria-pressed="true">Уся база</button>
           </div>
           <label class="chk"><input id="opt-iso" type="checkbox"> Лише цей поверх</label>
-          <label class="chk" for="cut">Зріз <input id="cut" type="range" min="0.5" max="20" step="0.25" value="20"> <span class="cutval" id="cut-val">усе</span></label>
+          <label class="chk" for="cut">Зріз <input id="cut" type="range" min="0.5" max="22" step="0.25" value="22"> <span class="cutval" id="cut-val">усе</span></label>
           <label class="chk"><input id="opt-tiles" type="checkbox" checked> Кольори плиток</label>
           <label class="chk"><input id="opt-labels3d" type="checkbox" checked> Підписи</label>
         </div>
@@ -286,15 +287,13 @@ table.counts tfoot td { font-weight: 700; border-bottom: 0; }
 
   <div class="notes">
     <section class="card" aria-labelledby="h-req">
-      <h2 id="h-req">Правки версії 3</h2>
+      <h2 id="h-req">Правки версії 4</h2>
       <ol class="req">
-        <li><span class="n">1</span><span>Ангари орні — скляні бокси з пентащитів на суцільному цоколі (скрін 1): фронт 4 плити, закруглення по 2, рівні боки. Виліт спереду, з боків і вгору.</span></li>
-        <li><span class="n">2</span><span>Дах ангарів ярусний: вищий ярус-підкова і прямокутний пентащит-світлик 2×4 для вильоту вгору (скрін 3).</span></li>
-        <li><span class="n">3</span><span>Ангар грузових знову широкий, на 2 місця поруч (9 плит), не «труба». На кінцях розтруби під 60° з рамками зі зрізаними кутами (скрін 5), скоси даху над розтрубами, скляна смуга по боках.</span></li>
-        <li><span class="n">4</span><span>Над центром — ступінчаста піраміда з куполом (скрін 4): прямокутний ярус, круглий ярус, верх. Вітряки стоять обабіч і її не закривають.</span></li>
-        <li><span class="n">5</span><span>Задній вхід — воронка зі скошеними укосами під порталом (скрін 2). Задні кути корпусів заокруглені трикутниками і нижчі на рівень.</span></li>
-        <li><span class="n">6</span><span>Заїзди в гаражі 2 плити завширшки на рівні підлоги заїзду: там похилі плити прибрано. Гаражі тепер на рівні 0, без пандусів.</span></li>
-        <li><span class="n">7</span><span>Кожна вежа має балкон з трьох боків на +12, між вежами місток. Грузові вилітають назад під ним.</span></li>
+        <li><span class="n">1</span><span>Дах ангарів орні у 2 яруси, як на скріні: нижній +8 на весь контур зі скошеним карнизом, верхній +9 з відступом на плиту, у ньому пентащит-світлик 2×4 у рамці.</span></li>
+        <li><span class="n">2</span><span>Центральний корпус піднято на +9. Ангар грузових тепер стоїть на верхньому ярусі дахів ангарів, і ярус ніде не обрізаний. Злітна тераса урівень з підлогою ангара грузових.</span></li>
+        <li><span class="n">3</span><span>Зубчасті боки між гаражем і залом меланжу — тепер фасад із деталей Harkonnen Stronghold: колони (Pillar) на виступах, вікна (Window) у западинах, рівний карниз зверху.</span></li>
+        <li><span class="n">4</span><span>Замість «шпиля» — широка ступінчаста гора над порталом ангара грузових: 3 яруси зі скошеними уступами (9 → 7 → 5 плит) і пологий гребінь (скрін 4). Вітряки стоять рядами позаду неї.</span></li>
+        <li><span class="n">+</span><span>Цистерну і хімічний переробник посунуто, щоб не виходили крізь западини стін. Генератор переїхав у головний склад.</span></li>
       </ol>
     </section>
 
@@ -304,9 +303,9 @@ table.counts tfoot td { font-weight: 700; border-bottom: 0; }
         <li><b>Земля.</b> Вулиця → заїзд → рівні заїзди в гаражі. Заїзд → центральний вхід → Великий зал → водний блок, склад піску (ще й із гаража краулера), фабрикатори, руда й хімія, головний склад → зал меланжу, рудний цех, вежі → задній вхід-воронка.</li>
         <li><b>З землі на +5.</b> Сходи вздовж задньої стіни кожного гаража виходять на перехід (ліворуч) і на дах гаража багі (праворуч). Парадні сходи залу ведуть на галерею. Вежі — з будь-якого рівня.</li>
         <li><b>+5.</b> Одне кільце: перехід ↔ балкон ↔ дах гаража ↔ ангари ↔ галерея залу ↔ задні майданчики ↔ задній двір. Права вежа ↔ майстерня.</li>
-        <li><b>+8.</b> Сходи з балкона через люк ведуть в ангар грузових між двома грузовими. Бічні двері ангара виходять на дахи корпусів, звідти — двері веж. Злітна тераса — на даху балкона.</li>
-        <li><b>+12.</b> Вежі → балкони навколо веж → місток. Вузькі сходи між двома грузовими → дах із вітряками обабіч піраміди.</li>
-        <li><b>Орні.</b> Ангари: виліт уперед на майданчик, убік на перехід, дах гаража чи задній майданчик, угору крізь світлик. Грузові: вперед над злітною терасою або назад під містком. Над краулером — пентащит, грузовий спускається крізь нього.</li>
+        <li><b>+9.</b> Сходи з балкона через люк ведуть в ангар грузових. Бічні двері ангара виходять урівень на дахи корпусів, звідти — двері веж. Злітна тераса — на даху балкона, урівень з ангаром.</li>
+        <li><b>+13.</b> Вежі → балкони навколо веж → місток. Вузькі сходи між двома грузовими → дах із вітряками за пірамідою.</li>
+        <li><b>Орні.</b> Ангари: виліт уперед на майданчик, убік на перехід, дах гаража чи задній майданчик, угору крізь світлик. Грузові: вперед на злітну терасу або назад під містком. Над краулером — пентащит, грузовий спускається крізь нього.</li>
       </ul>
     </section>
 
@@ -316,11 +315,11 @@ table.counts tfoot td { font-weight: 700; border-bottom: 0; }
         <li>1 плита = квадратний фундамент, 1 рівень = висота стіни.</li>
         <li>Грузовий 4×9 і великий рудний переробник 3×2 заввишки до 2 — з твоїх уточнень.</li>
         <li>Великий переробник спайсу 3×2, 5 стін; зал меланжу має 8 рівнів.</li>
-        <li>Скаут ≈ 3,6×2,5, асаулт ≈ 4×2,7; ангари 3 рівні, ярус даху +1.</li>
+        <li>Скаут ≈ 3,6×2,5, асаулт ≈ 4×2,7; ангари 3 рівні скла + верхній ярус даху.</li>
         <li>Краулер ≈ 5,5×2,6, багі 3×2, піскоцикл 2×1. Пентащит над краулером 6×9 під грузового 4×9.</li>
         <li>Вітряк займає 1,8×1,8, вітропастка 2×2, над ними нічого немає.</li>
         <li><b>Перевір у грі:</b> чи проходить краулер у заїзд шириною 2 плити (якщо ні — розширимо до 3), чи проходить грузовий крізь горизонтальний пентащит і чи вистачає 4 рівнів ангара грузових.</li>
-        <li><b>Питання:</b> балкон як тераса чи як додатковий вхід (пункт 17)? Піраміду робимо вищою чи так?</li>
+        <li><b>Питання:</b> балкон як тераса чи як додатковий вхід (пункт 17)? Колони на боках лишаємо такими чи робимо щільніше, з вікнами в кожному прорізі?</li>
       </ul>
       <p class="src">Джерела: <a href="https://duneawakening.wiki.fextralife.com/Large+Spice+Refinery" target="_blank" rel="noopener">Large Spice Refinery (Fextralife)</a> · <a href="https://steamcommunity.com/app/1172710/discussions/0/563626883365760733/" target="_blank" rel="noopener">Steam: проріз ангара</a> · <a href="https://steamcommunity.com/app/1172710/discussions/0/574921762383506540/" target="_blank" rel="noopener">Steam: розміри під орні</a> · <a href="https://steamcommunity.com/app/1172710/discussions/0/596287304340032968/" target="_blank" rel="noopener">Steam: горизонтальний пентащит</a></p>
     </section>
