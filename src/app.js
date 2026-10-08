@@ -18,12 +18,14 @@
   };
   let view = null;
 
-  const levelOf = (r) => (r.z0 === 0 ? 'g' : r.z0 < 8 ? 'u' : 'r');
-  const LEVEL_NAMES = { g: 'Рівень 0 · земля', u: 'Рівень +4 · ангари, тераса', r: 'Дах і башти' };
+  const { G, TUN, TOWER } = M.heights;
+  const levelOf = (r) => (r.z0 < G ? 'g' : r.z0 < TUN ? 'u' : r.z0 < TOWER ? 't' : 'r');
+  const LEVEL_NAMES = { g: 'Рівень 0 · земля', u: 'Рівень +5 · ангари, балкон, тераси', t: 'Рівень +8 · наскрізний ангар', r: 'Башти над дахом' };
   const CAPTIONS = {
-    g: '<span><strong>Рівень 0.</strong> Заїзд, гаражі, цоколі крил, Великий зал і переробка. Висота ярусу 4 стіни.</span>',
-    u: '<span><strong>Рівень +4.</strong> Ангари на крилах, тераса з пентащитом над краулером, наскрізний ангар над Великим залом. Штрихування — зал меланжу і башти, що проходять наскрізь.</span>',
-    r: '<span><strong>Дах.</strong> Вітряки на +7, вітропастки на +8, ліхтарі башт до +11. Над пристроями нічого немає.</span>',
+    g: '<span><strong>Рівень 0.</strong> Заїзд із заокругленим перерізом, гаражі із заїздом тільки із заїзду, цоколі ангарів, Великий зал, склади і переробка. Стрілки — сходи вгору.</span>',
+    u: '<span><strong>Рівень +5.</strong> Ангари з вильотом спереду, з боків і вгору. Балкон над заїздом, тераса, переходи, галерея залу, задня тераса. Штрихування — зали, що проходять крізь рівень.</span>',
+    t: '<span><strong>Рівень +8.</strong> Наскрізний ангар для двох грузових над балконом і Великим залом, дахи бічних корпусів із вітропастками.</span>',
+    r: '<span><strong>Дах.</strong> 20 вітряків на даху наскрізного ангара (+12), 15 вітропасток на задній терасі й дахах корпусів. Над пристроями нічого немає.</span>',
   };
 
   function press(ids, active) {
@@ -37,7 +39,7 @@
     const v = M.variants[state.variant];
     $('plan-caption').innerHTML = CAPTIONS[state.level] + (state.level === 'u' ? `<span><strong>${v.label}:</strong> ${v.note}</span>` : '');
     for (const g of $('plan').querySelectorAll('[data-room]')) g.addEventListener('click', () => select(g.dataset.room, false));
-    press(['lvl-g', 'lvl-u', 'lvl-r'], 'lvl-' + state.level);
+    press(['lvl-g', 'lvl-u', 'lvl-t', 'lvl-r'], 'lvl-' + state.level);
   }
 
   function setLevel(l) {
@@ -62,7 +64,7 @@
   function renderRooms() {
     const box = $('rooms');
     box.innerHTML = '';
-    for (const l of ['g', 'u', 'r']) {
+    for (const l of ['g', 'u', 't', 'r']) {
       const h = document.createElement('div');
       h.className = 'grp';
       h.textContent = LEVEL_NAMES[l];
@@ -71,7 +73,7 @@
         const b = document.createElement('button');
         b.type = 'button';
         b.setAttribute('aria-pressed', String(state.highlight === r.id));
-        const meta = r.h > 0 ? `${Math.round(M.roomArea(r))} пл · h${r.h}` : r.group === 'shield' ? 'пентащит' : 'палуба';
+        const meta = r.h > 0 ? `${Math.round(M.roomArea(r))} пл · +${r.z0}…${r.z0 + r.h}` : r.group === 'shield' ? 'пентащит' : `палуба +${r.z0}`;
         b.innerHTML = `<span></span><span>${meta}</span>`;
         b.firstChild.textContent = roomName(r);
         b.addEventListener('click', () => select(r.id, true));
@@ -85,13 +87,16 @@
     const r = M.rooms.find((x) => x.id === id);
     if (state.highlight && r) {
       const lvl = levelOf(r);
-      if (fromList && lvl !== state.level) state.level = lvl;
-      const items = (r.items || []).filter((it) => it.kind !== 'light');
+      if (fromList && lvl !== state.level) state.level = lvl === 'r' ? 't' : lvl;
+      const items = (r.items || []).filter((it) => it.kind !== 'light' && it.kind !== 'hatch');
       const counts = {};
-      for (const it of items) counts[it.name] = (counts[it.name] || 0) + 1;
+      for (const it of items) {
+        const n = it.kind === 'stairs' ? `${it.name} (+${it.from} → +${it.to})` : it.full || it.name;
+        counts[n] = (counts[n] || 0) + 1;
+      }
       const sq = r.tiles.filter((t) => t.k === 's').length, tr = r.tiles.length - sq;
       const note = r.id === 'terrace' ? `${r.note} ${M.variants[state.variant].note}` : r.note;
-      $('detail').innerHTML = `<h3></h3><p></p><p>${sq} квадратів · ${tr} трикутників · ${r.h > 0 ? `висота ${r.h} рівні від +${r.z0}` : `на висоті +${r.z0}`}</p>` +
+      $('detail').innerHTML = `<h3></h3><p></p><p>${sq} квадратів · ${tr} трикутників · ${r.h > 0 ? `від +${r.z0} до +${r.z0 + r.h}` : `на висоті +${r.z0}`}</p>` +
         (items.length ? '<ul>' + Object.entries(counts).map(([n, c]) => `<li>${n}${c > 1 ? ' ×' + c : ''}</li>`).join('') + '</ul>' : '');
       $('detail').querySelector('h3').textContent = roomName(r);
       $('detail').querySelector('p').textContent = note || '';
@@ -116,12 +121,19 @@
   }
 
   // ---------- 3D ----------
-  const CUTS = { 'cut-g': 3.75, 'cut-u': 7.95, 'cut-all': 14 };
+  // Поверхи в 3D: верхня межа зрізу і підлога поверху (для режиму «лише цей поверх»).
+  const CUTS = { 'cut-g': [4.9, 0], 'cut-u': [7.95, G], 'cut-t': [11.95, TUN], 'cut-all': [16, 0] };
+  function floorFor(v) {
+    if (!$('opt-iso').checked || v >= 16) return -1;
+    const lv = M.levels.filter((l) => l.z0 < v - 0.05);
+    const z = (lv[lv.length - 1] || M.levels[0]).z0;
+    return z > 0 ? z - 0.05 : -1;
+  }
   function setCut(v) {
     $('cut').value = v;
-    $('cut-val').textContent = v >= 14 ? 'усе' : '+' + Number(v).toFixed(2).replace(/\.?0+$/, '');
-    press(Object.keys(CUTS), Object.keys(CUTS).find((k) => Math.abs(CUTS[k] - v) < 0.01) || '');
-    if (view) view.setCut(v >= 14 ? 99 : v);
+    $('cut-val').textContent = v >= 16 ? 'усе' : '+' + Number(v).toFixed(2).replace(/\.?0+$/, '');
+    press(Object.keys(CUTS), Object.keys(CUTS).find((k) => Math.abs(CUTS[k][0] - v) < 0.01) || '');
+    if (view) view.setCut(v >= 16 ? 99 : v, floorFor(v));
   }
   function ensure3D() {
     if (view) return true;
@@ -149,12 +161,13 @@
   // ---------- події ----------
   $('tab-plan').addEventListener('click', () => setTab('plan'));
   $('tab-3d').addEventListener('click', () => setTab('3d'));
-  for (const l of ['g', 'u', 'r']) $('lvl-' + l).addEventListener('click', () => setLevel(l));
+  for (const l of ['g', 'u', 't', 'r']) $('lvl-' + l).addEventListener('click', () => setLevel(l));
   $('var-terrace').addEventListener('click', () => setVariant('terrace'));
   $('var-entrance').addEventListener('click', () => setVariant('entrance'));
   $('opt-items').addEventListener('change', (e) => { state.items = e.target.checked; renderPlan(); });
   $('opt-labels').addEventListener('change', (e) => { state.labels = e.target.checked; renderPlan(); });
-  for (const k of Object.keys(CUTS)) $(k).addEventListener('click', () => setCut(CUTS[k]));
+  for (const k of Object.keys(CUTS)) $(k).addEventListener('click', () => setCut(CUTS[k][0]));
+  $('opt-iso').addEventListener('change', () => setCut(Number($('cut').value)));
   $('cut').addEventListener('input', (e) => setCut(Number(e.target.value)));
   $('opt-tiles').addEventListener('change', (e) => view && view.setTileColors(e.target.checked));
   $('opt-labels3d').addEventListener('change', (e) => view && view.setLabels(e.target.checked));

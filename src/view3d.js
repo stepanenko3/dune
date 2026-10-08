@@ -7,16 +7,20 @@
   const M = root.BASE;
   const LH = 0.85; // висота рівня відносно сторони плити (умовно)
   const DOOR = 2.5; // висота дверей у рівнях
+  const PARAPET = 0.5; // висота парапету в рівнях
 
   const ITEM_COLORS = {
     vehicle: 0xc9a46a, air: 0x9fb0c2, refine: 0xb5523b, water: 0x3f8fc9, storage: 0x8a8f5a,
-    craft: 0x9b7fc4, power: 0xd6b13a, console: 0xe4572e, stairs: 0x7a7f88, turbine: 0xe3e7ec,
-    windtrap: 0xcfd6dc, furniture: 0x6b5b4b, pad: 0xf2f2f2, gate: 0x2dd4bf, light: 0xfff6d8,
+    craft: 0x9b7fc4, power: 0xd6b13a, console: 0xe4572e, stairs: 0x8b8f96, turbine: 0xe3e7ec,
+    windtrap: 0xcfd6dc, furniture: 0x6b5b4b, pad: 0xf2f2f2, gate: 0x2dd4bf, light: 0xfff6d8, hatch: 0x30333a,
   };
+  const MINOR = /^(apron|backApron|walkway|gallery|lantern)/;
 
   function create(container, opts = {}) {
     const THREE = root.THREE;
     const v3 = (x, y, z) => new THREE.Vector3(x, z * LH, -y);
+    const top = (r) => r.z0 + r.h;
+    const tileKey = (t) => M.centroid(t.p).x.toFixed(3) + ',' + M.centroid(t.p).y.toFixed(3);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
     renderer.setPixelRatio(Math.min(root.devicePixelRatio || 1, 2));
@@ -32,14 +36,14 @@
     controls.enableDamping = true;
     controls.dampingFactor = 0.12;
     controls.maxPolarAngle = Math.PI * 0.495;
-    controls.minDistance = 6;
-    controls.maxDistance = 140;
+    controls.minDistance = 5;
+    controls.maxDistance = 150;
 
     const VIEWS = {
-      quarter: { pos: [-29, 25, 23], target: [0, 2.4, -9.5] },
-      front: { pos: [0, 9, 34], target: [0, 4, -8] },
-      top: { pos: [0, 58, -9.9], target: [0, 0, -10] },
-      back: { pos: [24, 22, -46], target: [0, 3, -10] },
+      quarter: { pos: [-30, 27, 18], target: [0, 3.5, -14] },
+      front: { pos: [0, 8, 26], target: [0, 5, -10] },
+      back: { pos: [26, 24, -58], target: [0, 4, -15] },
+      top: { pos: [0, 70, -14.9], target: [0, 0, -15] },
     };
     function setView(name) {
       const v = VIEWS[name] || VIEWS.quarter;
@@ -52,32 +56,33 @@
     // світло
     scene.add(new THREE.HemisphereLight(0xfff1dc, 0x6f5638, 0.62));
     const sun = new THREE.DirectionalLight(0xffe6c8, 0.78);
-    sun.position.set(-30, 45, 28);
+    sun.position.set(-30, 48, 22);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(sun.shadow.camera, { left: -32, right: 32, top: 32, bottom: -32, near: 1, far: 140 });
+    Object.assign(sun.shadow.camera, { left: -36, right: 36, top: 36, bottom: -36, near: 1, far: 160 });
     sun.shadow.bias = -0.0008;
-    sun.target.position.set(0, 0, -10);
+    sun.target.position.set(0, 0, -15);
     scene.add(sun, sun.target);
     const fill = new THREE.DirectionalLight(0xc9d6ff, 0.32);
-    fill.position.set(30, 22, -50);
+    fill.position.set(30, 22, -60);
     scene.add(fill);
 
-    // зріз по висоті
-    const clip = new THREE.Plane(new THREE.Vector3(0, -1, 0), 99);
-    const planes = [clip];
+    // зрізи: верхній (бачимо все нижче) і нижній (лише один поверх)
+    const clipTop = new THREE.Plane(new THREE.Vector3(0, -1, 0), 99);
+    const clipBottom = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1);
+    const planes = [clipTop, clipBottom];
     const std = (color, extra = {}) =>
       new THREE.MeshStandardMaterial({ color, roughness: 0.78, metalness: 0.18, side: THREE.DoubleSide, clippingPlanes: planes, clipShadows: true, ...extra });
 
     const mats = {
       sq: std(0x2f6fd0, { roughness: 0.9, metalness: 0 }),
       tri: std(0xe0812a, { roughness: 0.9, metalness: 0 }),
-      floorDark: std(0x4a4d53, { roughness: 0.92, metalness: 0.1 }),
       wall: std(0x585c64, { metalness: 0.3 }),
       wallLight: std(0x80848b, { metalness: 0.2 }),
       roof: std(0x3a3d43, { metalness: 0.3 }),
+      frame: std(0x2a2c31, { metalness: 0.45, roughness: 0.55 }),
       glass: std(0xa9d4f0, { transparent: true, opacity: 0.22, roughness: 0.08, metalness: 0.1, depthWrite: false }),
-      shield: std(0x2dd4bf, { transparent: true, opacity: 0.26, emissive: 0x0d6b60, emissiveIntensity: 0.6, depthWrite: false, roughness: 0.2 }),
+      shield: std(0x2dd4bf, { transparent: true, opacity: 0.24, emissive: 0x0d6b60, emissiveIntensity: 0.6, depthWrite: false, roughness: 0.2 }),
       ground: new THREE.MeshStandardMaterial({ color: 0xa07d55, roughness: 1, metalness: 0 }),
     };
     const seamMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, clippingPlanes: planes });
@@ -94,46 +99,109 @@
     const quad = (arr, a, b, c, d) => { tri(arr, a, b, c); tri(arr, a, c, d); };
     const seams = [], seamsShield = [], edges = [];
     const line = (arr, a, b) => arr.push(a.x, a.y, a.z, b.x, b.y, b.z);
+    const tileMat = (t) => (t.k === 's' ? mats.sq : mats.tri);
 
-    function floor(tiles, z, matFor, seamArr = seams, lift = 0.004) {
+    function floorTiles(tiles, zOf, matFor, seamArr = seams, lift = 0.004) {
       for (const t of tiles) {
-        const p = t.p.map((q) => v3(q.x, q.y, z));
+        const p = t.p.map((q) => v3(q.x, q.y, zOf(q)));
         const arr = bucket(matFor(t));
         for (let i = 1; i < p.length - 1; i++) tri(arr, p[0], p[i], p[i + 1]);
-        const s = t.p.map((q) => v3(q.x, q.y, z + lift));
+        const s = t.p.map((q) => v3(q.x, q.y, zOf(q) + lift));
         for (let i = 0; i < s.length; i++) line(seamArr, s[i], s[(i + 1) % s.length]);
       }
     }
-    function slabSides(room, z, thick, mat) {
-      for (const e of M.boundaryEdges(room.tiles)) {
+    const flat = (z) => () => z;
+    function slabSides(tiles, z, thick, mat) {
+      for (const e of M.boundaryEdges(tiles)) {
         const a = v3(e.a.x, e.a.y, z), b = v3(e.b.x, e.b.y, z);
         const a2 = a.clone(), b2 = b.clone();
         a2.y -= thick; b2.y -= thick;
         quad(bucket(mat), a2, b2, b, a);
       }
     }
+    function wallQuad(a, b, lo, hi, mat) {
+      quad(bucket(mat), v3(a.x, a.y, lo), v3(b.x, b.y, lo), v3(b.x, b.y, hi), v3(a.x, a.y, hi));
+    }
 
     // проміжки стіни по висоті з урахуванням прорізів
-    function wallParts(room, e) {
-      const z0 = room.z0, z1 = room.z0 + room.h;
+    function wallParts(room, e, lo0, hi0) {
+      const z0 = lo0, z1 = hi0;
       const holes = e.open.map((o) => {
-        const a = o.z0 !== undefined ? o.z0 : z0;
-        const b = o.z1 !== undefined ? o.z1 : o.type === 'door' ? Math.min(z0 + DOOR, z1) : z1;
-        return { a: Math.max(a, z0), b: Math.min(b, z1), type: o.type };
-      });
+        const a = o.z0 !== undefined ? o.z0 : room.z0;
+        const b = o.z1 !== undefined ? o.z1 : o.type === 'door' ? room.z0 + DOOR : top(room);
+        const lo = o.type === 'balcony' ? room.z0 + PARAPET : a;
+        return { a: Math.max(lo, z0), b: Math.min(b, z1), type: o.type === 'balcony' ? 'open' : o.type };
+      }).filter((h) => h.b > h.a);
       const cuts = [...new Set([z0, z1, ...holes.flatMap((h) => [h.a, h.b])])].filter((z) => z >= z0 && z <= z1).sort((a, b) => a - b);
       const parts = [];
       for (let i = 0; i < cuts.length - 1; i++) {
         const lo = cuts[i], hi = cuts[i + 1];
         if (hi - lo < 1e-6) continue;
         const over = holes.filter((h) => h.a <= lo + 1e-6 && h.b >= hi - 1e-6).map((h) => h.type);
-        let kind = 'solid';
         if (over.includes('open') || over.includes('door')) continue;
-        if (over.includes('shield')) kind = 'shield';
-        else if (over.includes('glass')) kind = 'glass';
-        parts.push({ lo, hi, kind });
+        parts.push({ lo, hi, kind: over.includes('shield') ? 'shield' : over.includes('glass') ? 'glass' : 'solid' });
       }
       return parts;
+    }
+    function renderWall(room, e, lo, hi) {
+      for (const part of wallParts(room, e, lo, hi)) {
+        wallQuad(e.a, e.b, part.lo, part.hi, part.kind === 'solid' ? mats.wall : mats[part.kind]);
+        if (part.kind === 'solid') line(edges, v3(e.a.x, e.a.y, part.hi), v3(e.b.x, e.b.y, part.hi));
+      }
+    }
+
+    // Заокруглений переріз (скріни 3 і 5): похилі плити знизу і зверху.
+    function buildProfile(r, roomEdges) {
+      const p = r.profile, z0 = r.z0, z1 = top(r);
+      const inStrip = (t) => {
+        const c = M.centroid(t.p);
+        return c.x < p.x0 + p.ch ? -1 : c.x > p.x1 - p.ch ? 1 : 0;
+      };
+      const flatTiles = r.tiles.filter((t) => inStrip(t) === 0);
+      floorTiles(flatTiles, flat(z0), tileMat);
+      for (const t of r.tiles) {
+        const s = inStrip(t);
+        if (!s) continue;
+        const frac = (q) => Math.abs(q.x - (s < 0 ? p.x0 + p.ch : p.x1 - p.ch)) / p.ch;
+        floorTiles([t], (q) => z0 + frac(q) * p.lo, tileMat);
+        floorTiles([t], (q) => z1 - frac(q) * p.hi, () => mats.wallLight, edges, -0.004);
+      }
+      if (r.roof === 'solid') {
+        floorTiles(flatTiles, flat(z1), () => mats.roof, edges, 0.006);
+      }
+      for (const e of roomEdges) {
+        const vertical = Math.abs(e.a.x - e.b.x) < 1e-6 && (Math.abs(e.a.x - p.x0) < 1e-6 || Math.abs(e.a.x - p.x1) < 1e-6);
+        if (vertical) { renderWall(r, e, z0 + p.lo, z1 - p.hi); continue; }
+        // торці: відкриті — з порталом, інакше стіна з дверима
+        const isOpen = e.open.some((o) => o.type === 'open');
+        if (!isOpen) renderWall(r, e, z0, z1);
+      }
+      for (const yEnd of endYs(r)) {
+        const endOpen = roomEdges.some((e) => Math.abs(e.a.y - yEnd) < 1e-6 && Math.abs(e.b.y - yEnd) < 1e-6 && e.open.some((o) => o.type === 'open'));
+        if (endOpen) portal(p, yEnd, z0, z1, yEnd < 1 ? 1 : -1);
+      }
+    }
+    function endYs(r) {
+      const ys = r.tiles.flatMap((t) => t.p.map((q) => q.y));
+      return [Math.min(...ys), Math.max(...ys)];
+    }
+    // Восьмикутна рамка порталу.
+    function portal(p, y, z0, z1, outward) {
+      const oct = (g) => [
+        [p.x0 + p.ch, z0 - g], [p.x1 - p.ch, z0 - g], [p.x1 + g, z0 + p.lo], [p.x1 + g, z1 - p.hi],
+        [p.x1 - p.ch, z1 + g], [p.x0 + p.ch, z1 + g], [p.x0 - g, z1 - p.hi], [p.x0 - g, z0 + p.lo],
+      ];
+      const inner = oct(0), outer = oct(0.45);
+      const yo = y - outward * 0.35;
+      for (const yy of [y, yo])
+        for (let i = 0; i < 8; i++) {
+          const j = (i + 1) % 8;
+          quad(bucket(mats.frame), v3(inner[i][0], yy, inner[i][1]), v3(inner[j][0], yy, inner[j][1]), v3(outer[j][0], yy, outer[j][1]), v3(outer[i][0], yy, outer[i][1]));
+        }
+      for (let i = 0; i < 8; i++) {
+        const j = (i + 1) % 8;
+        quad(bucket(mats.frame), v3(outer[i][0], y, outer[i][1]), v3(outer[j][0], y, outer[j][1]), v3(outer[j][0], yo, outer[j][1]), v3(outer[i][0], yo, outer[i][1]));
+      }
     }
 
     const labelPts = [];
@@ -141,50 +209,59 @@
     const hoverables = [];
 
     function buildRoom(r) {
-      const z0 = r.z0, z1 = r.z0 + r.h;
-      const tileMat = (t) => (t.k === 's' ? mats.sq : mats.tri);
-      if (r.group === 'shield') {
-        floor(r.tiles, z0, () => mats.shield, seamsShield, 0.01);
-      } else {
-        floor(r.tiles, z0, tileMat);
-        if (z0 > 0) slabSides(r, z0, 0.14, mats.roof);
-      }
-      if (r.slopes) {
-        // похилі смуги заїзду (скрін 3): від рівної підлоги до стіни на висоту 1
-        for (const s of [-1, 1]) {
-          const xi = s * 1.5, xo = s * 2.5, arr = bucket(mats.wallLight);
-          quad(arr, v3(xi, 0, 0.01), v3(xi, 10, 0.01), v3(xo, 10, 1), v3(xo, 0, 1));
-          tri(arr, v3(xi, 0, 0.01), v3(xo, 0, 1), v3(xo, 0, 0.01));
-          tri(arr, v3(xi, 10, 0.01), v3(xo, 10, 1), v3(xo, 10, 0.01));
-        }
-      }
+      const z0 = r.z0, z1 = top(r);
       const roomEdges = M.roomEdges(r);
-      if (r.h > 0) {
-        for (const e of roomEdges)
-          for (const part of wallParts(r, e)) {
-            const mat = part.kind === 'solid' ? mats.wall : mats[part.kind];
-            quad(bucket(mat), v3(e.a.x, e.a.y, part.lo), v3(e.b.x, e.b.y, part.lo), v3(e.b.x, e.b.y, part.hi), v3(e.a.x, e.a.y, part.hi));
-            if (part.kind === 'solid') line(edges, v3(e.a.x, e.a.y, part.hi), v3(e.b.x, e.b.y, part.hi));
-          }
-      } else if (r.group === 'deck') {
+      if (r.group === 'shield') {
+        floorTiles(r.tiles, flat(z0), () => mats.shield, seamsShield, 0.01);
+      } else if (r.profile) {
+        buildProfile(r, roomEdges);
+      } else {
+        floorTiles(r.tiles, flat(z0), tileMat);
+        if (z0 > 0) slabSides(r.tiles, z0, r.solidBase ? z0 * LH : 0.14, r.solidBase ? mats.wall : mats.roof);
+      }
+
+      const rimKeys = new Set((r.rim || []).map(tileKey));
+      const drop = r.rimDrop || 0;
+      const edgeTile = new Map();
+      for (const t of r.tiles) for (let i = 0; i < t.p.length; i++) edgeTile.set(M.edgeKey(t.p[i], t.p[(i + 1) % t.p.length]), t);
+
+      if (r.h > 0 && !r.profile) {
+        for (const e of roomEdges) {
+          const t = edgeTile.get(M.edgeKey(e.a, e.b));
+          const hi = t && rimKeys.has(tileKey(t)) ? z1 - drop : z1;
+          renderWall(r, e, z0, hi);
+        }
+      } else if (r.h === 0 && r.group !== 'shield') {
         for (const e of roomEdges) {
           if (e.open.some((o) => o.type === 'open')) continue;
-          const h = 0.42 / LH;
-          quad(bucket(mats.wallLight), v3(e.a.x, e.a.y, z0), v3(e.b.x, e.b.y, z0), v3(e.b.x, e.b.y, z0 + h), v3(e.a.x, e.a.y, z0 + h));
+          wallQuad(e.a, e.b, z0, z0 + PARAPET, mats.wallLight);
         }
       }
-      if (r.roof === 'solid') {
-        floor(r.tiles, z1 - 0.02, () => mats.roof, edges, 0.006);
-        slabSides(r, z1 - 0.02, 0.16, mats.roof);
+
+      // дахи: ядро на z1, обідок нижче на rimDrop, між ними уступ
+      if (r.rim && drop) {
+        const rimTiles = r.tiles.filter((t) => rimKeys.has(tileKey(t)));
+        const core = r.tiles.filter((t) => !rimKeys.has(tileKey(t)));
+        floorTiles(rimTiles, flat(z1 - drop - 0.02), () => mats.roof, edges, 0.006);
+        const outer = new Set(M.boundaryEdges(r.tiles).map((e) => M.edgeKey(e.a, e.b)));
+        if (r.roof === 'solid') {
+          floorTiles(core, flat(z1 - 0.02), () => mats.roof, edges, 0.006);
+          for (const e of M.boundaryEdges(core)) if (!outer.has(M.edgeKey(e.a, e.b))) wallQuad(e.a, e.b, z1 - drop - 0.02, z1 - 0.02, mats.wall);
+        }
+      } else if (r.roof === 'solid' && !r.profile) {
+        floorTiles(r.tiles, flat(z1 - 0.02), () => mats.roof, edges, 0.006);
+        slabSides(r.tiles, z1 - 0.02, 0.16, mats.roof);
+      } else if (r.roof === 'shield') {
+        floorTiles(r.tiles, flat(z1 - 0.02), () => mats.shield, seamsShield, 0.006);
       } else if (r.roof === 'pyramid') {
         const c = M.labelPoint(r);
-        const apex = v3(c.x, c.y, z1 + 2.2);
+        const apex = v3(c.x, c.y, z1 + 2.4);
         for (const e of roomEdges) tri(bucket(mats.roof), v3(e.a.x, e.a.y, z1), v3(e.b.x, e.b.y, z1), apex);
         for (const e of roomEdges) line(edges, v3(e.a.x, e.a.y, z1), apex);
       }
+
       const lp = M.labelPoint(r);
-      const minor = /^(lobby|apron|lantern)/.test(r.id);
-      labelPts.push({ id: r.id, name: r.name, z0, h: r.h, minor, at: lp, p: new THREE.Vector3() });
+      labelPts.push({ id: r.id, name: r.name, z0, h: r.h, minor: MINOR.test(r.id), at: lp, p: new THREE.Vector3() });
       for (const it of r.items || []) addItem(it, z0, itemGroups.base);
     }
 
@@ -196,14 +273,31 @@
       g.position.set(it.c.x, z, -it.c.y);
       g.rotation.y = (it.ang * Math.PI) / 180;
       const h = it.h * LH;
-      const box = (w, hh, d, y, m = mat) => {
-        const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), m);
-        mesh.position.y = y + hh / 2;
+      const box = (w, hh, dd, y, m = mat, x = 0, zz = 0) => {
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, hh, dd), m);
+        mesh.position.set(x, y + hh / 2, zz);
         mesh.castShadow = mesh.receiveShadow = true;
         g.add(mesh);
         return mesh;
       };
-      if (it.kind === 'turbine') {
+      if (it.kind === 'stairs') {
+        const steep = h / it.w > 1.6;
+        if (steep) {
+          // гвинтові сходи в шахті башти
+          const n = Math.round(it.h * 3);
+          for (let i = 0; i < n; i++) {
+            const a = (i * Math.PI) / 4;
+            const step = box(it.d * 0.45, 0.08, 0.5, ((i + 1) * h) / n - 0.08, mat, Math.cos(a) * it.d * 0.24, Math.sin(a) * it.d * 0.24);
+            step.rotation.y = -a;
+          }
+          const core = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, h, 8), mat);
+          core.position.y = h / 2;
+          g.add(core);
+        } else {
+          const n = Math.max(4, Math.round(it.h * 2.5));
+          for (let i = 0; i < n; i++) box(it.w / n, ((i + 1) * h) / n, it.d, 0, mat, -it.w / 2 + (it.w / n) * (i + 0.5));
+        }
+      } else if (it.kind === 'turbine') {
         const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.16, h, 10), mat);
         mast.position.y = h / 2;
         mast.castShadow = true;
@@ -237,13 +331,17 @@
         g.add(ring);
       } else if (it.kind === 'light') {
         box(it.w, 0.02, it.d, 0, std(0xfff6d8, { emissive: 0xfff1c4, emissiveIntensity: 0.6 }));
+      } else if (it.kind === 'gate') {
+        box(it.w, h, it.d, 0, std(0x2dd4bf, { transparent: true, opacity: 0.35, emissive: 0x0d6b60, emissiveIntensity: 0.5 }));
+      } else if (it.kind === 'hatch') {
+        box(it.w, 0.03, it.d, 0.01, std(0x30333a));
       } else if (it.kind === 'air') {
         box(it.w, h * 0.55, it.d * 0.55, 0);
         box(it.w * 0.55, 0.08, it.d, h * 0.45, std(0xd5dde6, { transparent: true, opacity: 0.8 }));
       } else {
         box(it.w, h, it.d, 0);
       }
-      const nm = it.full || it.name;
+      const nm = it.kind === 'stairs' ? `${it.name} (+${it.from} → +${it.to})` : it.full || it.name;
       g.traverse((o) => { if (o.isMesh) { o.userData.name = nm; hoverables.push(o); } });
       group.add(g);
     }
@@ -267,19 +365,18 @@
       geo.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
       return new THREE.LineSegments(geo, mat);
     };
-    const seamLines = mkLines(seams, seamMat);
-    structure.add(seamLines, mkLines(seamsShield, seamMatShield), mkLines(edges, edgeMat));
+    structure.add(mkLines(seams, seamMat), mkLines(seamsShield, seamMatShield), mkLines(edges, edgeMat));
     scene.add(structure, itemGroups.base, itemGroups.terrace, itemGroups.entrance);
 
     // земля, сітка і ділянки
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(220, 220), mats.ground);
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), mats.ground);
     ground.rotation.x = -Math.PI / 2;
-    ground.position.set(0, -0.02, -10);
+    ground.position.set(0, -0.02, -15);
     ground.receiveShadow = true;
     scene.add(ground);
     const gridArr = [];
-    for (let x = -17; x <= 17; x++) line(gridArr, v3(x, -3, 0), v3(x, 23, 0));
-    for (let y = -3; y <= 23; y++) line(gridArr, v3(-17, y, 0), v3(17, y, 0));
+    for (let x = -12; x <= 12; x++) line(gridArr, v3(x, -3, 0), v3(x, 33, 0));
+    for (let y = -3; y <= 33; y++) line(gridArr, v3(-12, y, 0), v3(12, y, 0));
     const grid = mkLines(gridArr, new THREE.LineBasicMaterial({ color: 0x8f7457, transparent: true, opacity: 0.28 }));
     grid.position.y = -0.005;
     scene.add(grid);
@@ -288,9 +385,7 @@
       const q = [v3(c.x, c.y, 0), v3(c.x + c.w, c.y, 0), v3(c.x + c.w, c.y + c.d, 0), v3(c.x, c.y + c.d, 0)];
       for (let i = 0; i < 4; i++) line(claimArr, q[i], q[(i + 1) % 4]);
     }
-    const claimsLines = mkLines(claimArr, new THREE.LineBasicMaterial({ color: 0x24222e }));
-    claimsLines.position.y = 0.0;
-    scene.add(claimsLines);
+    scene.add(mkLines(claimArr, new THREE.LineBasicMaterial({ color: 0x24222e })));
 
     // підписи
     const labelLayer = document.createElement('div');
@@ -307,7 +402,7 @@
     tip.hidden = true;
     container.appendChild(tip);
 
-    const state = { cut: 99, labels: true, running: false, variant: 'terrace', w: 1, h: 1 };
+    const state = { cut: 99, floor: -1, labels: true, running: false, variant: 'terrace', w: 1, h: 1 };
     function setVariant(k) {
       state.variant = k;
       itemGroups.terrace.visible = k === 'terrace';
@@ -316,9 +411,12 @@
       if (t) t.el.textContent = M.variants[k].label;
     }
     setVariant(opts.variant || 'terrace');
-    function setCut(levels) {
+    // cut — верхня межа в рівнях; floor — нижня межа (-1 = показувати все нижче).
+    function setCut(levels, floor = -1) {
       state.cut = levels;
-      clip.constant = levels * LH;
+      state.floor = floor;
+      clipTop.constant = levels * LH;
+      clipBottom.constant = -floor * LH;
     }
     function setTileColors(on) {
       mats.sq.color.set(on ? 0x2f6fd0 : 0x50545b);
@@ -346,31 +444,33 @@
 
     const tmp = new THREE.Vector3();
     // Які підписи показувати: верхній видимий ярус + високі зали, що крізь нього проходять.
-    function labelVisible(L) {
-      const cut = state.cut;
-      if (L.minor || L.z0 >= cut - 0.05) return false;
-      const base = cut > M.heights.G + 0.05 ? M.heights.G : 0;
-      return L.z0 >= base || (L.h > M.heights.G && L.z0 + L.h > base);
+    function activeLevel() {
+      const lv = M.levels.filter((l) => l.z0 < state.cut - 0.05);
+      return lv[lv.length - 1] || M.levels[0];
     }
-    // Підпис ховається, якщо між камерою і ним стоїть стіна (перевірка раз на кілька кадрів).
-    const occRay = new THREE.Raycaster();
-    let occTick = 0;
-    // Точка підпису: над дахом, якщо дах видно, інакше трохи нижче площини зрізу.
+    function labelVisible(L) {
+      if (L.minor || L.z0 >= state.cut - 0.05 || L.z0 < state.floor - 0.05) return false;
+      const lv = activeLevel();
+      const base = state.cut >= M.heights.TOWER ? M.heights.G : lv.z0;
+      return L.z0 >= base || (L.h >= 6 && L.z0 + L.h > base && state.floor < 0);
+    }
     function labelAnchor(L) {
       const z = L.h > 0 ? Math.min(L.z0 + L.h + 0.45, state.cut - 0.3) : L.z0 + 0.6;
       L.p.copy(v3(L.at.x, L.at.y, Math.max(z, L.z0 + 0.4)));
     }
+    const occRay = new THREE.Raycaster();
+    let occTick = 0;
     function updateOcclusion() {
       if (occTick++ % 8 !== 0) return;
       const solids = structure.children.filter((o) => o.isMesh && !o.material.transparent);
       for (const L of labelPts) {
         if (!labelVisible(L)) continue;
         labelAnchor(L);
-        const dir = L.p.clone().sub(camera.position);
-        const dist = dir.length();
-        occRay.set(camera.position, dir.normalize());
+        const d = L.p.clone().sub(camera.position);
+        const dist = d.length();
+        occRay.set(camera.position, d.normalize());
         occRay.far = dist - 0.6;
-        const hits = occRay.intersectObjects(solids, false).filter((h) => h.point.y < state.cut * LH);
+        const hits = occRay.intersectObjects(solids, false).filter((hh) => hh.point.y < state.cut * LH && hh.point.y > state.floor * LH);
         L.hiddenByWall = hits.length > 0;
       }
     }
@@ -407,7 +507,11 @@
       if (!hoverReq) return;
       mouse.set((hoverReq.x / state.w) * 2 - 1, -(hoverReq.y / state.h) * 2 + 1);
       ray.setFromCamera(mouse, camera);
-      const hits = ray.intersectObjects(hoverables, false).filter((h) => h.point.y < state.cut * LH && h.object.parent.parent.visible !== false);
+      const hits = ray.intersectObjects(hoverables, false).filter((hh) => {
+        let o = hh.object, visible = true;
+        while (o) { if (o.visible === false) visible = false; o = o.parent; }
+        return visible && hh.point.y < state.cut * LH && hh.point.y > state.floor * LH - 0.01;
+      });
       if (hits.length) {
         tip.textContent = hits[0].object.userData.name;
         tip.style.transform = `translate(${hoverReq.x + 12}px, ${hoverReq.y + 12}px)`;
@@ -431,9 +535,8 @@
       requestAnimationFrame(frame);
     }
     function stop() { state.running = false; }
-    function renderOnce() { resize(); controls.update(); renderer.render(scene, camera); placeLabels(); }
 
-    return { start, stop, setCut, setVariant, setTileColors, setLabels, setView, renderOnce, LH };
+    return { start, stop, setCut, setVariant, setTileColors, setLabels, setView, LH };
   }
 
   root.VIEW3D = { create };

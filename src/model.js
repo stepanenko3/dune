@@ -1,15 +1,14 @@
 /*
- * Модель бази "Цитадель Харконненів" для Dune: Awakening.
+ * Модель бази "Цитадель Харконненів" для Dune: Awakening. Версія 2.
  *
  * Одиниці: 1 = сторона квадратного фундаменту (і трикутного теж).
  * Висота: 1 рівень = висота однієї стіни.
- * План: x — вправо, y — вглиб бази (фронт на y = 0, тил на y = 20).
- * Ділянки: 6 штук по 10x10, сітка 3 x 2 (x від -15 до 15, y від 0 до 20).
+ * План: x — вправо, y — вглиб бази (фронт на y = 0, тил на y = 30).
+ * Ділянки: 6 штук по 10x10, сітка 2 x 3 (x від -10 до 10, y від 0 до 30).
  *
  * Усі приміщення складені тільки з квадратів ('s') і рівносторонніх
- * трикутників ('t') зі стороною 1. Повернуті під 30 градусів частини
- * (ангари) і шестикутний зал отримані так само, як у грі:
- * квадрат -> трикутник -> повернутий квадрат.
+ * трикутників ('t') зі стороною 1. Повернуті під 30 градусів ангари
+ * прикріплені до шестикутного Великого залу, як рукави на скріні 4.
  */
 (function (root) {
   'use strict';
@@ -36,6 +35,13 @@
     }
     return inside;
   }
+  function distToSeg(p, a, b) {
+    const d = sub(b, a);
+    const t = Math.max(0, Math.min(1, ((p.x - a.x) * d.x + (p.y - a.y) * d.y) / (d.x * d.x + d.y * d.y)));
+    return Math.hypot(a.x + d.x * t - p.x, a.y + d.y * t - p.y);
+  }
+  const distToPoly = (p, poly) => Math.min(...poly.map((a, i) => distToSeg(p, a, poly[(i + 1) % poly.length])));
+  const inOrOn = (p, poly) => pointInPoly(p, poly) || distToPoly(p, poly) < 1e-6;
 
   // ---------- генератори плиток ----------
 
@@ -52,8 +58,9 @@
   const rect = (x, y, w, d) => squares(V(x, y), V(1, 0), V(0, 1), w, d);
 
   // Трикутна гратка з початком o і базисом a = dir(aDeg), b = dir(aDeg + 60).
-  // Повертає трикутники, центр яких лежить усередині полігона.
-  function triangles(o, aDeg, poly) {
+  // strict = false: трикутник береться, якщо його центр усередині полігона;
+  // strict = true: тільки якщо всі три вершини всередині або на межі.
+  function triangles(o, aDeg, poly, strict = false) {
     const a = dir(aDeg), b = dir(aDeg + 60);
     const det = a.x * b.y - a.y * b.x;
     let i0 = Infinity, i1 = -Infinity, j0 = Infinity, j1 = -Infinity;
@@ -70,32 +77,47 @@
         const P = add(o, add(mul(a, i), mul(b, j)));
         const up = [P, add(P, a), add(P, b)];
         const dn = [add(P, a), add(add(P, a), b), add(P, b)];
-        for (const tri of [up, dn]) if (pointInPoly(centroid(tri), poly)) out.push({ k: 't', p: tri });
+        for (const tri of [up, dn]) {
+          const ok = strict ? tri.every((q) => inOrOn(q, poly)) && pointInPoly(centroid(tri), poly) : pointInPoly(centroid(tri), poly);
+          if (ok) out.push({ k: 't', p: tri });
+        }
       }
     return out;
   }
 
-  // "Округлена" башта: ядро w x d + ряд трикутників по периметру + кутові вставки
-  // (повернутий квадрат + трикутник), як на скріншоті 4. Виходить майже 12-кутник.
+  // Кутова вставка для "округлення": повернутий квадрат + трикутник (як на скріні 4).
+  // Базовий випадок — кут (x1, y0) прямокутника; sx, sy віддзеркалюють для інших кутів.
+  function cornerPiece(c, sx, sy) {
+    const f = (p) => V(c.x + sx * p.x, c.y + sy * p.y);
+    const a = dir(240), b = dir(330), t = dir(30);
+    return [
+      { k: 's', p: [V(0, 0), a, add(a, b), b].map(f) },
+      { k: 't', p: [V(0, 0), b, t].map(f) },
+    ];
+  }
+
+  // Ряд трикутників уздовж відрізка p -> q (довжина ціла), назовні ліворуч від напрямку.
+  // Виходить трапеція з кутами 60 градусів, як "закруглені" краї на скріні 1.
+  function strip(p, q, rows = 1) {
+    const ang = (Math.atan2(q.y - p.y, q.x - p.x) * 180) / Math.PI;
+    const poly = [p, q, add(q, mul(dir(ang + 120), rows)), add(p, mul(dir(ang + 60), rows))];
+    return triangles(p, ang, poly);
+  }
+
+  // "Кругла" башта: ядро w x d + ряд трикутників по периметру + кутові вставки.
   function roundedBlock(x0, y0, w, d) {
-    const out = rect(x0, y0, w, d);
     const x1 = x0 + w, y1 = y0 + d;
-    out.push(...triangles(V(x0, y0), 0, [V(x0, y0), V(x1, y0), V(x1 - 0.5, y0 - R3), V(x0 + 0.5, y0 - R3)]));
-    out.push(...triangles(V(x0, y1), 0, [V(x0, y1), V(x1, y1), V(x1 - 0.5, y1 + R3), V(x0 + 0.5, y1 + R3)]));
-    out.push(...triangles(V(x1, y0), 90, [V(x1, y0), V(x1, y1), V(x1 + R3, y1 - 0.5), V(x1 + R3, y0 + 0.5)]));
-    out.push(...triangles(V(x0, y0), 90, [V(x0, y0), V(x0, y1), V(x0 - R3, y1 - 0.5), V(x0 - R3, y0 + 0.5)]));
-    // кутові вставки: для кута (x1, y0) вільний сектор 240..390 градусів
-    const corner = (c, sx, sy) => {
-      const f = (p) => V(c.x + sx * p.x, c.y + sy * p.y);
-      const a = dir(240), b = dir(330), t = dir(30);
-      out.push({ k: 's', p: [V(0, 0), a, add(a, b), b].map(f) });
-      out.push({ k: 't', p: [V(0, 0), b, t].map(f) });
-    };
-    corner(V(x1, y0), 1, 1);
-    corner(V(x0, y0), -1, 1);
-    corner(V(x1, y1), 1, -1);
-    corner(V(x0, y1), -1, -1);
-    return out;
+    return [
+      ...rect(x0, y0, w, d),
+      ...strip(V(x1, y0), V(x0, y0)),
+      ...strip(V(x0, y1), V(x1, y1)),
+      ...strip(V(x1, y1), V(x1, y0)),
+      ...strip(V(x0, y0), V(x0, y1)),
+      ...cornerPiece(V(x1, y0), 1, 1),
+      ...cornerPiece(V(x0, y0), -1, 1),
+      ...cornerPiece(V(x1, y1), 1, -1),
+      ...cornerPiece(V(x0, y1), -1, -1),
+    ];
   }
 
   const mirrorTiles = (tiles) => tiles.map((t) => ({ k: t.k, p: t.p.map(mirrorPt) }));
@@ -104,49 +126,74 @@
 
   // Предмет (техніка, обладнання) як прямокутник у власних осях.
   // c — центр, w — уздовж кута ang, d — поперек, h — висота в рівнях, z — рівень підлоги.
+  // Сходи: kind 'stairs', w — довжина маршу в напрямку підйому ang, from/to — рівні.
   const item = (name, kind, c, w, d, h, ang = 0, extra = {}) => ({ name, kind, c, w, d, h, ang, ...extra });
   const mirrorItem = (it) => ({ ...it, c: mirrorPt(it.c), ang: 180 - it.ang });
+  const stairs = (name, c, run, width, ang, from, to) =>
+    item(name, 'stairs', c, run, width, to - from, ang, { from, to, z: from });
 
-  // ---------- геометрія ----------
+  // ---------- висоти ----------
+  const G = 5;            // нижній ярус: заїзд, гаражі, цоколі, склади
+  const HANG = 3;         // ангари орні: +5 .. +8 (під підлогою наскрізного ангара)
+  const TUN = 8;          // наскрізний ангар: +8 .. +12
+  const BACK = 8;         // зал меланжу, майстерня, Великий зал
+  const TOWER = 12;       // шахти башт, далі ліхтарі до +14.5
 
   const claims = [];
-  for (const cx of [-15, -5, 5]) for (const cy of [0, 10]) claims.push({ x: cx, y: cy, w: 10, d: 10 });
+  for (const cx of [-10, 0]) for (const cy of [0, 10, 20]) claims.push({ x: cx, y: cy, w: 10, d: 10 });
 
-  const G = 4;      // висота першого ярусу (заїзд, гаражі, Великий зал, цоколі ангарів)
-  const UP = 4;     // висота верхнього ярусу (ангари, наскрізний ангар)
-  const SIDE = 7;   // висота бічних корпусів (зал меланжу, рудний цех + майстерня)
+  // ---------- ключові точки ----------
+  // Великий зал: шестикутник зі сторонами 5-6-3-8-3-6 на трикутній гратці.
+  const H0 = V(-2.5, 12);                    // лівий кут нижньої сторони (центральний вхід)
+  const hexPoly = [V(-2.5, 12), V(2.5, 12), V(5.5, 12 + 6 * R3), V(4, 12 + 9 * R3), V(-4, 12 + 9 * R3), V(-5.5, 12 + 6 * R3)];
+  const Y2 = 12 + 9 * R3;                    // верхня сторона залу = початок заднього корпусу
 
-  // Крило: внутрішній передній кут на стіні гаража, лицьова сторона під 30 градусів.
-  const I = V(-7.5, 6);
-  const u1 = dir(210); // уздовж лицьової сторони, назовні й уперед
-  const u2 = dir(120); // углиб крила
-  const OF = add(I, mul(u1, 6));
-  const OB = add(OF, mul(u2, 4));
-  const IB = add(I, mul(u2, 4));
-  const wingSq = squares(I, u1, u2, 6, 4);
-  const apronTri = triangles(I, 210, [I, V(-7.5, 0), OF]);
-  const stripPoly = [OB, IB, add(IB, dir(150)), add(OB, dir(90))];
-  const stripTri = triangles(OB, 30, stripPoly);
-  const wingLocal = (a, b) => add(I, add(mul(u1, a), mul(u2, b))); // точка в осях крила
+  // Ангар: прикріплений до лівої нижньої сторони залу (6 плит), виходить уперед-ліворуч під 30°.
+  const A = V(-2.5, 12), B = V(-5.5, 12 + 6 * R3);
+  const d = dir(210), e = dir(120);
+  const hL = (t, s) => add(A, add(mul(d, t), mul(e, s)));     // точка в осях ангара
+  const A1 = hL(4, 0), B1 = hL(4, 6);
+  const F1 = add(A1, mul(dir(180), 2)), F2 = add(B1, mul(dir(240), 2)); // фронт 4 плити
+  const hangarSq = squares(A, d, e, 4, 6);
+  const hangarNose = triangles(A1, 120, [A1, B1, F2, F1]);    // 2 ряди: 6 -> 4, "закруглення" по 2
+  const apronPoly = [F1, V(-10, 10), V(-10, F2.y), F2];
+  const apronTri = triangles(A1, 120, apronPoly, true);
+  const sandPoly = [B, V(-4, Y2), V(-10, Y2), V(-10, F2.y), F2, B1];
+  const sandTri = triangles(H0, 0, sandPoly, true);
+  const hexTri = triangles(H0, 0, hexPoly);
 
-  // Великий зал: шестикутник (5-3-3-5-3-3) на трикутній гратці + ніші + неф.
-  const A0 = V(-2.5, 10);
-  const yTop = 10 + 6 * R3;
-  const hexPoly = [V(-2.5, 10), V(2.5, 10), V(4, 10 + 3 * R3), V(2.5, yTop), V(-2.5, yTop), V(-4, 10 + 3 * R3)];
-  const fillerL = [V(-7.5, 10), V(-2.5, 10), V(-5, 10 + 5 * R3)];
-  const chapelL = [V(-7.49, 10), V(-5, 10 + 5 * R3), V(-4, 10 + 3 * R3), V(-2.5, yTop), V(-7.49, yTop)];
-
-  const towerCore = (x) => rect(x, 10, 3, 3);
-  const inTower = (t) => {
+  // Галерея всередині залу на +5: перший ряд трикутників уздовж стін.
+  const hexEdges = hexPoly.map((p, i) => [p, hexPoly[(i + 1) % hexPoly.length]]);
+  const galleryTri = hexTri.filter((t) => {
     const c = centroid(t.p);
-    return c.x > -10.5 && c.x < -7.5 && c.y > 10 && c.y < 13;
+    return Math.min(...hexEdges.map(([a, b]) => distToSeg(c, a, b))) < 0.6;
+  });
+
+  // Задній корпус: квадрати від верхньої сторони залу (y = Y2) + округлені краї.
+  const towerCoreL = rect(-6.5, Y2, 3, 3);
+  const inBox = (t, x0, x1, y0, y1) => {
+    const c = centroid(t.p);
+    return c.x > x0 && c.x < x1 && c.y > y0 && c.y < y1;
   };
-  const sideBlockL = rect(-14.5, 10, 7, 10).filter((t) => !inTower(t));
+  const backCoreL = rect(-8.5, Y2, 5, 8).filter((t) => !inBox(t, -6.5, -3.5, Y2, Y2 + 3));
+  const backRimL = [
+    ...strip(V(-8.5, Y2), V(-8.5, Y2 + 8)),
+    ...strip(V(-8.5, Y2 + 8), V(-3.5, Y2 + 8)),
+    ...cornerPiece(V(-8.5, Y2 + 8), -1, -1),
+  ];
+  const storeCore = rect(-3.5, Y2, 7, 8);
+  const storeNose = strip(V(-3.5, Y2 + 8), V(3.5, Y2 + 8), 2);
+
+  // Гараж: ядро 6 x 10 + закруглений зовнішній бік.
+  const garageCoreL = rect(-8.5, 0, 6, 10);
+  const garageRimL = strip(V(-8.5, 0), V(-8.5, 10));
 
   // ---------- приміщення ----------
-  // h = 0 означає відкритий майданчик (палуба) з парапетом.
-  // roof: 'solid' | 'none' | 'shield' | 'pyramid'
-  // open: прорізи у стінах: 'open' (без стіни), 'shield' (пентащит), 'glass', 'door'.
+  // h = 0 — відкрита палуба з парапетом. roof: 'solid' | 'none' | 'shield' | 'pyramid'.
+  // open: прорізи у стінах: 'open', 'shield' (пентащит), 'glass', 'door', 'balcony' (парапет).
+  // z0/z1 у прорізі — абсолютні рівні; без них двері мають висоту 2.5 від підлоги.
+  // rim: плитки з нижчим дахом на rimDrop рівнів (уступ, щоб корпус не був коробкою).
+  // profile: заокруглений переріз (похилі плити знизу і зверху), як на скрінах 3 і 5.
   const rooms = [];
   const addRoom = (r) => { rooms.push(r); return r; };
   const both = (r, mirror) => { addRoom(r); addRoom(mirror(r)); };
@@ -154,342 +201,376 @@
     ...r,
     id, name,
     tiles: mirrorTiles(r.tiles),
+    rim: r.rim ? mirrorTiles(r.rim) : undefined,
     open: (r.open || []).map(mirrorSeg),
     items: (r.items || []).map(mirrorItem),
     label: r.label ? mirrorPt(r.label) : undefined,
     ...extra,
   });
+  const seg = (a, b, type, z0, z1) => ({ a, b, type, ...(z0 !== undefined ? { z0, z1 } : {}) });
 
-  // === Перший ярус (z 0..4) ===
+  // ===== Рівень 0 =====
   addRoom({
     id: 'corridor', name: 'Центральний заїзд', group: 'drive', z0: 0, h: G, roof: 'none',
-    tiles: rect(-2.5, 0, 5, 10), slopes: true,
-    note: '3 плити рівної підлоги + 2 похилі, разом 5. Попереду виїзд, позаду центральний вхід, з боків гаражі (скрін 3).',
+    tiles: rect(-2.5, 0, 5, 12), label: V(0, 10.6),
+    profile: { x0: -2.5, x1: 2.5, ch: 1, lo: 1, hi: 1 },
+    note: '3 рівні плити + по 1 похилій з боків, знизу і зверху (скрін 3). Похилі плити внизу — пандуси в гаражі.',
     open: [
-      { a: V(-2.5, 0), b: V(2.5, 0), type: 'open' },
-      { a: V(-1.5, 10), b: V(1.5, 10), type: 'door' },
-      { a: V(-2.5, 1), b: V(-2.5, 9), type: 'glass' },
-      { a: V(2.5, 1), b: V(2.5, 9), type: 'glass' },
+      seg(V(-2.5, 0), V(2.5, 0), 'open'),
+      seg(V(-1.5, 12), V(1.5, 12), 'door', 0, 3),
+      seg(V(-2.5, 1), V(-2.5, 9), 'open', 1, 4),
+      seg(V(2.5, 1), V(2.5, 9), 'open', 1, 4),
     ],
-    items: [item('Світлова стеля', 'light', V(0, 5), 9, 2.4, 0.02, 90, { z: G - 0.1 })],
+    items: [item('Світлові панелі', 'light', V(0, 6), 11, 2.4, 0.02, 90, { z: G - 0.08 })],
   });
 
-  addRoom({
-    id: 'garageL', name: 'Гараж краулера', group: 'drive', z0: 0, h: G, roof: 'none',
-    tiles: rect(-7.5, 0, 5, 10), label: V(-5, 9.1),
-    note: 'Стеля над краулером — горизонтальний пентащит: грузовий орні спускається і забирає краулер.',
-    open: [
-      { a: V(-7, 0), b: V(-3, 0), type: 'shield' },
-      { a: V(-6, 10), b: V(-4, 10), type: 'door' },
-    ],
-    items: [item('Краулер', 'vehicle', V(-5, 4.6), 7, 3.5, 2.2, 90)],
-  });
-
-  addRoom({
-    id: 'garageR', name: 'Гараж: багі + піскоцикл', short: 'Гараж багі', group: 'drive', z0: 0, h: G, roof: 'none',
-    tiles: rect(2.5, 0, 5, 10), label: V(5, 7.2),
-    note: 'Прямий виїзд уперед + вихід у заїзд. Позаду двері до складу руди.',
-    open: [
-      { a: V(3, 0), b: V(7, 0), type: 'shield' },
-      { a: V(4, 10), b: V(6, 10), type: 'door' },
-    ],
-    items: [
-      item('Багі', 'vehicle', V(4.25, 4.5), 3, 2, 1.4, 90),
-      item('Піскоцикл', 'vehicle', V(6.5, 4), 2, 1, 1.1, 90),
-      item('Ремонтна станція', 'craft', V(5, 8.6), 2, 1.2, 1.2, 0),
-    ],
-  });
+  both(
+    {
+      id: 'garageL', name: 'Гараж краулера', group: 'drive', z0: 1, h: G - 1, roof: 'none', solidBase: true,
+      tiles: [...garageCoreL, ...garageRimL], rim: garageRimL, rimDrop: 1, label: V(-5.5, 8.55),
+      note: 'Заїзд тільки із центрального заїзду по похилій плиті. Стеля — горизонтальний пентащит 6×9: грузовий спускається і забирає краулер.',
+      open: [
+        seg(V(-2.5, 1), V(-2.5, 9), 'open', 1, 4),
+        seg(V(-7.96, 10), V(-6, 10), 'door', 1, 3.5),
+        seg(V(-7.5, 0), V(-3.5, 0), 'glass', 2.2, 4),
+      ],
+      items: [
+        item('Краулер', 'vehicle', V(-5.5, 4.2), 7, 3.5, 2.2, 90),
+        stairs('Сходи на +5', V(-6.2, 9.5), 4, 0.95, 0, 1, 5),
+      ],
+    },
+    mirrorRoom('garageR', 'Гараж: багі + піскоцикл', {
+      short: 'Гараж багі',
+      note: 'Заїзд тільки із центрального заїзду по похилій плиті. Сходи на терасу.',
+      items: [
+        item('Багі', 'vehicle', V(4.6, 4.2), 3, 2, 1.4, 90),
+        item('Піскоцикл', 'vehicle', V(7.2, 3.7), 2, 1, 1.1, 90),
+        item('Ремонтна станція', 'craft', V(7.0, 7.2), 2, 1.2, 1.2, 0),
+        stairs('Сходи на +5', V(6.2, 9.5), 4, 0.95, 180, 1, 5),
+      ],
+    })
+  );
 
   both(
     {
       id: 'plinthL', name: 'Водний блок', group: 'craft', z0: 0, h: G, roof: 'none',
-      tiles: [...wingSq, ...apronTri, ...stripTri],
-      label: V(-9.3, 2.9),
-      note: 'Цоколь під ангаром скаутів. Вода для переробки спайсу: цистерни + дистилятор (Deathstill).',
-      open: [{ a: V(-7.5, 1), b: V(-7.5, 3), type: 'door' }],
+      tiles: [...hangarSq, ...hangarNose, ...apronTri], label: hL(2.0, 3.0),
+      note: 'Цоколь під ангаром скаутів. Цистерни і Deathstill: вода для переробки спайсу.',
+      open: [
+        seg(hL(0, 2), hL(0, 4), 'door', 0, 2.5),
+        seg(V(-7.96, 10), V(-6, 10), 'door', 1, 3.5),
+      ],
       items: [
-        item('Цистерна', 'water', wingLocal(1, 1.2), 2, 2, 2.5, 210),
-        item('Цистерна', 'water', wingLocal(3, 1.2), 2, 2, 2.5, 210),
-        item('Цистерна', 'water', wingLocal(5, 1.2), 2, 2, 2.5, 210),
-        item('Deathstill', 'refine', wingLocal(4.6, 3.2), 2, 1.4, 2, 210),
-        item('Цистерна', 'water', wingLocal(1.6, 3.2), 2, 1.4, 2.5, 210),
+        item('Цистерна', 'water', hL(1.0, 1.0), 1.8, 1.8, 2.5, 210),
+        item('Цистерна', 'water', hL(1.0, 5.0), 1.8, 1.8, 2.5, 210),
+        item('Цистерна', 'water', hL(3.1, 1.0), 1.8, 1.8, 2.5, 210),
+        item('Цистерна', 'water', hL(3.1, 5.0), 1.8, 1.8, 2.5, 210),
+        item('Deathstill', 'refine', hL(4.6, 3.0), 1.2, 2.0, 2, 210),
       ],
     },
     mirrorRoom('plinthR', 'Фабрикатори', {
-      group: 'craft',
-      note: 'Цоколь під ангаром асаултів. Фабрикатори поруч із гаражем і складом руди.',
+      note: 'Цоколь під ангаром асаултів. Фабрикатори поруч із гаражем багі і складом руди.',
       items: [
-        item('Фаб. виживання', 'craft', mirrorPt(wingLocal(1, 1.2)), 2, 2, 1.6, -30),
-        item('Фаб. зброї', 'craft', mirrorPt(wingLocal(3, 1.2)), 2, 2, 1.6, -30),
-        item('Фаб. одягу', 'craft', mirrorPt(wingLocal(5, 1.2)), 2, 2, 1.6, -30),
-        item('Склад компонентів', 'storage', mirrorPt(wingLocal(3, 3.3)), 4, 1, 1.2, -30),
+        item('Фаб. виживання', 'craft', mirrorPt(hL(1.0, 1.0)), 1.8, 1.8, 1.6, -30),
+        item('Фаб. зброї', 'craft', mirrorPt(hL(1.0, 5.0)), 1.8, 1.8, 1.6, -30),
+        item('Фаб. одягу', 'craft', mirrorPt(hL(3.1, 1.0)), 1.8, 1.8, 1.6, -30),
+        item('Склад деталей', 'storage', mirrorPt(hL(3.1, 5.0)), 1.8, 1.8, 1.2, -30),
       ],
     })
   );
 
   addRoom({
-    id: 'hall', name: 'Великий зал', group: 'core', z0: 0, h: G, roof: 'none',
-    tiles: triangles(A0, 0, hexPoly),
-    label: V(0, 14.1),
-    note: 'Шестикутник із трикутників, як на скріні 4. В центрі консоль суб-фіфу. Над залом — наскрізний ангар.',
+    id: 'hall', name: 'Великий зал', group: 'core', z0: 0, h: BACK, roof: 'solid',
+    tiles: hexTri, label: V(0, 12.9),
+    note: 'Шестикутник із трикутників (скрін 4), 8 рівнів у висоту. До нього прикріплені обидва ангари. Усередині галерея на +5 і парадні сходи.',
     open: [
-      { a: V(-1.5, 10), b: V(1.5, 10), type: 'door' },
-      { a: V(-1.5, yTop), b: V(1.5, yTop), type: 'open' },
-      { a: V(-3.5, 10 + 4 * R3), b: V(-3, 10 + 5 * R3), type: 'open' },
-      { a: V(3.5, 10 + 4 * R3), b: V(3, 10 + 5 * R3), type: 'open' },
-      { a: V(-3, 10 + R3), b: V(-3.5, 10 + 2 * R3), type: 'open' },
-      { a: V(3, 10 + R3), b: V(3.5, 10 + 2 * R3), type: 'open' },
-    ],
-    items: [item('Консоль суб-фіфу', 'console', V(0, 12.6), 1, 1, 1.4, 0)],
-  });
-
-  both(
-    {
-      id: 'sandL', name: 'Склад спайсового піску', short: 'Склад піску', group: 'store', z0: 0, h: G, roof: 'none',
-      tiles: triangles(A0, 0, fillerL), label: V(-5, 12.25),
-      note: 'Між гаражем краулера і залом меланжу: пісок їде найкоротшим шляхом.',
-      open: [
-        { a: V(-6, 10), b: V(-4, 10), type: 'door' },
-        { a: V(-7, 10 + R3), b: V(-6, 10 + 3 * R3), type: 'door' },
-        { a: V(-3, 10 + R3), b: V(-3.5, 10 + 2 * R3), type: 'open' },
-      ],
-      items: [item('Контейнери', 'storage', V(-5, 10.6), 3.4, 0.9, 1.2, 0)],
-    },
-    mirrorRoom('oreR', 'Склад руди', {
-      short: 'Склад руди',
-      note: 'Між гаражем багі (лазер) і рудним цехом.',
-    })
-  );
-
-  both(
-    {
-      id: 'lobbyL', name: 'Вестибюль лівої башти', short: 'Вестибюль', group: 'core', z0: 0, h: G, roof: 'none',
-      tiles: triangles(A0, 0, chapelL), label: V(-5.9, 14.55),
-      note: 'Ніша між залом і баштою: прохід до башти, залу меланжу та енергоблоку.',
-      open: [
-        { box: [-7.6, -6.4, 10.8, 13], type: 'open' },
-        { a: V(-6.5, yTop), b: V(-4.5, yTop), type: 'door' },
-        { a: V(-3.5, 10 + 4 * R3), b: V(-3, 10 + 5 * R3), type: 'open' },
-        { a: V(-7, 10 + R3), b: V(-6, 10 + 3 * R3), type: 'door' },
-      ],
-      items: [],
-    },
-    mirrorRoom('lobbyR', 'Вестибюль правої башти')
-  );
-
-  addRoom({
-    id: 'store', name: 'Головний склад', group: 'store', z0: 0, h: G, roof: 'none',
-    tiles: rect(-2.5, yTop, 5, 4), label: V(0, yTop + 1.6),
-    note: 'Неф за шестикутником. Склад між переробкою і фабрикаторами.',
-    open: [{ a: V(-1, yTop + 4), b: V(1, yTop + 4), type: 'door' }],
-    items: [
-      item('Контейнери', 'storage', V(-1.95, yTop + 2), 0.9, 3.6, 1.2, 0),
-      item('Контейнери', 'storage', V(1.95, yTop + 2), 0.9, 3.6, 1.2, 0),
-      item('Контейнери', 'storage', V(0, yTop + 3.5), 2.8, 0.8, 1.2, 0),
-    ],
-  });
-
-  addRoom({
-    id: 'power', name: 'Енергоблок', group: 'refine', z0: 0, h: G, roof: 'none',
-    tiles: rect(-7.5, yTop, 5, 4), label: V(-5, yTop + 1.5),
-    note: 'Генератори (спайсові/паливні) як резерв до вітряків на даху.',
-    open: [{ a: V(-2.5, yTop + 1), b: V(-2.5, yTop + 3), type: 'door' }, { a: V(-6.5, yTop), b: V(-4.5, yTop), type: 'door' }],
-    items: [
-      item('Генератор', 'power', V(-6.35, yTop + 3), 2, 1.7, 1.8, 0),
-      item('Генератор', 'power', V(-4.1, yTop + 3), 2, 1.7, 1.8, 0),
-    ],
-  });
-
-  addRoom({
-    id: 'chem', name: 'Хімічна переробка', group: 'refine', z0: 0, h: G, roof: 'none',
-    tiles: rect(2.5, yTop, 5, 4), label: V(5, yTop + 1.5),
-    note: 'Хімічний переробник + середні переробники (руда/спайс) — усе, що не велике.',
-    open: [{ a: V(2.5, yTop + 1), b: V(2.5, yTop + 3), type: 'door' }, { a: V(6.5, yTop), b: V(4.5, yTop), type: 'door' }],
-    items: [
-      item('Хім. переробник', 'refine', V(4.15, yTop + 2.95), 3, 1.8, 2.4, 0),
-      item('Середні', 'refine', V(6.55, yTop + 2.95), 1.6, 1.8, 2, 0),
-    ],
-  });
-
-  addRoom({
-    id: 'spice', name: 'Зал меланжу', group: 'refine', z0: 0, h: SIDE, roof: 'solid',
-    tiles: sideBlockL,
-    label: V(-9.9, 15.6),
-    note: '7 рівнів у висоту: великий переробник спайсу потребує 5. Поруч вода і склад піску.',
-    open: [{ a: V(-7.5, 13.5), b: V(-7.5, 15), type: 'door' }, { a: V(-10.5, 10.5), b: V(-10.5, 12.5), type: 'door' }],
-    items: [
-      item('Переробник спайсу', 'refine', V(-12.5, 18.4), 3, 2, 5, 0, { full: 'Великий переробник спайсу' }),
-      item('Переробник спайсу', 'refine', V(-9, 18.4), 3, 2, 5, 0, { full: 'Великий переробник спайсу' }),
-      item('Цистерна', 'water', V(-13.25, 11.4), 2, 2, 2.5, 0),
-      item('Цистерна', 'water', V(-13.25, 14), 2, 2, 2.5, 0),
-    ],
-  });
-
-  addRoom({
-    id: 'ore', name: 'Рудний цех', group: 'refine', z0: 0, h: G, roof: 'none',
-    tiles: mirrorTiles(sideBlockL),
-    label: V(9.3, 15.1),
-    note: '3 великі переробники руди. Над цехом — майстерня техніки.',
-    open: [{ a: V(7.5, 13.5), b: V(7.5, 15), type: 'door' }, { a: V(10.5, 10.5), b: V(10.5, 12.5), type: 'door' }],
-    items: [
-      item('Переробник руди', 'refine', V(12.75, 18.3), 3, 3, 3, 0, { full: 'Великий переробник руди' }),
-      item('Переробник руди', 'refine', V(12.75, 14.6), 3, 3, 3, 0, { full: 'Великий переробник руди' }),
-      item('Переробник руди', 'refine', V(9.25, 18.3), 3, 3, 3, 0, { full: 'Великий переробник руди' }),
-      item('Середній', 'refine', V(12.9, 11.4), 2, 2, 2, 0, { full: 'Середній переробник руди' }),
-    ],
-  });
-
-  both(
-    {
-      id: 'towerL', name: 'Ліва башта', short: 'Башта', group: 'tower', z0: 0, h: 8, roof: 'none',
-      tiles: towerCore(-10.5), label: V(-9, 11.5),
-      note: 'Сходи з землі в наскрізний ангар, на дахи і в оглядовий ліхтар.',
-      open: [
-        { a: V(-7.5, 10.5), b: V(-7.5, 12.5), type: 'door', z0: 0, z1: 2.5 },
-        { a: V(-7.5, 10.5), b: V(-7.5, 12.5), type: 'door', z0: G, z1: G + 2.5 },
-        { a: V(-10.5, 10.5), b: V(-10.5, 12.5), type: 'door', z0: 0, z1: 2.5 },
-        { a: V(-10, 13), b: V(-8, 13), type: 'door', z0: SIDE, z1: 8 },
-      ],
-      items: [item('Сходи', 'stairs', V(-9, 11.5), 2.4, 2.4, 0.2, 0)],
-    },
-    mirrorRoom('towerR', 'Права башта')
-  );
-
-  // === Верхній ярус (z 4..8) ===
-  both(
-    {
-      id: 'hangarL', name: 'Ангар скаутів', group: 'air', z0: G, h: UP, roof: 'solid',
-      tiles: [...wingSq, ...stripTri],
-      label: wingLocal(3, 2.4),
-      note: 'Крило під 30 градусів, як на скрінах 1–2. Лицьова сторона — пентащит на посадковий майданчик.',
-      open: [{ a: I, b: OF, type: 'shield' }],
-      items: [
-        item('Скаут', 'air', wingLocal(1.5, 2.2), 3.6, 2.5, 1.5, 120),
-        item('Скаут', 'air', wingLocal(4.5, 2.2), 3.6, 2.5, 1.5, 120),
-      ],
-    },
-    mirrorRoom('hangarR', 'Ангар асаултів', {
-      items: [
-        item('Асаулт', 'air', mirrorPt(wingLocal(1.6, 2.15)), 4.1, 2.8, 1.8, 60),
-        item('Асаулт', 'air', mirrorPt(wingLocal(4.4, 2.15)), 4.1, 2.8, 1.8, 60),
-      ],
-    })
-  );
-
-  addRoom({
-    id: 'tunnel', name: 'Наскрізний ангар', group: 'air', z0: G, h: UP, roof: 'solid',
-    tiles: rect(-7.5, 10, 15, 10),
-    label: V(0, 15),
-    note: 'Як на скріні 5: проліт крізь будівлю. Дві смуги по 7,5 плити, грузові орні влітають спереду і вилітають ззаду.',
-    open: [
-      { a: V(-7.5, 10), b: V(7.5, 10), type: 'open' },
-      { a: V(-7.5, 20), b: V(7.5, 20), type: 'open' },
-      { a: V(-7.5, 10.5), b: V(-7.5, 12.5), type: 'door' },
-      { a: V(7.5, 10.5), b: V(7.5, 12.5), type: 'door' },
+      seg(V(-1.5, 12), V(1.5, 12), 'door', 0, 3),
+      seg(V(-1.5, 12), V(1.5, 12), 'door', G, G + 2.5),
+      seg(hL(0, 2), hL(0, 4), 'door', 0, 2.5),
+      seg(mirrorPt(hL(0, 2)), mirrorPt(hL(0, 4)), 'door', 0, 2.5),
+      seg(hL(0, 2), hL(0, 4), 'door', G, G + 2.5),
+      seg(mirrorPt(hL(0, 2)), mirrorPt(hL(0, 4)), 'door', G, G + 2.5),
+      seg(V(-5, 12 + 7 * R3), V(-4.5, 12 + 8 * R3), 'door', 0, 2.5),
+      seg(V(5, 12 + 7 * R3), V(4.5, 12 + 8 * R3), 'door', 0, 2.5),
+      seg(V(-5, 12 + 7 * R3), V(-4.5, 12 + 8 * R3), 'door', G, G + 2.5),
+      seg(V(5, 12 + 7 * R3), V(4.5, 12 + 8 * R3), 'door', G, G + 2.5),
+      seg(V(-3, Y2), V(-2, Y2), 'door', 0, 2.5),
+      seg(V(2, Y2), V(3, Y2), 'door', 0, 2.5),
+      seg(V(-1, Y2), V(1, Y2), 'door', G, G + 2.5),
     ],
     items: [
-      item('Грузовий', 'air', V(-3.75, 15), 9, 4.5, 2.2, 90),
-      item('Грузовий', 'air', V(3.75, 15), 9, 4.5, 2.2, 90),
+      item('Консоль суб-фіфу', 'console', V(0, 13.6), 1, 1, 1.4, 0),
+      stairs('Парадні сходи на галерею +5', V(0, 16.5), 4.6, 2, 90, 0, G),
     ],
   });
 
   addRoom({
-    id: 'workshop', name: 'Майстерня техніки', group: 'craft', z0: G, h: SIDE - G, roof: 'solid',
-    tiles: mirrorTiles(sideBlockL),
-    label: V(10.2, 14.7),
-    note: 'На рівні ангарів: фабрикатор техніки, ремонт, ресайклер. Двері в наскрізний ангар.',
-    open: [{ a: V(7.5, 13.5), b: V(7.5, 16), type: 'door' }],
-    items: [
-      item('Фабрикатор техніки', 'craft', V(12, 17.8), 4, 3, 2, 0),
-      item('Ремонтна станція', 'craft', V(9, 17.9), 2, 2, 1.4, 0),
-      item('Ресайклер', 'craft', V(13.2, 13.4), 2, 2, 1.6, 0),
-      item('Контейнери', 'storage', V(13.9, 11), 1, 1.8, 1.2, 0),
-    ],
-  });
-
-  // Палуби (z = 4): тераса між ангарами, посадкові майданчики, пентащит над краулером.
-  addRoom({
-    id: 'terrace', name: 'Тераса', group: 'deck', z0: G, h: 0, roof: 'none',
-    tiles: [...rect(-2.5, 0, 5, 10), ...rect(2.5, 0, 5, 10), ...rect(-7.5, 0, 5, 1)],
-    label: V(2.5, 5),
-    note: 'Між нижніми ангарами, перед пащею наскрізного ангара.',
-    open: [
-      { a: V(-7.5, 10), b: V(7.5, 10), type: 'open' },
-      { a: V(-7.5, 0), b: V(-7.5, 1), type: 'open' },
-      { a: V(7.5, 0), b: V(7.5, 6), type: 'open' },
-    ],
+    id: 'gallery', name: 'Галерея залу', short: 'Галерея', group: 'deck', z0: G, h: 0, roof: 'none', inside: 'hall',
+    tiles: galleryTri, label: V(0, 18.95),
+    note: 'Кільце на +5 уздовж стін залу: з’єднує балкон, обидва ангари, задні майданчики і задню терасу.',
+    open: hexEdges.map(([a, b]) => seg(a, b, 'open')),
     items: [],
   });
 
   both(
     {
-      id: 'apronL', name: 'Майданчик скаутів', short: 'Майданчик', group: 'deck', z0: G, h: 0, roof: 'none',
-      tiles: apronTri, label: add(I, add(mul(u1, 2.6), V(0.2, -1.6))),
-      note: 'Майданчик перед склом ангара.',
-      open: [{ a: I, b: OF, type: 'open' }, { a: V(-7.5, 0), b: V(-7.5, 1), type: 'open' }],
-      items: [],
+      id: 'sandL', name: 'Склад спайсового піску', short: 'Склад піску', group: 'store', z0: 0, h: G, roof: 'none',
+      tiles: sandTri, label: V(-7.4, 17.3),
+      note: 'Між водним блоком, Великим залом і залом меланжу: пісок із краулера йде найкоротшим шляхом.',
+      open: [
+        seg(V(-5, 12 + 7 * R3), V(-4.5, 12 + 8 * R3), 'door', 0, 2.5),
+        seg(V(-8.2, Y2), V(-7, Y2), 'door', 0, 2.5),
+        seg(V(-5.5, Y2), V(-4.5, Y2), 'door', 0, 2.5),
+      ],
+      items: [
+        item('Контейнери', 'storage', V(-9.2, 17.6), 0.9, 3.2, 1.2, 0),
+        item('Контейнери', 'storage', V(-7.3, 18.95), 2.6, 0.8, 1.2, 0),
+      ],
     },
-    mirrorRoom('apronR', 'Майданчик асаултів', {
-      open: [{ a: mirrorPt(I), b: mirrorPt(OF), type: 'open' }, { a: V(7.5, 0), b: V(7.5, 6), type: 'open' }],
+    mirrorRoom('oreR', 'Склад руди', { short: 'Склад руди', note: 'Між фабрикаторами, Великим залом і рудним цехом.' })
+  );
+
+  both(
+    {
+      id: 'towerL', name: 'Ліва башта', short: 'Башта', group: 'tower', z0: 0, h: TOWER, roof: 'none',
+      tiles: towerCoreL, label: V(-5, Y2 + 1.5),
+      note: 'Сходи з землі до +12: склад, задня тераса, зал меланжу, наскрізний ангар, дах із вітряками.',
+      open: [
+        seg(V(-5.5, Y2), V(-4.5, Y2), 'door', 0, 2.5),
+        seg(V(-3.5, Y2 + 1), V(-3.5, Y2 + 2), 'door', 0, 2.5),
+        seg(V(-3.5, Y2 + 1), V(-3.5, Y2 + 2), 'door', G, G + 2.5),
+        seg(V(-3.5, 20.2), V(-3.5, 21), 'door', TUN + 1, TUN + 3),
+        seg(V(-6.5, Y2 + 1), V(-6.5, Y2 + 2), 'door', 0, 2.5),
+        seg(V(-5.5, Y2 + 3), V(-4.5, Y2 + 3), 'door', BACK, BACK + 2),
+      ],
+      items: [stairs('Сходи 0 → +12', V(-5, Y2 + 1.5), 2.4, 2.4, 90, 0, TOWER)],
+    },
+    mirrorRoom('towerR', 'Права башта', {
+      note: 'Сходи з землі до +12: склад, задня тераса, майстерня, наскрізний ангар, дах із вітряками.',
     })
   );
 
   addRoom({
+    id: 'store', name: 'Головний склад', group: 'store', z0: 0, h: G, roof: 'none',
+    tiles: [...storeCore, ...storeNose], label: V(0, Y2 + 4.2),
+    note: 'За Великим залом, між переробкою і фабрикаторами. Задній вихід назовні.',
+    open: [
+      seg(V(-3, Y2), V(-2, Y2), 'door', 0, 2.5),
+      seg(V(2, Y2), V(3, Y2), 'door', 0, 2.5),
+      seg(V(-3.5, Y2 + 1), V(-3.5, Y2 + 2), 'door', 0, 2.5),
+      seg(V(3.5, Y2 + 1), V(3.5, Y2 + 2), 'door', 0, 2.5),
+      seg(V(-3.5, Y2 + 4), V(-3.5, Y2 + 6), 'door', 0, 2.5),
+      seg(V(3.5, Y2 + 4), V(3.5, Y2 + 6), 'door', 0, 2.5),
+      seg(V(-1, Y2 + 8 + 2 * R3), V(1, Y2 + 8 + 2 * R3), 'door', 0, 2.5),
+    ],
+    items: [
+      item('Контейнери', 'storage', V(-2.9, Y2 + 4), 0.9, 5.6, 1.2, 0),
+      item('Контейнери', 'storage', V(2.9, Y2 + 4), 0.9, 5.6, 1.2, 0),
+      item('Контейнери', 'storage', V(-1.3, Y2 + 7.4), 1.6, 0.8, 1.2, 0),
+      item('Контейнери', 'storage', V(1.3, Y2 + 7.4), 1.6, 0.8, 1.2, 0),
+    ],
+  });
+
+  addRoom({
+    id: 'spice', name: 'Зал меланжу', group: 'refine', z0: 0, h: BACK, roof: 'solid',
+    tiles: [...backCoreL, ...backRimL], rim: backRimL, rimDrop: 1, label: V(-6.0, Y2 + 4.2),
+    note: '2 великі переробники спайсу (3×2, 5 стін), вода, хімічний переробник, Deathstill. Округлені краї з уступом даху.',
+    open: [
+      seg(V(-8.2, Y2), V(-7, Y2), 'door', 0, 2.5),
+      seg(V(-6.5, Y2 + 1), V(-6.5, Y2 + 2), 'door', 0, 2.5),
+      seg(V(-3.5, Y2 + 4), V(-3.5, Y2 + 6), 'door', 0, 2.5),
+    ],
+    items: [
+      item('Переробник спайсу', 'refine', V(-7.5, Y2 + 1.5), 2.9, 1.9, 5, 90, { full: 'Великий переробник спайсу' }),
+      item('Переробник спайсу', 'refine', V(-5.0, Y2 + 4.1), 2.9, 1.9, 5, 0, { full: 'Великий переробник спайсу' }),
+      item('Цистерна', 'water', V(-7.5, Y2 + 4.1), 1.8, 1.8, 2.5, 0),
+      item('Цистерна', 'water', V(-7.5, Y2 + 6.4), 1.8, 1.6, 2.5, 0),
+      item('Хімічний', 'refine', V(-5.0, Y2 + 6.6), 2.9, 1.8, 2.4, 0, { full: 'Хімічний переробник' }),
+    ],
+  });
+
+  addRoom({
+    id: 'ore', name: 'Рудний цех', group: 'refine', z0: 0, h: G, roof: 'none',
+    tiles: mirrorTiles([...backCoreL, ...backRimL]), label: V(6.0, Y2 + 4.2),
+    note: '3 великі переробники руди (3×2, до 2 стін), середній переробник і генератор. Над цехом — майстерня техніки.',
+    open: [
+      seg(V(8.2, Y2), V(7, Y2), 'door', 0, 2.5),
+      seg(V(6.5, Y2 + 1), V(6.5, Y2 + 2), 'door', 0, 2.5),
+      seg(V(3.5, Y2 + 4), V(3.5, Y2 + 6), 'door', 0, 2.5),
+    ],
+    items: [
+      item('Переробник руди', 'refine', V(7.5, Y2 + 1.5), 2.9, 1.9, 2, 90, { full: 'Великий переробник руди' }),
+      item('Переробник руди', 'refine', V(5.0, Y2 + 4.1), 2.9, 1.9, 2, 0, { full: 'Великий переробник руди' }),
+      item('Переробник руди', 'refine', V(5.0, Y2 + 6.6), 2.9, 1.9, 2, 0, { full: 'Великий переробник руди' }),
+      item('Середній', 'refine', V(7.5, Y2 + 4.1), 1.8, 1.8, 2, 0, { full: 'Середній переробник руди' }),
+      item('Генератор', 'power', V(7.5, Y2 + 6.4), 1.8, 1.6, 1.8, 0),
+    ],
+  });
+
+  // ===== Рівень +5 =====
+  addRoom({
+    id: 'balcony', name: 'Балкон', group: 'core', z0: G, h: TUN - G, roof: 'none',
+    tiles: rect(-2.5, 0, 5, 12), label: V(-0.6, 4.2),
+    note: 'Над центральним заїздом і під наскрізним ангаром. Спереду відкритий з парапетом, з боків вихід на терасу і перехід, позаду галерея залу, сходи вгору в наскрізний ангар.',
+    open: [
+      seg(V(-2.5, 0), V(2.5, 0), 'balcony'),
+      seg(V(-2.5, 9), V(-2.5, 10), 'door'),
+      seg(V(-2.5, 1), V(-2.5, 8), 'glass', G + 0.8, TUN - 0.2),
+      seg(V(2.5, 4), V(2.5, 6), 'door'),
+      seg(V(2.5, 1), V(2.5, 3.5), 'glass', G + 0.8, TUN - 0.2),
+      seg(V(2.5, 6.5), V(2.5, 9), 'glass', G + 0.8, TUN - 0.2),
+      seg(V(-1.5, 12), V(1.5, 12), 'door'),
+    ],
+    items: [stairs('Сходи в наскрізний ангар', V(1.7, 8.65), 3.5, 1.4, 90, G, TUN)],
+  });
+
+  addRoom({
     id: 'shield', name: 'Пентащит над краулером', short: 'Пентащит', group: 'shield', z0: G, h: 0, roof: 'none',
-    tiles: rect(-7.5, 1, 5, 9), label: V(-5, 5.5), deckless: true,
-    note: 'Горизонтальний пентащит 5 x 9: грузовий орні проходить крізь нього до краулера.',
+    tiles: rect(-8.5, 0, 6, 9), label: V(-5.5, 4.6), note: 'Горизонтальний пентащит 6×9 у стелі гаража краулера.',
     open: [], items: [],
   });
 
-  // Ліхтарі башт над дахом (z 8..11), "круглі" з трикутників.
+  addRoom({
+    id: 'walkway', name: 'Перехід до ангара скаутів', short: 'Перехід', group: 'deck', z0: G, h: 0, roof: 'none',
+    tiles: rect(-8.5, 9, 6, 1), label: V(-5.5, 9.5),
+    note: 'Вздовж задньої стінки гаража: балкон ↔ ангар скаутів ↔ передній майданчик. Сюди виходять сходи з гаража.',
+    open: [seg(V(-2.5, 9), V(-2.5, 10), 'open'), seg(V(-8.5, 10), V(-5.96, 10), 'open')],
+    items: [],
+  });
+
+  addRoom({
+    id: 'terrace', name: 'Тераса', group: 'deck', z0: G, h: 0, roof: 'none',
+    tiles: rect(2.5, 0, 6, 10), label: V(5.6, 8.4),
+    note: 'Дах гаража багі між нижніми ангарами: балкон ↔ ангар асаултів ↔ передній майданчик. Сюди виходять сходи з гаража.',
+    open: [seg(V(2.5, 0), V(2.5, 10), 'open'), seg(V(5.96, 10), V(8.5, 10), 'open')],
+    items: [],
+  });
+
   both(
     {
-      id: 'lanternL', name: 'Ліхтар лівої башти', short: 'Ліхтар', group: 'tower', z0: 8, h: 3, roof: 'pyramid',
-      tiles: roundedBlock(-10.5, 10, 3, 3), label: V(-9, 11.5),
-      note: 'Верх башти над дахами: круглий з трикутників, дах-піраміда.',
-      open: [], items: [],
+      id: 'hangarL', name: 'Ангар скаутів', group: 'air', z0: G, h: HANG, roof: 'shield',
+      tiles: [...hangarSq, ...hangarNose], label: hL(2.3, 3.0),
+      note: 'Прикріплений до Великого залу. Фронт 4 плити, закруглення по 2, далі рівні боки. Виліт спереду, з боків і вгору (стіни й дах — пентащит).',
+      open: [
+        seg(A, A1, 'shield'), seg(B, B1, 'shield'),
+        seg(A1, F1, 'shield'), seg(F1, F2, 'shield'), seg(F2, B1, 'shield'),
+        seg(hL(0, 2), hL(0, 4), 'door'),
+      ],
+      items: [
+        item('Скаут', 'air', hL(2.25, 1.5), 3.6, 2.5, 1.5, 210),
+        item('Скаут', 'air', hL(2.25, 4.5), 3.6, 2.5, 1.5, 210),
+      ],
+    },
+    mirrorRoom('hangarR', 'Ангар асаултів', {
+      items: [
+        item('Асаулт', 'air', mirrorPt(hL(2.4, 1.6)), 4.0, 2.7, 1.8, -30),
+        item('Асаулт', 'air', mirrorPt(hL(2.4, 4.4)), 4.0, 2.7, 1.8, -30),
+      ],
+    })
+  );
+
+  both(
+    {
+      id: 'apronL', name: 'Передній майданчик скаутів', short: 'Майданчик', group: 'deck', z0: G, h: 0, roof: 'none',
+      tiles: apronTri, label: V(-9.0, 11.2),
+      note: 'Перед фронтом ангара, на даху водного блоку.',
+      open: [seg(F1, F2, 'open'), seg(F1, V(-8.5, 10), 'open')],
+      items: [],
+    },
+    mirrorRoom('apronR', 'Передній майданчик асаултів')
+  );
+
+  both(
+    {
+      id: 'backApronL', name: 'Задній майданчик', short: 'Задній майданчик', group: 'deck', z0: G, h: 0, roof: 'none',
+      tiles: sandTri, label: V(-7.6, 17.6),
+      note: 'Дах складу піску: бічний виліт ангара, двері галереї і башти.',
+      open: [seg(B, B1, 'open'), seg(B1, F2, 'open'), seg(B, V(-4, Y2), 'open'), seg(V(-10, Y2), V(-4, Y2), 'open')],
+      items: [],
+    },
+    mirrorRoom('backApronR', 'Задній майданчик')
+  );
+
+  addRoom({
+    id: 'backTerrace', name: 'Задня тераса', group: 'deck', z0: G, h: 0, roof: 'none',
+    tiles: [...storeCore, ...storeNose], label: V(0, Y2 + 2.0),
+    note: 'Дах головного складу за виходом наскрізного ангара: вітропастки, вихід із галереї і башт.',
+    open: [seg(V(-4, Y2), V(4, Y2), 'open'), seg(V(-3.5, Y2), V(-3.5, Y2 + 8), 'open'), seg(V(3.5, Y2), V(3.5, Y2 + 8), 'open')],
+    items: [],
+  });
+
+  addRoom({
+    id: 'workshop', name: 'Майстерня техніки', group: 'craft', z0: G, h: BACK - G, roof: 'solid',
+    tiles: mirrorTiles([...backCoreL, ...backRimL]), rim: mirrorTiles(backRimL), rimDrop: 1, label: V(6.0, Y2 + 3.4),
+    note: 'Над рудним цехом: фабрикатор техніки, ремонт, ресайклер. Вхід із правої башти.',
+    open: [seg(V(6.5, Y2 + 1), V(6.5, Y2 + 2), 'door')],
+    items: [
+      item('Фабрикатор техніки', 'craft', V(5.4, Y2 + 5.0), 3.6, 2.6, 2, 0),
+      item('Ремонт', 'craft', V(7.5, Y2 + 1.5), 2.8, 1.8, 1.4, 90, { full: 'Ремонтна станція' }),
+      item('Ресайклер', 'craft', V(7.6, Y2 + 7.15), 1.7, 1.7, 1.6, 0),
+    ],
+  });
+
+  // ===== Рівень +8 =====
+  addRoom({
+    id: 'tunnel', name: 'Наскрізний ангар', group: 'air', z0: TUN, h: 4, roof: 'solid',
+    tiles: rect(-3.5, 0, 7, 21), label: V(0, 10.4),
+    profile: { x0: -3.5, x1: 3.5, ch: 1, lo: 1, hi: 1 },
+    note: 'Як на скріні 5: восьмикутний переріз (похилі плити знизу і зверху), пролітає крізь усю базу над балконом і Великим залом. Два грузові 4×9 одне за одним: передній вилітає вперед, задній — назад.',
+    open: [
+      seg(V(-3.5, 0), V(3.5, 0), 'open'),
+      seg(V(-3.5, 21), V(3.5, 21), 'open'),
+      seg(V(-3.5, 20.2), V(-3.5, 21), 'door', TUN + 1, TUN + 3),
+      seg(V(3.5, 20.2), V(3.5, 21), 'door', TUN + 1, TUN + 3),
+    ],
+    items: [
+      item('Грузовий', 'air', V(0, 4.8), 9, 4, 2.2, 90),
+      item('Грузовий', 'air', V(0, 16.0), 9, 4, 2.2, 90),
+      item('Люк сходів', 'hatch', V(1.7, 10.4), 1.6, 1.4, 0.05, 90),
+    ],
+  });
+
+  both(
+    {
+      id: 'lanternL', name: 'Ліхтар лівої башти', short: 'Ліхтар', group: 'tower', z0: TOWER, h: 2.5, roof: 'pyramid',
+      tiles: roundedBlock(-6.5, Y2, 3, 3), label: V(-5, Y2 + 1.5),
+      note: 'Верх башти на рівні даху наскрізного ангара: звідси вихід до вітряків.',
+      open: [seg(V(-3.5 + R3, Y2 + 0.5), V(-3.5 + R3, Y2 + 2.5), 'door')],
+      items: [],
     },
     mirrorRoom('lanternR', 'Ліхтар правої башти')
   );
 
   // ---------- дахи: вітряки і пастки ----------
   const roofItems = [];
-  // 20 спрямованих вітряків: по 10 на дахах бічних корпусів (z = 7).
-  // Слоти 2 x 2 у сітці 3 x 5, крім тих, що під ліхтарем башти.
-  for (const side of [-1, 1]) {
-    let placed = 0;
-    for (let r = 4; r >= 0 && placed < 10; r--)
-      for (const x of [13.4, 10.9, 8.5]) {
-        const y = 11.2 + r * 1.95;
-        const underLantern = x - 0.9 < 11.4 && y - 0.9 < 13.9;
-        if (underLantern || placed >= 10) continue;
-        roofItems.push(item('Спрямований вітряк', 'turbine', V(side * x, y), 1.8, 1.8, 3, 0, { z: SIDE }));
-        placed++;
-      }
-  }
-  // 15 великих вітропасток: дах наскрізного ангара (z = 8), сітка 5 x 3.
-  for (let r = 0; r < 3; r++)
-    for (let c = 0; c < 5; c++)
-      roofItems.push(item('Велика вітропастка', 'windtrap', V(-5.6 + c * 2.8, 11.6 + r * 3.4), 2, 2, 2.6, 0, { z: G + UP }));
+  // 20 спрямованих вітряків на даху наскрізного ангара (+12), 2 ряди по 10.
+  for (const x of [-1.25, 1.25])
+    for (let k = 0; k < 10; k++)
+      roofItems.push(item('Спрямований вітряк', 'turbine', V(x, 1.05 + k * 2.1), 1.8, 1.8, 3, 0, { z: TUN + 4 }));
+  // 15 великих вітропасток: задня тераса (+5) і дахи бічних корпусів (+8).
+  for (const [x, y] of [[-2.3, Y2 + 2.6], [0, Y2 + 2.6], [2.3, Y2 + 2.6], [-2.3, Y2 + 5.0], [0, Y2 + 5.0], [2.3, Y2 + 5.0], [0, Y2 + 7.4]])
+    roofItems.push(item('Велика вітропастка', 'windtrap', V(x, y), 2, 2, 2.6, 0, { z: G }));
+  for (const s of [-1, 1])
+    for (const [x, y] of [[7.4, Y2 + 4.9], [5.0, Y2 + 4.9], [7.4, Y2 + 7.0], [5.0, Y2 + 7.0]])
+      roofItems.push(item('Велика вітропастка', 'windtrap', V(s * x, y), 2, 2, 2.6, 0, { z: BACK }));
 
-  // Пункт 17: між нижніми ангарами — тераса або додатковий вхід.
+  // Пункт 17: балкон між нижніми ангарами — тераса або додатковий вхід.
   const variants = {
     terrace: {
       label: 'Тераса',
-      note: 'Оглядовий майданчик з парапетом. Для бази на краю скелі, коли фронт недоступний пішки.',
+      note: 'Балкон і тераса як оглядовий майданчик. Для бази на краю скелі, коли фронт недоступний пішки.',
       items: [
-        item('Лава', 'furniture', V(4, 2.2), 2.4, 0.7, 0.5, 0, { z: G }),
-        item('Лава', 'furniture', V(6.2, 4.5), 2.4, 0.7, 0.5, 90, { z: G }),
-        item('Лава', 'furniture', V(-0.2, 1.6), 2.4, 0.7, 0.5, 0, { z: G }),
+        item('Лава', 'furniture', V(-0.9, 1.6), 2.4, 0.7, 0.5, 0, { z: G }),
+        item('Лава', 'furniture', V(5.2, 1.4), 2.4, 0.7, 0.5, 0, { z: G }),
+        item('Лава', 'furniture', V(7.6, 4.4), 2.4, 0.7, 0.5, 90, { z: G }),
       ],
     },
     entrance: {
       label: 'Додатковий вхід',
-      note: 'Посадка скаута на терасу + пішохідний шлюз у наскрізний ангар і башту. Для бази, до якої підходять з фронту.',
+      note: 'Посадка скаута на терасу, пішохідний шлюз у балконі. Для бази, до якої підходять з фронту.',
       items: [
-        item('Посадка скаута', 'pad', V(4.6, 4.6), 4, 4, 0.05, 0, { z: G }),
-        item('Пішохідний шлюз', 'gate', V(6.75, 10.7), 1.3, 1.2, 2.5, 0, { z: G }),
-        item('Пішохідний шлюз', 'gate', V(-6.75, 10.7), 1.3, 1.2, 2.5, 0, { z: G }),
+        item('Посадка скаута', 'pad', V(5.5, 4.4), 4, 4, 0.05, 0, { z: G }),
+        item('Пішохідний шлюз', 'gate', V(0, 0.7), 2.6, 0.8, 2.5, 0, { z: G }),
       ],
     },
   };
@@ -499,13 +580,16 @@
     const kx = Math.round(p.x * 1000), ky = Math.round(p.y * 1000);
     return (kx === 0 ? 0 : kx) + ',' + (ky === 0 ? 0 : ky);
   };
+  const edgeKey = (a, b) => {
+    const ka = keyOf(a), kb = keyOf(b);
+    return ka < kb ? ka + '|' + kb : kb + '|' + ka;
+  };
   function boundaryEdges(tiles) {
     const m = new Map();
     for (const t of tiles)
       for (let i = 0; i < t.p.length; i++) {
         const a = t.p[i], b = t.p[(i + 1) % t.p.length];
-        const ka = keyOf(a), kb = keyOf(b);
-        const k = ka < kb ? ka + '|' + kb : kb + '|' + ka;
+        const k = edgeKey(a, b);
         const e = m.get(k);
         if (e) e.n++;
         else m.set(k, { a, b, n: 1 });
@@ -520,14 +604,14 @@
         if (m.x >= o.box[0] && m.x <= o.box[1] && m.y >= o.box[2] && m.y <= o.box[3]) out.push(o);
         continue;
       }
-      const d = sub(o.b, o.a);
-      const t = ((m.x - o.a.x) * d.x + (m.y - o.a.y) * d.y) / (d.x * d.x + d.y * d.y);
+      const dd = sub(o.b, o.a);
+      const t = ((m.x - o.a.x) * dd.x + (m.y - o.a.y) * dd.y) / (dd.x * dd.x + dd.y * dd.y);
       if (t < -0.01 || t > 1.01) continue;
-      if (Math.hypot(o.a.x + d.x * t - m.x, o.a.y + d.y * t - m.y) < 0.06) out.push(o);
+      if (Math.hypot(o.a.x + dd.x * t - m.x, o.a.y + dd.y * t - m.y) < 0.06) out.push(o);
     }
     return out;
   }
-  const roomEdges = (room) => boundaryEdges(room.tiles).map((e) => ({ ...e, open: edgeOpenings(room, e.a, e.b) }));
+  const roomEdges = (room) => boundaryEdges(room.tiles).map((ed) => ({ ...ed, open: edgeOpenings(room, ed.a, ed.b) }));
   function tileArea(t) {
     let s = 0;
     for (let i = 0; i < t.p.length; i++) {
@@ -538,28 +622,30 @@
   }
   function labelPoint(room) {
     if (room.label) return room.label;
-    let A = 0, x = 0, y = 0;
+    let Ar = 0, x = 0, y = 0;
     for (const t of room.tiles) {
       const a = tileArea(t), c = centroid(t.p);
-      A += a; x += c.x * a; y += c.y * a;
+      Ar += a; x += c.x * a; y += c.y * a;
     }
-    return V(x / A, y / A);
+    return V(x / Ar, y / Ar);
   }
   const roomArea = (room) => room.tiles.reduce((s, t) => s + tileArea(t), 0);
 
+  // Рівні для плану: підлоги з z0 у [z0, z1).
   const levels = [
-    { key: 'g', name: 'Рівень 0', sub: 'земля, висота 4', zMin: 0, zMax: G },
-    { key: 'u', name: 'Рівень +4', sub: 'ангари і тераса', zMin: G, zMax: G + UP },
-    { key: 'r', name: 'Дах', sub: 'вітряки і пастки', zMin: G + UP, zMax: 99 },
+    { key: 'g', name: 'Рівень 0', sub: 'земля', z0: 0, z1: G },
+    { key: 'u', name: 'Рівень +5', sub: 'ангари, балкон, тераси', z0: G, z1: TUN },
+    { key: 't', name: 'Рівень +8', sub: 'наскрізний ангар', z0: TUN, z1: TOWER },
+    { key: 'r', name: 'Дах', sub: 'вітряки і пастки', z0: TOWER, z1: 99 },
   ];
 
   const model = {
     R3, V, add, sub, mul, dir, centroid, pointInPoly,
     claims, rooms, roofItems, levels, variants,
-    boundaryEdges, roomEdges, labelPoint, roomArea, tileArea,
-    heights: { G, UP, SIDE },
-    bounds: { x0: -15, x1: 15, y0: 0, y1: 20 },
-    key: { I, OF, OB, IB, yTop },
+    boundaryEdges, roomEdges, labelPoint, roomArea, tileArea, edgeKey,
+    heights: { G, HANG, TUN, BACK, TOWER },
+    bounds: { x0: -10, x1: 10, y0: 0, y1: 30 },
+    key: { A, B, A1, B1, F1, F2, Y2 },
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = model;

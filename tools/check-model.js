@@ -36,11 +36,11 @@ let problems = 0;
 const warn = (msg) => { problems++; console.log('  ! ' + msg); };
 
 // 1. межі ділянок
-console.log('Межі ділянок (x -15..15, y 0..20):');
+console.log('Межі ділянок (x -10..10, y 0..30):');
 for (const r of M.rooms)
   for (const t of r.tiles)
     for (const p of t.p)
-      if (p.x < -15 - EPS || p.x > 15 + EPS || p.y < -EPS || p.y > 20 + EPS) {
+      if (p.x < M.bounds.x0 - EPS || p.x > M.bounds.x1 + EPS || p.y < M.bounds.y0 - EPS || p.y > M.bounds.y1 + EPS) {
         warn(`${r.id}: вершина (${fmt(p.x)}, ${fmt(p.y)}) поза ділянками`);
         break;
       }
@@ -56,6 +56,7 @@ for (let i = 0; i < flat.length; i++)
     const A = flat[i], B = flat[j];
     const [a0, a1] = zr(A.r), [b0, b1] = zr(B.r);
     if (a1 <= b0 + EPS || b1 <= a0 + EPS) continue;
+    if (A.r.inside === B.r.id || B.r.inside === A.r.id) continue;
     if (A.b.x1 < B.b.x0 || B.b.x1 < A.b.x0 || A.b.y1 < B.b.y0 || B.b.y1 < A.b.y0) continue;
     if (overlap(A.t, B.t)) {
       pairs++;
@@ -81,15 +82,24 @@ for (const r of M.rooms)
   }
 
 // 4. вітряки і пастки на дахах
-const roofOf = (it) => M.rooms.filter((r) => r.roof === 'solid' && Math.abs(r.z0 + r.h - it.z) < 0.01);
+const roofOf = (it) => M.rooms.filter((r) => (r.roof === 'solid' && Math.abs(r.z0 + r.h - it.z) < 0.01) || (r.h === 0 && Math.abs(r.z0 - it.z) < 0.01));
+const rimOf = (r) => new Set((r.rim || []).map((t) => M.centroid(t.p).x.toFixed(3) + ',' + M.centroid(t.p).y.toFixed(3)));
 for (const it of M.roofItems) {
   const rs = roofOf(it);
-  const bad = corners(it).filter((p) => !rs.some((r) => inTiles(p, r.tiles)));
+  const bad = corners(it).filter((p) => !rs.some((r) => { const rim = rimOf(r); return inTiles(p, r.tiles.filter((t) => !rim.has(M.centroid(t.p).x.toFixed(3) + ',' + M.centroid(t.p).y.toFixed(3)))); }));
   if (bad.length) warn(`дах: «${it.name}» у (${fmt(it.c.x)}, ${fmt(it.c.y)}) виходить за дах`);
 }
 for (let i = 0; i < M.roofItems.length; i++)
   for (let j = i + 1; j < M.roofItems.length; j++)
     if (overlap(corners(M.roofItems[i]), corners(M.roofItems[j]))) warn(`дах: перетин ${i} і ${j}`);
+
+// 4b. предмети варіантів пункту 17 лежать на палубах +5
+for (const key of Object.keys(M.variants))
+  for (const it of M.variants[key].items) {
+    const rs = [...roofOf(it), ...M.rooms.filter((r) => r.h > 0 && Math.abs(r.z0 - it.z) < 0.01)];
+    const bad = corners(it).filter((p) => !rs.some((r) => inTiles(p, r.tiles)));
+    if (bad.length) warn(`варіант ${key}: «${it.name}» поза палубою`);
+  }
 
 // 5. зведення
 console.log('\nПриміщення:');

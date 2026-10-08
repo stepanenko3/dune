@@ -105,6 +105,16 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .plan .op-shield { stroke: var(--accent); stroke-width: 4.5; }
 .plan .op-glass { stroke: var(--glass); stroke-width: 3.5; }
 .plan .hl-edge { stroke: var(--accent); stroke-width: 3.6; }
+.plan .sq.rim, .plan .tri.rim { fill-opacity: 0.72; }
+.plan polygon.shieldfill { fill: url(#shieldHatch); fill-opacity: 1; }
+.plan .roof-under .sq, .plan .roof-under .tri { fill-opacity: 0.45; }
+.plan .slope-ln { stroke: var(--seam); stroke-width: 1.2; opacity: 0.85; }
+.plan .it-stairs polygon { fill: var(--item-fill); stroke: var(--item); stroke-width: 1.2; stroke-dasharray: none; }
+.plan .it-stairs .step { stroke: var(--item); stroke-width: 0.8; opacity: 0.7; }
+.plan .it-stairs .arrow { stroke: var(--item); stroke-width: 1.6; }
+.plan .arrow-head { fill: var(--item); }
+.plan .it-hatch polygon { fill: none; stroke-dasharray: 3 2; }
+.plan .it-hatch .step { stroke: var(--item); stroke-width: 0.8; }
 .plan .it polygon { fill: var(--item-fill); stroke: var(--item); stroke-width: 1.1; stroke-dasharray: 4 2.5; }
 .plan .it-turbine polygon, .plan .it-windtrap polygon { stroke-dasharray: none; }
 .plan .it .rotor { stroke: var(--item); stroke-width: 2.4; }
@@ -176,14 +186,14 @@ table.counts tfoot td { font-weight: 700; border-bottom: 0; }
   <header class="top">
     <div class="brand">
       <h1>Цитадель Харконненів</h1>
-      <p>База для Dune: Awakening на 6 ділянок 10×10. Тільки квадратні й трикутні плити, крила під 30°, шестикутний Великий зал, наскрізний ангар. Версія 1.</p>
+      <p>База для Dune: Awakening на 6 ділянок 10×10. Тільки квадратні й трикутні плити. Шестикутний Великий зал, ангари-рукави під 30°, заокруглений заїзд, балкон і наскрізний ангар над ним. Версія 2.</p>
     </div>
     <ul class="facts" aria-label="Основні цифри">
-      <li><b>30 × 20</b> плит</li>
+      <li><b>20 × 30</b> плит</li>
       <li><b>3</b> ангари · <b>6</b> орні</li>
       <li><b>2</b> гаражі</li>
       <li><b>20</b> вітряків · <b>15</b> вітропасток</li>
-      <li>до <b>+11</b> рівнів</li>
+      <li>до <b>+12</b>, башти <b>+14</b></li>
     </ul>
   </header>
 
@@ -206,7 +216,8 @@ table.counts tfoot td { font-weight: 700; border-bottom: 0; }
         <div class="bar">
           <div class="seg" role="group" aria-label="Рівень">
             <button id="lvl-g" type="button" aria-pressed="true">Рівень 0</button>
-            <button id="lvl-u" type="button" aria-pressed="false">Рівень +4</button>
+            <button id="lvl-u" type="button" aria-pressed="false">+5</button>
+            <button id="lvl-t" type="button" aria-pressed="false">+8</button>
             <button id="lvl-r" type="button" aria-pressed="false">Дах</button>
           </div>
           <label class="chk"><input id="opt-items" type="checkbox" checked> Обладнання і техніка</label>
@@ -224,17 +235,19 @@ table.counts tfoot td { font-weight: 700; border-bottom: 0; }
             <button id="cam-back" type="button" aria-pressed="false">Тил</button>
             <button id="cam-top" type="button" aria-pressed="false">Зверху</button>
           </div>
-          <div class="seg" role="group" aria-label="Зріз">
+          <div class="seg" role="group" aria-label="Поверх">
             <button id="cut-g" type="button" aria-pressed="false">Рівень 0</button>
-            <button id="cut-u" type="button" aria-pressed="false">До +8</button>
+            <button id="cut-u" type="button" aria-pressed="false">+5</button>
+            <button id="cut-t" type="button" aria-pressed="false">+8</button>
             <button id="cut-all" type="button" aria-pressed="true">Уся база</button>
           </div>
-          <label class="chk" for="cut">Зріз <input id="cut" type="range" min="0.5" max="14" step="0.25" value="14"> <span class="cutval" id="cut-val">усе</span></label>
+          <label class="chk"><input id="opt-iso" type="checkbox"> Лише цей поверх</label>
+          <label class="chk" for="cut">Зріз <input id="cut" type="range" min="0.5" max="16" step="0.25" value="16"> <span class="cutval" id="cut-val">усе</span></label>
           <label class="chk"><input id="opt-tiles" type="checkbox" checked> Кольори плиток</label>
           <label class="chk"><input id="opt-labels3d" type="checkbox" checked> Підписи</label>
         </div>
         <div class="three-wrap" id="three"></div>
-        <div class="caption"><span>Тягни мишею — обертання, колесо — масштаб, права кнопка — зсув. Наведи на техніку, щоб побачити назву.</span><span>Висота рівня в 3D умовна: 0,85 сторони плити.</span></div>
+        <div class="caption"><span>Тягни мишею — обертання, колесо — масштаб, права кнопка — зсув. Наведи на техніку, щоб побачити назву.</span><span>Висота рівня в 3D умовна: 0,85 сторони плити. «Лише цей поверх» ховає нижні поверхи.</span></div>
       </div>
     </section>
 
@@ -248,6 +261,9 @@ table.counts tfoot td { font-weight: 700; border-bottom: 0; }
           <svg viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--wall)" stroke-width="2.4" stroke-dasharray="3 4"/></svg><span>Двері</span>
           <svg viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--accent)" stroke-width="4.5"/></svg><span>Пентащит (проїзд, проліт)</span>
           <svg viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--glass)" stroke-width="3.5"/></svg><span>Скло / вікна в заїзд</span>
+          <svg viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--wall)" stroke-width="1.3" stroke-dasharray="1.5 3.5"/></svg><span>Парапет (палуба, балкон)</span>
+          <svg viewBox="0 0 26 18" aria-hidden="true"><rect x="2" y="3" width="22" height="12" fill="var(--item-fill)" stroke="var(--item)"/><path d="M7 3v12M12 3v12M17 3v12" stroke="var(--item)" stroke-width="0.8"/><path d="M4 9h15" stroke="var(--item)" stroke-width="1.4"/><path d="M19 6l4 3-4 3z" fill="var(--item)"/></svg><span>Сходи, стрілка — вгору</span>
+          <svg viewBox="0 0 26 18" aria-hidden="true"><rect x="3" y="2" width="20" height="14" fill="var(--sq)"/><path d="M3 6h20M3 10h20M3 14h20" stroke="var(--seam)" stroke-width="1.2"/></svg><span>Похилі плити (заокруглення)</span>
           <svg viewBox="0 0 26 18" aria-hidden="true"><rect x="3" y="3" width="20" height="12" fill="var(--item-fill)" stroke="var(--item)" stroke-dasharray="4 2.5"/></svg><span>Техніка й обладнання</span>
           <svg viewBox="0 0 26 18" aria-hidden="true"><defs><pattern id="lg-h" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="var(--hatch-bg)"/><line x1="0" y1="0" x2="0" y2="5" stroke="var(--hatch-ln)"/></pattern></defs><rect x="3" y="2" width="20" height="14" fill="url(#lg-h)" stroke="var(--wall)"/></svg><span>Висота залу йде крізь рівень</span>
         </div>
@@ -268,52 +284,44 @@ table.counts tfoot td { font-weight: 700; border-bottom: 0; }
 
   <div class="notes">
     <section class="card" aria-labelledby="h-req">
-      <h2 id="h-req">Вимоги → рішення</h2>
+      <h2 id="h-req">Правки версії 2</h2>
       <ol class="req">
-        <li><span class="n">1</span><span>Тільки квадрати й трикутники. Поворот на 30° зроблено як у грі: квадрат → трикутник → повернутий квадрат.</span></li>
-        <li><span class="n">2</span><span>6 ділянок 10×10, сітка 3×2. Фронт потребує 30 плит: ангар 7,5 + гараж 5 + заїзд 5 + гараж 5 + ангар 7,5. У 2×3 (20 у ширину) гаражі не влазять поруч із крилами.</span></li>
-        <li><span class="n">3</span><span>План у стилі скріна 1 — вкладка «План», три рівні.</span></li>
-        <li><span class="n">4</span><span>Як на скріні 2: два крила з ангарами по боках, вищий центральний корпус, посередині заїзд, над ним паща наскрізного ангара.</span></li>
-        <li><span class="n">5</span><span>Заїзд 3 + 2 = 5 плит: три рівні й дві похилі. З боків гаражі, прямо виїзд, позаду центральний вхід у Великий зал.</span></li>
-        <li><span class="n">6</span><span>Три ангари: скаути, асаулти, наскрізний на два грузові.</span></li>
-        <li><span class="n">7</span><span>Об'ємна модель — вкладка «3D» зі зрізом по висоті.</span></li>
-        <li><span class="n">9</span><span>Великий зал — шестикутник 5-3-3-5-3-3 з трикутників, ніші й неф, як на скріні 4. У центрі консоль суб-фіфу.</span></li>
-        <li><span class="n">10</span><span>Дві башти зі сходами між рівнями. Над дахом — круглі ліхтарі з трикутників під пірамідальним дахом.</span></li>
-        <li><span class="n">11</span><span>Ліва половина — спайс: гараж краулера → склад піску → зал меланжу (7 рівнів) + вода. Права — руда: гараж багі → склад руди → рудний цех. Фабрикатори під ангаром асаултів, фабрикатор техніки над рудним цехом, головний склад і енергоблок за залом.</span></li>
-        <li><span class="n">12</span><span>Стіни стоять тільки на швах плиток, тому колони можна ставити у вузлах сітки, а об'єм нарощувати без переробок плану.</span></li>
-        <li><span class="n">13</span><span>2 скаути, 2 асаулти, 2 грузові — кожен має своє місце.</span></li>
-        <li><span class="n">14</span><span>Гараж багі + піскоцикла. Гараж краулера зі стелею-пентащитом 5×9: грузовий спускається крізь неї і забирає краулер.</span></li>
-        <li><span class="n">15</span><span>20 спрямованих вітряків на дахах бічних корпусів (+7) і 15 великих вітропасток на даху наскрізного ангара (+8). Над ними нічого немає.</span></li>
-        <li><span class="n">16</span><span>Нижні ангари — крила спереду, як на скрінах 1–2. Грузовий ангар наскрізний, як на скріні 5: влітаєш з тераси, вилітаєш позаду.</span></li>
-        <li><span class="n">17</span><span>Між нижніми ангарами — тераса або додатковий вхід, перемикач угорі.</span></li>
+        <li><span class="n">1</span><span>Ангари з вильотом спереду, з боків і вгору: стіни й дах — пентащит. Фронт 4 плити, закруглення по 2 з трикутників, далі рівні боки (як на скріні 1).</span></li>
+        <li><span class="n">2</span><span>Заїзд заокруглений і знизу, і зверху: похилі плити вздовж підлоги та стелі, 3 рівні плити посередині (скрін 3).</span></li>
+        <li><span class="n">3</span><span>3D обертається, є поверхи 0 / +5 / +8, режим «Лише цей поверх» і вільний зріз.</span></li>
+        <li><span class="n">4</span><span>Гаражі відкриваються тільки в заїзд. Похилі плити заїзду — пандуси на підлогу гаража (+1).</span></li>
+        <li><span class="n">5</span><span>Балкон над заїздом на +5…+8, під наскрізним ангаром.</span></li>
+        <li><span class="n">6</span><span>Ангари прикріплені до Великого залу (центральна частина), а не до гаражів.</span></li>
+        <li><span class="n">7</span><span>Наскрізний ангар з восьмикутним перерізом і рамками порталів, як отвір на скріні 5. Два грузові 4×9 одне за одним.</span></li>
+        <li><span class="n">+</span><span>Задня частина — не коробка: округлені краї з трикутників, дахи з уступом, «ніс» складу, дві башти обабіч виходу з наскрізного ангара.</span></li>
+        <li><span class="n">+</span><span>Ділянки знову 2×3, як на твоєму першому скетчі: ангари тепер біля залу, тож 30 плит ширини не потрібні.</span></li>
       </ol>
     </section>
 
-    <section class="card" aria-labelledby="h-assume">
-      <h2 id="h-assume">Розміри, які я прийняв</h2>
+    <section class="card" aria-labelledby="h-routes">
+      <h2 id="h-routes">Як ходити базою</h2>
       <ul class="plain">
-        <li>1 плита = квадратний фундамент, 1 рівень = висота стіни.</li>
-        <li>Великий переробник спайсу: 3×2 плити, 5 стін. Зал меланжу має 7 рівнів із запасом.</li>
-        <li>Великий рудний переробник: прийняв 3×3, 3 стіни. Не перевірено.</li>
-        <li>Скаут ≈ 3,6×2,5, асаулт ≈ 4,1×2,8. За словами гравців, колізію має тільки корпус, і в 5 плит ширини влазять скаут з асаултом. Ангари мають 4 рівні при потрібних 3.</li>
-        <li>Грузовий ≈ 9×4,5. Це найбільше невідоме: смуга в наскрізному ангарі 7,5×10.</li>
-        <li>Краулер ≈ 7×3,5, багі 3×2, піскоцикл 2×1.</li>
-        <li>Вітряк і вітропастка: місце 2×2. Обом потрібне відкрите небо, тому вони стоять на найвищих дахах.</li>
-        <li>Горизонтальний пентащит над краулером. Гравці такі ставлять, але треба перевірити, що грузовий з краулером проходить крізь нього.</li>
+        <li><b>Земля.</b> Вулиця → заїзд → пандуси в гаражі. Заїзд → центральний вхід → Великий зал → водний блок, фабрикатори, склади піску й руди, головний склад → зал меланжу, рудний цех, башти → задній вихід.</li>
+        <li><b>З землі на +5.</b> Сходи в кожному гаражі ведуть на перехід (ліворуч) і терасу (праворуч). Парадні сходи у Великому залі ведуть на галерею. Башти — з будь-якого рівня.</li>
+        <li><b>+5.</b> Одне кільце: перехід ↔ балкон ↔ тераса ↔ ангари ↔ галерея залу ↔ задні майданчики ↔ задня тераса ↔ башти ↔ майстерня.</li>
+        <li><b>+8.</b> Зі сходів балкона — люк у наскрізний ангар між двома грузовими. Із башт — двері в кінці ангара і на дахи корпусів із вітропастками.</li>
+        <li><b>+12.</b> Башти → ліхтарі → дах наскрізного ангара з вітряками.</li>
+        <li><b>Орні.</b> Ангари: виліт уперед на майданчик, убік на перехід, терасу чи задній майданчик, угору крізь дах. Грузові: вперед над балконом або назад над задньою терасою. Над краулером — пентащит, грузовий спускається крізь нього.</li>
       </ul>
-      <p class="src">Джерела: <a href="https://duneawakening.wiki.fextralife.com/Large+Spice+Refinery" target="_blank" rel="noopener">Large Spice Refinery (Fextralife)</a> · <a href="https://steamcommunity.com/app/1172710/discussions/0/563626883365760733/" target="_blank" rel="noopener">Steam: проріз ангара</a> · <a href="https://steamcommunity.com/app/1172710/discussions/0/574921762383506540/" target="_blank" rel="noopener">Steam: розміри під орні</a> · <a href="https://steamcommunity.com/app/1172710/discussions/0/596287304340032968/" target="_blank" rel="noopener">Steam: горизонтальний пентащит</a></p>
     </section>
 
-    <section class="card" aria-labelledby="h-next">
-      <h2 id="h-next">Що уточнити для версії 2</h2>
+    <section class="card" aria-labelledby="h-assume">
+      <h2 id="h-assume">Розміри й питання</h2>
       <ul class="plain">
-        <li>Довжина грузового орні в плитах. Від неї залежить глибина наскрізного ангара: зараз 10, більше в 20 плит глибини не влізе.</li>
-        <li>Розмір великого рудного переробника і кількість середніх переробників.</li>
-        <li>Межа висоти суб-фіфу. Зараз корпус має +8, башти +11.</li>
-        <li>Чи підходить розподіл сторін: краулер і меланж ліворуч, багі й руда праворуч.</li>
-        <li>Тераса чи додатковий вхід: залежить від того, куди дивиться фронт.</li>
-        <li>Де потрібні колони й декор: фасад крил, паща ангара, Великий зал.</li>
+        <li>1 плита = квадратний фундамент, 1 рівень = висота стіни.</li>
+        <li>Грузовий 4×9 і великий рудний переробник 3×2 заввишки до 2 — з твоїх уточнень.</li>
+        <li>Великий переробник спайсу 3×2, 5 стін; зал меланжу має 8 рівнів.</li>
+        <li>Скаут ≈ 3,6×2,5, асаулт ≈ 4×2,7; ангари 3 рівні (стільки радять гравці).</li>
+        <li>Краулер ≈ 7×3,5, багі 3×2, піскоцикл 2×1. Шахта над краулером 6×9 під грузового 4×9.</li>
+        <li><b>Перевір у грі:</b> чи заїжджає техніка на похилу плиту висотою 1 рівень (інакше гаражі опустимо на +0,5), і чи проходить грузовий крізь горизонтальний пентащит.</li>
+        <li><b>Питання:</b> висота +12 (башти +14) підходить? Балкон як тераса чи як додатковий вхід?</li>
       </ul>
+      <p class="src">Джерела: <a href="https://duneawakening.wiki.fextralife.com/Large+Spice+Refinery" target="_blank" rel="noopener">Large Spice Refinery (Fextralife)</a> · <a href="https://steamcommunity.com/app/1172710/discussions/0/563626883365760733/" target="_blank" rel="noopener">Steam: проріз ангара</a> · <a href="https://steamcommunity.com/app/1172710/discussions/0/574921762383506540/" target="_blank" rel="noopener">Steam: розміри під орні</a> · <a href="https://steamcommunity.com/app/1172710/discussions/0/596287304340032968/" target="_blank" rel="noopener">Steam: горизонтальний пентащит</a></p>
     </section>
   </div>
 </div>
