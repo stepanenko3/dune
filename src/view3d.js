@@ -14,7 +14,7 @@
     craft: 0x9b7fc4, power: 0xd6b13a, console: 0xe4572e, stairs: 0x8b8f96, turbine: 0xe3e7ec,
     windtrap: 0xcfd6dc, furniture: 0x6b5b4b, pad: 0xf2f2f2, gate: 0x2dd4bf, light: 0xfff6d8, hatch: 0x30333a,
   };
-  const MINOR = /^(gallery|lantern|towerBalcony|pyr|lobby|rearBalcony|frontBalcony)/;
+  const MINOR = /^(gallery|lantern|towerBalcony|pyr|lobby|rearBalcony|frontBalcony|court|rearDeck)/;
   // Відтінки стін за типом блоку: збоку видно, де закінчується один корпус і починається інший.
   const WALL_TONES = { drive: 0x605b54, core: 0x4d5058, store: 0x5b6169, craft: 0x535b64, refine: 0x5d5351, tower: 0x6b6256, air: 0x4b4f57, crown: 0x4b4e56 };
 
@@ -282,7 +282,7 @@
       const probe = M.V((a.x + b.x) / 2 + n.x * 0.3, (a.y + b.y) / 2 + n.y * 0.3);
       if (opt.n) n = M.V(opt.n[0], opt.n[1]);
       else if (r.tiles.some((t) => M.pointInPoly(probe, t.p))) n = M.V(-n.x, -n.y); // рамка виступає назовні
-      const cx = opt.c || 1.2, cz = opt.c || 1.2, g = 0.42;
+      const cx = opt.c || 1.2, cz = opt.c || 1.2, g = opt.g || 0.42;
       const P = (s, z, off = 0) => v3(a.x + u.x * s + n.x * off, a.y + u.y * s + n.y * off, z);
       const inner = [[0, z0], [0, z1 - cz], [cx, z1], [L - cx, z1], [L, z1 - cz], [L, z0]];
       const outer = [[-g, z0], [-g, z1 - cz + g * 0.4], [cx - g * 0.4, z1 + g], [L - cx + g * 0.4, z1 + g], [L + g, z1 - cz + g * 0.4], [L + g, z0]];

@@ -50,7 +50,8 @@
   // Чи діє проріз на цьому рівні плану.
   function openingAt(room, o, z0, z1) {
     const lo = o.z0 !== undefined ? o.z0 : room.z0;
-    const hi = o.z1 !== undefined ? o.z1 : o.type === 'door' ? room.z0 + 2.5 : top(room);
+    // у палуби (h = 0) відкритий край діє на висоту парапету
+    const hi = o.z1 !== undefined ? o.z1 : o.type === 'door' ? room.z0 + 2.5 : Math.max(top(room), room.z0 + 1);
     return lo < z1 && hi > z0;
   }
 
@@ -227,7 +228,7 @@
           ? `над обривом · +${r.z0}`
           : sel.through.includes(r)
           ? `висота до +${top(r)}`
-          : r.h > 0 ? `${Math.round(M.roomArea(r))} пл · +${r.z0}…+${top(r)}` : r.group === 'shield' ? 'стеля гаража' : `палуба +${r.z0}`;
+          : r.h > 0 ? `${Math.round(M.roomArea(r))} пл · +${r.z0}…+${top(r)}` : r.group === 'shield' ? 'стеля гаража' : r.z0 === 0 ? 'фундамент · просто неба' : `палуба +${r.z0}`;
         const X = +px(p.x), Y = +py(p.y);
         taken.push(box(X, Y - 1, Math.max(name.length * 6.7, sub.length * 5.5) + 6, 30));
         s += `<text class="lbl${hl === r.id ? ' hl' : ''}" x="${X}" y="${py(p.y + 0.15)}">${esc(name)}</text>`;
@@ -277,7 +278,7 @@
       rows.push({ name, s, t });
     };
     const { G, CAR, BACK, TOWER, DECK, TOP } = M.heights;
-    const body = M.rooms.filter((r) => r.group !== 'crown');
+    const body = M.rooms.filter((r) => r.group !== 'crown' && !r.onRoof); // майданчик на даху — це плити даху під ним
     add('Фундамент, рівень 0', body.filter((r) => r.z0 === 0));
     add('Підлоги і палуби +5', body.filter((r) => r.z0 === G));
     add('Ангар грузових і підлоги веж +9', body.filter((r) => r.z0 === CAR));
