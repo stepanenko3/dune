@@ -14,7 +14,9 @@
     craft: 0x9b7fc4, power: 0xd6b13a, console: 0xe4572e, stairs: 0x8b8f96, turbine: 0xe3e7ec,
     windtrap: 0xcfd6dc, furniture: 0x6b5b4b, pad: 0xf2f2f2, gate: 0x2dd4bf, light: 0xfff6d8, hatch: 0x30333a,
   };
-  const MINOR = /^(apron|backApron|walkway|gallery|lantern|towerBalcony|pyr)/;
+  const MINOR = /^(gallery|lantern|towerBalcony|pyr|lobby|rearBalcony|frontBalcony)/;
+  // Відтінки стін за типом блоку: збоку видно, де закінчується один корпус і починається інший.
+  const WALL_TONES = { drive: 0x605b54, core: 0x4d5058, store: 0x5b6169, craft: 0x535b64, refine: 0x5d5351, tower: 0x6b6256, air: 0x4b4f57, crown: 0x4b4e56 };
 
   function create(container, opts = {}) {
     const THREE = root.THREE;
@@ -85,6 +87,13 @@
       shield: std(0x2dd4bf, { transparent: true, opacity: 0.24, emissive: 0x0d6b60, emissiveIntensity: 0.6, depthWrite: false, roughness: 0.2 }),
       ground: new THREE.MeshStandardMaterial({ color: 0xa07d55, roughness: 1, metalness: 0 }),
     };
+    const toneMats = {};
+    const wallMat = (r) => {
+      const c = WALL_TONES[r.group];
+      if (!c) return mats.wall;
+      if (!toneMats[r.group]) toneMats[r.group] = std(c, { metalness: 0.3 });
+      return toneMats[r.group];
+    };
     const seamMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, clippingPlanes: planes });
     const seamMatShield = new THREE.LineBasicMaterial({ color: 0x5eead4, transparent: true, opacity: 0.8, clippingPlanes: planes });
     const edgeMat = new THREE.LineBasicMaterial({ color: 0x15171b, transparent: true, opacity: 0.7, clippingPlanes: planes });
@@ -130,8 +139,8 @@
       });
     }
     // Скошений карниз (скріни 1 і 3): від краю даху на z вниз-назовні.
-    function eave(tiles, z, out, drop, mat) {
-      const es = outerEdges(tiles);
+    function eave(tiles, z, out, drop, mat, keep = null) {
+      const es = outerEdges(tiles).filter((e) => !keep || keep.has(M.edgeKey(e.a, e.b)));
       const at = new Map();
       const arr = bucket(mat);
       for (const e of es) {
@@ -195,7 +204,7 @@
     }
     function renderWall(room, e, lo, hi) {
       for (const part of wallParts(room, e, lo, hi)) {
-        wallQuad(e.a, e.b, part.lo, part.hi, part.kind === 'solid' ? mats.wall : mats[part.kind]);
+        wallQuad(e.a, e.b, part.lo, part.hi, part.kind === 'solid' ? wallMat(room) : mats[part.kind]);
         if (part.kind === 'solid') line(edges, v3(e.a.x, e.a.y, part.hi), v3(e.b.x, e.b.y, part.hi));
       }
     }
@@ -296,8 +305,81 @@
         }
     }
 
+    // Пентащит у даху зі світною рамкою (світлики ангарів, дах гаража краулера).
+    function skylightFrame(skyTiles, z) {
+      floorTiles(skyTiles, flat(z - 0.01), () => mats.shield, seamsShield, 0.006);
+      for (const e of M.boundaryEdges(skyTiles)) {
+        wallQuad(e.a, e.b, z, z + 0.14, mats.frame);
+        line(seamsShield, v3(e.a.x, e.a.y, z + 0.15), v3(e.b.x, e.b.y, z + 0.15));
+      }
+    }
+
+    // Оформлення зовнішніх стін: ребра (пілястри) на кутах, на стиках з іншими корпусами і через крок,
+    // цокольний пояс і карниз. Так блоки читаються збоку, а не лише згори.
+    function articulate(r, topOf) {
+      if (!(r.h > 0) || r.group === 'crown' || r.profile) return;
+      const ext = M.exteriorEdges(r).filter((e) => !e.open.some((o) => o.type === 'open'));
+      if (!ext.length) return;
+      const owner = new Map();
+      for (const t of r.tiles) for (let i = 0; i < t.p.length; i++) owner.set(M.edgeKey(t.p[i], t.p[(i + 1) % t.p.length]), t);
+      const normal = (e) => {
+        const t = owner.get(M.edgeKey(e.a, e.b)), c = M.centroid(t.p);
+        const L = Math.hypot(e.b.x - e.a.x, e.b.y - e.a.y);
+        let n = M.V((e.b.y - e.a.y) / L, -(e.b.x - e.a.x) / L);
+        if (((e.a.x + e.b.x) / 2 - c.x) * n.x + ((e.a.y + e.b.y) / 2 - c.y) * n.y < 0) n = M.V(-n.x, -n.y);
+        return n;
+      };
+      const fr = bucket(mats.frame);
+      const at = new Map();
+      for (const e of ext) {
+        const n = normal(e), hi = topOf(e), lo = r.z0;
+        const parts = wallParts(r, e, lo, hi);
+        const o = 0.07;
+        const A = M.V(e.a.x + n.x * o, e.a.y + n.y * o), B = M.V(e.b.x + n.x * o, e.b.y + n.y * o);
+        // карниз: якщо верх стіни суцільний
+        const topPart = parts[parts.length - 1];
+        if (topPart && topPart.kind === 'solid' && Math.abs(topPart.hi - hi) < 1e-6 && hi - lo > 1.2) {
+          quad(fr, v3(A.x, A.y, hi - 0.2), v3(B.x, B.y, hi - 0.2), v3(B.x, B.y, hi), v3(A.x, A.y, hi));
+          quad(fr, v3(e.a.x, e.a.y, hi), v3(e.b.x, e.b.y, hi), v3(B.x, B.y, hi), v3(A.x, A.y, hi));
+        }
+        // цокольний пояс
+        const bot = parts[0];
+        if (bot && bot.kind === 'solid' && Math.abs(bot.lo - lo) < 1e-6 && bot.hi - lo > 0.3)
+          quad(fr, v3(A.x, A.y, lo), v3(B.x, B.y, lo), v3(B.x, B.y, lo + 0.22), v3(A.x, A.y, lo + 0.22));
+        for (const q of [e.a, e.b]) {
+          const k = pkey(q);
+          if (!at.has(k)) at.set(k, { q, list: [] });
+          at.get(k).list.push({ e, n, hi });
+        }
+      }
+      // ребра
+      let step = 0;
+      for (const { q, list } of at.values()) {
+        let rib = false;
+        if (list.length === 1) rib = true; // стик із сусіднім корпусом
+        else {
+          const [u, w] = list;
+          const cross = Math.abs(u.n.x * w.n.y - u.n.y * w.n.x);
+          rib = cross > 0.05 || step++ % 3 === 0; // кут або через дві плити
+        }
+        if (!rib) continue;
+        let nx = list.reduce((s, x) => s + x.n.x, 0), ny = list.reduce((s, x) => s + x.n.y, 0);
+        const L = Math.hypot(nx, ny) || 1;
+        nx /= L; ny /= L;
+        const hi = Math.min(...list.map((x) => x.hi));
+        const tx = -ny, ty = nx, w = 0.09, dpt = 0.1;
+        const p1 = M.V(q.x + tx * w, q.y + ty * w), p2 = M.V(q.x - tx * w, q.y - ty * w);
+        const p3 = M.V(p2.x + nx * dpt, p2.y + ny * dpt), p4 = M.V(p1.x + nx * dpt, p1.y + ny * dpt);
+        for (const [a, b] of [[p1, p4], [p4, p3], [p3, p2]])
+          quad(fr, v3(a.x, a.y, r.z0), v3(b.x, b.y, r.z0), v3(b.x, b.y, hi), v3(a.x, a.y, hi));
+        quad(fr, v3(p1.x, p1.y, hi), v3(p4.x, p4.y, hi), v3(p3.x, p3.y, hi), v3(p2.x, p2.y, hi));
+      }
+    }
+
     const labelPts = [];
-    const itemGroups = { base: new THREE.Group(), terrace: new THREE.Group(), entrance: new THREE.Group() };
+    // base — сходи, люки, світло і пристрої на дахах; interior — техніка й обладнання всередині (можна вимкнути).
+    const itemGroups = { base: new THREE.Group(), interior: new THREE.Group() };
+    const STRUCTURAL = ['stairs', 'hatch', 'light'];
     const hoverables = [];
 
     function buildRoom(r) {
@@ -336,7 +418,7 @@
       } else if (r.h > 0 && !r.profile) {
         for (const e of roomEdges) {
           const t = edgeTile.get(M.edgeKey(e.a, e.b));
-          const top1 = r.roof === 'tier' ? z1 - TIER_S : z1;
+          const top1 = r.roof === 'tier' ? z1 - (r.tierS || TIER_S) : z1;
           const hi = t && rimKeys.has(tileKey(t)) ? top1 - drop : top1;
           renderWall(r, e, z0, hi);
         }
@@ -354,8 +436,14 @@
         floorTiles(rimTiles, flat(z1 - drop - 0.02), () => mats.roof, edges, 0.006);
         const outer = new Set(M.boundaryEdges(r.tiles).map((e) => M.edgeKey(e.a, e.b)));
         if (r.roof === 'solid') {
-          floorTiles(core, flat(z1 - 0.02), () => mats.roof, edges, 0.006);
-          for (const e of M.boundaryEdges(core)) if (!outer.has(M.edgeKey(e.a, e.b))) wallQuad(e.a, e.b, z1 - drop - 0.02, z1 - 0.02, mats.wall);
+          const sky = new Set((r.skylight || []).map(tileKey));
+          floorTiles(core.filter((t) => !sky.has(tileKey(t))), flat(z1 - 0.02), () => mats.roof, edges, 0.006);
+          for (const e of M.boundaryEdges(core)) if (!outer.has(M.edgeKey(e.a, e.b))) wallQuad(e.a, e.b, z1 - drop - 0.02, z1 - 0.02, wallMat(r));
+          if (r.eave) {
+            eave(core, z1, 0.3, 0.38, mats.frame, outer);
+            eave(rimTiles, z1 - drop, 0.3, 0.38, mats.frame, outer);
+          }
+          if (sky.size) skylightFrame(r.tiles.filter((t) => sky.has(tileKey(t))), z1 - 0.03);
         }
       } else if (r.roof === 'solid' && rs) {
         floorTiles(r.tiles, (q) => roofZ(q) - 0.02, () => mats.roof, edges, 0.006);
@@ -377,23 +465,19 @@
           for (const e of M.boundaryEdges(crown)) wallQuad(e.a, e.b, z1 - 0.02, zc, mats.wall);
           if (r.eave) eave(crown, zc, 0.24, 0.3, mats.frame);
         }
-        const skyTiles = r.tiles.filter((t) => sky.has(tileKey(t)));
-        floorTiles(skyTiles, flat(zc - 0.01), () => mats.shield, seamsShield, 0.006);
-        // світна рамка світлика
-        for (const e of M.boundaryEdges(skyTiles)) {
-          wallQuad(e.a, e.b, zc, zc + 0.14, mats.frame);
-          line(seamsShield, v3(e.a.x, e.a.y, zc + 0.15), v3(e.b.x, e.b.y, zc + 0.15));
-        }
+        skylightFrame(r.tiles.filter((t) => sky.has(tileKey(t))), zc);
       } else if (r.roof === 'solid' && !r.profile) {
         floorTiles(r.tiles, flat(z1 - 0.02), () => mats.roof, edges, 0.006);
-        slabSides(r.tiles, z1 - 0.02, 0.16, mats.roof);
+        if (r.eave) eave(r.tiles, z1, 0.28, 0.34, mats.frame);
+        else slabSides(r.tiles, z1 - 0.02, 0.16, mats.roof);
       } else if (r.roof === 'shield') {
         floorTiles(r.tiles, flat(z1 - 0.02), () => mats.shield, seamsShield, 0.006);
       } else if (r.roof === 'tier') {
         // ярус піраміди: по периметру скошений уступ на 1 плиту, посередині рівно
+        const ts = r.tierS || TIER_S;
         const rimPts = new Set(M.boundaryEdges(r.tiles).flatMap((e) => [pkey(e.a), pkey(e.b)]));
         const onRim = (t) => t.p.some((q) => rimPts.has(pkey(q)));
-        floorTiles(r.tiles, (q) => (rimPts.has(pkey(q)) ? z1 - TIER_S : z1), (t) => (onRim(t) ? mats.wallLight : mats.roof), edges, 0.006);
+        floorTiles(r.tiles, (q) => (rimPts.has(pkey(q)) ? z1 - ts : z1), (t) => (onRim(t) ? mats.wallLight : mats.roof), edges, 0.006);
       } else if (r.roof === 'pyramid') {
         const c = M.labelPoint(r);
         const apex = v3(c.x, c.y, z1 + (r.apex || 2.4));
@@ -402,10 +486,16 @@
       }
 
       for (const o of r.open || []) if (o.frame) mouth(r, o.a, o.b, z0, z1, o.frame === true ? {} : o.frame);
+      articulate(r, (e) => {
+        if (rs) return Math.min(roofZ(e.a), roofZ(e.b));
+        const t = edgeTile.get(M.edgeKey(e.a, e.b));
+        const top1 = r.roof === 'tier' ? z1 - (r.tierS || TIER_S) : z1;
+        return t && rimKeys.has(tileKey(t)) ? top1 - drop : top1;
+      });
 
       const lp = M.labelPoint(r);
       labelPts.push({ id: r.id, name: r.name, z0, h: r.h, minor: MINOR.test(r.id), covered: !!r.covered, at: r.label3d || lp, p: new THREE.Vector3() });
-      for (const it of r.items || []) addItem(it, z0, itemGroups.base);
+      for (const it of r.items || []) addItem(it, z0, STRUCTURAL.includes(it.kind) ? itemGroups.base : itemGroups.interior);
     }
 
     function addItem(it, baseZ, group) {
@@ -495,7 +585,6 @@
 
     for (const r of M.rooms) buildRoom(r);
     for (const it of M.roofItems) addItem(it, it.z, itemGroups.base);
-    for (const key of ['terrace', 'entrance']) for (const it of M.variants[key].items) addItem(it, it.z, itemGroups[key]);
 
     const structure = new THREE.Group();
     for (const [mat, arr] of buckets) {
@@ -513,7 +602,7 @@
       return new THREE.LineSegments(geo, mat);
     };
     structure.add(mkLines(seams, seamMat), mkLines(seamsShield, seamMatShield), mkLines(edges, edgeMat));
-    scene.add(structure, itemGroups.base, itemGroups.terrace, itemGroups.entrance);
+    scene.add(structure, itemGroups.base, itemGroups.interior);
 
     // земля, сітка і ділянки
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), mats.ground);
@@ -549,15 +638,10 @@
     tip.hidden = true;
     container.appendChild(tip);
 
-    const state = { cut: 99, floor: -1, labels: true, running: false, variant: 'terrace', w: 1, h: 1 };
-    function setVariant(k) {
-      state.variant = k;
-      itemGroups.terrace.visible = k === 'terrace';
-      itemGroups.entrance.visible = k === 'entrance';
-      const t = labelPts.find((l) => l.id === 'balcony');
-      if (t) t.el.textContent = M.variants[k].label;
+    const state = { cut: 99, floor: -1, labels: true, running: false, w: 1, h: 1 };
+    function setInterior(on) {
+      itemGroups.interior.visible = on;
     }
-    setVariant(opts.variant || 'terrace');
     // cut — верхня межа в рівнях; floor — нижня межа (-1 = показувати все нижче).
     function setCut(levels, floor = -1) {
       state.cut = levels;
@@ -691,7 +775,7 @@
       controls.update();
     }
 
-    return { start, stop, setCut, setVariant, setTileColors, setLabels, setView, setCamera, LH };
+    return { start, stop, setCut, setInterior, setTileColors, setLabels, setView, setCamera, LH };
   }
 
   root.VIEW3D = { create };

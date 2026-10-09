@@ -11,7 +11,6 @@
   const state = {
     tab: store.get('tab', 'plan'),
     level: store.get('level', 'g'),
-    variant: store.get('variant', 'terrace'),
     items: true,
     labels: true,
     highlight: null,
@@ -22,12 +21,12 @@
   const ALL = 22; // зріз «уся база»
   const levelOf = (r) => (r.z0 < G ? 'g' : r.z0 < CAR ? 'u' : r.z0 < TOP ? 't' : 'r');
   const listed = (r) => r.group !== 'crown';
-  const LEVEL_NAMES = { g: 'Рівень 0 · земля', u: 'Рівень +5 · ангари, балкон, двір', t: 'Рівень +9 · ангар грузових', r: 'Дах · вежі, балкони, місток' };
+  const LEVEL_NAMES = { g: 'Рівень 0 · земля', u: 'Рівень +5 · ангари орні, перехід, другі поверхи', t: 'Рівень +9 · ангар грузових', r: 'Дах · вежі, балкони, місток' };
   const CAPTIONS = {
-    g: '<span><strong>Рівень 0.</strong> Заїзд із заокругленим перерізом; заїзди в гаражі 2 плити завширшки на рівні підлоги, без пандусів. Цоколі ангарів, Великий зал, склади і переробка. Стрілки — сходи вгору.</span>',
-    u: '<span><strong>Рівень +5.</strong> Ангари — скляні бокси з пентащитів на цоколях: виліт спереду, з боків і вгору. Балкон над заїздом, переходи, галерея залу, задній двір. Штрихування — зали, що проходять крізь рівень.</span>',
-    t: '<span><strong>Рівень +9.</strong> Широкий ангар грузових на 2 місця поруч, з розтрубами спереду і ззаду; стоїть на верхньому ярусі дахів ангарів орні. Злітна тераса урівень з підлогою ангара. Дахи ангарів у 2 яруси (+8 і +9) зі світликом.</span>',
-    r: '<span><strong>Дах.</strong> Ступінчаста гора зі скошеними уступами над порталом ангара грузових (скрін 4), за нею 12 вітряків рядами. Балкони веж і місток на +13, ліхтарі веж +15. Над пристроями нічого немає.</span>',
+    g: '<span><strong>Рівень 0.</strong> Спереду заїзд і гаражі (заїзди 2 плити на рівні підлоги). У центрі Великий зал, обабіч — прямі бічні блоки з вежами і трикутні дворики. На тилу — задній зал і цехи під ангарами, задній вхід у воронці між ними. Стрілки — сходи вгору.</span>',
+    u: '<span><strong>Рівень +5.</strong> Ангари орні на тилу під кутом — скляні бокси, виліт назад, убік і вгору. Між ними задня галерея і круглий балкон над заднім входом. Спереду перехід над заїздом з круглим балконом, обабіч залу — другі поверхи бічних блоків. Штрихування — зали, що проходять крізь рівень.</span>',
+    t: '<span><strong>Рівень +9.</strong> Широкий ангар грузових на 2 місця поруч: спереду виліт над переходом, ззаду — між ангарами орні. Дахи ангарів орні у 2 яруси зі світликом, дахи бічних блоків із вітропастками.</span>',
+    r: '<span><strong>Дах.</strong> Ступінчаста гора над переднім порталом ангара грузових (скрін 4), за нею 20 вітряків. Вежі з балконами і місток-брама на +15 над переходом, ліхтарі +17. Над пристроями нічого немає.</span>',
   };
 
   function press(ids, active) {
@@ -36,10 +35,9 @@
 
   function renderPlan() {
     $('plan').innerHTML = window.PLAN2D.render({
-      level: state.level, items: state.items, labels: state.labels, variant: state.variant, highlight: state.highlight,
+      level: state.level, items: state.items, labels: state.labels, highlight: state.highlight,
     });
-    const v = M.variants[state.variant];
-    $('plan-caption').innerHTML = CAPTIONS[state.level] + (state.level === 'u' ? `<span><strong>${v.label}:</strong> ${v.note}</span>` : '');
+    $('plan-caption').innerHTML = CAPTIONS[state.level];
     for (const g of $('plan').querySelectorAll('[data-room]')) g.addEventListener('click', () => select(g.dataset.room, false));
     press(['lvl-g', 'lvl-u', 'lvl-t', 'lvl-r'], 'lvl-' + state.level);
   }
@@ -50,17 +48,8 @@
     renderPlan();
   }
 
-  function setVariant(k) {
-    state.variant = k;
-    store.set('variant', k);
-    press(['var-terrace', 'var-entrance'], 'var-' + k);
-    renderPlan();
-    renderRooms();
-    if (view) view.setVariant(k);
-  }
-
   function roomName(r) {
-    return r.id === 'balcony' ? M.variants[state.variant].label : r.name;
+    return r.name;
   }
 
   function renderRooms() {
@@ -97,7 +86,7 @@
         counts[n] = (counts[n] || 0) + 1;
       }
       const sq = r.tiles.filter((t) => t.k === 's').length, tr = r.tiles.length - sq;
-      const note = r.id === 'balcony' ? `${r.note} ${M.variants[state.variant].note}` : r.note;
+      const note = r.note;
       $('detail').innerHTML = `<h3></h3><p></p><p>${sq} квадратів · ${tr} трикутників · ${r.h > 0 ? `від +${r.z0} до +${r.z0 + r.h}` : `на висоті +${r.z0}`}</p>` +
         (items.length ? '<ul>' + Object.entries(counts).map(([n, c]) => `<li>${n}${c > 1 ? ' ×' + c : ''}</li>`).join('') + '</ul>' : '');
       $('detail').querySelector('h3').textContent = roomName(r);
@@ -143,7 +132,8 @@
       $('three').innerHTML = '<div class="three-msg">Не вдалося завантажити three.js. Перевір з\'єднання і онови сторінку — план у вкладці «План» працює без нього.</div>';
       return false;
     }
-    view = window.VIEW3D.create($('three'), { variant: state.variant });
+    view = window.VIEW3D.create($('three'), {});
+    view.setInterior($('opt-interior').checked);
     view.setTileColors($('opt-tiles').checked);
     view.setLabels($('opt-labels3d').checked);
     setCut(Number($('cut').value));
@@ -164,8 +154,7 @@
   $('tab-plan').addEventListener('click', () => setTab('plan'));
   $('tab-3d').addEventListener('click', () => setTab('3d'));
   for (const l of ['g', 'u', 't', 'r']) $('lvl-' + l).addEventListener('click', () => setLevel(l));
-  $('var-terrace').addEventListener('click', () => setVariant('terrace'));
-  $('var-entrance').addEventListener('click', () => setVariant('entrance'));
+  $('opt-interior').addEventListener('change', (e) => view && view.setInterior(e.target.checked));
   $('opt-items').addEventListener('change', (e) => { state.items = e.target.checked; renderPlan(); });
   $('opt-labels').addEventListener('change', (e) => { state.labels = e.target.checked; renderPlan(); });
   for (const k of Object.keys(CUTS)) $(k).addEventListener('click', () => setCut(CUTS[k][0]));
@@ -179,12 +168,11 @@
       if (view) view.setView(c);
     });
 
-  press(['var-terrace', 'var-entrance'], 'var-' + state.variant);
   renderPlan();
   renderRooms();
   renderCounts();
   setTab(state.tab === '3d' ? '3d' : 'plan');
 
   // для знімків екрана
-  window.CITADEL = { setTab, setLevel, setVariant, setCut, select, view: () => view };
+  window.CITADEL = { setTab, setLevel, setCut, select, view: () => view };
 })();

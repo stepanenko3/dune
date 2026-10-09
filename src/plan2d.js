@@ -127,7 +127,6 @@
 
   function render(opts) {
     const key = opts.level || 'g';
-    const variant = M.variants[opts.variant || 'terrace'];
     const sel = roomsFor(key);
     const L = sel.L || { z0: M.heights.TOP, z1: 99 };
     const hl = opts.highlight;
@@ -204,7 +203,6 @@
           for (const it of r.items || []) if (it.kind !== 'light' && inLevel(it)) { s += itemSvg(it); shownItems.push(it); }
         for (const r of sel.through) for (const it of r.items || []) if (it.kind === 'stairs') s += itemSvg(it);
         for (const it of M.roofItems) if (inLevel(it)) s += itemSvg(it);
-        for (const it of variant.items) if (inLevel(it)) { s += itemSvg(it); shownItems.push(it); }
       }
       s += '</g>';
     }
@@ -216,7 +214,7 @@
       const list = sel.roofMode ? [] : [...sel.draw, ...sel.through.filter((r) => r.group !== 'tower' || key !== 't')];
       for (const r of list) {
         const p = M.labelPoint(r);
-        const name = r.id === 'balcony' ? variant.label : r.short || r.name;
+        const name = r.short || r.name;
         const sub = sel.through.includes(r)
           ? `висота до +${top(r)}`
           : r.h > 0 ? `${Math.round(M.roomArea(r))} пл · +${r.z0}…+${top(r)}` : r.group === 'shield' ? 'стеля гаража' : `палуба +${r.z0}`;
@@ -240,7 +238,7 @@
         const tag = (x, y, t1, t2) =>
           `<text class="lbl" x="${px(x)}" y="${py(y)}">${esc(t1)}</text><text class="lbl-sub" x="${px(x)}" y="${py(y - 0.55)}">${esc(t2)}</text>`;
         s += tag(0, -0.9, 'Вітряки ×20 (1×1)', 'за горою на даху ангара грузових +13');
-        s += tag(0, 30.75, 'Вітропастки ×15 (1,5×1,5)', 'дахи корпусів +9, задній двір +5');
+        s += tag(0, 30.75, 'Вітропастки ×15 (1,5×1,5)', 'дахи бічних блоків +9, дах гаража багі +5');
       }
       s += '</g>';
     }
@@ -272,10 +270,10 @@
     const body = M.rooms.filter((r) => r.group !== 'crown');
     add('Фундамент, рівень 0', body.filter((r) => r.z0 === 0));
     add('Підлоги і палуби +5', body.filter((r) => r.z0 === G));
-    add('Ангар грузових і злітна тераса +9', body.filter((r) => r.z0 === CAR));
-    add('Дахи корпусів +9 і ангарів +8', body.filter((r) => r.roof !== 'none' && (r.z0 + r.h === BACK || r.crown)));
+    add('Ангар грузових +9', body.filter((r) => r.z0 === CAR));
+    add('Дахи до +9 (зал, блоки, перехід, ангари, гараж, склад)', body.filter((r) => r.roof !== 'none' && r.z0 + r.h <= BACK));
     add('Верхній ярус дахів ангарів +9', body.filter((r) => r.crown).map((r) => ({ tiles: r.crown.tiles })));
-    add('Балкони веж і місток +13', body.filter((r) => r.z0 === DECK));
+    add('Балкони веж і місток +15', body.filter((r) => r.z0 === DECK));
     add('Дах ангара грузових +13', body.filter((r) => r.roof === 'solid' && r.z0 + r.h === TOP));
     add('Піраміда', M.rooms.filter((r) => r.group === 'crown'));
     add('Ліхтарі веж', body.filter((r) => r.z0 === TOWER));

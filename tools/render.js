@@ -35,9 +35,7 @@ const threeDir = process.env.THREE_DIR;
     await page.evaluate((l) => window.CITADEL.setLevel(l), lvl);
     await plan.screenshot({ path: path.join(out, `plan-${lvl}.png`) });
   }
-  await page.evaluate(() => { window.CITADEL.setVariant('entrance'); window.CITADEL.setLevel('u'); });
-  await plan.screenshot({ path: path.join(out, 'plan-u-entrance.png') });
-  await page.evaluate(() => { window.CITADEL.setVariant('terrace'); window.CITADEL.setLevel('g'); });
+  await page.evaluate(() => window.CITADEL.setLevel('g'));
 
   await page.evaluate(() => window.CITADEL.setTab('3d'));
   await page.waitForTimeout(1500);

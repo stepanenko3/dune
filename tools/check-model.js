@@ -110,14 +110,6 @@ for (let i = 0; i < M.roofItems.length; i++)
   for (let j = i + 1; j < M.roofItems.length; j++)
     if (overlap(corners(M.roofItems[i]), corners(M.roofItems[j]))) warn(`дах: перетин ${i} і ${j}`);
 
-// 4b. предмети варіантів пункту 17 лежать на палубах +5
-for (const key of Object.keys(M.variants))
-  for (const it of M.variants[key].items) {
-    const rs = [...roofOf(it), ...M.rooms.filter((r) => r.h > 0 && Math.abs(r.z0 - it.z) < 0.01)];
-    const bad = corners(it).filter((p) => !rs.some((r) => inTiles(p, r.tiles)));
-    if (bad.length) warn(`варіант ${key}: «${it.name}» поза палубою`);
-  }
-
 // 5. зведення
 console.log('\nПриміщення:');
 let sq = 0, tr = 0;
