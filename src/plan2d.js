@@ -254,6 +254,22 @@
       s += '</g>';
     }
 
+    // координати клітинок (опція): стовпці A–T зліва направо, ряди 1–30 від фронту
+    if (opts.coords) {
+      s += '<g class="coords">';
+      for (let i = 0; i < 20; i++) {
+        const c = String.fromCharCode(65 + i), x = px(-10 + i + 0.5);
+        s += `<text x="${x}" y="${py(30.35)}">${c}</text><text x="${x}" y="${py(-0.75)}">${c}</text>`;
+      }
+      for (let j = 0; j < 30; j++) {
+        const y = py(j + 0.5);
+        s += `<text x="${px(-10.55)}" y="${y}">${j + 1}</text><text x="${px(10.55)}" y="${y}">${j + 1}</text>`;
+      }
+      for (let x = -10; x <= 10; x++) s += `<line x1="${px(x)}" y1="${py(0)}" x2="${px(x)}" y2="${py(30)}"/>`;
+      for (let y = 0; y <= 30; y++) s += `<line x1="${px(-10)}" y1="${py(y)}" x2="${px(10)}" y2="${py(y)}"/>`;
+      s += '</g>';
+    }
+
     // рамки ділянок
     s += '<g class="claims">';
     for (const c of M.claims) s += `<rect x="${px(c.x)}" y="${py(c.y + c.d)}" width="${c.w * S}" height="${c.d * S}"/>`;
@@ -280,7 +296,7 @@
     const { G, CAR, BACK, TOWER, DECK, TOP } = M.heights;
     const body = M.rooms.filter((r) => r.group !== 'crown' && !r.onRoof); // майданчик на даху — це плити даху під ним
     add('Фундамент, рівень 0', body.filter((r) => r.z0 === 0));
-    add('Підлоги і палуби +5', body.filter((r) => r.z0 === G));
+    add('Підлоги і палуби +5…+6', body.filter((r) => r.z0 >= G && r.z0 < CAR));
     add('Ангар грузових і підлоги веж +9', body.filter((r) => r.z0 === CAR));
     add('Дахи до +9 (зал, блоки, перехід, ангари, гараж, склад)', body.filter((r) => r.roof !== 'none' && r.z0 + r.h <= BACK));
     add('Верхній ярус дахів ангарів +9', body.filter((r) => r.crown).map((r) => ({ tiles: r.crown.tiles })));

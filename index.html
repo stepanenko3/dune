@@ -130,6 +130,8 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .plan .lbl { font: 700 11.5px/1 var(--font-body); fill: var(--ink); text-anchor: middle; paint-order: stroke; stroke: var(--halo); stroke-width: 3.6px; stroke-linejoin: round; pointer-events: none; }
 .plan .lbl.hl { fill: var(--accent); }
 .plan .lbl-sub { font: 500 9px/1 var(--font-mono); fill: var(--muted); text-anchor: middle; paint-order: stroke; stroke: var(--halo); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+.plan .coords text { font: 600 9.5px/1 var(--font-mono); fill: var(--muted); text-anchor: middle; dominant-baseline: middle; pointer-events: none; }
+.plan .coords line { stroke: var(--frame); stroke-width: 0.6; opacity: 0.35; pointer-events: none; }
 .plan .claims rect { fill: none; stroke: var(--frame); stroke-width: 2; }
 .plan .claims circle { fill: var(--frame); }
 .plan .anno text { font: 600 11px var(--font-body); fill: var(--muted); }
@@ -170,6 +172,25 @@ table.counts tfoot td { font-weight: 700; border-bottom: 0; }
 .dot { display: inline-block; width: 10px; height: 10px; vertical-align: -1px; margin-right: 4px; }
 
 .notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.build { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 20px; margin-top: 20px; }
+@media (max-width: 1100px) { .build { grid-template-columns: minmax(0, 1fr); } }
+.build .card { padding: 18px 20px; }
+.build h2 { font-size: 15px; margin-bottom: 12px; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; font-size: 14px; counter-reset: st; }
+.steps li { display: grid; grid-template-columns: 2.2ch 1fr; gap: 8px; counter-increment: st; }
+.steps li::before { content: counter(st); font: 600 12.5px/1.6 var(--font-mono); color: var(--muted); text-align: right; }
+.steps b { font-weight: 600; }
+.steps .what { color: var(--muted); }
+.steps .cnt { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 4px; font: 500 12.5px/1.4 var(--font-mono); }
+.steps .cnt span { white-space: nowrap; }
+table.cost { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+table.cost th, table.cost td { padding: 5px 4px; border-bottom: 1px solid var(--line); text-align: right; vertical-align: middle; }
+table.cost th:first-child, table.cost td:first-child { text-align: left; padding-left: 0; }
+table.cost tfoot td { font-weight: 700; border-bottom: 0; }
+table.cost input { width: 6.5ch; padding: 3px 5px; font: inherit; text-align: right; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; }
+.cost-res { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 13px; color: var(--muted); }
+.cost-res input { flex: 1; min-width: 0; padding: 4px 6px; font: inherit; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; }
+.small { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; }
 @media (max-width: 1100px) { .notes { grid-template-columns: minmax(0, 1fr); } }
 .notes .card { padding: 18px 20px; }
 .notes h2 { font-size: 15px; margin-bottom: 12px; }
@@ -190,7 +211,7 @@ table.counts tfoot td { font-weight: 700; border-bottom: 0; }
   <header class="top">
     <div class="brand">
       <h1>Цитадель Харконненів</h1>
-      <p>База для Dune: Awakening на 6 ділянок 10×10. Тільки квадратні й трикутні плити. Великий зал — витягнутий шестикутник, скляні ангари орні на тилу під кутом над обривом, заокруглений заїзд із переходом над ним, широкий наскрізний ангар грузових із пірамідою, вежі з +9 з балконами й містком-брамою. Версія 11.</p>
+      <p>База для Dune: Awakening на 6 ділянок 10×10. Тільки квадратні й трикутні плити. Великий зал — витягнутий шестикутник, скляні ангари орні на тилу під кутом над обривом, заокруглений заїзд із переходом над ним, широкий наскрізний ангар грузових із пірамідою, вежі з +9 з балконами й містком-брамою. Версія 12.</p>
     </div>
     <ul class="facts" aria-label="Основні цифри">
       <li><b>20 × 30</b> плит</li>
@@ -221,6 +242,7 @@ table.counts tfoot td { font-weight: 700; border-bottom: 0; }
           </div>
           <label class="chk"><input id="opt-items" type="checkbox" checked> Обладнання і техніка</label>
           <label class="chk"><input id="opt-labels" type="checkbox" checked> Підписи</label>
+          <label class="chk"><input id="opt-coords" type="checkbox"> Координати</label>
         </div>
         <div class="plan-wrap" id="plan"></div>
         <div class="caption" id="plan-caption"></div>
@@ -285,13 +307,13 @@ table.counts tfoot td { font-weight: 700; border-bottom: 0; }
 
   <div class="notes">
     <section class="card" aria-labelledby="h-req">
-      <h2 id="h-req">Правки версії 11</h2>
+      <h2 id="h-req">Правки версії 12</h2>
       <ol class="req">
-        <li><span class="n">1</span><span>Зайві фундаменти за цехами й виходи в них із залу прибрано. Замість них перший поверх розширено: між тилом цеху, фаскою Великого залу і заднім залом — одноповерхові крила головного складу, відкриті в склад на всю ширину грані.</span></li>
-        <li><span class="n">2</span><span>Зовнішня стіна крила — пряма навскіс від кута заднього залу до тилу цеху (червона лінія зі скріна; закінчується за плиту до кута цеху, бо так лягає трикутна гратка). Крило — півшестикутник 3-3-3-6.</span></li>
-        <li><span class="n">3</span><span>Фундамент рівня 0 — суцільний, без щілин і без нічого зайвого назовні: спереду прямокутник із квадратів, ззаду трикутна частина. Квадрати і трикутники стикуються лише по горизонталі. Перевірка моделі: 0 щілин, 0 зсунутих вершин.</span></li>
-        <li><span class="n">4</span><span>Великий зал — витягнутий шестикутник: спереду квадрати 11×5 зі спільними стінами з цехами, ззаду трикутна фаска. У 3D є «Тільки плити підлоги» для кожного поверху.</span></li>
-        <li><span class="n">5</span><span>З версії 9: ангар грузових не нависає над ангарами орні, за ним задній майданчик.</span></li>
+        <li><span class="n">1</span><span>Цехи меланжу і руди — 6 рівнів замість 5: великий переробник спайсу (5 стін) стоїть із запасом. Другі поверхи блоків на +6, з галереї залу і з переходу — по сходинці. Склад лишився на 5.</span></li>
+        <li><span class="n">2</span><span>Склад як у тебе: посередині прохід 2 плити, обабіч по 2 ряди контейнерів (2 стіни заввишки) — 20 контейнерів на 30 плитах. Вхід із Великого залу просто в прохід, ззаду — заглиблений задній вхід.</span></li>
+        <li><span class="n">3</span><span>Крила біля складу: генераторна (генератор, паливо) і хімічна (хімічний переробник). Сходи зі складу на +5 прибрано — їх дублюють парадні сходи залу.</span></li>
+        <li><span class="n">4</span><span>Унизу сторінки — план будівництва по етапах із кількістю деталей і кошторис ресурсів: впиши ціну деталі з гри, сума порахується.</span></li>
+        <li><span class="n">5</span><span>На плані опція «Координати»: стовпці A–T, ряди 1–30 від фронту.</span></li>
       </ol>
     </section>
 
@@ -299,7 +321,7 @@ table.counts tfoot td { font-weight: 700; border-bottom: 0; }
       <h2 id="h-routes">Як ходити базою</h2>
       <ul class="plain">
         <li><b>Земля.</b> Вулиця → заїзд → гаражі → цех меланжу і рудний цех → Великий зал (фабрикатори) → головний склад і його крила → заглиблений задній вхід.</li>
-        <li><b>З землі на +5.</b> Парадні сходи Великого залу, сходи на складі, сходи в обох цехах, сходи з гаража багі на його дах.</li>
+        <li><b>З землі на +5 / +6.</b> Парадні сходи Великого залу, сходи в обох цехах (на +6), сходи з гаража багі на його дах.</li>
         <li><b>+5.</b> Перехід над заїздом (круглий балкон, дах гаража багі, водний блок, майстерня) ↔ галерея Великого залу (теж у водний блок і майстерню) ↔ задня галерея ↔ обидва ангари орні ↔ задній балкон.</li>
         <li><b>+9.</b> Ангар грузових: сходи із задньої галереї через люк на задній майданчик і в задній портал, або з переходу — вихід перед переднім порталом. Вежі: сходи з водного блоку і майстерні через люк, двері на дахи блоків.</li>
         <li><b>+15.</b> Вежі → балкони → місток над переходом. Вузькі сходи між грузовими → дах із вітряками.</li>
@@ -312,16 +334,29 @@ table.counts tfoot td { font-weight: 700; border-bottom: 0; }
       <ul class="plain">
         <li>1 плита = квадратний фундамент, 1 рівень = висота стіни.</li>
         <li>Грузовий 4×9 і великий рудний переробник 3×2 заввишки до 2 — з твоїх уточнень.</li>
-        <li>Великий переробник спайсу 3×2, 5 стін; цех меланжу має рівно 5 рівнів — впритул.</li>
+        <li>Великий переробник спайсу 3×2, 5 стін; цехи мають 6 рівнів — із запасом. Контейнер складу — 1×1, 2 стіни заввишки.</li>
         <li>Скаут ≈ 3,6×2,5, асаулт ≈ 4×2,7; ангари 3 рівні скла + верхній ярус даху.</li>
         <li>Краулер ≈ 5,5×2,6, багі 3×2, піскоцикл 2×1. Пентащит над краулером 6×9 під грузового 4×9.</li>
         <li>Вітряк займає 1×1, вітропастка 1,5×1,5 — з твоїх уточнень. Над ними нічого немає.</li>
-        <li><b>Перевір у грі:</b> чи проходить краулер у заїзд шириною 2 плити (якщо ні — розширимо до 3), чи проходить грузовий крізь горизонтальний пентащит, чи вистачає 4 рівнів ангара грузових і чи влазить переробник спайсу під стелю на 5 стін.</li>
-        <li><b>Склад:</b> зараз це перший поверх заднього залу (≈59 плит) — напиши, скільки місця чи контейнерів потрібно, і я підлаштую.</li>
+        <li><b>Перевір у грі:</b> чи проходить краулер у заїзд шириною 2 плити (якщо ні — розширимо до 3), чи проходить грузовий крізь горизонтальний пентащит, чи вистачає 4 рівнів ангара грузових.</li>
+        <li><b>Склад:</b> 20 контейнерів на 30 плитах (прохід посередині), решта заднього залу і крила — генераторна, хімічна і запас місця.</li>
         <li><b>Фундамент:</b> квадрати і трикутники без залишку стикуються лише по горизонтальній лінії, тому пряма стіна квадратної частини ніде не стоїть навпроти скошеної грані трикутної.</li>
         <li><b>Пункт 17</b> тепер вирішено обома способами: між ангарами є і задній вхід, і круглий балкон.</li>
       </ul>
       <p class="src">Джерела: <a href="https://duneawakening.wiki.fextralife.com/Large+Spice+Refinery" target="_blank" rel="noopener">Large Spice Refinery (Fextralife)</a> · <a href="https://steamcommunity.com/app/1172710/discussions/0/563626883365760733/" target="_blank" rel="noopener">Steam: проріз ангара</a> · <a href="https://steamcommunity.com/app/1172710/discussions/0/574921762383506540/" target="_blank" rel="noopener">Steam: розміри під орні</a> · <a href="https://steamcommunity.com/app/1172710/discussions/0/596287304340032968/" target="_blank" rel="noopener">Steam: горизонтальний пентащит</a></p>
+    </section>
+  </div>
+
+  <div class="build">
+    <section class="card" aria-labelledby="h-build">
+      <h2 id="h-build">План будівництва</h2>
+      <ol class="steps" id="steps"></ol>
+    </section>
+    <section class="card" aria-labelledby="h-cost">
+      <h2 id="h-cost">Кошторис ресурсів</h2>
+      <label class="cost-res">Ресурс <input id="cost-res" type="text" value="пластон" aria-label="Назва ресурсу"></label>
+      <table class="cost" id="cost"></table>
+      <p class="small">Кількість деталей порахована з моделі. Ціну за штуку впиши з меню будівництва в грі — сума рахується сама і запам'ятовується в цьому браузері. Стіни — секції 1 плита × 1 рівень, спільна стіна двох приміщень рахується один раз. У Глибокій пустелі будівництво дешевше вдвічі.</p>
     </section>
   </div>
 </div>
@@ -330,6 +365,7 @@ table.counts tfoot td { font-weight: 700; border-bottom: 0; }
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="src/model.js"></script>
 <script src="src/plan2d.js"></script>
+<script src="src/build.js"></script>
 <script src="src/view3d.js"></script>
 <script src="src/app.js"></script>
 <!-- page:end -->

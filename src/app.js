@@ -13,6 +13,7 @@
     level: store.get('level', 'g'),
     items: true,
     labels: true,
+    coords: store.get('coords', false),
     highlight: null,
   };
   let view = null;
@@ -35,7 +36,7 @@
 
   function renderPlan() {
     $('plan').innerHTML = window.PLAN2D.render({
-      level: state.level, items: state.items, labels: state.labels, highlight: state.highlight,
+      level: state.level, items: state.items, labels: state.labels, coords: state.coords, highlight: state.highlight,
     });
     $('plan-caption').innerHTML = CAPTIONS[state.level];
     for (const g of $('plan').querySelectorAll('[data-room]')) g.addEventListener('click', () => select(g.dataset.room, false));
@@ -111,6 +112,51 @@
     $('counts').innerHTML = html;
   }
 
+  // ---------- план будівництва і кошторис ----------
+  const fmtN = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  function renderBuild() {
+    const B = window.BUILD, res = B.compute();
+    const short = { fsq: 'фунд. кв.', ftri: 'фунд. тр.', ramp: 'похилих', csq: 'перекр. кв.', ctri: 'перекр. тр.', wall: 'стін', window: 'вікон', door: 'дверей', shield: 'пентащитів', rail: 'парапетів' };
+    let html = '';
+    for (const st of res.stages) {
+      const parts = B.KINDS.filter((k) => st.n[k.id]).map((k) => `<span>${short[k.id]} ${fmtN(st.n[k.id])}</span>`).join('');
+      html += `<li><div><b>${st.name}.</b> <span class="what">${st.note}</span><div class="cnt">${parts}</div></div></li>`;
+    }
+    const eq = B.equipment().map(([n, c]) => `<span>${n}${c > 1 ? ' ×' + c : ''}</span>`).join('');
+    html += `<li><div><b>Пристрої й обладнання.</b> <span class="what">Ставляться після стін і дахів; вітряки й вітропастки — на дахи, де над ними нічого немає.</span><div class="cnt">${eq}</div></div></li>`;
+    $('steps').innerHTML = html;
+
+    const prices = store.get('prices', {});
+    let t = '<thead><tr><th>Деталь</th><th>К-сть</th><th>Ціна</th><th>Разом</th></tr></thead><tbody>';
+    for (const k of B.KINDS) {
+      const v = prices[k.id];
+      t += `<tr><td>${k.name}</td><td>${fmtN(res.total[k.id])}</td><td><input type="number" min="0" step="1" inputmode="numeric" data-k="${k.id}" value="${v === undefined ? '' : v}" placeholder="?" aria-label="Ціна: ${k.name}"></td><td data-sum="${k.id}">—</td></tr>`;
+    }
+    t += '</tbody><tfoot><tr><td>Разом</td><td></td><td></td><td id="cost-total">—</td></tr></tfoot>';
+    $('cost').innerHTML = t;
+    const recalc = () => {
+      let sum = 0, any = false;
+      for (const k of B.KINDS) {
+        const v = prices[k.id];
+        const cell = $('cost').querySelector(`[data-sum="${k.id}"]`);
+        if (v === undefined || v === '' || isNaN(v)) { cell.textContent = '—'; continue; }
+        const x = res.total[k.id] * Number(v);
+        sum += x; any = true;
+        cell.textContent = fmtN(x);
+      }
+      $('cost-total').textContent = any ? fmtN(sum) + ' ' + ($('cost-res').value || '') : '—';
+    };
+    for (const inp of $('cost').querySelectorAll('input')) inp.addEventListener('input', (e) => {
+      const k = e.target.dataset.k, v = e.target.value;
+      if (v === '') delete prices[k]; else prices[k] = Number(v);
+      store.set('prices', prices);
+      recalc();
+    });
+    $('cost-res').value = store.get('resource', 'пластон');
+    $('cost-res').addEventListener('input', (e) => { store.set('resource', e.target.value); recalc(); });
+    recalc();
+  }
+
   // ---------- 3D ----------
   // Поверхи в 3D: верхня межа зрізу і підлога поверху (для режиму «лише цей поверх»).
   const CUTS = { 'cut-g': [4.9, 0], 'cut-u': [8.95, G], 'cut-t': [12.55, CAR], 'cut-all': [ALL, 0] };
@@ -160,6 +206,8 @@
   $('opt-found').addEventListener('change', (e) => { if (view) view.setFoundation(e.target.checked); setCut(Number($('cut').value)); });
   $('opt-items').addEventListener('change', (e) => { state.items = e.target.checked; renderPlan(); });
   $('opt-labels').addEventListener('change', (e) => { state.labels = e.target.checked; renderPlan(); });
+  $('opt-coords').checked = state.coords;
+  $('opt-coords').addEventListener('change', (e) => { state.coords = e.target.checked; store.set('coords', state.coords); renderPlan(); });
   for (const k of Object.keys(CUTS)) $(k).addEventListener('click', () => setCut(CUTS[k][0]));
   $('opt-iso').addEventListener('change', () => setCut(Number($('cut').value)));
   $('cut').addEventListener('input', (e) => setCut(Number(e.target.value)));
@@ -174,6 +222,7 @@
   renderPlan();
   renderRooms();
   renderCounts();
+  renderBuild();
   setTab(state.tab === '3d' ? '3d' : 'plan');
 
   // для знімків екрана
