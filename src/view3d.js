@@ -376,6 +376,31 @@
       }
     }
 
+    // Ангар над обривом: суцільне днище і консолі від стіни, до якої він кріпиться.
+    function overhang(r, thick) {
+      const o = r.overhang, zb = r.z0 - thick;
+      const under = bucket(mats.roof);
+      for (const t of r.tiles) {
+        const p = t.p.map((q) => v3(q.x, q.y, zb));
+        for (let i = 1; i < p.length - 1; i++) tri(under, p[0], p[i], p[i + 1]);
+      }
+      const L = Math.hypot(o.b.x - o.a.x, o.b.y - o.a.y);
+      const u = M.V((o.b.x - o.a.x) / L, (o.b.y - o.a.y) / L), tw = 0.1;
+      const fr = bucket(mats.frame);
+      for (const s of o.at) {
+        const side = (k) => {
+          const w = M.V(o.a.x + u.x * (s + k), o.a.y + u.y * (s + k));
+          return [v3(w.x, w.y, zb), v3(w.x + o.out.x * o.len, w.y + o.out.y * o.len, zb), v3(w.x, w.y, zb - o.drop)];
+        };
+        const A = side(-tw), B = side(tw);
+        tri(fr, A[0], A[1], A[2]);
+        tri(fr, B[0], B[1], B[2]);
+        quad(fr, A[1], B[1], B[2], A[2]);
+        line(edges, A[1], A[2]);
+        line(edges, B[1], B[2]);
+      }
+    }
+
     const labelPts = [];
     // base — сходи, люки, світло і пристрої на дахах; interior — техніка й обладнання всередині (можна вимкнути).
     const itemGroups = { base: new THREE.Group(), interior: new THREE.Group() };
@@ -391,9 +416,10 @@
         buildProfile(r, roomEdges);
       } else if (r.group !== 'crown') {
         floorTiles(r.tiles, flat(z0), tileMat);
-        // високі палуби (балкони веж, місток) — товща плита, щоб читалась знизу
-        const thick = r.solidBase ? z0 * LH : r.h === 0 && z0 > M.heights.CAR ? 0.32 : 0.14;
-        if (z0 > 0) slabSides(r.tiles, z0, thick, r.solidBase ? mats.wall : mats.roof);
+        // високі палуби (балкони веж, місток) і ангари над обривом — товща плита, щоб читалась знизу
+        const thick = r.solidBase ? z0 * LH : r.overhang ? 0.45 : r.h === 0 && z0 > M.heights.CAR ? 0.32 : 0.14;
+        if (z0 > 0) slabSides(r.tiles, z0, thick, r.solidBase ? mats.wall : r.overhang ? mats.frame : mats.roof);
+        if (r.overhang) overhang(r, thick);
       }
 
       const rimKeys = new Set((r.rim || []).map(tileKey));

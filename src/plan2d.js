@@ -42,6 +42,8 @@
       through: M.rooms.filter((r) => r.h > 0 && r.z0 < L.z0 && top(r) > L.z0),
       roofs: M.rooms.filter((r) => r.h > 0 && (r.roof === 'solid' || r.roof === 'shield') && roofTop(r) >= L.z0 && roofTop(r) < L.z1 && r.z0 < L.z0),
       ghost: L.z0 > 0 ? M.rooms.filter((r) => top(r) <= L.z0 && r.h > 0) : [],
+      // на землі — контур ангарів, що звисають над обривом
+      over: L.z0 === 0 ? M.rooms.filter((r) => r.overhang) : [],
     };
   }
 
@@ -160,6 +162,12 @@
       for (const t of r.tiles) s += `<polygon points="${pts(t.p)}" fill="url(#hatch)"/>`;
       s += '</g>';
     }
+    for (const r of sel.over || []) {
+      s += `<g class="room overhead${hl && hl !== r.id ? ' dim' : ''}" data-room="${r.id}"><title>${esc(r.name)}: над обривом, підлога +${r.z0}</title>`;
+      for (const t of r.tiles) s += `<polygon points="${pts(t.p)}"/>`;
+      for (const e of M.boundaryEdges(r.tiles)) s += `<line x1="${px(e.a.x)}" y1="${py(e.a.y)}" x2="${px(e.b.x)}" y2="${py(e.b.y)}"/>`;
+      s += '</g>';
+    }
     for (const r of sel.draw) {
       const dim = hl && hl !== r.id ? ' dim' : '';
       s += `<g class="room g-${r.group}${dim}" data-room="${r.id}"><title>${esc(r.name)}</title>${tilesSvg(r)}`;
@@ -211,11 +219,13 @@
     if (opts.labels) {
       s += '<g class="labels">';
       const taken = [];
-      const list = sel.roofMode ? [] : [...sel.draw, ...sel.through.filter((r) => r.group !== 'tower' || key !== 't')];
+      const list = sel.roofMode ? [] : [...sel.draw, ...sel.through.filter((r) => r.group !== 'tower' || key !== 't'), ...(sel.over || [])];
       for (const r of list) {
         const p = M.labelPoint(r);
         const name = r.short || r.name;
-        const sub = sel.through.includes(r)
+        const sub = (sel.over || []).includes(r)
+          ? `над обривом · +${r.z0}`
+          : sel.through.includes(r)
           ? `висота до +${top(r)}`
           : r.h > 0 ? `${Math.round(M.roomArea(r))} пл · +${r.z0}…+${top(r)}` : r.group === 'shield' ? 'стеля гаража' : `палуба +${r.z0}`;
         const X = +px(p.x), Y = +py(p.y);
@@ -270,7 +280,7 @@
     const body = M.rooms.filter((r) => r.group !== 'crown');
     add('Фундамент, рівень 0', body.filter((r) => r.z0 === 0));
     add('Підлоги і палуби +5', body.filter((r) => r.z0 === G));
-    add('Ангар грузових +9', body.filter((r) => r.z0 === CAR));
+    add('Ангар грузових і підлоги веж +9', body.filter((r) => r.z0 === CAR));
     add('Дахи до +9 (зал, блоки, перехід, ангари, гараж, склад)', body.filter((r) => r.roof !== 'none' && r.z0 + r.h <= BACK));
     add('Верхній ярус дахів ангарів +9', body.filter((r) => r.crown).map((r) => ({ tiles: r.crown.tiles })));
     add('Балкони веж і місток +15', body.filter((r) => r.z0 === DECK));
