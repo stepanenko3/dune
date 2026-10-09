@@ -23,7 +23,7 @@
   const listed = (r) => r.group !== 'crown';
   const LEVEL_NAMES = { g: 'Рівень 0 · земля', u: 'Рівень +5 · ангари орні, перехід, другі поверхи', t: 'Рівень +9 · ангар грузових, вежі', r: 'Дах · балкони веж, місток' };
   const CAPTIONS = {
-    g: '<span><strong>Рівень 0.</strong> Спереду заїзд і гаражі (заїзди 2 плити на рівні підлоги). У центрі Великий зал із фабрикаторами, обабіч — цех меланжу і рудний цех на всю площу блоків, між ними й залом замощені дворики. На тилу — головний склад, задній вхід заглиблено на 2 ряди. Пунктир — ангари орні над обривом, під ними порожньо. Стрілки — сходи вгору.</span>',
+    g: '<span><strong>Рівень 0.</strong> Спереду заїзд і гаражі (заїзди 2 плити на рівні підлоги). У центрі Великий зал із фабрикаторами (витягнутий шестикутник), впритул обабіч — цех меланжу і рудний цех, за ними задні двори до краю обриву. На тилу — головний склад, задній вхід заглиблено на 2 ряди. Пунктир — ангари орні над обривом, під ними порожньо. Стрілки — сходи вгору.</span>',
     u: '<span><strong>Рівень +5.</strong> Ангари орні на тилу під кутом звисають над обривом: скляні бокси, виліт назад, убік і вгору. Між ними задня галерея і круглий балкон над заднім входом. Спереду перехід над заїздом з круглим балконом, обабіч залу — водний блок і майстерня, звідки сходи у вежі. Штрихування — зали, що проходять крізь рівень.</span>',
     t: '<span><strong>Рівень +9.</strong> Широкий ангар грузових на 2 місця поруч: спереду виліт під містком, ззаду — на задній майданчик; над ангарами орні він не нависає, їхні світлики вільні. Вежі починаються тут, на дахах бічних блоків: двері на дах, звідти до порталу ангара грузових. Дахи ангарів орні у 2 яруси зі світликом.</span>',
     r: '<span><strong>Дах.</strong> Ступінчаста гора над переднім порталом ангара грузових (скрін 4), за нею 20 вітряків. Вежі з балконами і місток-брама на +15 над переходом, ліхтарі +17. Над пристроями нічого немає.</span>',
@@ -115,7 +115,8 @@
   // Поверхи в 3D: верхня межа зрізу і підлога поверху (для режиму «лише цей поверх»).
   const CUTS = { 'cut-g': [4.9, 0], 'cut-u': [8.95, G], 'cut-t': [12.55, CAR], 'cut-all': [ALL, 0] };
   function floorFor(v) {
-    if (!$('opt-iso').checked || v >= ALL) return -1;
+    // «тільки плити» завжди показує один поверх (крім «уся база»)
+    if ((!$('opt-iso').checked && !$('opt-found').checked) || v >= ALL) return -1;
     const lv = M.levels.filter((l) => l.z0 < v - 0.05);
     const z = (lv[lv.length - 1] || M.levels[0]).z0;
     return z > 0 ? z - 0.05 : -1;
@@ -134,6 +135,7 @@
     }
     view = window.VIEW3D.create($('three'), {});
     view.setInterior($('opt-interior').checked);
+    view.setFoundation($('opt-found').checked);
     view.setTileColors($('opt-tiles').checked);
     view.setLabels($('opt-labels3d').checked);
     setCut(Number($('cut').value));
@@ -155,6 +157,7 @@
   $('tab-3d').addEventListener('click', () => setTab('3d'));
   for (const l of ['g', 'u', 't', 'r']) $('lvl-' + l).addEventListener('click', () => setLevel(l));
   $('opt-interior').addEventListener('change', (e) => view && view.setInterior(e.target.checked));
+  $('opt-found').addEventListener('change', (e) => { if (view) view.setFoundation(e.target.checked); setCut(Number($('cut').value)); });
   $('opt-items').addEventListener('change', (e) => { state.items = e.target.checked; renderPlan(); });
   $('opt-labels').addEventListener('change', (e) => { state.labels = e.target.checked; renderPlan(); });
   for (const k of Object.keys(CUTS)) $(k).addEventListener('click', () => setCut(CUTS[k][0]));

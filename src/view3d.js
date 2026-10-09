@@ -107,16 +107,23 @@
     const tri = (arr, a, b, c) => arr.push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z);
     const quad = (arr, a, b, c, d) => { tri(arr, a, b, c); tri(arr, a, c, d); };
     const seams = [], seamsShield = [], edges = [];
+    // плити підлоги окремо: режим «тільки плити» показує лише їх
+    const floorBuckets = new Map(), floorSeams = [];
+    const floorBucket = (mat) => {
+      if (!floorBuckets.has(mat)) floorBuckets.set(mat, []);
+      return floorBuckets.get(mat);
+    };
     const line = (arr, a, b) => arr.push(a.x, a.y, a.z, b.x, b.y, b.z);
     const tileMat = (t) => (t.k === 's' ? mats.sq : mats.tri);
 
     function floorTiles(tiles, zOf, matFor, seamArr = seams, lift = 0.004) {
       for (const t of tiles) {
         const p = t.p.map((q) => v3(q.x, q.y, zOf(q)));
-        const arr = bucket(matFor(t));
+        const m = matFor(t), isFloor = m === mats.sq || m === mats.tri;
+        const arr = isFloor ? floorBucket(m) : bucket(m);
         for (let i = 1; i < p.length - 1; i++) tri(arr, p[0], p[i], p[i + 1]);
         const s = t.p.map((q) => v3(q.x, q.y, zOf(q) + lift));
-        for (let i = 0; i < s.length; i++) line(seamArr, s[i], s[(i + 1) % s.length]);
+        for (let i = 0; i < s.length; i++) line(isFloor ? floorSeams : seamArr, s[i], s[(i + 1) % s.length]);
       }
     }
     const flat = (z) => () => z;
@@ -628,7 +635,17 @@
       return new THREE.LineSegments(geo, mat);
     };
     structure.add(mkLines(seams, seamMat), mkLines(seamsShield, seamMatShield), mkLines(edges, edgeMat));
-    scene.add(structure, itemGroups.base, itemGroups.interior);
+    const floors = new THREE.Group();
+    for (const [mat, arr] of floorBuckets) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
+      geo.computeVertexNormals();
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.receiveShadow = true;
+      floors.add(mesh);
+    }
+    floors.add(mkLines(floorSeams, seamMat));
+    scene.add(structure, floors, itemGroups.base, itemGroups.interior);
 
     // земля, сітка і ділянки
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), mats.ground);
@@ -664,9 +681,19 @@
     tip.hidden = true;
     container.appendChild(tip);
 
-    const state = { cut: 99, floor: -1, labels: true, running: false, w: 1, h: 1 };
+    const state = { cut: 99, floor: -1, labels: true, running: false, w: 1, h: 1, interior: true, found: false, colors: true };
     function setInterior(on) {
-      itemGroups.interior.visible = on;
+      state.interior = on;
+      itemGroups.interior.visible = on && !state.found;
+    }
+    // Тільки плити підлоги (фундамент і підлоги поверхів): без стін, дахів, техніки і підписів.
+    function setFoundation(on) {
+      state.found = on;
+      structure.visible = !on;
+      itemGroups.base.visible = !on;
+      itemGroups.interior.visible = state.interior && !on;
+      labelLayer.hidden = on || !state.labels;
+      seamMat.opacity = on ? 0.9 : state.colors ? 0.55 : 0.18;
     }
     // cut — верхня межа в рівнях; floor — нижня межа (-1 = показувати все нижче).
     function setCut(levels, floor = -1) {
@@ -676,13 +703,14 @@
       clipBottom.constant = -floor * LH;
     }
     function setTileColors(on) {
+      state.colors = on;
       mats.sq.color.set(on ? 0x2f6fd0 : 0x50545b);
       mats.tri.color.set(on ? 0xe0812a : 0x5a5650);
-      seamMat.opacity = on ? 0.55 : 0.18;
+      seamMat.opacity = state.found ? 0.9 : on ? 0.55 : 0.18;
     }
     function setLabels(on) {
       state.labels = on;
-      labelLayer.hidden = !on;
+      labelLayer.hidden = !on || state.found;
     }
 
     function resize() {
@@ -733,7 +761,7 @@
       }
     }
     function placeLabels() {
-      if (!state.labels) return;
+      if (!state.labels || state.found) return;
       updateOcclusion();
       const shown = [];
       for (const L of labelPts) {
@@ -801,7 +829,7 @@
       controls.update();
     }
 
-    return { start, stop, setCut, setInterior, setTileColors, setLabels, setView, setCamera, LH };
+    return { start, stop, setCut, setInterior, setFoundation, setTileColors, setLabels, setView, setCamera, LH };
   }
 
   root.VIEW3D = { create };

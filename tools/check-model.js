@@ -110,6 +110,61 @@ for (let i = 0; i < M.roofItems.length; i++)
   for (let j = i + 1; j < M.roofItems.length; j++)
     if (overlap(corners(M.roofItems[i]), corners(M.roofItems[j]))) warn(`дах: перетин ${i} і ${j}`);
 
+// 4b. фундамент рівня 0: плита до плити (без зсунутих вершин) і без жодної дірки всередині
+console.log('Фундамент рівня 0:');
+{
+  const ground = M.rooms.filter((r) => r.z0 === 0).flatMap((r) => r.tiles.map((t) => ({ r, t })));
+  const k = (p) => Math.round(p.x * 1e4) + ',' + Math.round(p.y * 1e4);
+  const verts = new Map();
+  for (const { t } of ground) for (const p of t.p) verts.set(k(p), p);
+  // вершина однієї плитки посеред ребра іншої
+  let tj = 0;
+  for (const { r, t } of ground)
+    for (let i = 0; i < t.p.length; i++) {
+      const a = t.p[i], b = t.p[(i + 1) % t.p.length];
+      for (const v of verts.values()) {
+        const L = Math.hypot(b.x - a.x, b.y - a.y);
+        const u = ((v.x - a.x) * (b.x - a.x) + (v.y - a.y) * (b.y - a.y)) / (L * L);
+        if (u <= 1e-6 || u >= 1 - 1e-6) continue;
+        const d = Math.abs((v.x - a.x) * (b.y - a.y) - (v.y - a.y) * (b.x - a.x)) / L;
+        if (d < 1e-6) { tj++; if (tj <= 6) warn(`${r.id}: вершина (${fmt(v.x)}, ${fmt(v.y)}) посеред ребра — плитки не стикуються край у край`); }
+      }
+    }
+  // межа об'єднання: ребра без пари; цикли за годинниковою стрілкою — дірки
+  const dir = new Map();
+  for (const { t } of ground) {
+    let A = 0;
+    for (let i = 0; i < t.p.length; i++) { const a = t.p[i], b = t.p[(i + 1) % t.p.length]; A += a.x * b.y - b.x * a.y; }
+    const pts = A > 0 ? t.p : t.p.slice().reverse();
+    for (let i = 0; i < pts.length; i++) dir.set(k(pts[i]) + '>' + k(pts[(i + 1) % pts.length]), [pts[i], pts[(i + 1) % pts.length]]);
+  }
+  const bnd = [...dir.entries()].filter(([key]) => { const [a, b] = key.split('>'); return !dir.has(b + '>' + a); }).map(([, e]) => e);
+  const next = new Map();
+  for (const e of bnd) { const a = k(e[0]); if (!next.has(a)) next.set(a, []); next.get(a).push(e); }
+  const used = new Set();
+  let outer = 0, holes = 0;
+  for (const e0 of bnd) {
+    const id0 = k(e0[0]) + '>' + k(e0[1]);
+    if (used.has(id0)) continue;
+    let e = e0, A = 0, n = 0;
+    while (true) {
+      const id = k(e[0]) + '>' + k(e[1]);
+      if (used.has(id)) break;
+      used.add(id);
+      A += e[0].x * e[1].y - e[1].x * e[0].y;
+      n++;
+      const cand = (next.get(k(e[1])) || []).filter((f) => !used.has(k(f[0]) + '>' + k(f[1])));
+      if (!cand.length) break;
+      // на дотику кількох контурів — найправіший поворот
+      const ang = (f) => { const a1 = Math.atan2(e[1].y - e[0].y, e[1].x - e[0].x), a2 = Math.atan2(f[1].y - f[0].y, f[1].x - f[0].x); let d = a2 - a1; while (d <= -Math.PI) d += 2 * Math.PI; while (d > Math.PI) d -= 2 * Math.PI; return d; };
+      e = cand.sort((f, g) => ang(f) - ang(g))[0];
+    }
+    if (A > 0) outer++;
+    else { holes++; warn(`дірка у фундаменті біля (${fmt(e0[0].x)}, ${fmt(e0[0].y)}), ${n} ребер`); }
+  }
+  console.log(`  плиток ${ground.length}, зовнішніх контурів ${outer}, дірок ${holes}, зсунутих вершин ${tj}`);
+}
+
 // 5. зведення
 console.log('\nПриміщення:');
 let sq = 0, tr = 0;
