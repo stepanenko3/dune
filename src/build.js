@@ -5,7 +5,7 @@
 (function (root) {
   'use strict';
   const M = root.BASE;
-  const { G, SH, CAR, DECK } = M.heights;
+  const { G, CAR, DECK } = M.heights;
   const top = (r) => r.z0 + r.h;
   const tileKey = (t) => M.centroid(t.p).x.toFixed(3) + ',' + M.centroid(t.p).y.toFixed(3);
 
@@ -34,9 +34,9 @@
 
   const STAGES = [
     { id: 'found', name: 'Фундамент', note: 'Спершу весь рівень 0 одним шаром: спереду квадрати (гаражі, заїзд, цехи, перед залу), ззаду трикутники (фаска залу, задній зал, крила). Стик — одна горизонтальна лінія на 17-му ряду від фронту.' },
-    { id: 'ground', name: 'Стіни першого поверху', note: 'Гаражі, заїзд, Великий зал до +6, цехи (6 рівнів), склад і крила (5 рівнів). Дверні прорізи одразу, щоб не перебудовувати.' },
-    { id: 'deck1', name: 'Перекриття +5 / +6', note: 'Підлога переходу над заїздом, тераса на даху гаража багі, галерея залу, підлоги других поверхів блоків (+6) і задньої галереї, дахи гаража краулера (з пентащитом) і крил складу.' },
-    { id: 'upper', name: 'Другий поверх', note: 'Перехід, водний блок, майстерня, задня галерея, стіни Великого залу від +6 до +9, круглі балкони.' },
+    { id: 'ground', name: 'Стіни першого поверху', note: 'Гаражі, заїзд, Великий зал до +5, цехи, склад і крила — 5 рівнів. Дверні прорізи одразу, щоб не перебудовувати.' },
+    { id: 'deck1', name: 'Перекриття +5', note: 'Підлога переходу над заїздом, тераса на даху гаража багі, галерея залу, підлоги других поверхів блоків і задньої галереї, дахи гаража краулера (з пентащитом) і крил складу.' },
+    { id: 'upper', name: 'Другий поверх', note: 'Перехід, водний блок, майстерня, задня галерея, стіни Великого залу від +5 до +9, круглі балкони.' },
     { id: 'orni', name: 'Ангари орні', note: 'Підлога на +5 від скошених граней заднього залу над обривом, стіни-пентащити, дах у 2 яруси зі світликом.' },
     { id: 'car', name: 'Дахи +9 і ангар грузових', note: 'Дахи залів і блоків на +9 (вони ж підлога ангара грузових), стіни і дах ангара грузових, задній майданчик.' },
     { id: 'tops', name: 'Вежі, гора, балкони, місток', note: 'Вежі від +9 на дахах блоків, ступінчаста гора на даху ангара грузових, балкони веж і місток на +15, ліхтарі.' },
@@ -74,7 +74,7 @@
     for (const r of M.rooms) {
       if (r.h <= 0 || r.roof === 'none') continue;
       const tp = top(r);
-      const s = r.group === 'crown' ? 'tops' : stageOf(r) === 'orni' ? 'orni' : tp <= SH ? 'deck1' : tp <= CAR ? 'car' : stageOf(r) === 'car' ? 'car' : 'tops';
+      const s = r.group === 'crown' ? 'tops' : stageOf(r) === 'orni' ? 'orni' : tp <= G ? 'deck1' : tp <= CAR ? 'car' : stageOf(r) === 'car' ? 'car' : 'tops';
       const sky = new Set((r.skylight || []).map(tileKey));
       for (const t of r.tiles) {
         if (sky.has(tileKey(t)) && !r.crown) add(s, 'shield');
@@ -110,7 +110,7 @@
             if (RANK[t] < RANK[type]) type = t;
             if (o.type === 'door') doors.set(ek + '@' + a.toFixed(1), true);
           }
-          const s = sg === 'ground' ? (z < SH ? 'ground' : 'upper') : sg === 'tops' && r.group === 'crown' ? 'tops' : sg;
+          const s = sg === 'ground' ? (z < G ? 'ground' : 'upper') : sg === 'tops' && r.group === 'crown' ? 'tops' : sg;
           const key = ek + '@' + z;
           const prev = cells.get(key);
           if (!prev || RANK[type] < RANK[prev.type]) cells.set(key, { type, s: prev ? prev.s : s });

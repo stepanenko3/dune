@@ -296,7 +296,7 @@
     const { G, CAR, BACK, TOWER, DECK, TOP } = M.heights;
     const body = M.rooms.filter((r) => r.group !== 'crown' && !r.onRoof); // майданчик на даху — це плити даху під ним
     add('Фундамент, рівень 0', body.filter((r) => r.z0 === 0));
-    add('Підлоги і палуби +5…+6', body.filter((r) => r.z0 >= G && r.z0 < CAR));
+    add('Підлоги і палуби +5', body.filter((r) => r.z0 >= G && r.z0 < CAR));
     add('Ангар грузових і підлоги веж +9', body.filter((r) => r.z0 === CAR));
     add('Дахи до +9 (зал, блоки, перехід, ангари, гараж, склад)', body.filter((r) => r.roof !== 'none' && r.z0 + r.h <= BACK));
     add('Верхній ярус дахів ангарів +9', body.filter((r) => r.crown).map((r) => ({ tiles: r.crown.tiles })));
