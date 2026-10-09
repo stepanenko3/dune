@@ -86,11 +86,11 @@
     const c = itemCorners(it);
     let s = `<g class="it it-${it.kind}"><title>${esc(it.full || it.name)}</title><polygon points="${pts(c)}"/>`;
     if (it.kind === 'turbine') {
-      const a = M.V(it.c.x - 0.75, it.c.y), b = M.V(it.c.x + 0.75, it.c.y);
+      const a = M.V(it.c.x - 0.42 * it.w, it.c.y), b = M.V(it.c.x + 0.42 * it.w, it.c.y);
       s += `<line class="rotor" x1="${px(a.x)}" y1="${py(a.y)}" x2="${px(b.x)}" y2="${py(b.y)}"/>`;
-      s += `<circle class="hub" cx="${px(it.c.x)}" cy="${py(it.c.y)}" r="${(0.16 * S).toFixed(1)}"/>`;
+      s += `<circle class="hub" cx="${px(it.c.x)}" cy="${py(it.c.y)}" r="${(0.1 * S).toFixed(1)}"/>`;
     } else if (it.kind === 'windtrap') {
-      s += `<circle class="hub" cx="${px(it.c.x)}" cy="${py(it.c.y)}" r="${(0.62 * S).toFixed(1)}"/>`;
+      s += `<circle class="hub" cx="${px(it.c.x)}" cy="${py(it.c.y)}" r="${(0.4 * it.w * S).toFixed(1)}"/>`;
     } else if (it.kind === 'pad') {
       s += `<circle class="pad-ring" cx="${px(it.c.x)}" cy="${py(it.c.y)}" r="${(1.6 * S).toFixed(1)}"/>`;
       s += `<text class="pad-h" x="${px(it.c.x)}" y="${py(it.c.y - 0.42)}">H</text>`;
@@ -187,12 +187,6 @@
       for (const r of sel.through) s += wallSvg(r, 'wall', L.z0, L.z1);
       for (const r of sel.draw) s += wallSvg(r, r.h > 0 ? 'wall' : 'parapet', r.z0, r.h > 0 ? Math.min(top(r), L.z1) : r.z0 + 1);
     }
-    // колони Харконненів на зубчастих боках
-    for (const dc of M.decor || [])
-      if (dc.kind === 'pillar' && dc.z1 > L.z0 && (sel.roofMode || dc.z0 < L.z1)) {
-        const h = 0.24 * S;
-        s += `<rect class="pillar" x="${(+px(dc.c.x) - h).toFixed(1)}" y="${(+py(dc.c.y) - h).toFixed(1)}" width="${(2 * h).toFixed(1)}" height="${(2 * h).toFixed(1)}"><title>${esc(dc.name)}</title></rect>`;
-      }
     if (hl) {
       const r = [...sel.draw, ...sel.through, ...sel.roofs].find((x) => x.id === hl);
       if (r) for (const e of M.boundaryEdges(r.tiles)) s += `<line class="hl-edge" x1="${px(e.a.x)}" y1="${py(e.a.y)}" x2="${px(e.b.x)}" y2="${py(e.b.y)}"/>`;
@@ -245,8 +239,8 @@
       if (sel.roofMode) {
         const tag = (x, y, t1, t2) =>
           `<text class="lbl" x="${px(x)}" y="${py(y)}">${esc(t1)}</text><text class="lbl-sub" x="${px(x)}" y="${py(y - 0.55)}">${esc(t2)}</text>`;
-        s += tag(0, -0.9, 'Вітряки ×20', 'за горою на ангарі грузових +13, дахи корпусів +9, двір і майданчики +5');
-        s += tag(0, 30.75, 'Вітропастки ×15', 'дах гаража багі +5, дахи корпусів +9, задній двір +5');
+        s += tag(0, -0.9, 'Вітряки ×20 (1×1)', 'за горою на даху ангара грузових +13');
+        s += tag(0, 30.75, 'Вітропастки ×15 (1,5×1,5)', 'дахи корпусів +9, задній двір +5');
       }
       s += '</g>';
     }

@@ -441,27 +441,31 @@
           for (let i = 0; i < n; i++) box(it.w / n, ((i + 1) * h) / n, it.d, 0, mat, -it.w / 2 + (it.w / n) * (i + 0.5));
         }
       } else if (it.kind === 'turbine') {
-        const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.16, h, 10), mat);
+        // спрямований вітряк на плиті 1×1
+        const k = it.w;
+        const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.07 * k, 0.12 * k, h, 10), mat);
         mast.position.y = h / 2;
         mast.castShadow = true;
         g.add(mast);
-        box(0.4, 0.35, 0.9, h - 0.1);
+        box(0.28 * k, 0.26 * k, 0.6 * k, h - 0.1);
         const bladeMat = std(0xf1f3f5);
-        for (let k = 0; k < 3; k++) {
-          const blade = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.95, 0.04), bladeMat);
-          blade.geometry.translate(0, 0.47, 0);
-          blade.position.set(0, h + 0.07, 0.48);
-          blade.rotation.z = (k * 2 * Math.PI) / 3 + 0.3;
+        for (let b = 0; b < 3; b++) {
+          const blade = new THREE.Mesh(new THREE.BoxGeometry(0.1 * k, 0.62 * k, 0.03), bladeMat);
+          blade.geometry.translate(0, 0.31 * k, 0);
+          blade.position.set(0, h + 0.05, 0.32 * k);
+          blade.rotation.z = (b * 2 * Math.PI) / 3 + 0.3;
           blade.castShadow = true;
           g.add(blade);
         }
-        box(1.8, 0.08, 1.8, 0, std(0x55595f));
+        box(it.w, 0.08, it.d, 0, std(0x55595f));
       } else if (it.kind === 'windtrap') {
-        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.82, h * 0.85, 16), mat);
+        // велика вітропастка на плиті 1,5×1,5
+        const rr = it.w / 2;
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.72 * rr, 0.95 * rr, h * 0.85, 16), mat);
         body.position.y = (h * 0.85) / 2;
         body.castShadow = true;
         g.add(body);
-        const cap = new THREE.Mesh(new THREE.ConeGeometry(0.7, h * 0.3, 16), std(0xa7b0b8));
+        const cap = new THREE.Mesh(new THREE.ConeGeometry(0.82 * rr, h * 0.3, 16), std(0xa7b0b8));
         cap.position.y = h * 0.85 + h * 0.15;
         g.add(cap);
       } else if (it.kind === 'pad') {
@@ -490,29 +494,6 @@
     }
 
     for (const r of M.rooms) buildRoom(r);
-    // декор: колони Харконненів і карнизи на зубчастих боках
-    for (const dc of M.decor || []) {
-      const g = new THREE.Group();
-      const m = mats.frame;
-      const add = (geo, x, y, z) => {
-        const mesh = new THREE.Mesh(geo, m);
-        mesh.position.set(x, y, z);
-        mesh.castShadow = mesh.receiveShadow = true;
-        mesh.userData.name = dc.name;
-        hoverables.push(mesh);
-        g.add(mesh);
-      };
-      if (dc.kind === 'pillar') {
-        const h = (dc.z1 - dc.z0) * LH;
-        add(new THREE.BoxGeometry(0.42, h, 0.42), dc.c.x, dc.z0 * LH + h / 2, -dc.c.y);
-        add(new THREE.BoxGeometry(0.62, 0.22, 0.62), dc.c.x, dc.z0 * LH + 0.11, -dc.c.y);
-        add(new THREE.BoxGeometry(0.62, 0.16, 0.62), dc.c.x, dc.z1 * LH - 0.08, -dc.c.y);
-      } else if (dc.kind === 'cornice') {
-        const w = Math.abs(dc.x1 - dc.x0), d = dc.y1 - dc.y0, h = dc.h * LH;
-        add(new THREE.BoxGeometry(w, h, d), (dc.x0 + dc.x1) / 2, dc.z * LH + h / 2, -(dc.y0 + dc.y1) / 2);
-      }
-      itemGroups.base.add(g);
-    }
     for (const it of M.roofItems) addItem(it, it.z, itemGroups.base);
     for (const key of ['terrace', 'entrance']) for (const it of M.variants[key].items) addItem(it, it.z, itemGroups[key]);
 
