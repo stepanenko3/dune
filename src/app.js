@@ -114,47 +114,122 @@
 
   // ---------- план будівництва і кошторис ----------
   const fmtN = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  // Налаштування запасів і ліміту (запам'ятовуються в браузері).
+  const LIM_DEF = { found: 4, decor: 10, cap: window.BUILD.LIMIT, equip: false };
+  const lim = Object.assign({}, LIM_DEF, store.get('limit', {}));
+  const BUILD_RES = window.BUILD.compute();
+
   function renderBuild() {
-    const B = window.BUILD, res = B.compute();
-    const short = { fsq: 'фунд. кв.', ftri: 'фунд. тр.', ramp: 'похилих', csq: 'перекр. кв.', ctri: 'перекр. тр.', wall: 'стін', window: 'вікон', door: 'дверей', shield: 'пентащитів', rail: 'парапетів' };
+    renderSteps();
+    renderCost();
+    renderLimit();
+    for (const inp of document.querySelectorAll('[data-lim]')) {
+      const k = inp.dataset.lim;
+      if (inp.type === 'checkbox') inp.checked = !!lim[k]; else inp.value = lim[k];
+      inp.addEventListener(inp.type === 'checkbox' ? 'change' : 'input', () => {
+        if (inp.type === 'checkbox') lim[k] = inp.checked;
+        else {
+          const v = Number(inp.value);
+          if (inp.value === '' || !isFinite(v) || v < 0) return;
+          lim[k] = v;
+        }
+        store.set('limit', lim);
+        renderSteps();
+        renderLimit();
+        renderCost();
+      });
+    }
+    $('cost-res').value = store.get('resource', 'пластон');
+    $('cost-res').addEventListener('input', (e) => { store.set('resource', e.target.value); recalcCost(); });
+  }
+
+  function renderSteps() {
+    const B = window.BUILD, res = BUILD_RES, bud = B.budget(res, lim);
+    const short = { fsq: 'фунд. кв.', ftri: 'фунд. тр.', ramp: 'похилих', csq: 'перекр. кв.', ctri: 'перекр. тр.', wall: 'стін', window: 'вікон', door: 'дверей', shield: 'пентащитів', rail: 'парапетів', stairs: 'сходів' };
     let html = '';
     for (const st of res.stages) {
-      const parts = B.KINDS.filter((k) => st.n[k.id]).map((k) => `<span>${short[k.id]} ${fmtN(st.n[k.id])}</span>`).join('');
+      let parts = B.KINDS.filter((k) => st.n[k.id]).map((k) => `<span>${short[k.id]} ${fmtN(st.n[k.id])}</span>`).join('');
+      if (st.id === 'found' && lim.found > 0) parts += `<span class="res">+ запас під рельєф: кв. ${fmtN(bud.resSq)}, тр. ${fmtN(bud.resTri)}</span>`;
       html += `<li><div><b>${st.name}.</b> <span class="what">${st.note}</span><div class="cnt">${parts}</div></div></li>`;
     }
     const eq = B.equipment().map(([n, c]) => `<span>${n}${c > 1 ? ' ×' + c : ''}</span>`).join('');
     html += `<li><div><b>Пристрої й обладнання.</b> <span class="what">Ставляться після стін і дахів; вітряки й вітропастки — на дахи, де над ними нічого немає.</span><div class="cnt">${eq}</div></div></li>`;
     $('steps').innerHTML = html;
+  }
 
+  // Кошторис: запас фундаментів іде за ціною звичайного фундаменту.
+  function costRows() {
+    const B = window.BUILD, bud = B.budget(BUILD_RES, lim);
+    const rows = [];
+    for (const k of B.KINDS) {
+      rows.push({ id: k.id, name: k.name, n: BUILD_RES.total[k.id], price: k.id });
+      if (k.id === 'ftri' && lim.found > 0) {
+        rows.push({ id: 'rsq', name: `Запас фундаментів, квадрат (×${fmtN(lim.found)})`, n: bud.resSq, price: 'fsq', sub: true });
+        rows.push({ id: 'rtri', name: `Запас фундаментів, трикутник (×${fmtN(lim.found)})`, n: bud.resTri, price: 'ftri', sub: true });
+      }
+    }
+    return rows;
+  }
+  function renderCost() {
     const prices = store.get('prices', {});
     let t = '<thead><tr><th>Деталь</th><th>К-сть</th><th>Ціна</th><th>Разом</th></tr></thead><tbody>';
-    for (const k of B.KINDS) {
-      const v = prices[k.id];
-      t += `<tr><td>${k.name}</td><td>${fmtN(res.total[k.id])}</td><td><input type="number" min="0" step="1" inputmode="numeric" data-k="${k.id}" value="${v === undefined ? '' : v}" placeholder="?" aria-label="Ціна: ${k.name}"></td><td data-sum="${k.id}">—</td></tr>`;
+    for (const r of costRows()) {
+      const v = prices[r.price];
+      const cell = r.sub
+        ? '<td class="same">як вище</td>'
+        : `<td><input type="number" min="0" step="1" inputmode="numeric" data-k="${r.id}" value="${v === undefined ? '' : v}" placeholder="?" aria-label="Ціна: ${r.name}"></td>`;
+      t += `<tr${r.sub ? ' class="sub"' : ''}><td>${r.name}</td><td>${fmtN(r.n)}</td>${cell}<td data-sum="${r.id}">—</td></tr>`;
     }
     t += '</tbody><tfoot><tr><td>Разом</td><td></td><td></td><td id="cost-total">—</td></tr></tfoot>';
     $('cost').innerHTML = t;
-    const recalc = () => {
-      let sum = 0, any = false;
-      for (const k of B.KINDS) {
-        const v = prices[k.id];
-        const cell = $('cost').querySelector(`[data-sum="${k.id}"]`);
-        if (v === undefined || v === '' || isNaN(v)) { cell.textContent = '—'; continue; }
-        const x = res.total[k.id] * Number(v);
-        sum += x; any = true;
-        cell.textContent = fmtN(x);
-      }
-      $('cost-total').textContent = any ? fmtN(sum) + ' ' + ($('cost-res').value || '') : '—';
-    };
     for (const inp of $('cost').querySelectorAll('input')) inp.addEventListener('input', (e) => {
       const k = e.target.dataset.k, v = e.target.value;
-      if (v === '') delete prices[k]; else prices[k] = Number(v);
-      store.set('prices', prices);
-      recalc();
+      const p = store.get('prices', {});
+      if (v === '') delete p[k]; else p[k] = Number(v);
+      store.set('prices', p);
+      recalcCost();
     });
-    $('cost-res').value = store.get('resource', 'пластон');
-    $('cost-res').addEventListener('input', (e) => { store.set('resource', e.target.value); recalc(); });
-    recalc();
+    recalcCost();
+  }
+  function recalcCost() {
+    const prices = store.get('prices', {});
+    let sum = 0, any = false;
+    for (const r of costRows()) {
+      const v = prices[r.price];
+      const cell = $('cost').querySelector(`[data-sum="${r.id}"]`);
+      if (v === undefined || v === '' || isNaN(v)) { cell.textContent = '—'; continue; }
+      const x = r.n * Number(v);
+      sum += x; any = true;
+      cell.textContent = fmtN(x);
+    }
+    $('cost-total').textContent = any ? fmtN(sum) + ' ' + ($('cost-res').value || '') : '—';
+  }
+
+  // Лічильник деталей проти ліміту гри.
+  function renderLimit() {
+    const B = window.BUILD, bud = B.budget(BUILD_RES, lim);
+    const cap = lim.cap || 0, over = bud.total - cap;
+    $('lim-total').textContent = fmtN(bud.total);
+    $('lim-cap').textContent = fmtN(cap);
+    const st = $('lim-status');
+    st.className = 'lim-status ' + (over > 0 ? 'bad' : 'ok');
+    st.textContent = cap <= 0 ? 'ліміт не задано' : over > 0 ? `не влазить: більше на ${fmtN(over)}` : `влазить: лишається ${fmtN(-over)}`;
+    const scale = Math.max(bud.total, cap, 1) * 1.04;
+    let bar = '';
+    for (const g of bud.groups) if (g.n > 0) bar += `<span class="seg s-${g.id}" style="width:${((g.n / scale) * 100).toFixed(3)}%" title="${g.name}: ${fmtN(g.n)}"></span>`;
+    if (cap > 0 && over > 0) bar += `<span class="over" style="left:${((cap / scale) * 100).toFixed(3)}%;width:${((over / scale) * 100).toFixed(3)}%"></span>`;
+    if (cap > 0) bar += `<span class="cap" style="left:${((cap / scale) * 100).toFixed(3)}%"><span>ліміт ${fmtN(cap)}</span></span>`;
+    $('lim-bar').innerHTML = bar;
+    let leg = '';
+    for (const g of bud.groups) leg += `<li><span class="sw s-${g.id}"></span><span>${g.name}</span><b>${fmtN(g.n)}</b></li>`;
+    $('lim-legend').innerHTML = leg;
+    $('lim-eq').textContent = fmtN(bud.eq);
+    // скільки фундаментів запасу на плиту можна дозволити при поточному декорі
+    const room = cap - bud.base - bud.decor - (lim.equip ? bud.eq : 0);
+    const per = Math.floor((room / bud.bottom) * 10) / 10;
+    $('lim-hint').innerHTML = cap <= 0 ? '' : room < 0
+      ? `Навіть без запасу фундаментів конструкція з декором уже більша за ліміт на ${fmtN(-room)}.`
+      : `Нижніх плит ${fmtN(bud.bottom)} (з похилими). При декорі ${fmtN(lim.decor)}% у ліміт уміщається <b>${String(per).replace('.', ',')}</b> фундаменту запасу на плиту в середньому — це ${fmtN(Math.floor(room))} фундаментів на весь рельєф.`;
   }
 
   // ---------- 3D ----------

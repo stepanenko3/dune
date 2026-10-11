@@ -14,6 +14,7 @@
   --bg: #e9ecef;
   --surface: #ffffff;
   --surface-2: #f4f6f8;
+  --ok: #0b7a4b; --ok-bg: #e2f4ea; --bad: #b42318; --bad-bg: #fde7e4;
   --ink: #14161b;
   --muted: #586070;
   --line: #d3d8df;
@@ -47,6 +48,7 @@
     --seam: #14171c; --wall: #f1f2f5; --halo: #14171c; --ghost: #262b33; --hatch-bg: #1b1f25; --hatch-ln: #4b5361;
     --item: #0c0d10; --item-fill: rgba(255, 255, 255, 0.7); --item-ink: #111317; --glass: #7fb8dd;
     --sky-top: #2a2622; --sky-bottom: #4a3b2c; color-scheme: dark;
+    --ok: #4ade80; --ok-bg: #12291c; --bad: #f87171; --bad-bg: #331616;
   }
 }
 :root[data-theme="dark"] {
@@ -55,6 +57,7 @@
   --seam: #14171c; --wall: #f1f2f5; --halo: #14171c; --ghost: #262b33; --hatch-bg: #1b1f25; --hatch-ln: #4b5361;
   --item: #0c0d10; --item-fill: rgba(255, 255, 255, 0.7); --item-ink: #111317; --glass: #7fb8dd;
   --sky-top: #2a2622; --sky-bottom: #4a3b2c; color-scheme: dark;
+  --ok: #4ade80; --ok-bg: #12291c; --bad: #f87171; --bad-bg: #331616;
 }
 
 * { box-sizing: border-box; }
@@ -191,6 +194,40 @@ table.cost input { width: 6.5ch; padding: 3px 5px; font: inherit; text-align: ri
 .cost-res { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 13px; color: var(--muted); }
 .cost-res input { flex: 1; min-width: 0; padding: 4px 6px; font: inherit; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; }
 .small { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; }
+.steps .cnt .res { color: var(--muted); }
+table.cost tr.sub td:first-child { padding-left: 12px; color: var(--muted); }
+table.cost td.same { color: var(--muted); font-size: 12px; }
+/* лічильник деталей */
+.build .lim { grid-column: 1 / -1; }
+.lim-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.build .lim-head h2 { margin: 0; }
+.lim-num { font: 600 22px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.lim-num span { margin-left: 6px; font-size: 13px; font-weight: 500; color: var(--muted); }
+.lim-status { padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+.lim-status.ok { color: var(--ok); background: var(--ok-bg); }
+.lim-status.bad { color: var(--bad); background: var(--bad-bg); }
+.lim-bar { position: relative; display: flex; height: 18px; margin: 30px 0 12px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface-2); }
+.lim-bar .seg { height: 100%; box-shadow: inset -1px 0 0 var(--surface); }
+.lim-bar .seg:first-child { border-radius: 4px 0 0 4px; }
+.lim-bar .cap { position: absolute; top: -7px; bottom: -7px; width: 2px; margin-left: -1px; background: var(--ink); }
+.lim-bar .over { position: absolute; bottom: -6px; height: 3px; border-radius: 2px; background: var(--bad); }
+.lim-bar .cap span { position: absolute; right: 0; bottom: 100%; padding: 0 0 3px; font: 500 11.5px/1 var(--font-mono); white-space: nowrap; color: var(--ink); }
+.s-f { background: var(--sq); }
+.s-d { background: var(--tri); }
+.s-w { background: var(--wall); }
+.s-g { background: var(--glass); }
+.s-o { background: var(--muted); }
+.s-rf { background: repeating-linear-gradient(135deg, var(--sq) 0 3px, transparent 3px 6px); }
+.s-rd { background: repeating-linear-gradient(135deg, var(--accent) 0 3px, transparent 3px 6px); }
+.s-e { background: var(--accent); }
+.lim-legend { list-style: none; margin: 0 0 14px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 4px 20px; font-size: 13px; }
+.lim-legend li { display: flex; align-items: center; gap: 8px; }
+.lim-legend b { margin-left: auto; font: 500 12.5px/1.4 var(--font-mono); font-variant-numeric: tabular-nums; }
+.lim-legend .sw { flex: none; width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--line); }
+.lim-opts { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 13px; color: var(--muted); }
+.lim-opts label { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.lim-opts input[type="number"] { width: 9ch; padding: 3px 5px; font: inherit; text-align: right; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; }
+.lim-opts input[type="checkbox"] { accent-color: var(--accent); }
 @media (max-width: 1100px) { .notes { grid-template-columns: minmax(0, 1fr); } }
 .notes .card { padding: 18px 20px; }
 .notes h2 { font-size: 15px; margin-bottom: 12px; }
@@ -307,12 +344,11 @@ table.cost input { width: 6.5ch; padding: 3px 5px; font: inherit; text-align: ri
 
   <div class="notes">
     <section class="card" aria-labelledby="h-req">
-      <h2 id="h-req">Правки версії 12</h2>
+      <h2 id="h-req">Правки версії 13</h2>
       <ol class="req">
-        <li><span class="n">1</span><span>Склад як у тебе: посередині прохід 2 плити, обабіч по 2 ряди контейнерів (2 стіни заввишки) — 20 контейнерів на 30 плитах. Вхід із Великого залу просто в прохід, ззаду — заглиблений задній вхід.</span></li>
-        <li><span class="n">2</span><span>Крила біля складу: генераторна (генератор, паливо) і хімічна (хімічний переробник). Сходи зі складу на +5 прибрано — їх дублюють парадні сходи залу.</span></li>
-        <li><span class="n">3</span><span>Унизу сторінки — план будівництва по етапах із кількістю деталей і кошторис ресурсів: впиши ціну деталі з гри, сума порахується.</span></li>
-        <li><span class="n">4</span><span>На плані опція «Координати»: стовпці A–T, ряди 1–30 від фронту.</span></li>
+        <li><span class="n">1</span><span>Унизу сторінки — лічильник деталей проти ліміту гри (5000 за словами гравців, число можна змінити): смуга з розбивкою, статус «влазить / не влазить» і скільки запасу фундаментів ще вміщається.</span></li>
+        <li><span class="n">2</span><span>Запас фундаментів під рельєф: за замовчуванням 4 під кожну нижню плиту, трикутні й похилі теж. Він же доданий у план будівництва і в кошторис за ціною фундаменту.</span></li>
+        <li><span class="n">3</span><span>Запас на декор (клиноподібні стіни тощо) — 10% від конструкції, можна змінити. Сходи тепер теж рахуються деталями: проліт на кожен рівень.</span></li>
       </ol>
     </section>
 
@@ -347,6 +383,23 @@ table.cost input { width: 6.5ch; padding: 3px 5px; font: inherit; text-align: ri
   </div>
 
   <div class="build">
+    <section class="card lim" aria-labelledby="h-lim">
+      <div class="lim-head">
+        <h2 id="h-lim">Кількість деталей</h2>
+        <div class="lim-num"><b id="lim-total">—</b><span>з <span id="lim-cap">—</span></span></div>
+        <span class="lim-status" id="lim-status" role="status"></span>
+      </div>
+      <div class="lim-bar" id="lim-bar" role="img" aria-label="Розподіл деталей відносно ліміту"></div>
+      <ul class="lim-legend" id="lim-legend"></ul>
+      <div class="lim-opts">
+        <label>Запас фундаментів під кожну нижню плиту <input data-lim="found" type="number" min="0" step="1" inputmode="numeric"> шт.</label>
+        <label>Запас на декор (клиноподібні стіни тощо) <input data-lim="decor" type="number" min="0" step="1" inputmode="numeric"> %</label>
+        <label>Ліміт деталей на базу <input data-lim="cap" type="number" min="0" step="100" inputmode="numeric"></label>
+        <label><input data-lim="equip" type="checkbox"><span>рахувати обладнання (<span id="lim-eq">—</span> шт.)</span></label>
+      </div>
+      <p class="small" id="lim-hint"></p>
+      <p class="small">Ліміт 5000 — так пишуть гравці; один писав про 2500, тож звір число в меню будівництва в грі і впиши своє. Конструкція порахована з моделі: фундаменти, перекриття, стіни по секціях, вікна, пентащити, двері, парапети, сходи. Запас фундаментів — стовпчик під кожною плитою рівня 0, трикутною теж, і під похилими. Декор — відсоток від конструкції. Обладнання в грі, схоже, має окремі ліміти, як світильники, тож у суму за замовчуванням не входить. Налаштування запам'ятовуються в цьому браузері.</p>
+    </section>
     <section class="card" aria-labelledby="h-build">
       <h2 id="h-build">План будівництва</h2>
       <ol class="steps" id="steps"></ol>

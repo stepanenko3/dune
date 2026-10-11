@@ -21,7 +21,11 @@
     { id: 'door', name: 'Дверний проріз' },
     { id: 'shield', name: 'Пентащит (секція)' },
     { id: 'rail', name: 'Парапет (секція)' },
+    { id: 'stairs', name: 'Сходи (проліт на 1 рівень)' },
   ];
+
+  // Ліміт будівельних деталей на одну базу. Гравці пишуть про 5000; точне число видно в меню будівництва в грі.
+  const LIMIT = 5000;
 
   // До якого етапу належить приміщення.
   function stageOf(r) {
@@ -123,6 +127,13 @@
     for (const c of cells.entries()) if (c[1].type === 'door') doorStage.set(c[0].split('@')[0], c[1].s);
     for (const [k, s] of doorStage) add(s, 'door');
 
+    // сходи — проліт на кожен рівень підйому
+    for (const r of M.rooms) for (const it of r.items || []) {
+      if (it.kind !== 'stairs') continue;
+      const sg = stageOf(r);
+      add(sg === 'ground' ? 'ground' : sg, 'stairs', Math.ceil(it.to - it.from));
+    }
+
     const total = blank();
     for (const s of STAGES) for (const k of KINDS) total[k.id] += st[s.id][k.id];
     return { stages: STAGES.map((s) => ({ ...s, n: st[s.id] })), total };
@@ -137,5 +148,28 @@
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
   }
 
-  root.BUILD = { KINDS, compute, equipment };
+  // Скільки деталей піде з урахуванням запасів.
+  // found — додаткових фундаментів під кожну нижню плиту (вирівнювання під рельєф), decor — % на декор від конструкції.
+  function budget(res, { found = 4, decor = 10, equip = false } = {}) {
+    const t = res.total;
+    const base = KINDS.reduce((s, k) => s + t[k.id], 0);
+    const bottom = t.fsq + t.ramp + t.ftri; // плити рівня 0, під кожною — стовпчик фундаментів
+    const resSq = found * (t.fsq + t.ramp), resTri = found * t.ftri;
+    const dec = Math.round((base * decor) / 100);
+    const eq = equipment().reduce((s, [, c]) => s + c, 0);
+    const groups = [
+      { id: 'f', name: 'Фундамент', n: t.fsq + t.ftri + t.ramp },
+      { id: 'd', name: 'Перекриття й дахи', n: t.csq + t.ctri },
+      { id: 'w', name: 'Стіни', n: t.wall },
+      { id: 'g', name: 'Вікна й пентащити', n: t.window + t.shield },
+      { id: 'o', name: 'Двері, парапети, сходи', n: t.door + t.rail + t.stairs },
+      { id: 'rf', name: 'Запас фундаментів', n: resSq + resTri },
+      { id: 'rd', name: 'Запас на декор', n: dec },
+    ];
+    if (equip) groups.push({ id: 'e', name: 'Обладнання', n: eq });
+    const total = groups.reduce((s, g) => s + g.n, 0);
+    return { base, bottom, resSq, resTri, decor: dec, eq, groups, total };
+  }
+
+  root.BUILD = { KINDS, LIMIT, compute, equipment, budget };
 })(typeof window !== 'undefined' ? window : globalThis);
