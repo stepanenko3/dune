@@ -115,7 +115,7 @@
   // ---------- план будівництва і кошторис ----------
   const fmtN = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
   // Налаштування запасів і ліміту (запам'ятовуються в браузері).
-  const LIM_DEF = { found: 4, decor: 10, cap: window.BUILD.LIMIT, equip: false };
+  const LIM_DEF = { found: 4, decor: 10 };
   const lim = Object.assign({}, LIM_DEF, store.get('limit', {}));
   const BUILD_RES = window.BUILD.compute();
 
@@ -125,14 +125,11 @@
     renderLimit();
     for (const inp of document.querySelectorAll('[data-lim]')) {
       const k = inp.dataset.lim;
-      if (inp.type === 'checkbox') inp.checked = !!lim[k]; else inp.value = lim[k];
-      inp.addEventListener(inp.type === 'checkbox' ? 'change' : 'input', () => {
-        if (inp.type === 'checkbox') lim[k] = inp.checked;
-        else {
-          const v = Number(inp.value);
-          if (inp.value === '' || !isFinite(v) || v < 0) return;
-          lim[k] = v;
-        }
+      inp.value = lim[k];
+      inp.addEventListener('input', () => {
+        const v = Number(inp.value);
+        if (inp.value === '' || !isFinite(v) || v < 0) return;
+        lim[k] = v;
         store.set('limit', lim);
         renderSteps();
         renderLimit();
@@ -205,31 +202,42 @@
     $('cost-total').textContent = any ? fmtN(sum) + ' ' + ($('cost-res').value || '') : '—';
   }
 
-  // Лічильник деталей проти ліміту гри.
+  // Лічильник деталей проти лімітів гри.
   function renderLimit() {
     const B = window.BUILD, bud = B.budget(BUILD_RES, lim);
-    const cap = lim.cap || 0, over = bud.total - cap;
+    const cap = B.LIMITS[0].cap, over = bud.total - cap;
     $('lim-total').textContent = fmtN(bud.total);
     $('lim-cap').textContent = fmtN(cap);
     const st = $('lim-status');
     st.className = 'lim-status ' + (over > 0 ? 'bad' : 'ok');
-    st.textContent = cap <= 0 ? 'ліміт не задано' : over > 0 ? `не влазить: більше на ${fmtN(over)}` : `влазить: лишається ${fmtN(-over)}`;
-    const scale = Math.max(bud.total, cap, 1) * 1.04;
+    st.textContent = over > 0 ? `не влазить: більше на ${fmtN(over)}` : `влазить: лишається ${fmtN(-over)}`;
+    const scale = Math.max(bud.total, cap) * 1.04;
+    const pc = (n) => ((n / scale) * 100).toFixed(3) + '%';
     let bar = '';
-    for (const g of bud.groups) if (g.n > 0) bar += `<span class="seg s-${g.id}" style="width:${((g.n / scale) * 100).toFixed(3)}%" title="${g.name}: ${fmtN(g.n)}"></span>`;
-    if (cap > 0 && over > 0) bar += `<span class="over" style="left:${((cap / scale) * 100).toFixed(3)}%;width:${((over / scale) * 100).toFixed(3)}%"></span>`;
-    if (cap > 0) bar += `<span class="cap" style="left:${((cap / scale) * 100).toFixed(3)}%"><span>ліміт ${fmtN(cap)}</span></span>`;
+    for (const g of bud.groups) if (g.n > 0) bar += `<span class="seg s-${g.id}" style="width:${pc(g.n)}" title="${g.name}: ${fmtN(g.n)}"></span>`;
+    if (over > 0) bar += `<span class="over" style="left:${pc(cap)};width:${pc(over)}"></span>`;
+    bar += `<span class="cap" style="left:${pc(cap)}"><span>ліміт ${fmtN(cap)}</span></span>`;
     $('lim-bar').innerHTML = bar;
     let leg = '';
     for (const g of bud.groups) leg += `<li><span class="sw s-${g.id}"></span><span>${g.name}</span><b>${fmtN(g.n)}</b></li>`;
     $('lim-legend').innerHTML = leg;
-    $('lim-eq').textContent = fmtN(bud.eq);
     // скільки фундаментів запасу на плиту можна дозволити при поточному декорі
-    const room = cap - bud.base - bud.decor - (lim.equip ? bud.eq : 0);
+    const room = cap - bud.base - bud.decor;
     const per = Math.floor((room / bud.bottom) * 10) / 10;
-    $('lim-hint').innerHTML = cap <= 0 ? '' : room < 0
+    $('lim-hint').innerHTML = room < 0
       ? `Навіть без запасу фундаментів конструкція з декором уже більша за ліміт на ${fmtN(-room)}.`
       : `Нижніх плит ${fmtN(bud.bottom)} (з похилими). При декорі ${fmtN(lim.decor)}% у ліміт уміщається <b>${String(per).replace('.', ',')}</b> фундаменту запасу на плиту в середньому — це ${fmtN(Math.floor(room))} фундаментів на весь рельєф.`;
+    // решта категорій
+    const EMPTY = { light: 'решту освітлення ще не сплановано', proj: 'у моделі нічого не віднесено' };
+    let cats = '';
+    for (const c of bud.cats.slice(1)) {
+      const bad = c.n > c.cap;
+      let what = c.items.map(([n, k]) => `${n}${k > 1 ? ' ×' + k : ''}`).join(' · ');
+      if (EMPTY[c.id]) what = what ? what + ' — ' + EMPTY[c.id] : EMPTY[c.id][0].toUpperCase() + EMPTY[c.id].slice(1);
+      cats += `<li class="${bad ? 'bad' : ''}"><div class="lc-top"><span>${c.name}</span><b>${fmtN(c.n)} <i>/ ${fmtN(c.cap)}</i></b></div>`
+        + `<div class="mini"><span style="width:${Math.min(100, (c.n / c.cap) * 100).toFixed(2)}%"></span></div><div class="lc-what">${what}</div></li>`;
+    }
+    $('lim-cats').innerHTML = cats;
   }
 
   // ---------- 3D ----------

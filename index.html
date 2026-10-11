@@ -227,7 +227,17 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
 .lim-opts { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 13px; color: var(--muted); }
 .lim-opts label { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .lim-opts input[type="number"] { width: 9ch; padding: 3px 5px; font: inherit; text-align: right; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; }
-.lim-opts input[type="checkbox"] { accent-color: var(--accent); }
+.lim-sub { margin: 18px 0 10px; font-size: 13.5px; font-weight: 600; }
+.lim-cats { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px 22px; }
+.lim-cats li { min-width: 0; }
+.lc-top { display: flex; align-items: baseline; gap: 8px; font-size: 13px; }
+.lc-top b { margin-left: auto; font: 600 13px/1.4 var(--font-mono); font-variant-numeric: tabular-nums; }
+.lc-top i { font-style: normal; font-weight: 400; color: var(--muted); }
+.lim-cats .mini { height: 6px; margin: 4px 0 5px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.lim-cats .mini span { display: block; height: 100%; background: var(--accent); }
+.lim-cats li.bad .mini span { background: var(--bad); }
+.lim-cats li.bad .lc-top b { color: var(--bad); }
+.lc-what { font-size: 12px; line-height: 1.45; color: var(--muted); }
 @media (max-width: 1100px) { .notes { grid-template-columns: minmax(0, 1fr); } }
 .notes .card { padding: 18px 20px; }
 .notes h2 { font-size: 15px; margin-bottom: 12px; }
@@ -385,7 +395,7 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
   <div class="build">
     <section class="card lim" aria-labelledby="h-lim">
       <div class="lim-head">
-        <h2 id="h-lim">Кількість деталей</h2>
+        <h2 id="h-lim">Будівельні елементи</h2>
         <div class="lim-num"><b id="lim-total">—</b><span>з <span id="lim-cap">—</span></span></div>
         <span class="lim-status" id="lim-status" role="status"></span>
       </div>
@@ -394,11 +404,11 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
       <div class="lim-opts">
         <label>Запас фундаментів під кожну нижню плиту <input data-lim="found" type="number" min="0" step="1" inputmode="numeric"> шт.</label>
         <label>Запас на декор (клиноподібні стіни тощо) <input data-lim="decor" type="number" min="0" step="1" inputmode="numeric"> %</label>
-        <label>Ліміт деталей на базу <input data-lim="cap" type="number" min="0" step="100" inputmode="numeric"></label>
-        <label><input data-lim="equip" type="checkbox"><span>рахувати обладнання (<span id="lim-eq">—</span> шт.)</span></label>
       </div>
       <p class="small" id="lim-hint"></p>
-      <p class="small">Ліміт 5000 — так пишуть гравці; один писав про 2500, тож звір число в меню будівництва в грі і впиши своє. Конструкція порахована з моделі: фундаменти, перекриття, стіни по секціях, вікна, пентащити, двері, парапети, сходи. Запас фундаментів — стовпчик під кожною плитою рівня 0, трикутною теж, і під похилими. Декор — відсоток від конструкції. Обладнання в грі, схоже, має окремі ліміти, як світильники, тож у суму за замовчуванням не входить. Налаштування запам'ятовуються в цьому браузері.</p>
+      <h3 class="lim-sub">Інші ліміти бази</h3>
+      <ul class="lim-cats" id="lim-cats"></ul>
+      <p class="small">Ліміти — з гри. Будівельні елементи пораховані з моделі: фундаменти, перекриття, стіни по секціях, вікна, пентащити, дверні прорізи, парапети, сходи. Запас фундаментів — стовпчик під кожною плитою рівня 0, трикутною теж, і під похилими. Декор (клиноподібні стіни тощо) — відсоток від конструкції. Двері — по одній у кожен дверний проріз. Цистерни віднесено до складу. Налаштування запам'ятовуються в цьому браузері.</p>
     </section>
     <section class="card" aria-labelledby="h-build">
       <h2 id="h-build">План будівництва</h2>

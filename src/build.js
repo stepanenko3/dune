@@ -24,8 +24,18 @@
     { id: 'stairs', name: 'Сходи (проліт на 1 рівень)' },
   ];
 
-  // Ліміт будівельних деталей на одну базу. Гравці пишуть про 5000; точне число видно в меню будівництва в грі.
-  const LIMIT = 5000;
+  // Ліміти бази з гри, по категоріях.
+  const LIMITS = [
+    { id: 'build', name: 'Будівельні елементи', cap: 5000 },
+    { id: 'prod', name: 'Виробництво', cap: 80 },
+    { id: 'light', name: 'Освітлення', cap: 60 },
+    { id: 'store', name: 'Склад', cap: 150 },
+    { id: 'decor', name: 'Прикраси', cap: 700 },
+    { id: 'doors', name: 'Двері', cap: 70 },
+    { id: 'proj', name: 'Проєкція', cap: 20 },
+  ];
+  // Категорія ліміту для пристрою з моделі; null — не рахується (консоль, техніка, сходи).
+  const CAT = { turbine: 'prod', windtrap: 'prod', craft: 'prod', refine: 'prod', power: 'prod', water: 'store', storage: 'store', light: 'light', furniture: 'decor' };
 
   // До якого етапу належить приміщення.
   function stageOf(r) {
@@ -148,15 +158,28 @@
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
   }
 
+  // Пристрої по категоріях лімітів: { prod: [[назва, к-сть], ...], ... }
+  function placeables() {
+    const out = {};
+    const put = (cat, n) => {
+      if (!cat) return;
+      const m = out[cat] || (out[cat] = new Map());
+      m.set(n, (m.get(n) || 0) + 1);
+    };
+    for (const it of M.roofItems) put(CAT[it.kind], it.name);
+    for (const r of M.rooms) for (const it of r.items || []) put(CAT[it.kind], it.full || it.name);
+    for (const k of Object.keys(out)) out[k] = [...out[k].entries()].sort((a, b) => b[1] - a[1]);
+    return out;
+  }
+
   // Скільки деталей піде з урахуванням запасів.
   // found — додаткових фундаментів під кожну нижню плиту (вирівнювання під рельєф), decor — % на декор від конструкції.
-  function budget(res, { found = 4, decor = 10, equip = false } = {}) {
+  function budget(res, { found = 4, decor = 10 } = {}) {
     const t = res.total;
     const base = KINDS.reduce((s, k) => s + t[k.id], 0);
     const bottom = t.fsq + t.ramp + t.ftri; // плити рівня 0, під кожною — стовпчик фундаментів
     const resSq = found * (t.fsq + t.ramp), resTri = found * t.ftri;
     const dec = Math.round((base * decor) / 100);
-    const eq = equipment().reduce((s, [, c]) => s + c, 0);
     const groups = [
       { id: 'f', name: 'Фундамент', n: t.fsq + t.ftri + t.ramp },
       { id: 'd', name: 'Перекриття й дахи', n: t.csq + t.ctri },
@@ -166,10 +189,17 @@
       { id: 'rf', name: 'Запас фундаментів', n: resSq + resTri },
       { id: 'rd', name: 'Запас на декор', n: dec },
     ];
-    if (equip) groups.push({ id: 'e', name: 'Обладнання', n: eq });
     const total = groups.reduce((s, g) => s + g.n, 0);
-    return { base, bottom, resSq, resTri, decor: dec, eq, groups, total };
+    // решта категорій: пристрої з моделі, двері — по одній на дверний проріз
+    const pl = placeables();
+    if (t.door) (pl.doors || (pl.doors = [])).unshift(['Двері в прорізах', t.door]);
+    const cats = LIMITS.map((l) => {
+      if (l.id === 'build') return { ...l, n: total, items: [] };
+      const items = pl[l.id] || [];
+      return { ...l, n: items.reduce((s, [, c]) => s + c, 0), items };
+    });
+    return { base, bottom, resSq, resTri, decor: dec, groups, total, cats };
   }
 
-  root.BUILD = { KINDS, LIMIT, compute, equipment, budget };
+  root.BUILD = { KINDS, LIMITS, compute, equipment, budget };
 })(typeof window !== 'undefined' ? window : globalThis);
