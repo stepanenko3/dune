@@ -64,7 +64,6 @@
       if (types.includes('shield')) out += `<line class="op-shield" ${seg}/>`;
       else if (types.includes('balcony')) out += `<line class="parapet" ${seg}/>`;
       else if (types.includes('door')) out += `<line class="op-door" ${seg}/>`;
-      else if (types.includes('glass')) out += `<line class="op-glass" ${seg}/>`;
       else out += `<line class="${cls}" ${seg}/>`;
     }
     return out;

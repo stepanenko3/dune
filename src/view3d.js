@@ -76,16 +76,18 @@
     const std = (color, extra = {}) =>
       new THREE.MeshStandardMaterial({ color, roughness: 0.78, metalness: 0.18, side: THREE.DoubleSide, clippingPlanes: planes, clipShadows: true, ...extra });
 
+    // Плити трохи відсунуті в глибину, щоб шви й ребра поверх них не миготіли пунктиром.
+    const behind = { polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 };
     const mats = {
-      sq: std(0x2f6fd0, { roughness: 0.9, metalness: 0 }),
-      tri: std(0xe0812a, { roughness: 0.9, metalness: 0 }),
+      sq: std(0x2f6fd0, { roughness: 0.9, metalness: 0, ...behind }),
+      tri: std(0xe0812a, { roughness: 0.9, metalness: 0, ...behind }),
       wall: std(0x585c64, { metalness: 0.3 }),
-      wallLight: std(0x80848b, { metalness: 0.2 }),
-      roof: std(0x3a3d43, { metalness: 0.3 }),
+      wallLight: std(0x80848b, { metalness: 0.2, ...behind }),
+      roof: std(0x3a3d43, { metalness: 0.3, ...behind }),
       frame: std(0x2a2c31, { metalness: 0.45, roughness: 0.55 }),
-      glass: std(0xa9d4f0, { transparent: true, opacity: 0.22, roughness: 0.08, metalness: 0.1, depthWrite: false }),
       shield: std(0x2dd4bf, { transparent: true, opacity: 0.24, emissive: 0x0d6b60, emissiveIntensity: 0.6, depthWrite: false, roughness: 0.2 }),
-      ground: new THREE.MeshStandardMaterial({ color: 0xa07d55, roughness: 1, metalness: 0 }),
+      // пісок відсунутий у глибину сильніше за плити, інакше під кутом він перекриває підлогу рівня 0
+      ground: new THREE.MeshStandardMaterial({ color: 0xa07d55, roughness: 1, metalness: 0, polygonOffset: true, polygonOffsetFactor: 6, polygonOffsetUnits: 12 }),
     };
     const toneMats = {};
     const wallMat = (r) => {
@@ -98,15 +100,24 @@
     const seamMatShield = new THREE.LineBasicMaterial({ color: 0x5eead4, transparent: true, opacity: 0.8, clippingPlanes: planes });
     const edgeMat = new THREE.LineBasicMaterial({ color: 0x15171b, transparent: true, opacity: 0.7, clippingPlanes: planes });
 
-    // збирач геометрії
-    const buckets = new Map();
-    const bucket = (mat) => {
-      if (!buckets.has(mat)) buckets.set(mat, []);
-      return buckets.get(mat);
+    // збирач геометрії по шарах: 'base' видно завжди (його ріжуть площини зрізу), 'roof:<id>' — дах приміщення:
+    // при зрізі нижче верху приміщення він ховається цілком, щоб не лишалось шматків стелі (обідки, скоси, уступи).
+    let layer = 'base';
+    const layers = new Map();
+    const L = () => {
+      if (!layers.has(layer)) layers.set(layer, { mats: new Map(), seams: [], seamsShield: [], edges: [] });
+      return layers.get(layer);
     };
+    const bucket = (mat) => {
+      const m = L().mats;
+      if (!m.has(mat)) m.set(mat, []);
+      return m.get(mat);
+    };
+    const S = () => L().seams, SS = () => L().seamsShield, E = () => L().edges;
+    const roofTop = new Map(); // шар даху -> верх приміщення (з другим ярусом)
+    const floorZ = new Map(); // шар плити -> рівень підлоги: торці, днища і консолі ховаються, коли зріз нижче підлоги
     const tri = (arr, a, b, c) => arr.push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z);
     const quad = (arr, a, b, c, d) => { tri(arr, a, b, c); tri(arr, a, c, d); };
-    const seams = [], seamsShield = [], edges = [];
     // плити підлоги окремо: режим «тільки плити» показує лише їх
     const floorBuckets = new Map(), floorSeams = [];
     const floorBucket = (mat) => {
@@ -116,7 +127,7 @@
     const line = (arr, a, b) => arr.push(a.x, a.y, a.z, b.x, b.y, b.z);
     const tileMat = (t) => (t.k === 's' ? mats.sq : mats.tri);
 
-    function floorTiles(tiles, zOf, matFor, seamArr = seams, lift = 0.004) {
+    function floorTiles(tiles, zOf, matFor, seamArr = S(), lift = 0.004) {
       for (const t of tiles) {
         const p = t.p.map((q) => v3(q.x, q.y, zOf(q)));
         const m = matFor(t), isFloor = m === mats.sq || m === mats.tri;
@@ -138,11 +149,11 @@
           else m.set(k, { a, b, t, n: 1 });
         }
       return [...m.values()].filter((e) => e.n === 1).map(({ a, b, t }) => {
-        const L = Math.hypot(b.x - a.x, b.y - a.y);
-        let n = M.V((b.y - a.y) / L, -(b.x - a.x) / L);
+        const len = Math.hypot(b.x - a.x, b.y - a.y);
+        let n = M.V((b.y - a.y) / len, -(b.x - a.x) / len);
         const c = M.centroid(t.p), mid = M.V((a.x + b.x) / 2, (a.y + b.y) / 2);
         if ((mid.x - c.x) * n.x + (mid.y - c.y) * n.y < 0) n = M.V(-n.x, -n.y);
-        return { a, b, n };
+        return { a, b, n, t };
       });
     }
     // Скошений карниз (скріни 1 і 3): від краю даху на z вниз-назовні.
@@ -154,7 +165,7 @@
         const a2 = M.V(e.a.x + e.n.x * out, e.a.y + e.n.y * out), b2 = M.V(e.b.x + e.n.x * out, e.b.y + e.n.y * out);
         quad(arr, v3(e.a.x, e.a.y, z), v3(e.b.x, e.b.y, z), v3(b2.x, b2.y, z - drop), v3(a2.x, a2.y, z - drop));
         quad(arr, v3(a2.x, a2.y, z - drop), v3(b2.x, b2.y, z - drop), v3(b2.x, b2.y, z - drop - 0.12), v3(a2.x, a2.y, z - drop - 0.12));
-        line(edges, v3(a2.x, a2.y, z - drop), v3(b2.x, b2.y, z - drop));
+        line(E(), v3(a2.x, a2.y, z - drop), v3(b2.x, b2.y, z - drop));
         for (const [q, q2] of [[e.a, a2], [e.b, b2]]) {
           const k = pkey(q);
           if (!at.has(k)) at.set(k, []);
@@ -170,18 +181,78 @@
         }
     }
     const TIER_S = 0.5; // висота скошеного уступу ярусу піраміди
-    function slabSides(tiles, z, thick, mat) {
-      for (const e of M.boundaryEdges(tiles)) {
-        const a = v3(e.a.x, e.a.y, z), b = v3(e.b.x, e.b.y, z);
-        const a2 = a.clone(), b2 = b.clone();
-        a2.y -= thick; b2.y -= thick;
-        quad(bucket(mat), a2, b2, b, a);
+    // Торець плити, трохи винесений назовні, щоб не лежав в одній площині зі стіною під ним.
+    function slabSides(tiles, z, thick, mat, out = 0.02, keep = null) {
+      for (const e of outerEdges(tiles)) {
+        if (keep && !keep(e)) continue;
+        const A = M.V(e.a.x + e.n.x * out, e.a.y + e.n.y * out), B = M.V(e.b.x + e.n.x * out, e.b.y + e.n.y * out);
+        quad(bucket(mat), v3(A.x, A.y, z - thick), v3(B.x, B.y, z - thick), v3(B.x, B.y, z), v3(A.x, A.y, z));
       }
     }
+    // Прорізи на кожному ребрі від усіх приміщень, що його ділять (абсолютні висоти): двері в спільній стіні
+    // видно з обох боків, навіть якщо записані лише в одному приміщенні.
+    const edgeHoles = new Map();
+    for (const r of M.rooms) {
+      if (!(r.h > 0)) continue;
+      for (const e of M.roomEdges(r)) {
+        const k = M.edgeKey(e.a, e.b);
+        for (const o of e.open) {
+          const a = o.z0 !== undefined ? o.z0 : r.z0;
+          const b = o.z1 !== undefined ? o.z1 : o.type === 'door' ? r.z0 + DOOR : top(r);
+          if (!edgeHoles.has(k)) edgeHoles.set(k, []);
+          edgeHoles.get(k).push({ a: o.type === 'balcony' ? r.z0 + PARAPET : a, b, type: o.type === 'balcony' ? 'open' : o.type });
+        }
+      }
+    }
+    // Спільна стіна двох приміщень малюється один раз: інакше дві площини в одному місці мерехтять.
+    const drawnWalls = new Map();
+    const freeSpans = (k, lo, hi) => subtract(drawnWalls.get(k) || [], lo, hi);
+    // [lo, hi] мінус уже зайняті проміжки
+    function subtract(spans, lo, hi) {
+      const used = spans.slice().sort((p, q) => p[0] - q[0]);
+      const out = [];
+      let z = lo;
+      for (const [a, b] of used) {
+        if (b <= z + 1e-6) continue;
+        if (a >= hi - 1e-6) break;
+        if (a > z + 1e-6) out.push([z, Math.min(a, hi)]);
+        z = Math.max(z, b);
+        if (z >= hi - 1e-6) break;
+      }
+      if (z < hi - 1e-6) out.push([z, hi]);
+      return out;
+    }
+    // Стіни приміщень по ребрах (номінальна висота) — щоб рамки, парапети й другі яруси дахів не лягали на них.
+    const roomWalls = new Map();
+    for (const r of M.rooms) {
+      if (!(r.h > 0) || r.group === 'crown') continue;
+      for (const e of M.boundaryEdges(r.tiles)) {
+        const k = M.edgeKey(e.a, e.b);
+        if (!roomWalls.has(k)) roomWalls.set(k, []);
+        roomWalls.get(k).push([r.z0, top(r)]);
+      }
+    }
+    const wallFree = (a, b, lo, hi) => subtract(roomWalls.get(M.edgeKey(a, b)) || [], lo, hi);
+    // Горизонтальні плити (підлоги і дахи) за висотою: кришки ребер і карнизів під ними не малюються.
+    const horiz = new Map();
+    const addH = (tiles, z) => {
+      const k = z.toFixed(2);
+      if (!horiz.has(k)) horiz.set(k, []);
+      horiz.get(k).push(...tiles);
+    };
+    for (const r of M.rooms) {
+      if (r.group !== 'crown' && !r.profile) addH(r.tiles, r.z0);
+      if (!(r.h > 0) || r.roof === 'none') continue;
+      const z1 = top(r);
+      if (r.roof === 'tier') addH(r.tiles, z1 - (r.tierS || TIER_S));
+      if (r.rim && r.rimDrop) addH(r.rim, z1 - r.rimDrop);
+      addH(r.tiles, z1);
+    }
+    const coveredAt = (pt, z) => (horiz.get(z.toFixed(2)) || []).some((t) => M.pointInPoly(pt, t.p));
     const seenPanes = new Set();
     function wallQuad(a, b, lo, hi, mat) {
       if (mat.transparent) {
-        // спільна скляна стіна двох приміщень малюється один раз
+        // спільна прозора стіна (пентащит) двох приміщень малюється один раз
         const k = M.edgeKey(a, b) + '@' + lo.toFixed(2) + '-' + hi.toFixed(2);
         if (seenPanes.has(k)) return;
         seenPanes.add(k);
@@ -189,15 +260,12 @@
       quad(bucket(mat), v3(a.x, a.y, lo), v3(b.x, b.y, lo), v3(b.x, b.y, hi), v3(a.x, a.y, hi));
     }
 
-    // проміжки стіни по висоті з урахуванням прорізів
+    // проміжки стіни по висоті з урахуванням прорізів (усіх приміщень на цьому ребрі)
     function wallParts(room, e, lo0, hi0) {
       const z0 = lo0, z1 = hi0;
-      const holes = e.open.map((o) => {
-        const a = o.z0 !== undefined ? o.z0 : room.z0;
-        const b = o.z1 !== undefined ? o.z1 : o.type === 'door' ? room.z0 + DOOR : top(room);
-        const lo = o.type === 'balcony' ? room.z0 + PARAPET : a;
-        return { a: Math.max(lo, z0), b: Math.min(b, z1), type: o.type === 'balcony' ? 'open' : o.type };
-      }).filter((h) => h.b > h.a);
+      const holes = (edgeHoles.get(M.edgeKey(e.a, e.b)) || [])
+        .map((h) => ({ a: Math.max(h.a, z0), b: Math.min(h.b, z1), type: h.type }))
+        .filter((h) => h.b > h.a);
       const cuts = [...new Set([z0, z1, ...holes.flatMap((h) => [h.a, h.b])])].filter((z) => z >= z0 && z <= z1).sort((a, b) => a - b);
       const parts = [];
       for (let i = 0; i < cuts.length - 1; i++) {
@@ -205,14 +273,19 @@
         if (hi - lo < 1e-6) continue;
         const over = holes.filter((h) => h.a <= lo + 1e-6 && h.b >= hi - 1e-6).map((h) => h.type);
         if (over.includes('open') || over.includes('door')) continue;
-        parts.push({ lo, hi, kind: over.includes('shield') ? 'shield' : over.includes('glass') ? 'glass' : 'solid' });
+        parts.push({ lo, hi, kind: over.includes('shield') ? 'shield' : 'solid' });
       }
       return parts;
     }
     function renderWall(room, e, lo, hi) {
+      const k = M.edgeKey(e.a, e.b);
       for (const part of wallParts(room, e, lo, hi)) {
-        wallQuad(e.a, e.b, part.lo, part.hi, part.kind === 'solid' ? wallMat(room) : mats[part.kind]);
-        if (part.kind === 'solid') line(edges, v3(e.a.x, e.a.y, part.hi), v3(e.b.x, e.b.y, part.hi));
+        for (const [a, b] of freeSpans(k, part.lo, part.hi)) {
+          wallQuad(e.a, e.b, a, b, part.kind === 'solid' ? wallMat(room) : mats[part.kind]);
+          if (part.kind === 'solid') line(E(), v3(e.a.x, e.a.y, b), v3(e.b.x, e.b.y, b));
+        }
+        if (!drawnWalls.has(k)) drawnWalls.set(k, []);
+        drawnWalls.get(k).push([part.lo, part.hi]);
       }
     }
 
@@ -233,19 +306,26 @@
         if (!s) continue;
         const frac = (q) => Math.abs(q.x - (s < 0 ? p.x0 + p.ch : p.x1 - p.ch)) / p.ch;
         if (!lowFlat(t)) floorTiles([t], (q) => z0 + frac(q) * p.lo, tileMat);
-        floorTiles([t], (q) => z1 - frac(q) * p.hi, () => mats.wallLight, edges, -0.004);
       }
+      // верхні скоси і дах — шар даху
+      layer = 'roof:' + r.id;
+      roofTop.set(layer, z1);
+      for (const t of r.tiles) {
+        const s = inStrip(t);
+        if (!s) continue;
+        const frac = (q) => Math.abs(q.x - (s < 0 ? p.x0 + p.ch : p.x1 - p.ch)) / p.ch;
+        floorTiles([t], (q) => z1 - frac(q) * p.hi, () => mats.wallLight, E(), -0.004);
+      }
+      if (r.roof === 'solid') floorTiles(flatTiles, flat(z1 - RZ), () => mats.roof, E(), 0.006);
+      layer = 'base';
       // трикутні щічки пандуса біля рівних заїздів
       for (const [ya, yb] of p.flat || [])
         for (const y of [ya, yb])
           for (const [xe, xi] of [[p.x0, p.x0 + p.ch], [p.x1, p.x1 - p.ch]]) {
             const arr = bucket(mats.wallLight);
             tri(arr, v3(xi, y, z0), v3(xe, y, z0), v3(xe, y, z0 + p.lo));
-            line(edges, v3(xi, y, z0), v3(xe, y, z0 + p.lo));
+            line(E(), v3(xi, y, z0), v3(xe, y, z0 + p.lo));
           }
-      if (r.roof === 'solid') {
-        floorTiles(flatTiles, flat(z1), () => mats.roof, edges, 0.006);
-      }
       for (const e of roomEdges) {
         const vertical = Math.abs(e.a.x - e.b.x) < 1e-6 && (Math.abs(e.a.x - p.x0) < 1e-6 || Math.abs(e.a.x - p.x1) < 1e-6);
         if (vertical) { renderWall(r, e, isFlatY((e.a.y + e.b.y) / 2) ? z0 : z0 + p.lo, z1 - p.hi); continue; }
@@ -269,15 +349,15 @@
         [p.x1 - p.ch, z1 + g], [p.x0 + p.ch, z1 + g], [p.x0 - g, z1 - p.hi], [p.x0 - g, z0 + p.lo],
       ];
       const inner = oct(0), outer = oct(0.45);
-      const yo = y - outward * 0.35;
-      for (const yy of [y, yo])
+      const y0 = y - outward * 0.055, yo = y - outward * 0.405; // не в площині стін над порталом
+      for (const yy of [y0, yo])
         for (let i = 0; i < 8; i++) {
           const j = (i + 1) % 8;
           quad(bucket(mats.frame), v3(inner[i][0], yy, inner[i][1]), v3(inner[j][0], yy, inner[j][1]), v3(outer[j][0], yy, outer[j][1]), v3(outer[i][0], yy, outer[i][1]));
         }
       for (let i = 0; i < 8; i++) {
         const j = (i + 1) % 8;
-        quad(bucket(mats.frame), v3(outer[i][0], y, outer[i][1]), v3(outer[j][0], y, outer[j][1]), v3(outer[j][0], yo, outer[j][1]), v3(outer[i][0], yo, outer[i][1]));
+        quad(bucket(mats.frame), v3(outer[i][0], y0, outer[i][1]), v3(outer[j][0], y0, outer[j][1]), v3(outer[j][0], yo, outer[j][1]), v3(outer[i][0], yo, outer[i][1]));
       }
     }
 
@@ -290,14 +370,17 @@
       if (opt.n) n = M.V(opt.n[0], opt.n[1]);
       else if (r.tiles.some((t) => M.pointInPoly(probe, t.p))) n = M.V(-n.x, -n.y); // рамка виступає назовні
       const cx = opt.c || 1.2, cz = opt.c || 1.2, g = opt.g || 0.42;
-      const P = (s, z, off = 0) => v3(a.x + u.x * s + n.x * off, a.y + u.y * s + n.y * off, z);
-      const inner = [[0, z0], [0, z1 - cz], [cx, z1], [L - cx, z1], [L, z1 - cz], [L, z0]];
+      // рамка трохи відступає від площин стін (і від сусідніх веж), щоб не мерехтіла з ними
+      const P = (s, z, off = 0) => v3(a.x + u.x * s + n.x * (off + 0.055), a.y + u.y * s + n.y * (off + 0.055), z);
+      const W = (s, z) => v3(a.x + u.x * s, a.y + u.y * s, z); // у площині стіни
+      const si = 0.02, zt = z1 - 0.03; // і нижче від підлоги над порталом
+      const inner = [[si, z0], [si, zt - cz], [cx, zt], [L - cx, zt], [L - si, zt - cz], [L - si, z0]];
       const outer = [[-g, z0], [-g, z1 - cz + g * 0.4], [cx - g * 0.4, z1 + g], [L - cx + g * 0.4, z1 + g], [L + g, z1 - cz + g * 0.4], [L + g, z0]];
       const arr = bucket(mats.frame);
       // зрізані кути (якщо дах сам не скошений під рамку)
       if (opt.fill !== false) {
-        tri(bucket(mats.wall), P(0, z1), P(cx, z1), P(0, z1 - cz));
-        tri(bucket(mats.wall), P(L, z1), P(L, z1 - cz), P(L - cx, z1));
+        tri(bucket(mats.wall), W(si, zt), W(cx, zt), W(si, zt - cz));
+        tri(bucket(mats.wall), W(L - si, zt), W(L - si, zt - cz), W(L - cx, zt));
       }
       for (const off of [0, 0.45])
         for (let i = 0; i < inner.length - 1; i++) {
@@ -308,19 +391,33 @@
         for (let i = 0; i < ring.length - 1; i++) {
           const j = i + 1;
           quad(arr, P(...ring[i], 0), P(...ring[j], 0), P(...ring[j], 0.45), P(...ring[i], 0.45));
-          line(edges, P(...ring[i], 0.45), P(...ring[j], 0.45));
+          line(E(), P(...ring[i], 0.45), P(...ring[j], 0.45));
         }
     }
 
     // Пентащит у даху зі світною рамкою (світлики ангарів, дах гаража краулера).
     function skylightFrame(skyTiles, z) {
-      floorTiles(skyTiles, flat(z - 0.01), () => mats.shield, seamsShield, 0.006);
+      floorTiles(skyTiles, flat(z - 0.01), () => mats.shield, SS(), 0.006);
       for (const e of M.boundaryEdges(skyTiles)) {
-        wallQuad(e.a, e.b, z, z + 0.14, mats.frame);
-        line(seamsShield, v3(e.a.x, e.a.y, z + 0.15), v3(e.b.x, e.b.y, z + 0.15));
+        for (const [lo, hi] of wallFree(e.a, e.b, z, z + 0.14)) wallQuad(e.a, e.b, lo, hi, mats.frame);
+        line(SS(), v3(e.a.x, e.a.y, z + 0.15), v3(e.b.x, e.b.y, z + 0.15));
       }
     }
 
+    const ribs = new Map();
+    function freeRib(k, lo, hi) {
+      const used = (ribs.get(k) || []).slice().sort((p, q) => p[0] - q[0]);
+      const out = [];
+      let z = lo;
+      for (const [a, b] of used) {
+        if (b <= z + 1e-6) continue;
+        if (a >= hi - 1e-6) break;
+        if (a > z + 1e-6) out.push([z, Math.min(a, hi)]);
+        z = Math.max(z, b);
+      }
+      if (z < hi - 1e-6) out.push([z, hi]);
+      return out;
+    }
     // Оформлення зовнішніх стін: ребра (пілястри) на кутах, на стиках з іншими корпусами і через крок,
     // цокольний пояс і карниз. Так блоки читаються збоку, а не лише згори.
     function articulate(r, topOf) {
@@ -343,11 +440,13 @@
         const parts = wallParts(r, e, lo, hi);
         const o = 0.07;
         const A = M.V(e.a.x + n.x * o, e.a.y + n.y * o), B = M.V(e.b.x + n.x * o, e.b.y + n.y * o);
-        // карниз: якщо верх стіни суцільний
+        // карниз: якщо верх стіни суцільний і над ним не лежить плита (інакше верх карниза мерехтить з нею)
         const topPart = parts[parts.length - 1];
-        if (topPart && topPart.kind === 'solid' && Math.abs(topPart.hi - hi) < 1e-6 && hi - lo > 1.2) {
-          quad(fr, v3(A.x, A.y, hi - 0.2), v3(B.x, B.y, hi - 0.2), v3(B.x, B.y, hi), v3(A.x, A.y, hi));
-          quad(fr, v3(e.a.x, e.a.y, hi), v3(e.b.x, e.b.y, hi), v3(B.x, B.y, hi), v3(A.x, A.y, hi));
+        const probe = [0.5, 0.15, 0.85].map((f) => M.V(e.a.x + (e.b.x - e.a.x) * f + n.x * 0.035, e.a.y + (e.b.y - e.a.y) * f + n.y * 0.035));
+        if (topPart && topPart.kind === 'solid' && Math.abs(topPart.hi - hi) < 1e-6 && hi - lo > 1.2 && !probe.some((pt) => coveredAt(pt, hi))) {
+          const ht = hi - 0.02; // на 2 см нижче плити над стіною
+          quad(fr, v3(A.x, A.y, hi - 0.2), v3(B.x, B.y, hi - 0.2), v3(B.x, B.y, ht), v3(A.x, A.y, ht));
+          quad(fr, v3(e.a.x, e.a.y, ht), v3(e.b.x, e.b.y, ht), v3(B.x, B.y, ht), v3(A.x, A.y, ht));
         }
         // цокольний пояс
         const bot = parts[0];
@@ -377,9 +476,18 @@
         const tx = -ny, ty = nx, w = 0.09, dpt = 0.1;
         const p1 = M.V(q.x + tx * w, q.y + ty * w), p2 = M.V(q.x - tx * w, q.y - ty * w);
         const p3 = M.V(p2.x + nx * dpt, p2.y + ny * dpt), p4 = M.V(p1.x + nx * dpt, p1.y + ny * dpt);
-        for (const [a, b] of [[p1, p4], [p4, p3], [p3, p2]])
-          quad(fr, v3(a.x, a.y, r.z0), v3(b.x, b.y, r.z0), v3(b.x, b.y, hi), v3(a.x, a.y, hi));
-        quad(fr, v3(p1.x, p1.y, hi), v3(p4.x, p4.y, hi), v3(p3.x, p3.y, hi), v3(p2.x, p2.y, hi));
+        // на стику двох корпусів ребро ставить кожен — малюємо лише ту висоту, якої ще немає
+        const rk = pkey(q);
+        const spans = freeRib(rk, r.z0, hi);
+        if (!ribs.has(rk)) ribs.set(rk, []);
+        ribs.get(rk).push([r.z0, hi]);
+        for (const [lo2, hi2] of spans) {
+          for (const [a, b] of [[p1, p4], [p4, p3], [p3, p2]])
+            quad(fr, v3(a.x, a.y, lo2), v3(b.x, b.y, lo2), v3(b.x, b.y, hi2), v3(a.x, a.y, hi2));
+          const c = M.V(q.x + nx * dpt * 0.5, q.y + ny * dpt * 0.5);
+          const hc = hi - 0.02;
+          if (Math.abs(hi2 - hi) < 1e-6 && ![c, p1, p2, p3, p4].some((pt) => coveredAt(pt, hi))) quad(fr, v3(p1.x, p1.y, hc), v3(p4.x, p4.y, hc), v3(p3.x, p3.y, hc), v3(p2.x, p2.y, hc));
+        }
       }
     }
 
@@ -392,7 +500,7 @@
         for (let i = 1; i < p.length - 1; i++) tri(under, p[0], p[i], p[i + 1]);
       }
       const L = Math.hypot(o.b.x - o.a.x, o.b.y - o.a.y);
-      const u = M.V((o.b.x - o.a.x) / L, (o.b.y - o.a.y) / L), tw = 0.1;
+      const u = M.V((o.b.x - o.a.x) / L, (o.b.y - o.a.y) / L), tw = 0.13; // не в площині ребер стіни (±0.09)
       const fr = bucket(mats.frame);
       for (const s of o.at) {
         const side = (k) => {
@@ -403,8 +511,8 @@
         tri(fr, A[0], A[1], A[2]);
         tri(fr, B[0], B[1], B[2]);
         quad(fr, A[1], B[1], B[2], A[2]);
-        line(edges, A[1], A[2]);
-        line(edges, B[1], B[2]);
+        line(E(), A[1], A[2]);
+        line(E(), B[1], B[2]);
       }
     }
 
@@ -414,19 +522,30 @@
     const STRUCTURAL = ['stairs', 'hatch', 'light'];
     const hoverables = [];
 
+    // Плитки даху, на яких лежить підлога приміщення вище, не малюються: дві площини майже в одній висоті мерехтять.
+    const RZ = 0.004; // дах трохи нижче верху стін
+    const upperFloors = new Set();
+    for (const r of M.rooms) if (r.z0 > 0 && r.group !== 'crown' && !r.profile) for (const t of r.tiles) upperFloors.add(tileKey(t) + '@' + r.z0);
+    const covered = (t, z) => upperFloors.has(tileKey(t) + '@' + z);
+
     function buildRoom(r) {
       const z0 = r.z0, z1 = top(r);
       const roomEdges = M.roomEdges(r);
       if (r.group === 'shield') {
-        floorTiles(r.tiles, flat(z0), () => mats.shield, seamsShield, 0.01);
+        floorTiles(r.tiles, flat(z0), () => mats.shield, SS(), 0.01);
       } else if (r.profile) {
         buildProfile(r, roomEdges);
       } else if (r.group !== 'crown') {
         floorTiles(r.tiles, flat(z0), tileMat);
         // високі палуби (балкони веж, місток) і ангари над обривом — товща плита, щоб читалась знизу
         const thick = r.solidBase ? z0 * LH : r.overhang ? 0.45 : r.h === 0 && z0 > M.heights.CAR ? 0.32 : 0.14;
-        if (z0 > 0) slabSides(r.tiles, z0, thick, r.solidBase ? mats.wall : r.overhang ? mats.frame : mats.roof);
-        if (r.overhang) overhang(r, thick);
+        if (z0 > 0) {
+          layer = 'floor:' + r.id;
+          floorZ.set(layer, z0);
+          slabSides(r.tiles, z0, thick, r.solidBase ? mats.wall : r.overhang ? mats.frame : mats.roof);
+          if (r.overhang) overhang(r, thick);
+          layer = 'base';
+        }
       }
 
       const rimKeys = new Set((r.rim || []).map(tileKey));
@@ -446,7 +565,7 @@
             const arr = bucket(mats.wall);
             tri(arr, v3(e.a.x, e.a.y, lo), v3(e.b.x, e.b.y, lo), ha > hb ? v3(e.a.x, e.a.y, ha) : v3(e.b.x, e.b.y, hb));
           }
-          line(edges, v3(e.a.x, e.a.y, ha), v3(e.b.x, e.b.y, hb));
+          line(E(), v3(e.a.x, e.a.y, ha), v3(e.b.x, e.b.y, hb));
         }
       } else if (r.h > 0 && !r.profile) {
         for (const e of roomEdges) {
@@ -458,30 +577,33 @@
       } else if (r.h === 0 && r.group !== 'shield') {
         for (const e of roomEdges) {
           if (e.open.some((o) => o.type === 'open')) continue;
-          wallQuad(e.a, e.b, z0, z0 + PARAPET, mats.wallLight);
+          for (const [lo, hi] of wallFree(e.a, e.b, z0, z0 + PARAPET)) wallQuad(e.a, e.b, lo, hi, mats.wallLight);
         }
       }
 
-      // дахи: ядро на z1, обідок нижче на rimDrop, між ними уступ
+      // дахи: ядро на z1, обідок нижче на rimDrop, між ними уступ. Усе це — шар даху приміщення.
+      layer = 'roof:' + r.id;
+      roofTop.set(layer, z1 + (r.crown ? r.crown.h : 0) + (r.roof === 'pyramid' ? r.apex || 2.4 : 0));
+      const open = (t) => !covered(t, z1);
       if (r.rim && drop) {
         const rimTiles = r.tiles.filter((t) => rimKeys.has(tileKey(t)));
         const core = r.tiles.filter((t) => !rimKeys.has(tileKey(t)));
-        floorTiles(rimTiles, flat(z1 - drop - 0.02), () => mats.roof, edges, 0.006);
+        floorTiles(rimTiles, flat(z1 - drop - RZ), () => mats.roof, E(), 0.006);
         const outer = new Set(M.boundaryEdges(r.tiles).map((e) => M.edgeKey(e.a, e.b)));
         if (r.roof === 'solid') {
           const sky = new Set((r.skylight || []).map(tileKey));
-          floorTiles(core.filter((t) => !sky.has(tileKey(t))), flat(z1 - 0.02), () => mats.roof, edges, 0.006);
-          for (const e of M.boundaryEdges(core)) if (!outer.has(M.edgeKey(e.a, e.b))) wallQuad(e.a, e.b, z1 - drop - 0.02, z1 - 0.02, wallMat(r));
+          floorTiles(core.filter((t) => !sky.has(tileKey(t)) && open(t)), flat(z1 - RZ), () => mats.roof, E(), 0.006);
+          for (const e of M.boundaryEdges(core)) if (!outer.has(M.edgeKey(e.a, e.b))) wallQuad(e.a, e.b, z1 - drop - RZ, z1 - RZ, wallMat(r));
           if (r.eave) {
             eave(core, z1, 0.3, 0.38, mats.frame, outer);
             eave(rimTiles, z1 - drop, 0.3, 0.38, mats.frame, outer);
           }
-          if (sky.size) skylightFrame(r.tiles.filter((t) => sky.has(tileKey(t))), z1 - 0.03);
+          if (sky.size) skylightFrame(r.tiles.filter((t) => sky.has(tileKey(t))), z1 - RZ);
         }
       } else if (r.roof === 'solid' && rs) {
-        floorTiles(r.tiles, (q) => roofZ(q) - 0.02, () => mats.roof, edges, 0.006);
+        floorTiles(r.tiles, (q) => roofZ(q) - RZ, () => mats.roof, E(), 0.006);
         for (const e of M.boundaryEdges(r.tiles)) {
-          const ha = roofZ(e.a) - 0.02, hb = roofZ(e.b) - 0.02;
+          const ha = roofZ(e.a) - RZ, hb = roofZ(e.b) - RZ;
           quad(bucket(mats.frame), v3(e.a.x, e.a.y, ha - 0.2), v3(e.b.x, e.b.y, hb - 0.2), v3(e.b.x, e.b.y, hb), v3(e.a.x, e.a.y, ha));
         }
       } else if (r.roof === 'solid' && (r.skylight || r.crown)) {
@@ -489,34 +611,35 @@
         const sky = new Set((r.skylight || []).map(tileKey));
         const crown = r.crown ? r.crown.tiles : [];
         const crownKeys = new Set(crown.map(tileKey));
-        const ch = r.crown ? r.crown.h : 0, zc = z1 + ch - 0.03;
-        floorTiles(r.tiles.filter((t) => !crownKeys.has(tileKey(t))), flat(z1 - 0.02), () => mats.roof, edges, 0.006);
+        const ch = r.crown ? r.crown.h : 0, zc = z1 + ch - RZ;
+        floorTiles(r.tiles.filter((t) => !crownKeys.has(tileKey(t)) && open(t)), flat(z1 - RZ), () => mats.roof, E(), 0.006);
         if (r.eave) eave(r.tiles, z1, 0.32, 0.4, mats.frame);
-        else slabSides(r.tiles, z1 - 0.02, 0.3, mats.frame);
+        else slabSides(r.tiles, z1 - RZ, 0.3, mats.frame, 0.035);
         if (crown.length) {
-          floorTiles(crown.filter((t) => !sky.has(tileKey(t))), flat(zc), () => mats.roof, edges, 0.006);
-          for (const e of M.boundaryEdges(crown)) wallQuad(e.a, e.b, z1 - 0.02, zc, mats.wall);
+          floorTiles(crown.filter((t) => !sky.has(tileKey(t))), flat(zc), () => mats.roof, E(), 0.006);
+          for (const e of M.boundaryEdges(crown)) for (const [lo, hi] of wallFree(e.a, e.b, z1 - RZ, zc)) wallQuad(e.a, e.b, lo, hi, mats.wall);
           if (r.eave) eave(crown, zc, 0.24, 0.3, mats.frame);
         }
         skylightFrame(r.tiles.filter((t) => sky.has(tileKey(t))), zc);
       } else if (r.roof === 'solid' && !r.profile) {
-        floorTiles(r.tiles, flat(z1 - 0.02), () => mats.roof, edges, 0.006);
+        floorTiles(r.tiles.filter(open), flat(z1 - RZ), () => mats.roof, E(), 0.006);
         if (r.eave) eave(r.tiles, z1, 0.28, 0.34, mats.frame);
-        else slabSides(r.tiles, z1 - 0.02, 0.16, mats.roof);
+        else slabSides(r.tiles, z1 - RZ, 0.16, mats.roof, 0.035, (e) => open(e.t));
       } else if (r.roof === 'shield') {
-        floorTiles(r.tiles, flat(z1 - 0.02), () => mats.shield, seamsShield, 0.006);
+        floorTiles(r.tiles, flat(z1 - RZ), () => mats.shield, SS(), 0.006);
       } else if (r.roof === 'tier') {
         // ярус піраміди: по периметру скошений уступ на 1 плиту, посередині рівно
         const ts = r.tierS || TIER_S;
         const rimPts = new Set(M.boundaryEdges(r.tiles).flatMap((e) => [pkey(e.a), pkey(e.b)]));
         const onRim = (t) => t.p.some((q) => rimPts.has(pkey(q)));
-        floorTiles(r.tiles, (q) => (rimPts.has(pkey(q)) ? z1 - ts : z1), (t) => (onRim(t) ? mats.wallLight : mats.roof), edges, 0.006);
+        floorTiles(r.tiles, (q) => (rimPts.has(pkey(q)) ? z1 - ts : z1), (t) => (onRim(t) ? mats.wallLight : mats.roof), E(), 0.006);
       } else if (r.roof === 'pyramid') {
         const c = M.labelPoint(r);
         const apex = v3(c.x, c.y, z1 + (r.apex || 2.4));
         for (const e of roomEdges) tri(bucket(mats.roof), v3(e.a.x, e.a.y, z1), v3(e.b.x, e.b.y, z1), apex);
-        for (const e of roomEdges) line(edges, v3(e.a.x, e.a.y, z1), apex);
+        for (const e of roomEdges) line(E(), v3(e.a.x, e.a.y, z1), apex);
       }
+      layer = 'base';
 
       for (const o of r.open || []) if (o.frame) mouth(r, o.a, o.b, z0, z1, o.frame === true ? {} : o.frame);
       articulate(r, (e) => {
@@ -607,7 +730,7 @@
         box(it.w, 0.03, it.d, 0.01, std(0x30333a));
       } else if (it.kind === 'air') {
         box(it.w, h * 0.55, it.d * 0.55, 0);
-        box(it.w * 0.55, 0.08, it.d, h * 0.45, std(0xd5dde6, { transparent: true, opacity: 0.8 }));
+        box(it.w * 0.55, 0.08, it.d, h * 0.45, std(0xd5dde6));
       } else {
         box(it.w, h, it.d, 0);
       }
@@ -619,22 +742,38 @@
     for (const r of M.rooms) buildRoom(r);
     for (const it of M.roofItems) addItem(it, it.z, itemGroups.base);
 
-    const structure = new THREE.Group();
-    for (const [mat, arr] of buckets) {
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
-      geo.computeVertexNormals();
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.castShadow = !mat.transparent;
-      mesh.receiveShadow = true;
-      structure.add(mesh);
-    }
     const mkLines = (arr, mat) => {
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
       return new THREE.LineSegments(geo, mat);
     };
-    structure.add(mkLines(seams, seamMat), mkLines(seamsShield, seamMatShield), mkLines(edges, edgeMat));
+    const structure = new THREE.Group();
+    const roofGroups = [], floorGroups = [];
+    for (const [key, lay] of layers) {
+      const g = new THREE.Group();
+      for (const [mat, arr] of lay.mats) {
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
+        geo.computeVertexNormals();
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.castShadow = !mat.transparent;
+        mesh.receiveShadow = true;
+        g.add(mesh);
+      }
+      for (const [arr, mat] of [[lay.seams, seamMat], [lay.seamsShield, seamMatShield], [lay.edges, edgeMat]]) if (arr.length) g.add(mkLines(arr, mat));
+      if (roofTop.has(key)) roofGroups.push({ g, top: roofTop.get(key) });
+      if (floorZ.has(key)) floorGroups.push({ g, z: floorZ.get(key) });
+      structure.add(g);
+    }
+    const visibleMeshes = (root) => {
+      const out = [];
+      root.traverse((o) => {
+        if (!o.isMesh) return;
+        for (let p = o; p; p = p.parent) if (p.visible === false) return;
+        out.push(o);
+      });
+      return out;
+    };
     const floors = new THREE.Group();
     for (const [mat, arr] of floorBuckets) {
       const geo = new THREE.BufferGeometry();
@@ -650,7 +789,7 @@
     // земля, сітка і ділянки
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), mats.ground);
     ground.rotation.x = -Math.PI / 2;
-    ground.position.set(0, -0.02, -15);
+    ground.position.set(0, -0.06, -15);
     ground.receiveShadow = true;
     scene.add(ground);
     const gridArr = [];
@@ -701,6 +840,10 @@
       state.floor = floor;
       clipTop.constant = levels * LH;
       clipBottom.constant = -floor * LH;
+      // дах приміщення, яке перетинає зріз, ховаємо цілком
+      for (const R of roofGroups) R.g.visible = levels >= 98 || R.top <= levels + 1e-3;
+      // плита приміщення вище зрізу (торці, днище ангара, консолі звисають нижче підлоги) — теж
+      for (const F of floorGroups) F.g.visible = levels >= 98 || F.z <= levels + 1e-3;
     }
     function setTileColors(on) {
       state.colors = on;
@@ -748,7 +891,7 @@
     let occTick = 0;
     function updateOcclusion() {
       if (occTick++ % 8 !== 0) return;
-      const solids = structure.children.filter((o) => o.isMesh && !o.material.transparent);
+      const solids = visibleMeshes(structure).filter((o) => !o.material.transparent);
       for (const L of labelPts) {
         if (!labelVisible(L)) continue;
         labelAnchor(L);
@@ -829,7 +972,7 @@
       controls.update();
     }
 
-    return { start, stop, setCut, setInterior, setFoundation, setTileColors, setLabels, setView, setCamera, LH };
+    return { start, stop, setCut, setInterior, setFoundation, setTileColors, setLabels, setView, setCamera, LH, debug: { scene, structure, floors, roofGroups } };
   }
 
   root.VIEW3D = { create };

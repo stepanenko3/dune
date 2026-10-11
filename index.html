@@ -106,7 +106,6 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .plan .parapet { stroke: var(--wall); stroke-width: 1.3; stroke-dasharray: 1.5 3.5; }
 .plan .op-door { stroke: var(--wall); stroke-width: 2.4; stroke-dasharray: 3 4; }
 .plan .op-shield { stroke: var(--accent); stroke-width: 4.5; }
-.plan .op-glass { stroke: var(--glass); stroke-width: 3.5; }
 .plan .hl-edge { stroke: var(--accent); stroke-width: 3.6; }
 .plan .overhead polygon { fill: var(--ghost); fill-opacity: 0.55; stroke: none; }
 .plan .overhead line { stroke: var(--muted); stroke-width: 1.6; stroke-dasharray: 6 4; }
@@ -215,7 +214,7 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
 .s-f { background: var(--sq); }
 .s-d { background: var(--tri); }
 .s-w { background: var(--wall); }
-.s-g { background: var(--glass); }
+.s-g { background: var(--accent); }
 .s-o { background: var(--muted); }
 .s-rf { background: repeating-linear-gradient(135deg, var(--sq) 0 3px, transparent 3px 6px); }
 .s-rd { background: repeating-linear-gradient(135deg, var(--accent) 0 3px, transparent 3px 6px); }
@@ -258,7 +257,7 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
   <header class="top">
     <div class="brand">
       <h1>Цитадель Харконненів</h1>
-      <p>База для Dune: Awakening на 6 ділянок 10×10. Тільки квадратні й трикутні плити. Великий зал — витягнутий шестикутник, скляні ангари орні на тилу під кутом над обривом, заокруглений заїзд із переходом над ним, широкий наскрізний ангар грузових із пірамідою, вежі з +9 з балконами й містком-брамою. Версія 12.</p>
+      <p>База для Dune: Awakening на 6 ділянок 10×10. Тільки квадратні й трикутні плити. Великий зал — витягнутий шестикутник, ангари орні з пентащитів на тилу під кутом над обривом, заокруглений заїзд із переходом над ним, широкий наскрізний ангар грузових із пірамідою, вежі з +9 з балконами й містком-брамою. Версія 12.</p>
     </div>
     <ul class="facts" aria-label="Основні цифри">
       <li><b>20 × 30</b> плит</li>
@@ -330,7 +329,6 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
           <svg viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--wall)" stroke-width="2.4"/></svg><span>Стіна</span>
           <svg viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--wall)" stroke-width="2.4" stroke-dasharray="3 4"/></svg><span>Двері</span>
           <svg viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--accent)" stroke-width="4.5"/></svg><span>Пентащит (проїзд, проліт)</span>
-          <svg viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--glass)" stroke-width="3.5"/></svg><span>Скло / вікна в заїзд</span>
           <svg viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--wall)" stroke-width="1.3" stroke-dasharray="1.5 3.5"/></svg><span>Парапет (палуба, балкон)</span>
           <svg viewBox="0 0 26 18" aria-hidden="true"><rect x="2" y="3" width="22" height="12" fill="var(--item-fill)" stroke="var(--item)"/><path d="M7 3v12M12 3v12M17 3v12" stroke="var(--item)" stroke-width="0.8"/><path d="M4 9h15" stroke="var(--item)" stroke-width="1.4"/><path d="M19 6l4 3-4 3z" fill="var(--item)"/></svg><span>Сходи, стрілка — вгору</span>
           <svg viewBox="0 0 26 18" aria-hidden="true"><rect x="3" y="2" width="20" height="14" fill="var(--sq)"/><path d="M3 6h20M3 10h20M3 14h20" stroke="var(--seam)" stroke-width="1.2"/></svg><span>Похилі плити (заокруглення)</span>
@@ -354,11 +352,11 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
 
   <div class="notes">
     <section class="card" aria-labelledby="h-req">
-      <h2 id="h-req">Правки версії 14</h2>
+      <h2 id="h-req">Правки версії 15</h2>
       <ol class="req">
-        <li><span class="n">1</span><span>Ангар грузових перебудовано під гру: підлога — лише дахи плит нижче (квадрати до 17-го ряду, далі трикутники), без вигаданих трикутників. Прямих бічних стін у трикутній зоні не буває, тож форма тепер іде по ребрах плит.</span></li>
-        <li><span class="n">2</span><span>Кожна стіна ангара грузових стоїть на стіні нижче: спереду на стінах Великого залу (11 плит), посередині розширення до 14 на прибудовах над крилами, задні скоси на гранях заднього залу, портал 9 плит.</span></li>
-        <li><span class="n">3</span><span>На +5 над крилами — прибудови (двері із задньої галереї). Під їхньою діагональною стіною в крилах перегородка з дверима: генератор і хімічний переробник лишились у ромбі біля складу, паливо — за перегородкою.</span></li>
+        <li><span class="n">1</span><span>Вікон у наборі Харконненів немає, тож усі вікна й скляні смуги стали суцільними стінами. Прозорі лише пентащити: ангари орні, світлик гаража краулера.</span></li>
+        <li><span class="n">2</span><span>3D без мерехтіння: спільна стіна двох приміщень малюється один раз, дах під підлогою приміщення вище не малюється, торці плит, карнизи, ребра, рамки порталів і кронштейни ангарів відсунуті від стін і плит. Автоматична перевірка: жодної пари площин, що перекриваються.</span></li>
+        <li><span class="n">3</span><span>Зрізи чисті: дах приміщення, через яке проходить зріз, ховається цілком — без шматків стелі, обідків гаражів, верхніх скосів заїзду чи уступів переходу. «Лише цей поверх» більше не показує смужки стін нижнього поверху.</span></li>
       </ol>
     </section>
 
@@ -380,7 +378,7 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
         <li>1 плита = квадратний фундамент, 1 рівень = висота стіни.</li>
         <li>Грузовий 4×9 і великий рудний переробник 3×2 заввишки до 2 — з твоїх уточнень.</li>
         <li>Великий переробник спайсу 3×2, 5 стін; цех меланжу має рівно 5 рівнів — впритул. Контейнер складу — 1×1, 2 стіни заввишки.</li>
-        <li>Скаут ≈ 3,6×2,5, асаулт ≈ 4×2,7; ангари 3 рівні скла + верхній ярус даху.</li>
+        <li>Скаут ≈ 3,6×2,5, асаулт ≈ 4×2,7; ангари 3 рівні пентащита + верхній ярус даху.</li>
         <li>Краулер ≈ 5,5×2,6, багі 3×2, піскоцикл 2×1. Пентащит над краулером 6×9 під грузового 4×9.</li>
         <li>Вітряк займає 1×1, вітропастка 1,5×1,5 — з твоїх уточнень. Над ними нічого немає.</li>
         <li><b>Перевір у грі:</b> чи проходить краулер у заїзд шириною 2 плити (якщо ні — розширимо до 3), чи проходить грузовий крізь горизонтальний пентащит, чи вистачає 4 рівнів ангара грузових і чи влазить переробник спайсу під стелю на 5 стін.</li>
@@ -408,7 +406,7 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
       <p class="small" id="lim-hint"></p>
       <h3 class="lim-sub">Інші ліміти бази</h3>
       <ul class="lim-cats" id="lim-cats"></ul>
-      <p class="small">Ліміти — з гри. Будівельні елементи пораховані з моделі: фундаменти, перекриття, стіни по секціях, вікна, пентащити, дверні прорізи, парапети, сходи. Запас фундаментів — стовпчик під кожною плитою рівня 0, трикутною теж, і під похилими. Декор (клиноподібні стіни тощо) — відсоток від конструкції. Двері — по одній у кожен дверний проріз. Цистерни віднесено до складу. Налаштування запам'ятовуються в цьому браузері.</p>
+      <p class="small">Ліміти — з гри. Будівельні елементи пораховані з моделі: фундаменти, перекриття, стіни по секціях, пентащити, дверні прорізи, парапети, сходи. Запас фундаментів — стовпчик під кожною плитою рівня 0, трикутною теж, і під похилими. Декор (клиноподібні стіни тощо) — відсоток від конструкції. Двері — по одній у кожен дверний проріз. Цистерни віднесено до складу. Налаштування запам'ятовуються в цьому браузері.</p>
     </section>
     <section class="card" aria-labelledby="h-build">
       <h2 id="h-build">План будівництва</h2>

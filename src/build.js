@@ -17,7 +17,6 @@
     { id: 'csq', name: 'Перекриття / дах, квадрат' },
     { id: 'ctri', name: 'Перекриття / дах, трикутник' },
     { id: 'wall', name: 'Стіна (секція)' },
-    { id: 'window', name: 'Вікно (секція)' },
     { id: 'door', name: 'Дверний проріз' },
     { id: 'shield', name: 'Пентащит (секція)' },
     { id: 'rail', name: 'Парапет (секція)' },
@@ -98,7 +97,7 @@
     }
 
     // стіни: секції по рівнях, спільні — один раз; більш відкритий тип перемагає
-    const RANK = { none: 0, door: 1, shield: 2, window: 3, wall: 4, rail: 5 };
+    const RANK = { none: 0, door: 1, shield: 2, wall: 4, rail: 5 };
     const cells = new Map();
     const doors = new Map();
     for (const r of M.rooms) {
@@ -120,7 +119,7 @@
             const a = o.z0 !== undefined ? o.z0 : r.z0;
             const b = o.z1 !== undefined ? o.z1 : o.type === 'door' ? r.z0 + 2.5 : top(r);
             if (mid < a || mid > b) continue;
-            const t = o.type === 'open' || o.type === 'balcony' ? 'none' : o.type === 'glass' ? 'window' : o.type;
+            const t = o.type === 'open' || o.type === 'balcony' ? 'none' : o.type;
             if (RANK[t] < RANK[type]) type = t;
             if (o.type === 'door') doors.set(ek + '@' + a.toFixed(1), true);
           }
@@ -184,7 +183,7 @@
       { id: 'f', name: 'Фундамент', n: t.fsq + t.ftri + t.ramp },
       { id: 'd', name: 'Перекриття й дахи', n: t.csq + t.ctri },
       { id: 'w', name: 'Стіни', n: t.wall },
-      { id: 'g', name: 'Вікна й пентащити', n: t.window + t.shield },
+      { id: 'g', name: 'Пентащити', n: t.shield },
       { id: 'o', name: 'Двері, парапети, сходи', n: t.door + t.rail + t.stairs },
       { id: 'rf', name: 'Запас фундаментів', n: resSq + resTri },
       { id: 'rd', name: 'Запас на декор', n: dec },
