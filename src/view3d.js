@@ -683,8 +683,20 @@
           core.position.y = h / 2;
           g.add(core);
         } else {
-          const n = Math.max(4, Math.round(it.h * 2.5));
-          for (let i = 0; i < n; i++) box(it.w / n, ((i + 1) * h) / n, it.d, 0, mat, -it.w / 2 + (it.w / n) * (i + 0.5));
+          // марш: сходинки зверху, під ними рівна похила плита, знизу порожньо (як у грі)
+          const n = Math.max(4, Math.round(it.h * 2.5)), w = it.w, r = h / n, x = (i) => -w / 2 + (w / n) * i;
+          const sv = Math.max(0.22, r * 0.8); // товщина плити під кутами сходинок, по вертикалі
+          const sh = new THREE.Shape();
+          sh.moveTo(-w / 2, 0);
+          for (let i = 0; i < n; i++) { sh.lineTo(x(i), (i + 1) * r); sh.lineTo(x(i + 1), (i + 1) * r); }
+          sh.lineTo(w / 2, h - sv);
+          sh.lineTo(-w / 2 + (sv * w) / h, 0);
+          sh.lineTo(-w / 2, 0);
+          const geo = new THREE.ExtrudeGeometry(sh, { depth: it.d, bevelEnabled: false });
+          geo.translate(0, 0, -it.d / 2);
+          const flight = new THREE.Mesh(geo, mat);
+          flight.castShadow = flight.receiveShadow = true;
+          g.add(flight);
         }
       } else if (it.kind === 'turbine') {
         // спрямований вітряк на плиті 1×1
