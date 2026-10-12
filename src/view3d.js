@@ -12,7 +12,7 @@
   const ITEM_COLORS = {
     vehicle: 0xc9a46a, air: 0x9fb0c2, refine: 0xb5523b, water: 0x3f8fc9, storage: 0x8a8f5a,
     craft: 0x9b7fc4, power: 0xd6b13a, console: 0xe4572e, stairs: 0x8b8f96, turbine: 0xe3e7ec,
-    windtrap: 0xcfd6dc, furniture: 0x6b5b4b, pad: 0xf2f2f2, gate: 0x2dd4bf, light: 0xfff6d8, hatch: 0x30333a,
+    windtrap: 0xcfd6dc, furniture: 0x6b5b4b, pillar: 0x585c64, pad: 0xf2f2f2, gate: 0x2dd4bf, light: 0xfff6d8, hatch: 0x30333a,
   };
   const MINOR = /^(gallery|lantern|towerBalcony|pyr|lobby|rearBalcony|frontBalcony|court|rearDeck)/;
   // Відтінки стін за типом блоку: збоку видно, де закінчується один корпус і починається інший.
@@ -397,7 +397,7 @@
 
     // Пентащит у даху зі світною рамкою (світлики ангарів, дах гаража краулера).
     function skylightFrame(skyTiles, z) {
-      floorTiles(skyTiles, flat(z - 0.01), () => mats.shield, SS(), 0.006);
+      floorTiles(skyTiles, flat(z - 0.002), () => mats.shield, SS(), 0.006);
       for (const e of M.boundaryEdges(skyTiles)) {
         for (const [lo, hi] of wallFree(e.a, e.b, z, z + 0.14)) wallQuad(e.a, e.b, lo, hi, mats.frame);
         line(SS(), v3(e.a.x, e.a.y, z + 0.15), v3(e.b.x, e.b.y, z + 0.15));
@@ -519,7 +519,7 @@
     const labelPts = [];
     // base — сходи, люки, світло і пристрої на дахах; interior — техніка й обладнання всередині (можна вимкнути).
     const itemGroups = { base: new THREE.Group(), interior: new THREE.Group() };
-    const STRUCTURAL = ['stairs', 'hatch', 'light'];
+    const STRUCTURAL = ['stairs', 'hatch', 'light', 'pillar'];
     const hoverables = [];
 
     // Плитки даху, на яких лежить підлога приміщення вище, не малюються: дві площини майже в одній висоті мерехтять.
@@ -835,15 +835,18 @@
       seamMat.opacity = on ? 0.9 : state.colors ? 0.55 : 0.18;
     }
     // cut — верхня межа в рівнях; floor — нижня межа (-1 = показувати все нижче).
+    // Площина зрізу ніколи не лягає на плиту: зріз рівно на +5 чи +9 інакше рве підлогу в шум.
+    const CUT_EPS = 0.03;
     function setCut(levels, floor = -1) {
       state.cut = levels;
       state.floor = floor;
-      clipTop.constant = levels * LH;
+      const c = levels - CUT_EPS;
+      clipTop.constant = c * LH;
       clipBottom.constant = -floor * LH;
       // дах приміщення, яке перетинає зріз, ховаємо цілком
-      for (const R of roofGroups) R.g.visible = levels >= 98 || R.top <= levels + 1e-3;
+      for (const R of roofGroups) R.g.visible = levels >= 98 || R.top <= c;
       // плита приміщення вище зрізу (торці, днище ангара, консолі звисають нижче підлоги) — теж
-      for (const F of floorGroups) F.g.visible = levels >= 98 || F.z <= levels + 1e-3;
+      for (const F of floorGroups) F.g.visible = levels >= 98 || F.z <= c;
     }
     function setTileColors(on) {
       state.colors = on;

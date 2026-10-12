@@ -37,13 +37,18 @@ const warn = (msg) => { problems++; console.log('  ! ' + msg); };
 
 // 1. межі ділянок
 console.log('Межі ділянок (x -10..10, y 0..30):');
-for (const r of M.rooms)
+for (const r of M.rooms) {
+  let out = 0, worst = 0;
   for (const t of r.tiles)
-    for (const p of t.p)
-      if (p.x < M.bounds.x0 - EPS || p.x > M.bounds.x1 + EPS || p.y < M.bounds.y0 - EPS || p.y > M.bounds.y1 + EPS) {
-        warn(`${r.id}: вершина (${fmt(p.x)}, ${fmt(p.y)}) поза ділянками`);
-        break;
-      }
+    for (const p of t.p) {
+      const d = Math.max(M.bounds.x0 - p.x, p.x - M.bounds.x1, M.bounds.y0 - p.y, p.y - M.bounds.y1);
+      if (d > EPS) { out++; worst = Math.max(worst, d); }
+    }
+  if (!out) continue;
+  // в моделі виходить, у грі влазить (реальна ділянка трохи інша) — лише примітка
+  if (r.boundsInGame) console.log(`  · ${r.id}: за межею до ${worst.toFixed(2)} плитки — у грі влазить, перевірено`);
+  else warn(`${r.id}: ${out} вершин поза ділянками, до ${worst.toFixed(2)} плитки`);
+}
 
 // 2. перекриття в межах однієї приміщення і між приміщеннями з перетином по висоті
 console.log('Перекриття плиток:');
@@ -90,12 +95,16 @@ for (const r of M.rooms)
     if (bad.length) warn(`${r.id}: «${it.name}» виходить за підлогу (${bad.length} точ.)`);
   }
 
-// 3b. предмети в одному приміщенні не перетинаються (крім світла й люків)
+// 3b. предмети в одному приміщенні не перетинаються (крім світла й люків); марші один над одним — можна
+const zSpan = (it, r) => { const z = it.z !== undefined ? it.z : r.z0; return [z, z + it.h]; };
 for (const r of M.rooms) {
   const its = (r.items || []).filter((it) => !['light', 'hatch'].includes(it.kind));
   for (let i = 0; i < its.length; i++)
-    for (let j = i + 1; j < its.length; j++)
+    for (let j = i + 1; j < its.length; j++) {
+      const [a0, a1] = zSpan(its[i], r), [b0, b1] = zSpan(its[j], r);
+      if (a1 <= b0 + EPS || b1 <= a0 + EPS) continue;
       if (overlap(corners(its[i]), corners(its[j]))) warn(`${r.id}: «${its[i].name}» перетинає «${its[j].name}»`);
+    }
 }
 
 // 4. вітряки і пастки на дахах
