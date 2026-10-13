@@ -614,7 +614,8 @@
         const crown = r.crown ? r.crown.tiles : [];
         const crownKeys = new Set(crown.map(tileKey));
         const ch = r.crown ? r.crown.h : 0, zc = z1 + ch - RZ;
-        floorTiles(r.tiles.filter((t) => !crownKeys.has(tileKey(t)) && open(t)), flat(z1 - RZ), () => mats.roof, E(), 0.006);
+        // світлик без верхнього ярусу — прямо в нижньому даху (ангар орні з вильотом угору)
+        floorTiles(r.tiles.filter((t) => !crownKeys.has(tileKey(t)) && !sky.has(tileKey(t)) && open(t)), flat(z1 - RZ), () => mats.roof, E(), 0.006);
         if (r.eave) eave(r.tiles, z1, 0.32, 0.4, mats.frame);
         else slabSides(r.tiles, z1 - RZ, 0.3, mats.frame, 0.035);
         if (crown.length) {
