@@ -258,13 +258,13 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
   <header class="top">
     <div class="brand">
       <h1>Форпост у Глибокій пустелі</h1>
-      <p>Компактна база Харконненів для Deep Desert на одну ділянку 10×10: кругла вежа на 3 яруси — енергія і склад, переробка, ангар орні з пентащитом. Стиль той самий, що в <a href="https://claude.ai/artifact/815cTdAhrGpL2nmnndqsLi" target="_blank" rel="noopener">Цитаделі</a>: квадрати й трикутники, скошені карнизи, гора над брамою. Лише необхідне на тиждень до бурі Коріоліса.</p>
+      <p>Компактна база Харконненів для Deep Desert на одну ділянку 10×10: низька кругла будівля на 2 яруси, як будують у Deep Desert: унизу цех (енергія, вода, переробка, склад), нагорі ангар орні з пентащитом. Стиль той самий, що в <a href="https://claude.ai/artifact/815cTdAhrGpL2nmnndqsLi" target="_blank" rel="noopener">Цитаделі</a>: квадрати й трикутники, скошені карнизи, уступ над брамою. Лише необхідне на тиждень до бурі Коріоліса.</p>
     </div>
     <ul class="facts" aria-label="Основні цифри">
       <li><b>10 × 10</b> плит</li>
-      <li><b>3</b> яруси · дах <b>+9</b></li>
+      <li><b>2</b> яруси · дах <b>+5</b></li>
       <li>асаулт + скаут</li>
-      <li><b>12</b> вітряків · <b>2</b> вітропастки</li>
+      <li><b>14</b> вітряків · <b>2</b> вітропастки</li>
       <li><b>2</b> переробники спайсу</li>
     </ul>
   </header>
@@ -283,8 +283,7 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
         <div class="bar">
           <div class="seg" role="group" aria-label="Рівень">
             <button id="lvl-g" type="button" aria-pressed="true">Рівень 0</button>
-            <button id="lvl-u" type="button" aria-pressed="false">+3</button>
-            <button id="lvl-t" type="button" aria-pressed="false">+6</button>
+            <button id="lvl-t" type="button" aria-pressed="false">+2</button>
             <button id="lvl-r" type="button" aria-pressed="false">Дах</button>
           </div>
           <label class="chk"><input id="opt-items" type="checkbox" checked> Обладнання і техніка</label>
@@ -305,12 +304,11 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
           </div>
           <div class="seg" role="group" aria-label="Поверх">
             <button id="cut-g" type="button" aria-pressed="false">Рівень 0</button>
-            <button id="cut-u" type="button" aria-pressed="false">+3</button>
-            <button id="cut-t" type="button" aria-pressed="false">+6</button>
+            <button id="cut-t" type="button" aria-pressed="false">+2</button>
             <button id="cut-all" type="button" aria-pressed="true">Уся база</button>
           </div>
           <label class="chk"><input id="opt-iso" type="checkbox"> Лише цей поверх</label>
-          <label class="chk" for="cut">Зріз <input id="cut" type="range" min="0.5" max="12" step="0.25" value="12"> <span class="cutval" id="cut-val">усе</span></label>
+          <label class="chk" for="cut">Зріз <input id="cut" type="range" min="0.5" max="8" step="0.25" value="8"> <span class="cutval" id="cut-val">усе</span></label>
           <label class="chk"><input id="opt-found" type="checkbox"> Тільки плити підлоги</label>
           <label class="chk"><input id="opt-interior" type="checkbox" checked> Обладнання всередині</label>
           <label class="chk"><input id="opt-tiles" type="checkbox" checked> Кольори плиток</label>
@@ -350,23 +348,21 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
 
   <div class="notes">
     <section class="card" aria-labelledby="h-req">
-      <h2 id="h-req">Що тут є і чому</h2>
+      <h2 id="h-req">Версія 2 — нижче, як у Deep Desert</h2>
       <ol class="req">
-        <li><span class="n">1</span><span><b>Ангар орні нагорі.</b> У PvP-зоні техніку, що стоїть надворі, можуть забрати. Асаулт возить удвічі більше спайсу за скаута, скаут — розвідка і швидкі вильоти. Брама — пентащит на весь фронт і кутові грані.</span></li>
-        <li><span class="n">2</span><span><b>Переробка посередині.</b> Два середні переробники спайсу (у Deep Desert спайсу багато, а до бурі тиждень), середній рудний і хімічний. Контейнери під меланж і злитки поруч.</span></li>
-        <li><span class="n">3</span><span><b>Енергія, вода і склад унизу.</b> 4 паливні генератори з паливом, 8 середніх цистерн, 7 контейнерів, консоль біля дверей. На даху 12 вітряків і 2 великі вітропастки — живлення без палива.</span></li>
-        <li><span class="n">4</span><span><b>Без зайвого.</b> Ні фабрикаторів, ні гаражів, ні перегородок: крафт лишається на головній базі, а тут — видобуток і переробка. Будувати вдвічі дешевше, тож базу не шкода віддати бурі.</span></li>
+        <li><span class="n">1</span><span><b>2 яруси замість 3.</b> Енергія, вода, переробка і склад — в одному цеху внизу, нагорі тільки ангар. Так будують і в гайдах: генератори і переробка знизу, гараж орні зверху.</span></li>
+        <li><span class="n">2</span><span><b>Цех на 2 стіни.</b> Середнім переробникам спайсу і руди досить кімнати у 2 стіни, контейнер теж 2 стіни. Ангар лишився на 3 — як ангари орні на головній базі.</span></li>
+        <li><span class="n">3</span><span><b>Дах на +5 замість +9.</b> Гора над брамою стала одним уступом, найвища точка — +6 замість +11,2.</span></li>
       </ol>
     </section>
 
     <section class="card" aria-labelledby="h-routes">
       <h2 id="h-routes">Як ходити базою</h2>
       <ul class="plain">
-        <li><b>Земля.</b> Двері посередині фронту → консоль → генератори ліворуч, цистерни праворуч, контейнери ззаду. Перший проліт іде вздовж задньої стіни зліва направо на +3.</li>
-        <li><b>+3.</b> Вихід біля задньої стіни праворуч, на майданчику розворот, другий проліт іде назад справа наліво в ангар.</li>
-        <li><b>+6.</b> Виходиш ззаду ліворуч у службову смугу ангара: ремонт, контейнери, звідти третій проліт на дах. Орні стоять носом до брами.</li>
-        <li><b>Дах.</b> Люк ззаду посередині, вітряки й вітропастки обабіч і позаду гори.</li>
-        <li><b>Рейс зі спайсом.</b> Асаулт залітає в браму → вантаж у контейнери ангара або одразу проліт униз до переробників → меланж у контейнери біля фронту цеху.</li>
+        <li><b>Цех.</b> Двері посередині фронту → консоль → переробники спайсу і генератори ліворуч, руда, хімія і цистерни праворуч, контейнери посередині. Проліт вздовж задньої стіни зліва направо — в ангар.</li>
+        <li><b>Ангар.</b> Виходиш ззаду праворуч у службову смугу: ремонт, контейнери, звідти другий проліт справа наліво на дах. Орні стоять носом до брами.</li>
+        <li><b>Дах.</b> Люк ззаду посередині, вітряки й вітропастки обабіч і позаду уступу.</li>
+        <li><b>Рейс зі спайсом.</b> Асаулт залітає в браму → вантаж у контейнери ангара або одразу проліт униз до переробників → меланж у контейнери посередині цеху.</li>
       </ul>
     </section>
 
@@ -374,14 +370,15 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
       <h2 id="h-assume">Розміри й питання</h2>
       <ul class="plain">
         <li>Корпус — ядро 8×7 квадратів, по колу ряд трикутників і кутові вставки. До межі ділянки по 0,13 плити з кожного боку: перший фундамент став точно по центру.</li>
-        <li>Яруси по 3 стіни. Кожна стіна стоїть на стіні нижче, перегородок немає: до найближчої стіни від будь-якої плити не більше 5 — у межах стабільності квадратів (6).</li>
-        <li>Сходи — по 3 плити на 3 рівні (1 плита на рівень), один над одним у розворот уздовж задньої стіни.</li>
-        <li>Асаулт ≈ 4×2,7, скаут ≈ 3,6×2,4, як на головній базі. <b>Перевір у грі:</b> чи стають обидва поруч — асаултові потрібні широкі крила. Якщо ні — у ангарі лишається асаулт, скаут стоїть на даху або вдома.</li>
-        <li>Середній переробник спайсу взято ≈ 2×1,6 заввишки до 3 стін — <b>звір розмір у грі</b>. Великий (3×2, 5 стін) сюди не влазить за висотою.</li>
-        <li>Кількість генераторів у гайдах різна (від 7 до 14). Тут 4 паливні + 12 вітряків; якщо бракує — генератори додаються на місце кількох цистерн.</li>
-        <li>Межа висоти в Deep Desert мені невідома: база сягає +11 разом із горою. Буря Коріоліса раз на тиждень зносить усе — розбирай базу до неї, щоб повернути ресурси.</li>
+        <li>Кожна стіна ангара стоїть на стіні цеху, перегородок немає: до найближчої стіни від будь-якої плити не більше 5 — у межах стабільності квадратів (6).</li>
+        <li>Сходи — 1 плита на рівень: 2 плити в ангар, 3 плити на дах.</li>
+        <li>Асаулт ≈ 4×2,7, скаут ≈ 3,6×2,4, як на головній базі. <b>Перевір у грі:</b> чи стають обидва поруч — у асаулта широкі крила. Якщо ні — у ангарі лишається асаулт.</li>
+        <li>Середній переробник спайсу взято ≈ 2×1,6 — <b>звір розмір у грі</b>. Висота 2 стіни — за гайдом KeenGamer.</li>
+        <li>Генераторів у гайдах від 7 до 14. Тут 4 паливні + 14 вітряків; якщо бракує — генератори стають на місце кількох цистерн.</li>
+        <li>У гайдах бази в DD ще менші — 3×3 на два поверхи для одного-двох гравців. Тут 10×10, бо треба вмістити два орні й два переробники спайсу.</li>
+        <li>Буря Коріоліса раз на тиждень зносить усе — розбирай базу до неї, щоб повернути ресурси.</li>
       </ul>
-      <p class="src">Джерела: <a href="https://www.method.gg/dune-awakening/building-in-the-deep-desert-in-dune-awakening-a-full-guide" target="_blank" rel="noopener">Method.gg: будівництво в Deep Desert</a> · <a href="https://deltiasgaming.com/?p=290858" target="_blank" rel="noopener">Deltia's: база в Deep Desert</a> · <a href="https://www.keengamer.com/articles/guides/how-to-survive-solo-in-the-deep-desert-dune-awakening/section/11-full-base-resource-checklist-for-solo-refining/" target="_blank" rel="noopener">KeenGamer: чекліст бази</a> · <a href="https://www.keengamer.com/articles/guides/how-to-survive-solo-in-the-deep-desert-dune-awakening/section/8-weekly-reset-strategy-coriolis-storm/" target="_blank" rel="noopener">KeenGamer: тижневе скидання</a></p>
+      <p class="src">Джерела: <a href="https://www.keengamer.com/articles/guides/how-to-build-the-perfect-base-dune-awakening/" target="_blank" rel="noopener">KeenGamer: висота кімнат під переробники</a> · <a href="https://www.mmogah.com/news/dune-awakening/dune-awakening-deep-desert-survival-guide-base-building-resource-farming-strategy" target="_blank" rel="noopener">MMOGah: база 3×3 у DD</a> · <a href="https://www.method.gg/dune-awakening/building-in-the-deep-desert-in-dune-awakening-a-full-guide" target="_blank" rel="noopener">Method.gg: будівництво в DD</a> · <a href="https://www.keengamer.com/articles/guides/how-to-survive-solo-in-the-deep-desert-dune-awakening/section/8-weekly-reset-strategy-coriolis-storm/" target="_blank" rel="noopener">KeenGamer: тижневе скидання</a> · <a href="https://steamcommunity.com/app/1172710/discussions/0/563626883365749889/" target="_blank" rel="noopener">Steam: ангар орні</a></p>
     </section>
   </div>
 

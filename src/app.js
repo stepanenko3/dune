@@ -18,6 +18,7 @@
     coords: store.get('coords', false),
     highlight: null,
   };
+  if (!M.levels.some((l) => l.key === state.level)) state.level = 'g'; // рівня з іншої версії бази вже немає
   let view = null;
 
   const { G, CAR, TOP } = M.heights;
@@ -33,7 +34,7 @@
   };
 
   function press(ids, active) {
-    for (const id of ids) $(id).setAttribute('aria-pressed', String(id === active));
+    for (const id of ids) if ($(id)) $(id).setAttribute('aria-pressed', String(id === active)); // кнопок рівнів може бути менше
   }
 
   function renderPlan() {
@@ -288,7 +289,7 @@
   // ---------- події ----------
   $('tab-plan').addEventListener('click', () => setTab('plan'));
   $('tab-3d').addEventListener('click', () => setTab('3d'));
-  for (const l of ['g', 'u', 't', 'r']) $('lvl-' + l).addEventListener('click', () => setLevel(l));
+  for (const l of ['g', 'u', 't', 'r']) if ($('lvl-' + l)) $('lvl-' + l).addEventListener('click', () => setLevel(l));
   $('opt-interior').addEventListener('change', (e) => view && view.setInterior(e.target.checked));
   $('opt-found').addEventListener('change', (e) => { if (view) view.setFoundation(e.target.checked); setCut(Number($('cut').value)); });
   $('opt-items').addEventListener('change', (e) => { state.items = e.target.checked; renderPlan(); });
