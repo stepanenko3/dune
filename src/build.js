@@ -39,6 +39,7 @@
 
   // До якого етапу належить приміщення.
   function stageOf(r) {
+    if (r.group === 'crown') return 'tops'; // піраміда / гора: і стіни, і дахи — в останньому етапі
     if (r.group === 'air' && r.z0 === G) return 'orni';
     if (r.z0 === 0) return 'ground';
     if (r.z0 < CAR) return 'upper';
@@ -46,7 +47,7 @@
     return 'tops';
   }
 
-  const STAGES = [
+  const STAGES_BASE = [
     { id: 'found', name: 'Фундамент', note: 'Спершу весь рівень 0 одним шаром: спереду квадрати (гаражі, заїзд, цехи, перед залу), ззаду трикутники (фаска залу, задній зал, крила). Стик — одна горизонтальна лінія на 17-му ряду від фронту.' },
     { id: 'ground', name: 'Стіни першого поверху', note: 'Гаражі, заїзд, Великий зал до +5, склад (лівий блок), цех меланжу (правий), рудний цех (задній зал) і крила — 5 рівнів. Дверні прорізи одразу, щоб не перебудовувати.' },
     { id: 'deck1', name: 'Перекриття +5', note: 'Підлога переходу над заїздом, тераса на даху гаража багі, галерея залу, підлоги других поверхів блоків і задньої галереї, дахи гаража краулера (з пентащитом) і крил (під прибудовами дах крила і є їхньою підлогою).' },
@@ -55,6 +56,9 @@
     { id: 'car', name: 'Дахи +9 і ангар грузових', note: 'Дахи залів, блоків і прибудов на +9 — вони ж підлога ангара грузових, окремої підлоги немає (проріз над парадними сходами). Стіни ангара — тільки над стінами нижче. Колона по центру біля заднього порталу, потім дах із трикутників і задній майданчик.' },
     { id: 'tops', name: 'Вежі, гора, балкони, місток', note: 'Вежі від +9 на дахах блоків, ступінчаста гора на даху ангара грузових, балкони веж і місток на +15, ліхтарі.' },
   ];
+
+  // інша база може перейменувати етапи й дати свої пояснення (M.ui.stages); порожні етапи не показуються
+  const STAGES = STAGES_BASE.map((s) => ({ ...s, ...((M.ui && M.ui.stages && M.ui.stages[s.id]) || {}) }));
 
   function blank() { const o = {}; for (const k of KINDS) o[k.id] = 0; return o; }
 
@@ -150,14 +154,15 @@
 
     const total = blank();
     for (const s of STAGES) for (const k of KINDS) total[k.id] += st[s.id][k.id];
-    return { stages: STAGES.map((s) => ({ ...s, n: st[s.id] })), total };
+    const used = (s) => KINDS.some((k) => st[s.id][k.id]);
+    return { stages: STAGES.filter(used).map((s) => ({ ...s, n: st[s.id] })), total };
   }
 
   // Пристрої й обладнання — окремий етап, без кошторису плит.
   function equipment() {
     const m = new Map();
     const put = (n) => m.set(n, (m.get(n) || 0) + 1);
-    for (const it of M.roofItems) put(it.name);
+    for (const it of M.roofItems) if (it.kind !== 'hatch') put(it.name);
     for (const r of M.rooms) for (const it of r.items || []) if (!['stairs', 'hatch', 'light', 'furniture', 'vehicle', 'air', 'pillar'].includes(it.kind)) put(it.full || it.name);
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
   }

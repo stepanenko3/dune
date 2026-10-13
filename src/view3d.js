@@ -20,6 +20,8 @@
 
   function create(container, opts = {}) {
     const THREE = root.THREE;
+    // центр і розмір ділянки: камери, сонце, земля і сітка рахуються від них
+    const B = M.bounds, CX = (B.x0 + B.x1) / 2, CY = (B.y0 + B.y1) / 2;
     const v3 = (x, y, z) => new THREE.Vector3(x, z * LH, -y);
     const top = (r) => r.z0 + r.h;
     const tileKey = (t) => M.centroid(t.p).x.toFixed(3) + ',' + M.centroid(t.p).y.toFixed(3);
@@ -41,7 +43,7 @@
     controls.minDistance = 5;
     controls.maxDistance = 150;
 
-    const VIEWS = {
+    const VIEWS = (M.ui && M.ui.views) || {
       quarter: { pos: [-30, 27, 18], target: [0, 3.5, -14] },
       front: { pos: [0, 8, 26], target: [0, 5, -10] },
       back: { pos: [12, 22, -60], target: [0, 5, -16] },
@@ -63,7 +65,7 @@
     sun.shadow.mapSize.set(2048, 2048);
     Object.assign(sun.shadow.camera, { left: -36, right: 36, top: 36, bottom: -36, near: 1, far: 160 });
     sun.shadow.bias = -0.0008;
-    sun.target.position.set(0, 0, -15);
+    sun.target.position.set(CX, 0, -CY);
     scene.add(sun, sun.target);
     const fill = new THREE.DirectionalLight(0xc9d6ff, 0.32);
     fill.position.set(30, 22, -60);
@@ -801,12 +803,13 @@
     // земля, сітка і ділянки
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), mats.ground);
     ground.rotation.x = -Math.PI / 2;
-    ground.position.set(0, -0.06, -15);
+    ground.position.set(CX, -0.06, -CY);
     ground.receiveShadow = true;
     scene.add(ground);
     const gridArr = [];
-    for (let x = -12; x <= 12; x++) line(gridArr, v3(x, -3, 0), v3(x, 33, 0));
-    for (let y = -3; y <= 33; y++) line(gridArr, v3(-12, y, 0), v3(12, y, 0));
+    const gx0 = B.x0 - 2, gx1 = B.x1 + 2, gy0 = B.y0 - 3, gy1 = B.y1 + 3;
+    for (let x = gx0; x <= gx1; x++) line(gridArr, v3(x, gy0, 0), v3(x, gy1, 0));
+    for (let y = gy0; y <= gy1; y++) line(gridArr, v3(gx0, y, 0), v3(gx1, y, 0));
     const grid = mkLines(gridArr, new THREE.LineBasicMaterial({ color: 0x8f7457, transparent: true, opacity: 0.28 }));
     grid.position.y = -0.005;
     scene.add(grid);

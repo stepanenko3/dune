@@ -1,7 +1,7 @@
 // Перевірка моделі: межі ділянок, перекриття плиток, предмети всередині приміщень.
-// Запуск: node tools/check-model.js
+// Запуск: node tools/check-model.js [src/model-dd.js]
 'use strict';
-const M = require('../src/model.js');
+const M = require(process.argv[2] ? require('path').resolve(process.argv[2]) : '../src/model.js');
 
 const EPS = 1e-6;
 const fmt = (n) => n.toFixed(2);
@@ -36,7 +36,7 @@ let problems = 0;
 const warn = (msg) => { problems++; console.log('  ! ' + msg); };
 
 // 1. межі ділянок
-console.log('Межі ділянок (x -10..10, y 0..30):');
+console.log(`Межі ділянок (x ${M.bounds.x0}..${M.bounds.x1}, y ${M.bounds.y0}..${M.bounds.y1}):`);
 for (const r of M.rooms) {
   let out = 0, worst = 0;
   for (const t of r.tiles)

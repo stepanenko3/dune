@@ -5,8 +5,9 @@
 (function (root) {
   'use strict';
   const M = root.BASE;
-  const S = 26; // пікселів на плиту
-  const X0 = -11.6, X1 = 11.6, Y0 = -2.6, Y1 = 31.2;
+  const B = M.bounds, UI = M.ui || {};
+  const S = UI.planScale || 26; // пікселів на плиту
+  const X0 = B.x0 - 1.6, X1 = B.x1 + 1.6, Y0 = B.y0 - 2.6, Y1 = B.y1 + 1.2;
   const W = (X1 - X0) * S, H = (Y1 - Y0) * S;
   const px = (x) => ((x - X0) * S).toFixed(1);
   const py = (y) => ((Y1 - y) * S).toFixed(1);
@@ -247,39 +248,48 @@
       if (sel.roofMode) {
         const tag = (x, y, t1, t2) =>
           `<text class="lbl" x="${px(x)}" y="${py(y)}">${esc(t1)}</text><text class="lbl-sub" x="${px(x)}" y="${py(y - 0.55)}">${esc(t2)}</text>`;
-        s += tag(0, -0.9, 'Вітряки ×20 (1×1)', 'за горою на даху ангара грузових +13');
-        s += tag(0, 30.75, 'Вітропастки ×15 (1,5×1,5)', 'дахи бічних блоків +9, дах гаража багі +5');
+        const tags = UI.roofTags || [
+          [0, -0.9, 'Вітряки ×20 (1×1)', 'за горою на даху ангара грузових +13'],
+          [0, 30.75, 'Вітропастки ×15 (1,5×1,5)', 'дахи бічних блоків +9, дах гаража багі +5'],
+        ];
+        for (const t of tags) s += tag(...t);
       }
       s += '</g>';
     }
 
-    // координати клітинок (опція): стовпці A–T зліва направо, ряди 1–30 від фронту
+    // координати клітинок (опція): стовпці A… зліва направо, ряди 1… від фронту
+    const nx = B.x1 - B.x0, ny = B.y1 - B.y0;
     if (opts.coords) {
       s += '<g class="coords">';
-      for (let i = 0; i < 20; i++) {
-        const c = String.fromCharCode(65 + i), x = px(-10 + i + 0.5);
-        s += `<text x="${x}" y="${py(30.35)}">${c}</text><text x="${x}" y="${py(-0.75)}">${c}</text>`;
+      for (let i = 0; i < nx; i++) {
+        const c = String.fromCharCode(65 + i), x = px(B.x0 + i + 0.5);
+        s += `<text x="${x}" y="${py(B.y1 + 0.35)}">${c}</text><text x="${x}" y="${py(B.y0 - 0.75)}">${c}</text>`;
       }
-      for (let j = 0; j < 30; j++) {
-        const y = py(j + 0.5);
-        s += `<text x="${px(-10.55)}" y="${y}">${j + 1}</text><text x="${px(10.55)}" y="${y}">${j + 1}</text>`;
+      for (let j = 0; j < ny; j++) {
+        const y = py(B.y0 + j + 0.5);
+        s += `<text x="${px(B.x0 - 0.55)}" y="${y}">${j + 1}</text><text x="${px(B.x1 + 0.55)}" y="${y}">${j + 1}</text>`;
       }
-      for (let x = -10; x <= 10; x++) s += `<line x1="${px(x)}" y1="${py(0)}" x2="${px(x)}" y2="${py(30)}"/>`;
-      for (let y = 0; y <= 30; y++) s += `<line x1="${px(-10)}" y1="${py(y)}" x2="${px(10)}" y2="${py(y)}"/>`;
+      for (let x = B.x0; x <= B.x1; x++) s += `<line x1="${px(x)}" y1="${py(B.y0)}" x2="${px(x)}" y2="${py(B.y1)}"/>`;
+      for (let y = B.y0; y <= B.y1; y++) s += `<line x1="${px(B.x0)}" y1="${py(y)}" x2="${px(B.x1)}" y2="${py(y)}"/>`;
       s += '</g>';
     }
 
-    // рамки ділянок
+    // рамки ділянок з точками на кутах
     s += '<g class="claims">';
-    for (const c of M.claims) s += `<rect x="${px(c.x)}" y="${py(c.y + c.d)}" width="${c.w * S}" height="${c.d * S}"/>`;
-    for (const x of [-10, 0, 10]) for (const y of [0, 10, 20, 30]) s += `<circle cx="${px(x)}" cy="${py(y)}" r="4"/>`;
+    const dots = new Set();
+    for (const c of M.claims) {
+      s += `<rect x="${px(c.x)}" y="${py(c.y + c.d)}" width="${c.w * S}" height="${c.d * S}"/>`;
+      for (const [x, y] of [[c.x, c.y], [c.x + c.w, c.y], [c.x, c.y + c.d], [c.x + c.w, c.y + c.d]]) dots.add(x + ',' + y);
+    }
+    for (const d of dots) { const [x, y] = d.split(',').map(Number); s += `<circle cx="${px(x)}" cy="${py(y)}" r="4"/>`; }
     s += '</g>';
 
-    const annoY = sel.roofMode ? -2.1 : -1.5;
+    const annoY = sel.roofMode ? B.y0 - 2.1 : B.y0 - 1.5;
+    const nc = M.claims.length;
     s += `<g class="anno">
-      ${sel.roofMode ? '' : `<text x="${px(0)}" y="${py(-1.5)}" class="front">▼ ФРОНТ · виїзд</text>`}
-      <text x="${px(-10)}" y="${py(annoY)}" text-anchor="start">20 × 30 плит</text>
-      <text x="${px(10)}" y="${py(annoY)}" text-anchor="end">2 × 3 ділянки</text>
+      ${sel.roofMode ? '' : `<text x="${px((B.x0 + B.x1) / 2)}" y="${py(B.y0 - 1.5)}" class="front">▼ ФРОНТ · виїзд</text>`}
+      <text x="${px(B.x0)}" y="${py(annoY)}" text-anchor="start">${nx} × ${ny} плит</text>
+      <text x="${px(B.x1)}" y="${py(annoY)}" text-anchor="end">${UI.claimsText || (nc === 1 ? '1 ділянка' : `${nc} ділянок`)}</text>
     </g>`;
     return s + '</svg>';
   }
@@ -287,6 +297,14 @@
   // Підрахунок плит для кошторису.
   function pieceCounts() {
     const rows = [];
+    if (UI.pieceRows) {
+      for (const [name, pick] of UI.pieceRows) {
+        let s = 0, t = 0;
+        for (const tiles of pick(M.rooms)) for (const x of tiles) x.k === 's' ? s++ : t++;
+        rows.push({ name, s, t });
+      }
+      return rows;
+    }
     const add = (name, rooms) => {
       let s = 0, t = 0;
       for (const r of rooms) for (const x of r.tiles) x.k === 's' ? s++ : t++;

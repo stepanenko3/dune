@@ -2,10 +2,12 @@
 (function () {
   'use strict';
   const M = window.BASE;
+  const UI = M.ui || {};
   const $ = (id) => document.getElementById(id);
+  const PFX = UI.store || 'citadel:';
   const store = {
-    get(k, d) { try { const v = localStorage.getItem('citadel:' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
-    set(k, v) { try { localStorage.setItem('citadel:' + k, JSON.stringify(v)); } catch (e) { /* без збереження */ } },
+    get(k, d) { try { const v = localStorage.getItem(PFX + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(PFX + k, JSON.stringify(v)); } catch (e) { /* без збереження */ } },
   };
 
   const state = {
@@ -19,11 +21,11 @@
   let view = null;
 
   const { G, CAR, TOP } = M.heights;
-  const ALL = 22; // зріз «уся база»
+  const ALL = UI.all || 22; // зріз «уся база»
   const levelOf = (r) => (r.z0 < G ? 'g' : r.z0 < CAR ? 'u' : r.z0 < TOP ? 't' : 'r');
   const listed = (r) => r.group !== 'crown';
-  const LEVEL_NAMES = { g: 'Рівень 0 · земля', u: 'Рівень +5 · ангари орні, перехід, другі поверхи', t: 'Рівень +9 · ангар грузових, вежі', r: 'Дах · балкони веж, місток' };
-  const CAPTIONS = {
+  const LEVEL_NAMES = UI.levelNames || { g: 'Рівень 0 · земля', u: 'Рівень +5 · ангари орні, перехід, другі поверхи', t: 'Рівень +9 · ангар грузових, вежі', r: 'Дах · балкони веж, місток' };
+  const CAPTIONS = UI.captions || {
     g: '<span><strong>Рівень 0.</strong> Спереду заїзд і гаражі (заїзди 2 плити на рівні підлоги). У центрі Великий зал із фабрикаторами і парадними сходами, обабіч — головний склад (лівий блок, контейнери вздовж проходу) і цех меланжу (правий). На тилу рудний цех і крила: генераторна і хімічна, задній вхід заглиблено на 2 ряди. Пунктир — ангари орні над обривом, під ними порожньо. Стрілки — сходи вгору.</span>',
     u: '<span><strong>Рівень +5.</strong> Ангари орні на тилу під кутом звисають над обривом: бокси з пентащитів, виліт назад і вбік; зліва асаултів — 6 плит на всю грань (один асаулт), справа скаутів — 5 плит, зсунутий на плиту до центру. Між ними задня галерея і круглий балкон над заднім входом, обабіч — прибудови над крилами. З галереї залу біля переходу по центру — другий марш парадних сходів в ангар грузових. Спереду перехід над заїздом, обабіч залу — водний блок і майстерня, звідки сходи у вежі.</span>',
     t: '<span><strong>Рівень +9.</strong> Ангар грузових на 2 місця поруч стоїть на дахах залу, заднього залу і прибудов — кожна стіна над стіною нижче. Вхід лише парадними сходами по центру. Колона по центру біля заднього порталу тримає трикутний дах. Спереду 11 плит і виліт під містком, посередині розширення до 14, ззаду портал 9 плит на задній майданчик. Вежі починаються тут, на дахах бічних блоків.</span>',
@@ -57,6 +59,7 @@
     const box = $('rooms');
     box.innerHTML = '';
     for (const l of ['g', 'u', 't', 'r']) {
+      if (!M.rooms.some((x) => listed(x) && levelOf(x) === l)) continue;
       const h = document.createElement('div');
       h.className = 'grp';
       h.textContent = LEVEL_NAMES[l];
@@ -159,6 +162,7 @@
     const B = window.BUILD, bud = B.budget(BUILD_RES, lim);
     const rows = [];
     for (const k of B.KINDS) {
+      if (!BUILD_RES.total[k.id]) continue; // деталей цього типу на базі немає
       rows.push({ id: k.id, name: k.name, n: BUILD_RES.total[k.id], price: k.id });
       if (k.id === 'ftri' && lim.found > 0) {
         rows.push({ id: 'rsq', name: `Запас фундаментів, квадрат (×${fmtN(lim.found)})`, n: bud.resSq, price: 'fsq', sub: true });
@@ -242,7 +246,7 @@
 
   // ---------- 3D ----------
   // Поверхи в 3D: верхня межа зрізу і підлога поверху (для режиму «лише цей поверх»).
-  const CUTS = { 'cut-g': [4.9, 0], 'cut-u': [8.95, G], 'cut-t': [12.55, CAR], 'cut-all': [ALL, 0] };
+  const CUTS = UI.cuts ? { ...UI.cuts, 'cut-all': [ALL, 0] } : { 'cut-g': [4.9, 0], 'cut-u': [8.95, G], 'cut-t': [12.55, CAR], 'cut-all': [ALL, 0] };
   function floorFor(v) {
     // «тільки плити» завжди показує один поверх (крім «уся база»)
     if ((!$('opt-iso').checked && !$('opt-found').checked) || v >= ALL) return -1;

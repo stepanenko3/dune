@@ -247,6 +247,7 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
 .plain li::marker { color: var(--muted); }
 .src { margin-top: 12px; font-size: 12.5px; color: var(--muted); }
 .src a { color: inherit; }
+.brand p a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
 </style>
 <!-- page:head-end -->
@@ -257,7 +258,7 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
   <header class="top">
     <div class="brand">
       <h1>Цитадель Харконненів</h1>
-      <p>База для Dune: Awakening на 6 ділянок 10×10. Тільки квадратні й трикутні плити. Великий зал — витягнутий шестикутник, ангари орні з пентащитів на тилу під кутом над обривом, заокруглений заїзд із переходом над ним, широкий наскрізний ангар грузових із пірамідою, вежі з +9 з балконами й містком-брамою. Версія 12.</p>
+      <p>База для Dune: Awakening на 6 ділянок 10×10. Тільки квадратні й трикутні плити. Великий зал — витягнутий шестикутник, ангари орні з пентащитів на тилу під кутом над обривом, заокруглений заїзд із переходом над ним, широкий наскрізний ангар грузових із пірамідою, вежі з +9 з балконами й містком-брамою. Версія 12. Компактний форпост для Глибокої пустелі — <a href="https://claude.ai/artifact/FSzj8XtcywSUXteB8G4Ajs" target="_blank" rel="noopener">окремою сторінкою</a>.</p>
     </div>
     <ul class="facts" aria-label="Основні цифри">
       <li><b>20 × 30</b> плит</li>
@@ -423,6 +424,7 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="src/geom.js"></script>
 <script src="src/model.js"></script>
 <script src="src/plan2d.js"></script>
 <script src="src/build.js"></script>

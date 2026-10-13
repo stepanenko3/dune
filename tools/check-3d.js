@@ -1,5 +1,5 @@
 // 3D без мерехтіння: шукає пари трикутників, що лежать в одній (або майже в одній) площині і перекриваються.
-// Запуск: THREE_DIR=<шлях до three@0.128.0> node tools/check-3d.js. Очікується «overlapping pairs 0».
+// Запуск: THREE_DIR=<шлях до three@0.128.0> node tools/check-3d.js [dd.html]. Очікується «overlapping pairs 0».
 const path = require('path'); const { chromium } = require('playwright');
 (async () => {
   const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
@@ -9,7 +9,7 @@ const path = require('path'); const { chromium } = require('playwright');
     if (u.includes('three@0.128.0/')) return r.fulfill({ path: path.join(process.env.THREE_DIR, u.split('three@0.128.0/')[1]), contentType: 'application/javascript' });
     return r.abort(); });
   await p.addInitScript(() => { try { localStorage.clear(); } catch (e) {} });
-  await p.goto('file://' + path.resolve(__dirname, '..', 'index.html'));
+  await p.goto('file://' + path.resolve(__dirname, '..', process.argv[2] || 'index.html'));
   await p.evaluate(() => window.CITADEL.setTab('3d'));
   await p.waitForTimeout(800);
   const res = await p.evaluate(() => {
