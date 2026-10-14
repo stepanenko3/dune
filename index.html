@@ -70,7 +70,10 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .brand h1 { font: 700 clamp(22px, 3.2vw, 34px)/1.1 var(--font-display); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
 .brand p { margin: 6px 0 0; color: var(--muted); max-width: 70ch; }
 .base-tabs { margin-bottom: 14px; }
-.base-tabs button { padding: 9px 14px; font-size: 13.5px; }
+.brand { min-width: 0; max-width: 100%; }
+.seg.base-tabs { max-width: 100%; overflow-x: auto; }
+.seg.base-tabs button { padding: 9px 14px; font-size: 13.5px; }
+@media (max-width: 480px) { .seg.base-tabs button { padding: 8px 9px; font-size: 12.5px; } }
 .facts { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding: 0; list-style: none; font: 500 13px/1.4 var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
 .facts b { color: var(--ink); font-weight: 600; }
 
@@ -247,6 +250,39 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
 .lc-what { font-size: 12px; line-height: 1.45; color: var(--muted); }
 .src { margin-top: 12px; font-size: 12.5px; color: var(--muted); }
 .src a { color: inherit; }
+/* план розвитку */
+.roadmap { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 1020px) { .roadmap { grid-template-columns: minmax(0, 1fr); } }
+.rm-now h2, .rm-total h2 { font-size: 15px; margin-bottom: 10px; }
+.rm-now h3 { margin: 12px 0 4px; font: 600 11px/1 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.rm-now ul { margin: 0; padding-left: 16px; display: grid; gap: 4px; font-size: 13.5px; }
+.rm-now b { font-family: var(--font-mono); font-weight: 600; }
+.muted { color: var(--muted); }
+.rm-note { margin: 14px 0 0; padding: 10px 12px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
+.roadmap > * { min-width: 0; }
+.rm-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr)); gap: 16px; }
+.rm-step { padding: 16px 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.rm-head { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+.rm-head h3 { flex: 1 1 14ch; min-width: 0; margin: 0; font: 700 14px/1.3 var(--font-display); text-wrap: balance; }
+.rm-n { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: var(--surface); font: 600 13px/1 var(--font-mono); }
+.chip { padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.chip.ok { color: var(--ok); background: var(--ok-bg); }
+.chip.est { color: var(--muted); background: var(--surface-2); border: 1px solid var(--line); }
+.rm-why { margin: 0; font-size: 13.5px; }
+table.rm-cost { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+table.rm-cost td, table.rm-cost th { padding: 4px 0; border-bottom: 1px solid var(--line); text-align: right; }
+table.rm-cost th { font-size: 11.5px; font-weight: 600; color: var(--muted); }
+table.rm-cost td:first-child { text-align: left; padding-right: 10px; }
+table.rm-cost td + td { padding-left: 10px; font-family: var(--font-mono); }
+table.rm-cost tr.sum td { font-weight: 700; }
+.rm-meta { margin: 0; font-size: 12.5px; color: var(--muted); }
+.rm-total { grid-column: 1 / -1; padding: 16px 20px; }
+.rm-big { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px 24px; }
+.rm-big b { display: block; font: 600 20px/1.2 var(--font-mono); font-variant-numeric: tabular-nums; }
+.rm-big span { font-size: 12.5px; color: var(--muted); }
+.howto { margin: 0 0 14px; padding: 12px 14px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); font-size: 13.5px; }
+.howto h3 { margin: 0 0 6px; font-size: 13.5px; }
+.howto ol { margin: 0; padding-left: 18px; display: grid; gap: 5px; }
 .versions { padding: 18px 20px; }
 .versions h2 { font-size: 15px; margin-bottom: 12px; }
 .vcols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px 32px; align-items: start; }
@@ -276,6 +312,7 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
       <div class="seg tabs base-tabs" role="group" aria-label="База">
         <button id="base-main" type="button" aria-pressed="true">Sandwalkers Main</button>
         <button id="base-dd" type="button" aria-pressed="false">Sandwalkers DD</button>
+        <button id="base-plan" type="button" aria-pressed="false">План розвитку</button>
       </div>
       <h1 id="base-title">Sandwalkers Main</h1>
       <p id="base-lead"></p>
@@ -283,7 +320,7 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
     <ul class="facts" id="base-facts" aria-label="Основні цифри"></ul>
   </header>
 
-  <div class="workspace">
+  <div class="workspace" data-view="base">
     <section class="stage" aria-label="Перегляд бази">
       <div class="bar">
         <div class="seg tabs" role="group" aria-label="Вид">
@@ -355,7 +392,7 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
     </aside>
   </div>
 
-  <div class="build">
+  <div class="build" data-view="base">
     <section class="card lim" aria-labelledby="h-lim">
       <div class="lim-head">
         <h2 id="h-lim">Будівельні елементи</h2>
@@ -374,15 +411,100 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
           </section>
     <section class="card" aria-labelledby="h-build">
       <h2 id="h-build">План будівництва</h2>
+      <div class="howto" id="howto" hidden></div>
       <ol class="steps" id="steps"></ol>
     </section>
     <section class="card" aria-labelledby="h-cost">
       <h2 id="h-cost">Кошторис</h2>
       <table class="cost" id="cost"></table>
       <p class="small" id="cost-note"></p>
-      <p class="src">Ціни сардаукарського набору: <a href="https://dune.gaming.tools/buildables/sardaukar_foundation" target="_blank" rel="noopener">фундамент</a> · <a href="https://dune.gaming.tools/buildables/sardaukar_wall_02" target="_blank" rel="noopener">стіна</a> · <a href="https://dune.gaming.tools/buildables/sardaukar_column" target="_blank" rel="noopener">колона</a> · <a href="https://awakening.wiki/Sardaukar_Building_Set" target="_blank" rel="noopener">увесь набір</a> · <a href="https://dune.gaming.tools/placeables/choam_pentashieldsurfacevertical_placeable" target="_blank" rel="noopener">пентащит</a> · <a href="https://www.method.gg/dune-awakening/building-in-the-deep-desert-in-dune-awakening-a-full-guide" target="_blank" rel="noopener">−50% у Deep Desert</a></p>
+      <p class="src">Ціни сардаукарського набору (актуальні на жовтень 2026): <a href="https://dune.gaming.tools/buildables/sardaukar_foundation" target="_blank" rel="noopener">фундамент</a> · <a href="https://dune.gaming.tools/buildables/sardaukar_wall_02" target="_blank" rel="noopener">стіна</a> · <a href="https://dune.gaming.tools/buildables/sardaukar_column" target="_blank" rel="noopener">колона</a> · <a href="https://awakening.wiki/Sardaukar_Building_Set" target="_blank" rel="noopener">увесь набір</a> · <a href="https://dune.gaming.tools/placeables/choam_pentashieldsurfacevertical_placeable" target="_blank" rel="noopener">пентащит</a> · <a href="https://www.method.gg/dune-awakening/building-in-the-deep-desert-in-dune-awakening-a-full-guide" target="_blank" rel="noopener">−50% у Deep Desert</a></p>
     </section>
   </div>
+
+  <section class="roadmap" id="roadmap" data-view="plan" hidden aria-label="План розвитку">
+    <aside class="card rm-now">
+      <h2>Зараз є</h2>
+      <h3>Переробка</h3>
+      <ul>
+        <li>Середній переробник меланжу <b>×1</b></li>
+        <li>Середній переробник руди <b>×4</b></li>
+        <li>Середній хімічний <b>×2</b> <span class="muted">— більших немає</span></li>
+      </ul>
+      <h3>Техніка</h3>
+      <ul>
+        <li>Скаут Mk4, скаут Mk5</li>
+        <li>Асаулт Mk5</li>
+        <li>Багі Mk5, піскоцикл</li>
+      </ul>
+      <p class="rm-note">Цього тижня діє указ Ландсрааду: −25% на вхідні ресурси переробки. Середній бере 563 піску на 10 меланжу замість 750 і 5 титану на злиток пластану замість 6. Будівництво указ не здешевлює.</p>
+    </aside>
+
+    <ol class="rm-steps">
+      <li class="card rm-step">
+        <div class="rm-head"><span class="rm-n">1</span><h3>Великий переробник руди</h3><span class="chip ok">ціна з гри</span></div>
+        <p class="rm-why">Пластан з 4 титану замість 6 (з указом — 3 замість 5), злиток за 20 с замість 30. Усе далі коштує сотні злитків, тож він здешевлює кожен наступний етап.</p>
+        <table class="rm-cost">
+          <tr><td>Пластанієві злитки</td><td>300</td></tr>
+          <tr><td>Меланж</td><td>315</td></tr>
+          <tr><td>Силікон</td><td>450</td></tr>
+          <tr><td>Кобальтова паста</td><td>550</td></tr>
+          <tr><td>Складні механізми</td><td>160</td></tr>
+          <tr><td>Покращені механізми</td><td>40</td></tr>
+        </table>
+        <p class="rm-meta">Відкриття: 20 очок інтелу (від 1 200 витрачених). Бере 350 енергії.</p>
+      </li>
+      <li class="card rm-step">
+        <div class="rm-head"><span class="rm-n">2</span><h3>Грузовий орні і вантажний контейнер</h3><span class="chip est">частково оцінка</span></div>
+        <p class="rm-why">Доставляє краулер на поле і везе на Main контейнер: 15 000 об'єму — близько 100 000 спайс-піску за рейс.</p>
+        <table class="rm-cost">
+          <tr><th></th><th>Пластан</th><th>Меланж</th></tr>
+          <tr><td>Рама Mk6</td><td>85</td><td>42</td></tr>
+          <tr><td>Двигун Mk6</td><td>45</td><td>42</td></tr>
+          <tr><td>Головний корпус Mk6</td><td>79</td><td>42</td></tr>
+          <tr><td>Генератор, хвіст, бічні корпуси, крила</td><td>≈ 190–290</td><td>≈ 175–225</td></tr>
+          <tr class="sum"><td>Грузовий разом</td><td>≈ 400–500</td><td>≈ 300–350</td></tr>
+          <tr><td>Вантажний контейнер</td><td>≈ 225</td><td>≈ 105</td></tr>
+        </table>
+        <p class="rm-meta">Ще: кобальтова паста, покращені серво (контейнер — 68), конденсатори частинок, бронеплити, діамантиновий пил, гідропоршні. Відкриття: по 60 інтелу за деталь. Точний список — у наборі Carrier Ornithopter Mk6 Assembly у фабрикаторі.</p>
+      </li>
+      <li class="card rm-step">
+        <div class="rm-head"><span class="rm-n">3</span><h3>Краулер</h3><span class="chip est">частково оцінка</span></div>
+        <p class="rm-why">Середнє поле — близько 15 000 піску за кілька хвилин; з покращеним контейнером Regis вміщує до 75 000.</p>
+        <table class="rm-cost">
+          <tr><th></th><th>Пластан</th><th>Меланж</th></tr>
+          <tr><td>Рама Mk6</td><td>63</td><td>55</td></tr>
+          <tr><td>Кабіна, двигун, живлення, пилосос, гусениці, центрифуга</td><td>≈ 240–290</td><td>≈ 295–345</td></tr>
+          <tr class="sum"><td>Разом</td><td>≈ 300–350</td><td>≈ 350–400</td></tr>
+        </table>
+        <p class="rm-meta">Ще: кобальтова паста, покращені серво, конденсатори частинок, гідропоршні.</p>
+      </li>
+      <li class="card rm-step">
+        <div class="rm-head"><span class="rm-n">4</span><h3>Великий переробник меланжу</h3><span class="chip ok">ціна з гри</span></div>
+        <p class="rm-why">50 піску на меланж замість 75 (з указом — 37,5 замість 56): +50% меланжу з того самого піску. 200 меланжу за 45 хв — у 3,3 раза швидше, води вдвічі менше. Окупається приблизно за 125 000 піску — 8 середніх полів.</p>
+        <table class="rm-cost">
+          <tr><td>Пластанієві злитки</td><td>750</td></tr>
+          <tr><td>Меланж</td><td>840</td></tr>
+          <tr><td>Силікон</td><td>900</td></tr>
+          <tr><td>Кобальтова паста</td><td>825</td></tr>
+          <tr><td>Складні механізми</td><td>280</td></tr>
+          <tr><td>Покращені механізми</td><td>звір у грі</td></tr>
+        </table>
+        <p class="rm-meta">Відкриття: 40 очок інтелу (від 1 200 витрачених).</p>
+      </li>
+    </ol>
+
+    <section class="card rm-total">
+      <h2>Разом на 4 етапи</h2>
+      <ul class="rm-big">
+        <li><b>≈ 2 000–2 100</b><span>пластанієвих злитків</span></li>
+        <li><b>≈ 1 900–2 000</b><span>меланжу</span></li>
+        <li><b>≈ 7 000</b><span>титану (з великим рудним, без указу)</span></li>
+        <li><b>≈ 2 500 л</b><span>води на пластан (1,25 л на злиток)</span></li>
+      </ul>
+      <p class="src">Ціни: <a href="https://dune.gaming.tools/placeables/largeorerefinery_placeable" target="_blank" rel="noopener">великий рудний</a> · <a href="https://dune.gaming.tools/placeables/largespicerefinery_placeable" target="_blank" rel="noopener">великий меланжевий</a> · <a href="https://dune.gaming.tools/items/melangespice" target="_blank" rel="noopener">рецепти меланжу</a> · <a href="https://dune.gaming.tools/items/t6refinedresourcea" target="_blank" rel="noopener">рецепти пластану</a> · <a href="https://dune.gaming.tools/items/ornithoptertransportchassis_6" target="_blank" rel="noopener">рама грузового</a> · <a href="https://dune.gaming.tools/items/containervehicle" target="_blank" rel="noopener">контейнер</a> · <a href="https://dune.gaming.tools/items/sandcrawlerchassis_6" target="_blank" rel="noopener">рама краулера</a></p>
+    </section>
+  </section>
 
   <section class="card versions" aria-labelledby="h-ver">
     <h2 id="h-ver">Версії</h2>

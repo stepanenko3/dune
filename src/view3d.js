@@ -397,9 +397,13 @@
     }
 
     // Пентащит у даху зі світною рамкою (світлики ангарів, дах гаража краулера).
+    const skyEdges = new Set(); // рамка на стику двох світликів — одна на обидва
     function skylightFrame(skyTiles, z) {
       floorTiles(skyTiles, flat(z - 0.002), () => mats.shield, SS(), 0.006);
       for (const e of M.boundaryEdges(skyTiles)) {
+        const k = M.edgeKey(e.a, e.b) + '@' + z.toFixed(3);
+        if (skyEdges.has(k)) continue;
+        skyEdges.add(k);
         for (const [lo, hi] of wallFree(e.a, e.b, z, z + 0.14)) wallQuad(e.a, e.b, lo, hi, mats.frame);
         line(SS(), v3(e.a.x, e.a.y, z + 0.15), v3(e.b.x, e.b.y, z + 0.15));
       }

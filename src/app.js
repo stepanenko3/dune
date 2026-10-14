@@ -226,6 +226,9 @@
 
   function renderBuild() {
     for (const inp of document.querySelectorAll('[data-lim]')) inp.value = C.lim[inp.dataset.lim];
+    const how = C.UI.howto;
+    $('howto').hidden = !how;
+    $('howto').innerHTML = how ? '<h3>Як будувати від кута ділянки</h3><ol>' + how.map((x) => `<li>${x}</li>`).join('') + '</ol>' : '';
     renderSteps();
     renderLimit();
     renderCost();
@@ -284,12 +287,33 @@
   }
 
   // ---------- перемикання бази ----------
-  function setBase(id) {
-    if (!BASES[id]) id = ORDER[0];
-    C = context(id);
+  // Третя вкладка — план розвитку: замість плану бази показує, що будувати далі і скільки коштує.
+  const PLAN_HEAD = {
+    name: 'План розвитку',
+    lead: 'Що будувати далі і скільки це коштує. Ціни переробників — з гри, деталі техніки — з актуальної бази, решта — оцінка.',
+    facts: ['<b>4</b> етапи', '≈ <b>2 000</b> пластану', '≈ <b>2 000</b> меланжу', 'указ Ландсрааду <b>−25%</b> на переробку'],
+  };
+  const TABS = [...ORDER, 'plan'];
+  function setView(id) {
+    const plan = id === 'plan';
+    for (const el of document.querySelectorAll('[data-view]')) el.hidden = el.dataset.view !== (plan ? 'plan' : 'base');
+    press(TABS.map((k) => 'base-' + k), 'base-' + id);
     store.set('base', id);
     try { history.replaceState(null, '', id === ORDER[0] ? location.pathname : '#' + id); } catch (e) { /* без адреси */ }
-    press(ORDER.map((k) => 'base-' + k), 'base-' + id);
+  }
+  function showPlan() {
+    setView('plan');
+    $('base-title').textContent = PLAN_HEAD.name;
+    $('base-lead').textContent = PLAN_HEAD.lead;
+    $('base-facts').innerHTML = PLAN_HEAD.facts.map((f) => `<li>${f}</li>`).join('');
+    for (const k of ORDER) if (ctx[k] && ctx[k].view) ctx[k].view.stop();
+  }
+
+  function setBase(id) {
+    if (id === 'plan') return showPlan();
+    if (!BASES[id]) id = ORDER[0];
+    C = context(id);
+    setView(id);
     const UI = C.UI;
     $('base-title').textContent = UI.name;
     $('base-lead').textContent = UI.lead;
@@ -312,7 +336,7 @@
   }
 
   // ---------- події ----------
-  for (const k of ORDER) $('base-' + k).addEventListener('click', () => setBase(k));
+  for (const k of TABS) $('base-' + k).addEventListener('click', () => setBase(k));
   $('tab-plan').addEventListener('click', () => setTab('plan'));
   $('tab-3d').addEventListener('click', () => setTab('3d'));
   $('opt-interior').addEventListener('change', (e) => C.view && C.view.setInterior(e.target.checked));
@@ -347,7 +371,9 @@
   press(['tab-plan', 'tab-3d'], 'tab-' + state.tab);
   $('plan-panel').hidden = state.tab !== 'plan';
   $('three-panel').hidden = state.tab === 'plan';
-  setBase(BASES[fromHash] ? fromHash : store.get('base', ORDER[0]));
+  const first = TABS.includes(fromHash) ? fromHash : store.get('base', ORDER[0]);
+  if (first === 'plan') setBase(ORDER[0]); // база готується наперед, щоб «назад» з плану був миттєвим
+  setBase(TABS.includes(first) ? first : ORDER[0]);
 
   // для знімків екрана і перевірок
   window.SANDWALKERS = { setBase, setTab, setLevel, setCut, select, view: () => C.view };
