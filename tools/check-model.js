@@ -95,10 +95,10 @@ for (const r of M.rooms)
     if (bad.length) warn(`${r.id}: «${it.name}» виходить за підлогу (${bad.length} точ.)`);
   }
 
-// 3b. предмети в одному приміщенні не перетинаються (крім світла й люків); марші один над одним — можна
+// 3b. предмети в одному приміщенні не перетинаються (крім світла, люків і місць «замість» — spot); марші один над одним — можна
 const zSpan = (it, r) => { const z = it.z !== undefined ? it.z : r.z0; return [z, z + it.h]; };
 for (const r of M.rooms) {
-  const its = (r.items || []).filter((it) => !['light', 'hatch'].includes(it.kind));
+  const its = (r.items || []).filter((it) => !['light', 'hatch', 'spot'].includes(it.kind));
   for (let i = 0; i < its.length; i++)
     for (let j = i + 1; j < its.length; j++) {
       const [a0, a1] = zSpan(its[i], r), [b0, b1] = zSpan(its[j], r);

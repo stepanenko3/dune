@@ -164,7 +164,7 @@
       const m = new Map();
       const put = (n) => m.set(n, (m.get(n) || 0) + 1);
       for (const it of M.roofItems) if (it.kind !== 'hatch') put(it.name);
-      for (const r of M.rooms) for (const it of r.items || []) if (!['stairs', 'hatch', 'light', 'furniture', 'vehicle', 'air', 'pillar'].includes(it.kind)) put(it.full || it.name);
+      for (const r of M.rooms) for (const it of r.items || []) if (!['stairs', 'hatch', 'light', 'furniture', 'vehicle', 'air', 'pillar', 'spot'].includes(it.kind)) put(it.full || it.name);
       return [...m.entries()].sort((a, b) => b[1] - a[1]);
     }
 

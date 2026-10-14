@@ -742,6 +742,13 @@
         box(it.w, h, it.d, 0, std(0x2dd4bf, { transparent: true, opacity: 0.35, emissive: 0x0d6b60, emissiveIntensity: 0.5 }));
       } else if (it.kind === 'hatch') {
         box(it.w, 0.03, it.d, 0.01, std(0x30333a));
+      } else if (it.kind === 'spot') {
+        // місце для техніки, що стоїть тут не завжди: лише рамка на підлозі
+        const fm = std(0x2dd4bf, { emissive: 0x0d6b60, emissiveIntensity: 0.4 }), t = 0.07;
+        box(it.w, 0.02, t, 0.006, fm, 0, -it.d / 2 + t / 2);
+        box(it.w, 0.02, t, 0.006, fm, 0, it.d / 2 - t / 2);
+        box(t, 0.02, it.d, 0.006, fm, -it.w / 2 + t / 2, 0);
+        box(t, 0.02, it.d, 0.006, fm, it.w / 2 - t / 2, 0);
       } else if (it.kind === 'air') {
         box(it.w, h * 0.55, it.d * 0.55, 0);
         box(it.w * 0.55, 0.08, it.d, h * 0.45, std(0xd5dde6));
