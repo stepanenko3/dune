@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- page:start -->
-<title>Цитадель Харконненів</title>
+<title>Sandwalkers</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@500;700&display=swap">
 <style>
-/* Layout: робоче місце кресляра — велике полотно плану/3D ліворуч, довідкова колонка праворуч, нотатки нижче */
+/* Layout: робоче місце кресляра — вкладки баз угорі, велике полотно плану/3D ліворуч, довідкова колонка праворуч, етапи й кошторис нижче */
 :root {
   --bg: #e9ecef;
   --surface: #ffffff;
@@ -61,6 +61,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; }
 body { background: var(--bg); color: var(--ink); font: 400 15px/1.55 var(--font-body); }
 .wrap { max-width: 1480px; margin: 0 auto; padding-inline: clamp(16px, 3vw, 36px); padding-block: 24px 56px; display: grid; gap: 22px; }
@@ -68,6 +69,8 @@ body { background: var(--bg); color: var(--ink); font: 400 15px/1.55 var(--font-
 header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 28px; }
 .brand h1 { font: 700 clamp(22px, 3.2vw, 34px)/1.1 var(--font-display); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
 .brand p { margin: 6px 0 0; color: var(--muted); max-width: 70ch; }
+.base-tabs { margin-bottom: 14px; }
+.base-tabs button { padding: 9px 14px; font-size: 13.5px; }
 .facts { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding: 0; list-style: none; font: 500 13px/1.4 var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
 .facts b { color: var(--ink); font-weight: 600; }
 
@@ -144,6 +147,7 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 
 .three-wrap { position: relative; height: min(72vh, 780px); min-height: 420px; background: linear-gradient(180deg, var(--sky-top), var(--sky-bottom)); overflow: hidden; touch-action: none; }
 .three-wrap canvas.gl { display: block; }
+.three-base { position: absolute; inset: 0; }
 .labels3d { position: absolute; inset: 0; pointer-events: none; }
 .lbl3d { position: absolute; left: 0; top: 0; font: 600 11.5px/1.2 var(--font-body); color: #f7f4ef; background: rgba(20, 21, 25, 0.72); padding: 3px 7px; border-radius: 4px; white-space: nowrap; }
 .tip3d { position: absolute; left: 0; top: 0; pointer-events: none; font: 600 12px/1.2 var(--font-body); background: #fff; color: #111; border: 1px solid #222; padding: 4px 8px; border-radius: 4px; }
@@ -170,10 +174,10 @@ aside.side { display: grid; gap: 16px; min-width: 0; }
 table.counts { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
 table.counts th, table.counts td { padding: 5px 0; border-bottom: 1px solid var(--line); text-align: right; }
 table.counts th:first-child, table.counts td:first-child { text-align: left; padding-right: 8px; }
+table.counts th + th, table.counts td + td { padding-left: 10px; }
 table.counts tfoot td { font-weight: 700; border-bottom: 0; }
 .dot { display: inline-block; width: 10px; height: 10px; vertical-align: -1px; margin-right: 4px; }
 
-.notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
 .build { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 20px; margin-top: 20px; }
 @media (max-width: 1100px) { .build { grid-template-columns: minmax(0, 1fr); } }
 .build .card { padding: 18px 20px; }
@@ -189,9 +193,6 @@ table.cost { width: 100%; border-collapse: collapse; font-size: 13px; font-varia
 table.cost th, table.cost td { padding: 5px 4px; border-bottom: 1px solid var(--line); text-align: right; vertical-align: middle; }
 table.cost th:first-child, table.cost td:first-child { text-align: left; padding-left: 0; }
 table.cost tfoot td { font-weight: 700; border-bottom: 0; }
-table.cost input { width: 6.5ch; padding: 3px 5px; font: inherit; text-align: right; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; }
-.cost-res { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 13px; color: var(--muted); }
-.cost-res input { flex: 1; min-width: 0; padding: 4px 6px; font: inherit; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; }
 .small { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; }
 .steps .cnt .res { color: var(--muted); }
 table.cost tr.sub td:first-child { padding-left: 12px; color: var(--muted); }
@@ -237,17 +238,15 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
 .lim-cats li.bad .mini span { background: var(--bad); }
 .lim-cats li.bad .lc-top b { color: var(--bad); }
 .lc-what { font-size: 12px; line-height: 1.45; color: var(--muted); }
-@media (max-width: 1100px) { .notes { grid-template-columns: minmax(0, 1fr); } }
-.notes .card { padding: 18px 20px; }
-.notes h2 { font-size: 15px; margin-bottom: 12px; }
-.req { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; font-size: 14px; }
-.req li { display: grid; grid-template-columns: 2.2ch 1fr; gap: 8px; }
-.req .n { font: 600 12.5px/1.6 var(--font-mono); color: var(--muted); text-align: right; }
-.plain { margin: 0; padding-left: 18px; display: grid; gap: 8px; font-size: 14px; }
-.plain li::marker { color: var(--muted); }
 .src { margin-top: 12px; font-size: 12.5px; color: var(--muted); }
 .src a { color: inherit; }
-.brand p a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: 2px; }
+.versions { padding: 14px 20px; }
+.versions summary { font: 700 13px/1.3 var(--font-display); letter-spacing: 0.02em; cursor: pointer; }
+.versions summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.vcols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 8px 32px; margin-top: 14px; }
+.vcols h3 { margin: 0 0 8px; font-size: 13.5px; }
+.vcols ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13.5px; color: var(--muted); }
+.vcols b { color: var(--ink); font: 600 12.5px/1.5 var(--font-mono); margin-right: 4px; }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
 </style>
 <!-- page:head-end -->
@@ -257,16 +256,14 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
 <div class="wrap">
   <header class="top">
     <div class="brand">
-      <h1>Цитадель Харконненів</h1>
-      <p>База для Dune: Awakening на 6 ділянок 10×10. Тільки квадратні й трикутні плити. Великий зал — витягнутий шестикутник, ангари орні з пентащитів на тилу під кутом над обривом, заокруглений заїзд із переходом над ним, широкий наскрізний ангар грузових із пірамідою, вежі з +9 з балконами й містком-брамою. Версія 12. Компактний форпост для Глибокої пустелі — <a href="https://claude.ai/artifact/FSzj8XtcywSUXteB8G4Ajs" target="_blank" rel="noopener">окремою сторінкою</a>.</p>
+      <div class="seg tabs base-tabs" role="group" aria-label="База">
+        <button id="base-main" type="button" aria-pressed="true">Sandwalkers Main</button>
+        <button id="base-dd" type="button" aria-pressed="false">Sandwalkers DD</button>
+      </div>
+      <h1 id="base-title">Sandwalkers Main</h1>
+      <p id="base-lead"></p>
     </div>
-    <ul class="facts" aria-label="Основні цифри">
-      <li><b>20 × 30</b> плит</li>
-      <li><b>3</b> ангари · <b>6</b> орні</li>
-      <li><b>2</b> гаражі</li>
-      <li><b>20</b> вітряків · <b>15</b> вітропасток</li>
-      <li>центр до <b>+16</b>, вежі <b>+19</b></li>
-    </ul>
+    <ul class="facts" id="base-facts" aria-label="Основні цифри"></ul>
   </header>
 
   <div class="workspace">
@@ -281,12 +278,7 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
 
       <div id="plan-panel">
         <div class="bar">
-          <div class="seg" role="group" aria-label="Рівень">
-            <button id="lvl-g" type="button" aria-pressed="true">Рівень 0</button>
-            <button id="lvl-u" type="button" aria-pressed="false">+5</button>
-            <button id="lvl-t" type="button" aria-pressed="false">+9</button>
-            <button id="lvl-r" type="button" aria-pressed="false">Дах</button>
-          </div>
+          <div class="seg" role="group" aria-label="Рівень" id="lvl-seg"></div>
           <label class="chk"><input id="opt-items" type="checkbox" checked> Обладнання і техніка</label>
           <label class="chk"><input id="opt-labels" type="checkbox" checked> Підписи</label>
           <label class="chk"><input id="opt-coords" type="checkbox"> Координати</label>
@@ -303,12 +295,7 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
             <button id="cam-back" type="button" aria-pressed="false">Тил</button>
             <button id="cam-top" type="button" aria-pressed="false">Зверху</button>
           </div>
-          <div class="seg" role="group" aria-label="Поверх">
-            <button id="cut-g" type="button" aria-pressed="false">Рівень 0</button>
-            <button id="cut-u" type="button" aria-pressed="false">+5</button>
-            <button id="cut-t" type="button" aria-pressed="false">+9</button>
-            <button id="cut-all" type="button" aria-pressed="true">Уся база</button>
-          </div>
+          <div class="seg" role="group" aria-label="Поверх" id="cut-seg"></div>
           <label class="chk"><input id="opt-iso" type="checkbox"> Лише цей поверх</label>
           <label class="chk" for="cut">Зріз <input id="cut" type="range" min="0.5" max="22" step="0.25" value="22"> <span class="cutval" id="cut-val">усе</span></label>
           <label class="chk"><input id="opt-found" type="checkbox"> Тільки плити підлоги</label>
@@ -317,7 +304,7 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
           <label class="chk"><input id="opt-labels3d" type="checkbox" checked> Підписи</label>
         </div>
         <div class="three-wrap" id="three"></div>
-        <div class="caption"><span>Тягни мишею — обертання, колесо — масштаб, права кнопка — зсув. Наведи на техніку, щоб побачити назву.</span><span>Висота рівня в 3D умовна: 0,85 сторони плити. «Лише цей поверх» ховає нижні поверхи. «Тільки плити підлоги» лишає самі плити вибраного поверху: «Рівень 0» — фундамент.</span></div>
+        <div class="caption"><span>Мишею — обертання, колесо — масштаб, права кнопка — зсув.</span></div>
       </div>
     </section>
 
@@ -330,11 +317,11 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
           <svg viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--wall)" stroke-width="2.4"/></svg><span>Стіна</span>
           <svg viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--wall)" stroke-width="2.4" stroke-dasharray="3 4"/></svg><span>Двері</span>
           <svg viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--accent)" stroke-width="4.5"/></svg><span>Пентащит (проїзд, проліт)</span>
-          <svg viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--wall)" stroke-width="1.3" stroke-dasharray="1.5 3.5"/></svg><span>Парапет (палуба, балкон)</span>
+          <svg data-only="main" viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--wall)" stroke-width="1.3" stroke-dasharray="1.5 3.5"/></svg><span data-only="main">Парапет (палуба, балкон)</span>
           <svg viewBox="0 0 26 18" aria-hidden="true"><rect x="2" y="3" width="22" height="12" fill="var(--item-fill)" stroke="var(--item)"/><path d="M7 3v12M12 3v12M17 3v12" stroke="var(--item)" stroke-width="0.8"/><path d="M4 9h15" stroke="var(--item)" stroke-width="1.4"/><path d="M19 6l4 3-4 3z" fill="var(--item)"/></svg><span>Сходи, стрілка — вгору</span>
-          <svg viewBox="0 0 26 18" aria-hidden="true"><rect x="3" y="2" width="20" height="14" fill="var(--sq)"/><path d="M3 6h20M3 10h20M3 14h20" stroke="var(--seam)" stroke-width="1.2"/></svg><span>Похилі плити (заокруглення)</span>
+          <svg data-only="main" viewBox="0 0 26 18" aria-hidden="true"><rect x="3" y="2" width="20" height="14" fill="var(--sq)"/><path d="M3 6h20M3 10h20M3 14h20" stroke="var(--seam)" stroke-width="1.2"/></svg><span data-only="main">Похилі плити (заокруглення)</span>
           <svg viewBox="0 0 26 18" aria-hidden="true"><rect x="3" y="3" width="20" height="12" fill="var(--item-fill)" stroke="var(--item)" stroke-dasharray="4 2.5"/></svg><span>Техніка й обладнання</span>
-          <svg viewBox="0 0 26 18" aria-hidden="true"><defs><pattern id="lg-h" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="var(--hatch-bg)"/><line x1="0" y1="0" x2="0" y2="5" stroke="var(--hatch-ln)"/></pattern></defs><rect x="3" y="2" width="20" height="14" fill="url(#lg-h)" stroke="var(--wall)"/></svg><span>Висота залу йде крізь рівень</span>
+          <svg data-only="main" viewBox="0 0 26 18" aria-hidden="true"><defs><pattern id="lg-h" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="var(--hatch-bg)"/><line x1="0" y1="0" x2="0" y2="5" stroke="var(--hatch-ln)"/></pattern></defs><rect x="3" y="2" width="20" height="14" fill="url(#lg-h)" stroke="var(--wall)"/></svg><span data-only="main">Висота залу йде крізь рівень</span>
         </div>
       </section>
 
@@ -351,46 +338,6 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
     </aside>
   </div>
 
-  <div class="notes">
-    <section class="card" aria-labelledby="h-req">
-      <h2 id="h-req">Правки версії 18 — як збудовано в грі</h2>
-      <ol class="req">
-        <li><span class="n">1</span><span>Другий марш парадних сходів в ангар грузових притулено до балкончика (галереї) Великого залу біля переходу: починається впритул до галереї +5 і йде нагору над першим маршем.</span></li>
-        <li><span class="n">2</span><span>Усі прямі сходи в 3D — сходинки на рівній похилій плиті, під ними порожньо, без заповнення до підлоги.</span></li>
-        <li><span class="n">3</span><span>Зліва ангар асаултів на всю грань, справа ангар скаутів на 5 плит — як у версії 17.</span></li>
-      </ol>
-    </section>
-
-    <section class="card" aria-labelledby="h-routes">
-      <h2 id="h-routes">Як ходити базою</h2>
-      <ul class="plain">
-        <li><b>Земля.</b> Вулиця → заїзд → гаражі → склад (лівий блок) і цех меланжу (правий) → Великий зал (фабрикатори) → рудний цех у задньому залі і його крила → заглиблений задній вхід.</li>
-        <li><b>З землі на +5.</b> Парадні сходи Великого залу, сходи в обох блоках (склад і цех меланжу), сходи з гаража багі на його дах.</li>
-        <li><b>+5.</b> Перехід над заїздом (круглий балкон, дах гаража багі, водний блок, майстерня) ↔ галерея Великого залу (теж у водний блок і майстерню) ↔ задня галерея ↔ обидва ангари орні ↔ задній балкон.</li>
-        <li><b>+9.</b> Ангар грузових: лише другий марш парадних сходів по центру залу — починається на галереї +5 біля переходу, виходить між грузовими; інших підйомів туди немає. Вежі: сходи з водного блоку і майстерні через люк.</li>
-        <li><b>+15.</b> Вежі → балкони → місток над переходом. Вузькі сходи між грузовими → дах із вітряками.</li>
-        <li><b>Орні.</b> Ангари на тилу під кутом над обривом: виліт назад і вбік (зверху орні не пролазить). Грузові: вперед під містком або назад над заднім майданчиком і дахами ангарів орні. Над краулером — пентащит, грузовий спускається крізь нього.</li>
-      </ul>
-    </section>
-
-    <section class="card" aria-labelledby="h-assume">
-      <h2 id="h-assume">Розміри й питання</h2>
-      <ul class="plain">
-        <li>1 плита = квадратний фундамент, 1 рівень = висота стіни.</li>
-        <li>Грузовий 4×9 і великий рудний переробник 3×2 заввишки до 2 — з твоїх уточнень.</li>
-        <li>Великий переробник спайсу 3×2, 5 стін; цех меланжу має рівно 5 рівнів — впритул. Контейнер складу — 1×1, 2 стіни заввишки.</li>
-        <li>Скаут ≈ 3,6×2,5, асаулт ≈ 4×2,7; ангари 3 рівні пентащита + верхній ярус даху.</li>
-        <li>Краулер ≈ 5,5×2,6, багі 3×2, піскоцикл 2×1. Пентащит над краулером 6×9 під грузового 4×9.</li>
-        <li>Вітряк займає 1×1, вітропастка 1,5×1,5 — з твоїх уточнень. Над ними нічого немає.</li>
-        <li><b>Перевір у грі:</b> чи проходить краулер у заїзд шириною 2 плити (якщо ні — розширимо до 3), чи проходить грузовий крізь горизонтальний пентащит, чи вистачає 4 рівнів ангара грузових і чи влазить переробник спайсу під стелю на 5 стін.</li>
-        <li><b>Склад:</b> у лівому блоці 4×6 з проходом 2 плити посередині вміщається 10 контейнерів (ряд біля дверей у зал і прохід до гаража вільні). Скільки стоїть у грі — уточнити.</li>
-        <li><b>Фундамент:</b> квадрати і трикутники без залишку стикуються лише по горизонтальній лінії, тому пряма стіна квадратної частини ніде не стоїть навпроти скошеної грані трикутної.</li>
-        <li><b>Пункт 17</b> тепер вирішено обома способами: між ангарами є і задній вхід, і круглий балкон.</li>
-      </ul>
-      <p class="src">Джерела: <a href="https://duneawakening.wiki.fextralife.com/Large+Spice+Refinery" target="_blank" rel="noopener">Large Spice Refinery (Fextralife)</a> · <a href="https://steamcommunity.com/app/1172710/discussions/0/563626883365760733/" target="_blank" rel="noopener">Steam: проріз ангара</a> · <a href="https://steamcommunity.com/app/1172710/discussions/0/574921762383506540/" target="_blank" rel="noopener">Steam: розміри під орні</a> · <a href="https://steamcommunity.com/app/1172710/discussions/0/596287304340032968/" target="_blank" rel="noopener">Steam: горизонтальний пентащит</a></p>
-    </section>
-  </div>
-
   <div class="build">
     <section class="card lim" aria-labelledby="h-lim">
       <div class="lim-head">
@@ -402,23 +349,62 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
       <ul class="lim-legend" id="lim-legend"></ul>
       <div class="lim-opts">
         <label>Запас фундаментів під кожну нижню плиту <input data-lim="found" type="number" min="0" step="1" inputmode="numeric"> шт.</label>
-        <label>Запас на декор (клиноподібні стіни тощо) <input data-lim="decor" type="number" min="0" step="1" inputmode="numeric"> %</label>
+        <label>Запас на декор <input data-lim="decor" type="number" min="0" step="1" inputmode="numeric"> %</label>
       </div>
       <p class="small" id="lim-hint"></p>
       <h3 class="lim-sub">Інші ліміти бази</h3>
       <ul class="lim-cats" id="lim-cats"></ul>
-      <p class="small">Ліміти — з гри. Будівельні елементи пораховані з моделі: фундаменти, перекриття, стіни по секціях, пентащити, дверні прорізи, парапети, сходи. Запас фундаментів — стовпчик під кожною плитою рівня 0, трикутною теж, і під похилими. Декор (клиноподібні стіни тощо) — відсоток від конструкції. Двері — по одній у кожен дверний проріз. Цистерни віднесено до складу. Налаштування запам'ятовуються в цьому браузері.</p>
-    </section>
+          </section>
     <section class="card" aria-labelledby="h-build">
       <h2 id="h-build">План будівництва</h2>
       <ol class="steps" id="steps"></ol>
     </section>
     <section class="card" aria-labelledby="h-cost">
-      <h2 id="h-cost">Кошторис ресурсів</h2>
-      <label class="cost-res">Ресурс <input id="cost-res" type="text" value="пластон" aria-label="Назва ресурсу"></label>
+      <h2 id="h-cost">Кошторис</h2>
       <table class="cost" id="cost"></table>
-      <p class="small">Кількість деталей порахована з моделі. Ціну за штуку впиши з меню будівництва в грі — сума рахується сама і запам'ятовується в цьому браузері. Стіни — секції 1 плита × 1 рівень, спільна стіна двох приміщень рахується один раз. У Глибокій пустелі будівництво дешевше вдвічі.</p>
+      <p class="small" id="cost-note"></p>
+      <p class="src">Ціни сардаукарського набору: <a href="https://dune.gaming.tools/buildables/sardaukar_foundation" target="_blank" rel="noopener">фундамент</a> · <a href="https://dune.gaming.tools/buildables/sardaukar_wall_02" target="_blank" rel="noopener">стіна</a> · <a href="https://dune.gaming.tools/buildables/sardaukar_column" target="_blank" rel="noopener">колона</a> · <a href="https://awakening.wiki/Sardaukar_Building_Set" target="_blank" rel="noopener">увесь набір</a> · <a href="https://dune.gaming.tools/placeables/choam_pentashieldsurfacevertical_placeable" target="_blank" rel="noopener">пентащит</a> · <a href="https://www.method.gg/dune-awakening/building-in-the-deep-desert-in-dune-awakening-a-full-guide" target="_blank" rel="noopener">−50% у Deep Desert</a></p>
     </section>
+  </div>
+
+  <details class="card versions">
+    <summary>Версії</summary>
+    <div class="vcols">
+      <section>
+        <h3>Sandwalkers Main</h3>
+        <ol reversed>
+          <li><b>19.</b> Сардаукарський набір, кошторис у гранітному камені, одна сторінка з DD.</li>
+          <li><b>18.</b> Другий марш сходів притулено до галереї залу; сходи — сходинки на похилій плиті.</li>
+          <li><b>17.</b> Ангари орні місцями: асаулт ліворуч на всю грань, скаути праворуч; сходи в ангар грузових від переходу.</li>
+          <li><b>16.</b> Модель як збудовано в грі: склад, цех меланжу і рудний цех переставлено, одна колона, вужчий ангар скаутів.</li>
+          <li><b>15.</b> Без вікон, 3D без мерехтіння, чисті зрізи.</li>
+          <li><b>14.</b> Ангар грузових стоїть на стінах нижче, без вигаданих трикутників.</li>
+          <li><b>13.</b> Ліміти бази по 7 категоріях, запас фундаментів і декору.</li>
+          <li><b>12.</b> Склад на контейнери, етапи будівництва і кошторис, координати на плані; цехи на +5.</li>
+          <li><b>11.</b> Крила складу замість зайвих фундаментів за цехами.</li>
+          <li><b>10.</b> Фундамент без щілин, зал — витягнутий шестикутник, режим «тільки плити».</li>
+          <li><b>9.</b> Ангар грузових не нависає над ангарами орні, задній майданчик.</li>
+          <li><b>8.</b> Ангари орні над обривом, заглиблений задній вхід, фабрикатори в залі, вежі з +9.</li>
+          <li><b>6–7.</b> Ангари орні на тилу під кутом, задній зал, прямий центр, перехід із балконом, місток-брама.</li>
+          <li><b>5.</b> Прямі стіни біля ангарів, вільний заліт, вітряки 1×1 і вітропастки 1,5×1,5.</li>
+          <li><b>4.</b> Дах ангарів у 2 яруси, ступінчаста гора, центр на +9.</li>
+          <li><b>3.</b> Ангари з пентащитів, ангар грузових на 2 місця поруч, піраміда, вежі з балконами.</li>
+          <li><b>2.</b> 2×3 ділянки (20×30), заокруглений заїзд, ангар грузових із порталами, вежі.</li>
+          <li><b>1.</b> Перший проєкт на 6 ділянок: заїзд, гаражі, Великий зал, цехи, ангари, наскрізний ангар грузових.</li>
+        </ol>
+      </section>
+      <section>
+        <h3>Sandwalkers DD</h3>
+        <ol reversed>
+          <li><b>4.</b> Сардаукарський набір, кошторис зі знижкою Deep Desert, одна сторінка з Main.</li>
+          <li><b>3.</b> Гараж багі; ангар на один асаулт із вильотом угору крізь пентащит у даху; переробка нагорі.</li>
+          <li><b>2.</b> Нижче: 2 яруси замість 3, дах на +5.</li>
+          <li><b>1.</b> Кругла будівля 10×10 на 3 яруси: енергія і склад, переробка, ангар на асаулт і скаут.</li>
+        </ol>
+      </section>
+    </div>
+  </details>
+</div>
   </div>
 </div>
 
@@ -426,6 +412,7 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="src/geom.js"></script>
 <script src="src/model.js"></script>
+<script src="src/model-dd.js"></script>
 <script src="src/plan2d.js"></script>
 <script src="src/build.js"></script>
 <script src="src/view3d.js"></script>

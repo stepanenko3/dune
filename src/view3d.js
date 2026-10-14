@@ -4,7 +4,6 @@
  */
 (function (root) {
   'use strict';
-  const M = root.BASE;
   const LH = 0.85; // висота рівня відносно сторони плити (умовно)
   const DOOR = 2.5; // висота дверей у рівнях
   const PARAPET = 0.5; // висота парапету в рівнях
@@ -18,7 +17,7 @@
   // Відтінки стін за типом блоку: збоку видно, де закінчується один корпус і починається інший.
   const WALL_TONES = { drive: 0x605b54, core: 0x4d5058, store: 0x5b6169, craft: 0x535b64, refine: 0x5d5351, tower: 0x6b6256, air: 0x4b4f57, crown: 0x4b4e56 };
 
-  function create(container, opts = {}) {
+  function create(container, opts = {}, M = root.BASE) {
     const THREE = root.THREE;
     // центр і розмір ділянки: камери, сонце, земля і сітка рахуються від них
     const B = M.bounds, CX = (B.x0 + B.x1) / 2, CY = (B.y0 + B.y1) / 2;

@@ -1,77 +1,77 @@
-/* Інтерфейс сторінки: вкладки, рівні, список приміщень, кошторис, 3D. */
+/* Інтерфейс сторінки: дві бази на вкладках, план, 3D, приміщення, ліміти, етапи й кошторис. */
 (function () {
   'use strict';
-  const M = window.BASE;
-  const UI = M.ui || {};
   const $ = (id) => document.getElementById(id);
-  const PFX = UI.store || 'citadel:';
+  const BASES = window.BASES;
+  const ORDER = Object.keys(BASES);
   const store = {
-    get(k, d) { try { const v = localStorage.getItem(PFX + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
-    set(k, v) { try { localStorage.setItem(PFX + k, JSON.stringify(v)); } catch (e) { /* без збереження */ } },
+    get(k, d) { try { const v = localStorage.getItem('sw:' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem('sw:' + k, JSON.stringify(v)); } catch (e) { /* без збереження */ } },
   };
+  const fmtN = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  const fmtP = (n) => String(Math.round(n * 10) / 10).replace('.', ',');
+  const press = (ids, active) => { for (const id of ids) if ($(id)) $(id).setAttribute('aria-pressed', String(id === active)); };
+  const listed = (r) => r.group !== 'crown';
+  const LIM_DEF = { found: 4, decor: 10 };
+
+  // ---------- база: модель, план, підрахунки і 3D для кожної — один раз ----------
+  const ctx = {};
+  function context(id) {
+    if (ctx[id]) return ctx[id];
+    const M = BASES[id], UI = M.ui;
+    const { G, CAR, TOP } = M.heights;
+    const B = window.BUILD.make(M);
+    let level = store.get(id + ':level', 'g');
+    if (!M.levels.some((l) => l.key === level)) level = 'g';
+    return (ctx[id] = {
+      id, M, UI, B, P: window.PLAN2D.make(M), res: B.compute(),
+      levelOf: (r) => (r.z0 < G ? 'g' : r.z0 < CAR ? 'u' : r.z0 < TOP ? 't' : 'r'),
+      cuts: { ...UI.cuts, 'cut-all': [UI.all, 0] },
+      lim: Object.assign({}, LIM_DEF, store.get(id + ':limit', {})),
+      level, cut: UI.all, view: null, box: null,
+    });
+  }
+  let C = null;
 
   const state = {
     tab: store.get('tab', 'plan'),
-    level: store.get('level', 'g'),
     items: true,
     labels: true,
     coords: store.get('coords', false),
     highlight: null,
   };
-  if (!M.levels.some((l) => l.key === state.level)) state.level = 'g'; // рівня з іншої версії бази вже немає
-  let view = null;
 
-  const { G, CAR, TOP } = M.heights;
-  const ALL = UI.all || 22; // зріз «уся база»
-  const levelOf = (r) => (r.z0 < G ? 'g' : r.z0 < CAR ? 'u' : r.z0 < TOP ? 't' : 'r');
-  const listed = (r) => r.group !== 'crown';
-  const LEVEL_NAMES = UI.levelNames || { g: 'Рівень 0 · земля', u: 'Рівень +5 · ангари орні, перехід, другі поверхи', t: 'Рівень +9 · ангар грузових, вежі', r: 'Дах · балкони веж, місток' };
-  const CAPTIONS = UI.captions || {
-    g: '<span><strong>Рівень 0.</strong> Спереду заїзд і гаражі (заїзди 2 плити на рівні підлоги). У центрі Великий зал із фабрикаторами і парадними сходами, обабіч — головний склад (лівий блок, контейнери вздовж проходу) і цех меланжу (правий). На тилу рудний цех і крила: генераторна і хімічна, задній вхід заглиблено на 2 ряди. Пунктир — ангари орні над обривом, під ними порожньо. Стрілки — сходи вгору.</span>',
-    u: '<span><strong>Рівень +5.</strong> Ангари орні на тилу під кутом звисають над обривом: бокси з пентащитів, виліт назад і вбік; зліва асаултів — 6 плит на всю грань (один асаулт), справа скаутів — 5 плит, зсунутий на плиту до центру. Між ними задня галерея і круглий балкон над заднім входом, обабіч — прибудови над крилами. З галереї залу біля переходу по центру — другий марш парадних сходів в ангар грузових. Спереду перехід над заїздом, обабіч залу — водний блок і майстерня, звідки сходи у вежі.</span>',
-    t: '<span><strong>Рівень +9.</strong> Ангар грузових на 2 місця поруч стоїть на дахах залу, заднього залу і прибудов — кожна стіна над стіною нижче. Вхід лише парадними сходами по центру. Колона по центру біля заднього порталу тримає трикутний дах. Спереду 11 плит і виліт під містком, посередині розширення до 14, ззаду портал 9 плит на задній майданчик. Вежі починаються тут, на дахах бічних блоків.</span>',
-    r: '<span><strong>Дах.</strong> Ступінчаста гора над переднім порталом ангара грузових (скрін 4), за нею 20 вітряків. Вежі з балконами і місток-брама на +15 над переходом, ліхтарі +17. Над пристроями нічого немає.</span>',
-  };
-
-  function press(ids, active) {
-    for (const id of ids) if ($(id)) $(id).setAttribute('aria-pressed', String(id === active)); // кнопок рівнів може бути менше
-  }
-
+  // ---------- план ----------
   function renderPlan() {
-    $('plan').innerHTML = window.PLAN2D.render({
-      level: state.level, items: state.items, labels: state.labels, coords: state.coords, highlight: state.highlight,
-    });
-    $('plan-caption').innerHTML = CAPTIONS[state.level];
+    $('plan').innerHTML = C.P.render({ level: C.level, items: state.items, labels: state.labels, coords: state.coords, highlight: state.highlight });
+    $('plan-caption').innerHTML = C.UI.captions[C.level];
     for (const g of $('plan').querySelectorAll('[data-room]')) g.addEventListener('click', () => select(g.dataset.room, false));
-    press(['lvl-g', 'lvl-u', 'lvl-t', 'lvl-r'], 'lvl-' + state.level);
+    press(C.M.levels.map((l) => 'lvl-' + l.key), 'lvl-' + C.level);
   }
 
   function setLevel(l) {
-    state.level = l;
-    store.set('level', l);
+    C.level = l;
+    store.set(C.id + ':level', l);
     renderPlan();
-  }
-
-  function roomName(r) {
-    return r.name;
   }
 
   function renderRooms() {
     const box = $('rooms');
     box.innerHTML = '';
     for (const l of ['g', 'u', 't', 'r']) {
-      if (!M.rooms.some((x) => listed(x) && levelOf(x) === l)) continue;
+      const rs = C.M.rooms.filter((x) => listed(x) && C.levelOf(x) === l);
+      if (!rs.length) continue;
       const h = document.createElement('div');
       h.className = 'grp';
-      h.textContent = LEVEL_NAMES[l];
+      h.textContent = C.UI.levelNames[l];
       box.appendChild(h);
-      for (const r of M.rooms.filter((x) => listed(x) && levelOf(x) === l)) {
+      for (const r of rs) {
         const b = document.createElement('button');
         b.type = 'button';
         b.setAttribute('aria-pressed', String(state.highlight === r.id));
-        const meta = r.h > 0 ? `${Math.round(M.roomArea(r))} пл · +${r.z0}…${r.z0 + r.h}` : r.group === 'shield' ? 'пентащит' : `палуба +${r.z0}`;
+        const meta = r.h > 0 ? `${Math.round(C.M.roomArea(r))} пл · +${r.z0}…${r.z0 + r.h}` : `палуба +${r.z0}`;
         b.innerHTML = `<span></span><span>${meta}</span>`;
-        b.firstChild.textContent = roomName(r);
+        b.firstChild.textContent = r.name;
         b.addEventListener('click', () => select(r.id, true));
         box.appendChild(b);
       }
@@ -80,10 +80,10 @@
 
   function select(id, fromList) {
     state.highlight = state.highlight === id && fromList ? null : id;
-    const r = M.rooms.find((x) => x.id === id);
+    const r = C.M.rooms.find((x) => x.id === id);
     if (state.highlight && r) {
-      const lvl = levelOf(r);
-      if (fromList && lvl !== state.level) state.level = lvl;
+      const lvl = C.levelOf(r);
+      if (fromList && lvl !== C.level) C.level = lvl;
       const items = (r.items || []).filter((it) => it.kind !== 'light' && it.kind !== 'hatch');
       const counts = {};
       for (const it of items) {
@@ -91,13 +91,12 @@
         counts[n] = (counts[n] || 0) + 1;
       }
       const sq = r.tiles.filter((t) => t.k === 's').length, tr = r.tiles.length - sq;
-      const note = r.note;
       $('detail').innerHTML = `<h3></h3><p></p><p>${sq} квадратів · ${tr} трикутників · ${r.h > 0 ? `від +${r.z0} до +${r.z0 + r.h}` : `на висоті +${r.z0}`}</p>` +
         (items.length ? '<ul>' + Object.entries(counts).map(([n, c]) => `<li>${n}${c > 1 ? ' ×' + c : ''}</li>`).join('') + '</ul>' : '');
-      $('detail').querySelector('h3').textContent = roomName(r);
-      $('detail').querySelector('p').textContent = note || '';
+      $('detail').querySelector('h3').textContent = r.name;
+      $('detail').querySelector('p').textContent = r.note || '';
     } else {
-      $('detail').innerHTML = '<p>Обери приміщення, щоб підсвітити його на плані й побачити, що в ньому.</p>';
+      $('detail').innerHTML = '<p>Обери приміщення, щоб підсвітити його на плані.</p>';
     }
     if (state.tab !== 'plan' && fromList) setTab('plan');
     renderPlan();
@@ -105,111 +104,43 @@
   }
 
   function renderCounts() {
-    const rows = window.PLAN2D.pieceCounts();
     let s = 0, t = 0;
     let html = '<thead><tr><th>Ярус</th><th><span class="dot" style="background:var(--sq)"></span>кв.</th><th><span class="dot" style="background:var(--tri);clip-path:polygon(50% 0,100% 100%,0 100%)"></span>тр.</th></tr></thead><tbody>';
-    for (const r of rows) {
+    for (const r of C.P.pieceCounts()) {
       s += r.s; t += r.t;
       html += `<tr><td>${r.name}</td><td>${r.s}</td><td>${r.t}</td></tr>`;
     }
-    html += `</tbody><tfoot><tr><td>Разом</td><td>${s}</td><td>${t}</td></tr></tfoot>`;
-    $('counts').innerHTML = html;
+    $('counts').innerHTML = html + `</tbody><tfoot><tr><td>Разом</td><td>${s}</td><td>${t}</td></tr></tfoot>`;
   }
 
-  // ---------- план будівництва і кошторис ----------
-  const fmtN = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-  // Налаштування запасів і ліміту (запам'ятовуються в браузері).
-  const LIM_DEF = { found: 4, decor: 10 };
-  const lim = Object.assign({}, LIM_DEF, store.get('limit', {}));
-  const BUILD_RES = window.BUILD.compute();
-
-  function renderBuild() {
-    renderSteps();
-    renderCost();
-    renderLimit();
-    for (const inp of document.querySelectorAll('[data-lim]')) {
-      const k = inp.dataset.lim;
-      inp.value = lim[k];
-      inp.addEventListener('input', () => {
-        const v = Number(inp.value);
-        if (inp.value === '' || !isFinite(v) || v < 0) return;
-        lim[k] = v;
-        store.set('limit', lim);
-        renderSteps();
-        renderLimit();
-        renderCost();
-      });
-    }
-    $('cost-res').value = store.get('resource', 'пластон');
-    $('cost-res').addEventListener('input', (e) => { store.set('resource', e.target.value); recalcCost(); });
-  }
-
+  // ---------- етапи, кошторис, ліміти ----------
   function renderSteps() {
-    const B = window.BUILD, res = BUILD_RES, bud = B.budget(res, lim);
+    const B = C.B, bud = B.budget(C.res, C.lim);
     const short = { fsq: 'фунд. кв.', ftri: 'фунд. тр.', ramp: 'похилих', csq: 'перекр. кв.', ctri: 'перекр. тр.', wall: 'стін', door: 'дверей', shield: 'пентащитів', rail: 'парапетів', stairs: 'сходів', pillar: 'колон' };
     let html = '';
-    for (const st of res.stages) {
+    for (const st of C.res.stages) {
       let parts = B.KINDS.filter((k) => st.n[k.id]).map((k) => `<span>${short[k.id]} ${fmtN(st.n[k.id])}</span>`).join('');
-      if (st.id === 'found' && lim.found > 0) parts += `<span class="res">+ запас під рельєф: кв. ${fmtN(bud.resSq)}, тр. ${fmtN(bud.resTri)}</span>`;
+      if (st.id === 'found' && C.lim.found > 0) parts += `<span class="res">+ запас: кв. ${fmtN(bud.resSq)}, тр. ${fmtN(bud.resTri)}</span>`;
       html += `<li><div><b>${st.name}.</b> <span class="what">${st.note}</span><div class="cnt">${parts}</div></div></li>`;
     }
     const eq = B.equipment().map(([n, c]) => `<span>${n}${c > 1 ? ' ×' + c : ''}</span>`).join('');
-    html += `<li><div><b>Пристрої й обладнання.</b> <span class="what">Ставляться після стін і дахів; вітряки й вітропастки — на дахи, де над ними нічого немає.</span><div class="cnt">${eq}</div></div></li>`;
+    html += `<li><div><b>Пристрої й обладнання.</b><div class="cnt">${eq}</div></div></li>`;
     $('steps').innerHTML = html;
   }
 
-  // Кошторис: запас фундаментів іде за ціною звичайного фундаменту.
-  function costRows() {
-    const B = window.BUILD, bud = B.budget(BUILD_RES, lim);
-    const rows = [];
-    for (const k of B.KINDS) {
-      if (!BUILD_RES.total[k.id]) continue; // деталей цього типу на базі немає
-      rows.push({ id: k.id, name: k.name, n: BUILD_RES.total[k.id], price: k.id });
-      if (k.id === 'ftri' && lim.found > 0) {
-        rows.push({ id: 'rsq', name: `Запас фундаментів, квадрат (×${fmtN(lim.found)})`, n: bud.resSq, price: 'fsq', sub: true });
-        rows.push({ id: 'rtri', name: `Запас фундаментів, трикутник (×${fmtN(lim.found)})`, n: bud.resTri, price: 'ftri', sub: true });
-      }
-    }
-    return rows;
-  }
   function renderCost() {
-    const prices = store.get('prices', {});
-    let t = '<thead><tr><th>Деталь</th><th>К-сть</th><th>Ціна</th><th>Разом</th></tr></thead><tbody>';
-    for (const r of costRows()) {
-      const v = prices[r.price];
-      const cell = r.sub
-        ? '<td class="same">як вище</td>'
-        : `<td><input type="number" min="0" step="1" inputmode="numeric" data-k="${r.id}" value="${v === undefined ? '' : v}" placeholder="?" aria-label="Ціна: ${r.name}"></td>`;
-      t += `<tr${r.sub ? ' class="sub"' : ''}><td>${r.name}</td><td>${fmtN(r.n)}</td>${cell}<td data-sum="${r.id}">—</td></tr>`;
-    }
-    t += '</tbody><tfoot><tr><td>Разом</td><td></td><td></td><td id="cost-total">—</td></tr></tfoot>';
+    const c = C.B.cost(C.res, C.lim);
+    let t = `<thead><tr><th>Деталь</th><th>К-сть</th><th>Ціна</th><th>Каменю</th></tr></thead><tbody>`;
+    for (const r of c.rows) t += `<tr${r.sub ? ' class="sub"' : ''}><td>${r.name}</td><td>${fmtN(r.n)}</td><td>${fmtP(r.price)}</td><td>${fmtN(r.sum)}</td></tr>`;
+    if (c.shields) t += `<tr><td>Пентащит (секція)</td><td>${fmtN(c.shields)}</td><td class="same">не камінь</td><td>—</td></tr>`;
+    t += `</tbody><tfoot><tr><td>Разом гранітного каменю</td><td></td><td></td><td>${fmtN(c.stone)}</td></tr></tfoot>`;
     $('cost').innerHTML = t;
-    for (const inp of $('cost').querySelectorAll('input')) inp.addEventListener('input', (e) => {
-      const k = e.target.dataset.k, v = e.target.value;
-      const p = store.get('prices', {});
-      if (v === '') delete p[k]; else p[k] = Number(v);
-      store.set('prices', p);
-      recalcCost();
-    });
-    recalcCost();
-  }
-  function recalcCost() {
-    const prices = store.get('prices', {});
-    let sum = 0, any = false;
-    for (const r of costRows()) {
-      const v = prices[r.price];
-      const cell = $('cost').querySelector(`[data-sum="${r.id}"]`);
-      if (v === undefined || v === '' || isNaN(v)) { cell.textContent = '—'; continue; }
-      const x = r.n * Number(v);
-      sum += x; any = true;
-      cell.textContent = fmtN(x);
-    }
-    $('cost-total').textContent = any ? fmtN(sum) + ' ' + ($('cost-res').value || '') : '—';
+    $('cost-note').innerHTML = (c.factor !== 1 ? `Ціни вже зі знижкою Глибокої пустелі (×${fmtP(c.factor)}). ` : '')
+      + (c.shields ? `На пентащити: ${c.shield.map((m) => `<b>${fmtN(m.n)}</b> ${m.name}`).join(', ')}.` : '');
   }
 
-  // Лічильник деталей проти лімітів гри.
   function renderLimit() {
-    const B = window.BUILD, bud = B.budget(BUILD_RES, lim);
+    const B = C.B, bud = B.budget(C.res, C.lim);
     const cap = B.LIMITS[0].cap, over = bud.total - cap;
     $('lim-total').textContent = fmtN(bud.total);
     $('lim-cap').textContent = fmtN(cap);
@@ -223,57 +154,69 @@
     if (over > 0) bar += `<span class="over" style="left:${pc(cap)};width:${pc(over)}"></span>`;
     bar += `<span class="cap" style="left:${pc(cap)}"><span>ліміт ${fmtN(cap)}</span></span>`;
     $('lim-bar').innerHTML = bar;
-    let leg = '';
-    for (const g of bud.groups) leg += `<li><span class="sw s-${g.id}"></span><span>${g.name}</span><b>${fmtN(g.n)}</b></li>`;
-    $('lim-legend').innerHTML = leg;
-    // скільки фундаментів запасу на плиту можна дозволити при поточному декорі
+    $('lim-legend').innerHTML = bud.groups.map((g) => `<li><span class="sw s-${g.id}"></span><span>${g.name}</span><b>${fmtN(g.n)}</b></li>`).join('');
     const room = cap - bud.base - bud.decor;
     const per = Math.floor((room / bud.bottom) * 10) / 10;
     $('lim-hint').innerHTML = room < 0
-      ? `Навіть без запасу фундаментів конструкція з декором уже більша за ліміт на ${fmtN(-room)}.`
-      : `Нижніх плит ${fmtN(bud.bottom)} (з похилими). При декорі ${fmtN(lim.decor)}% у ліміт уміщається <b>${String(per).replace('.', ',')}</b> фундаменту запасу на плиту в середньому — це ${fmtN(Math.floor(room))} фундаментів на весь рельєф.`;
-    // решта категорій
-    const EMPTY = { light: 'решту освітлення ще не сплановано', proj: 'у моделі нічого не віднесено' };
+      ? `Навіть без запасу фундаментів конструкція з декором більша за ліміт на ${fmtN(-room)}.`
+      : `У ліміт уміщається до <b>${fmtP(per)}</b> фундаменту запасу на кожну нижню плиту.`;
     let cats = '';
     for (const c of bud.cats.slice(1)) {
-      const bad = c.n > c.cap;
-      let what = c.items.map(([n, k]) => `${n}${k > 1 ? ' ×' + k : ''}`).join(' · ');
-      if (EMPTY[c.id]) what = what ? what + ' — ' + EMPTY[c.id] : EMPTY[c.id][0].toUpperCase() + EMPTY[c.id].slice(1);
-      cats += `<li class="${bad ? 'bad' : ''}"><div class="lc-top"><span>${c.name}</span><b>${fmtN(c.n)} <i>/ ${fmtN(c.cap)}</i></b></div>`
+      const what = c.items.map(([n, k]) => `${n}${k > 1 ? ' ×' + k : ''}`).join(' · ');
+      cats += `<li class="${c.n > c.cap ? 'bad' : ''}"><div class="lc-top"><span>${c.name}</span><b>${fmtN(c.n)} <i>/ ${fmtN(c.cap)}</i></b></div>`
         + `<div class="mini"><span style="width:${Math.min(100, (c.n / c.cap) * 100).toFixed(2)}%"></span></div><div class="lc-what">${what}</div></li>`;
     }
     $('lim-cats').innerHTML = cats;
   }
 
+  function renderBuild() {
+    for (const inp of document.querySelectorAll('[data-lim]')) inp.value = C.lim[inp.dataset.lim];
+    renderSteps();
+    renderLimit();
+    renderCost();
+  }
+
   // ---------- 3D ----------
-  // Поверхи в 3D: верхня межа зрізу і підлога поверху (для режиму «лише цей поверх»).
-  const CUTS = UI.cuts ? { ...UI.cuts, 'cut-all': [ALL, 0] } : { 'cut-g': [4.9, 0], 'cut-u': [8.95, G], 'cut-t': [12.55, CAR], 'cut-all': [ALL, 0] };
   function floorFor(v) {
     // «тільки плити» завжди показує один поверх (крім «уся база»)
-    if ((!$('opt-iso').checked && !$('opt-found').checked) || v >= ALL) return -1;
-    const lv = M.levels.filter((l) => l.z0 < v - 0.05);
-    const z = (lv[lv.length - 1] || M.levels[0]).z0;
+    if ((!$('opt-iso').checked && !$('opt-found').checked) || v >= C.UI.all) return -1;
+    const lv = C.M.levels.filter((l) => l.z0 < v - 0.05);
+    const z = (lv[lv.length - 1] || C.M.levels[0]).z0;
     return z > 0 ? z - 0.009 : -1; // між карнизами (−0.02) і дахами (−0.004), не на плиті
   }
   function setCut(v) {
+    C.cut = v;
     $('cut').value = v;
-    $('cut-val').textContent = v >= ALL ? 'усе' : '+' + Number(v).toFixed(2).replace(/\.?0+$/, '');
-    press(Object.keys(CUTS), Object.keys(CUTS).find((k) => Math.abs(CUTS[k][0] - v) < 0.01) || '');
-    if (view) view.setCut(v >= ALL ? 99 : v, floorFor(v));
+    $('cut-val').textContent = v >= C.UI.all ? 'усе' : '+' + Number(v).toFixed(2).replace(/\.?0+$/, '');
+    press(Object.keys(C.cuts), Object.keys(C.cuts).find((k) => Math.abs(C.cuts[k][0] - v) < 0.01) || '');
+    if (C.view) C.view.setCut(v >= C.UI.all ? 99 : v, floorFor(v));
+  }
+  function applyOptions(v) {
+    v.setInterior($('opt-interior').checked);
+    v.setFoundation($('opt-found').checked);
+    v.setTileColors($('opt-tiles').checked);
+    v.setLabels($('opt-labels3d').checked);
   }
   function ensure3D() {
-    if (view) return true;
+    if (C.view) return true;
     if (!window.THREE || !window.THREE.OrbitControls) {
-      $('three').innerHTML = '<div class="three-msg">Не вдалося завантажити three.js. Перевір з\'єднання і онови сторінку — план у вкладці «План» працює без нього.</div>';
+      $('three').innerHTML = '<div class="three-msg">Не вдалося завантажити three.js. Онови сторінку — план працює без нього.</div>';
       return false;
     }
-    view = window.VIEW3D.create($('three'), {});
-    view.setInterior($('opt-interior').checked);
-    view.setFoundation($('opt-found').checked);
-    view.setTileColors($('opt-tiles').checked);
-    view.setLabels($('opt-labels3d').checked);
-    setCut(Number($('cut').value));
+    C.box = document.createElement('div');
+    C.box.className = 'three-base';
+    $('three').appendChild(C.box);
+    C.view = window.VIEW3D.create(C.box, {}, C.M);
     return true;
+  }
+  function show3D() {
+    for (const k of ORDER) if (ctx[k] && ctx[k] !== C && ctx[k].view) { ctx[k].view.stop(); ctx[k].box.hidden = true; }
+    if (state.tab === 'plan') { if (C.view) C.view.stop(); return; }
+    if (!ensure3D()) return;
+    C.box.hidden = false;
+    applyOptions(C.view);
+    setCut(C.cut);
+    C.view.start();
   }
 
   function setTab(t) {
@@ -282,37 +225,74 @@
     press(['tab-plan', 'tab-3d'], 'tab-' + (t === 'plan' ? 'plan' : '3d'));
     $('plan-panel').hidden = t !== 'plan';
     $('three-panel').hidden = t === 'plan';
-    if (t === 'plan') { if (view) view.stop(); }
-    else if (ensure3D()) view.start();
+    show3D();
+  }
+
+  // ---------- перемикання бази ----------
+  function setBase(id) {
+    if (!BASES[id]) id = ORDER[0];
+    C = context(id);
+    store.set('base', id);
+    try { history.replaceState(null, '', id === ORDER[0] ? location.pathname : '#' + id); } catch (e) { /* без адреси */ }
+    press(ORDER.map((k) => 'base-' + k), 'base-' + id);
+    const UI = C.UI;
+    $('base-title').textContent = UI.name;
+    $('base-lead').textContent = UI.lead;
+    $('base-facts').innerHTML = UI.facts.map((f) => `<li>${f}</li>`).join('');
+    // атрибут, а не el.hidden: у SVG такої властивості немає
+    for (const el of document.querySelectorAll('[data-only]')) el.toggleAttribute('hidden', el.dataset.only !== id);
+
+    $('lvl-seg').innerHTML = C.M.levels.map((l) => `<button id="lvl-${l.key}" type="button" aria-pressed="false">${UI.levelButtons[l.key]}</button>`).join('');
+    for (const l of C.M.levels) $('lvl-' + l.key).addEventListener('click', () => setLevel(l.key));
+    $('cut-seg').innerHTML = Object.keys(C.cuts).map((k) => `<button id="${k}" type="button" aria-pressed="false">${k === 'cut-all' ? 'Уся база' : UI.cutButtons[k]}</button>`).join('');
+    for (const k of Object.keys(C.cuts)) $(k).addEventListener('click', () => setCut(C.cuts[k][0]));
+    $('cut').max = UI.all;
+
+    state.highlight = null;
+    select(null, false);
+    renderCounts();
+    renderBuild();
+    setCut(C.cut);
+    show3D();
   }
 
   // ---------- події ----------
+  for (const k of ORDER) $('base-' + k).addEventListener('click', () => setBase(k));
   $('tab-plan').addEventListener('click', () => setTab('plan'));
   $('tab-3d').addEventListener('click', () => setTab('3d'));
-  for (const l of ['g', 'u', 't', 'r']) if ($('lvl-' + l)) $('lvl-' + l).addEventListener('click', () => setLevel(l));
-  $('opt-interior').addEventListener('change', (e) => view && view.setInterior(e.target.checked));
-  $('opt-found').addEventListener('change', (e) => { if (view) view.setFoundation(e.target.checked); setCut(Number($('cut').value)); });
+  $('opt-interior').addEventListener('change', (e) => C.view && C.view.setInterior(e.target.checked));
+  $('opt-found').addEventListener('change', (e) => { if (C.view) C.view.setFoundation(e.target.checked); setCut(Number($('cut').value)); });
   $('opt-items').addEventListener('change', (e) => { state.items = e.target.checked; renderPlan(); });
   $('opt-labels').addEventListener('change', (e) => { state.labels = e.target.checked; renderPlan(); });
   $('opt-coords').checked = state.coords;
   $('opt-coords').addEventListener('change', (e) => { state.coords = e.target.checked; store.set('coords', state.coords); renderPlan(); });
-  for (const k of Object.keys(CUTS)) $(k).addEventListener('click', () => setCut(CUTS[k][0]));
   $('opt-iso').addEventListener('change', () => setCut(Number($('cut').value)));
   $('cut').addEventListener('input', (e) => setCut(Number(e.target.value)));
-  $('opt-tiles').addEventListener('change', (e) => view && view.setTileColors(e.target.checked));
-  $('opt-labels3d').addEventListener('change', (e) => view && view.setLabels(e.target.checked));
+  $('opt-tiles').addEventListener('change', (e) => C.view && C.view.setTileColors(e.target.checked));
+  $('opt-labels3d').addEventListener('change', (e) => C.view && C.view.setLabels(e.target.checked));
   for (const c of ['quarter', 'front', 'back', 'top'])
     $('cam-' + c).addEventListener('click', () => {
       press(['cam-quarter', 'cam-front', 'cam-back', 'cam-top'], 'cam-' + c);
-      if (view) view.setView(c);
+      if (C.view) C.view.setView(c);
+    });
+  for (const inp of document.querySelectorAll('[data-lim]'))
+    inp.addEventListener('input', () => {
+      const v = Number(inp.value);
+      if (inp.value === '' || !isFinite(v) || v < 0) return;
+      C.lim[inp.dataset.lim] = v;
+      store.set(C.id + ':limit', C.lim);
+      renderSteps();
+      renderLimit();
+      renderCost();
     });
 
-  renderPlan();
-  renderRooms();
-  renderCounts();
-  renderBuild();
-  setTab(state.tab === '3d' ? '3d' : 'plan');
+  const fromHash = location.hash.replace('#', '');
+  state.tab = state.tab === '3d' ? '3d' : 'plan';
+  press(['tab-plan', 'tab-3d'], 'tab-' + state.tab);
+  $('plan-panel').hidden = state.tab !== 'plan';
+  $('three-panel').hidden = state.tab === 'plan';
+  setBase(BASES[fromHash] ? fromHash : store.get('base', ORDER[0]));
 
-  // для знімків екрана
-  window.CITADEL = { setTab, setLevel, setCut, select, view: () => view };
+  // для знімків екрана і перевірок
+  window.SANDWALKERS = { setBase, setTab, setLevel, setCut, select, view: () => C.view };
 })();

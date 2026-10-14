@@ -32,12 +32,12 @@ const threeDir = process.env.THREE_DIR;
 
   const plan = page.locator('#plan svg');
   for (const lvl of ['g', 'u', 't', 'r']) {
-    await page.evaluate((l) => window.CITADEL.setLevel(l), lvl);
+    await page.evaluate((l) => window.SANDWALKERS.setLevel(l), lvl);
     await plan.screenshot({ path: path.join(out, `plan-${lvl}.png`) });
   }
-  await page.evaluate(() => window.CITADEL.setLevel('g'));
+  await page.evaluate(() => window.SANDWALKERS.setLevel('g'));
 
-  await page.evaluate(() => window.CITADEL.setTab('3d'));
+  await page.evaluate(() => window.SANDWALKERS.setTab('3d'));
   await page.waitForTimeout(1500);
   const three = page.locator('#three');
   const shots = [
@@ -49,7 +49,7 @@ const threeDir = process.env.THREE_DIR;
     ['3d-cut-carrier', 'quarter', 12.55],
   ];
   for (const [name, cam, cut] of shots) {
-    await page.evaluate(([c, k]) => { window.CITADEL.view().setView(c); window.CITADEL.setCut(k); }, [cam, cut]);
+    await page.evaluate(([c, k]) => { window.SANDWALKERS.view().setView(c); window.SANDWALKERS.setCut(k); }, [cam, cut]);
     await page.waitForTimeout(900);
     await three.screenshot({ path: path.join(out, name + '.png') });
   }
