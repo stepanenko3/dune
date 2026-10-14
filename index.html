@@ -196,6 +196,12 @@ table.cost tfoot td { font-weight: 700; border-bottom: 0; }
 .small { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; }
 .steps .cnt .res { color: var(--muted); }
 table.cost tr.sub td:first-child { padding-left: 12px; color: var(--muted); }
+table.cost input.cell { width: 7.5ch; padding: 3px 5px; font: inherit; text-align: right; color: var(--ink); background: transparent; border: 1px solid transparent; border-radius: 5px; font-variant-numeric: tabular-nums; }
+table.cost input.cell:hover { border-color: var(--line); background: var(--surface-2); }
+table.cost input.cell:focus { outline: none; border-color: var(--accent); background: var(--surface); }
+table.cost input.cell.edited { color: var(--accent); font-weight: 600; border-color: var(--line); }
+.linkbtn { padding: 0; font: inherit; color: var(--accent); background: none; border: 0; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.linkbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 table.cost td.same { color: var(--muted); font-size: 12px; }
 /* лічильник деталей */
 .build .lim { grid-column: 1 / -1; }
@@ -240,13 +246,23 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
 .lc-what { font-size: 12px; line-height: 1.45; color: var(--muted); }
 .src { margin-top: 12px; font-size: 12.5px; color: var(--muted); }
 .src a { color: inherit; }
-.versions { padding: 14px 20px; }
-.versions summary { font: 700 13px/1.3 var(--font-display); letter-spacing: 0.02em; cursor: pointer; }
-.versions summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.vcols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 8px 32px; margin-top: 14px; }
-.vcols h3 { margin: 0 0 8px; font-size: 13.5px; }
-.vcols ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13.5px; color: var(--muted); }
-.vcols b { color: var(--ink); font: 600 12.5px/1.5 var(--font-mono); margin-right: 4px; }
+.versions { padding: 18px 20px; }
+.versions h2 { font-size: 15px; margin-bottom: 12px; }
+.vcols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px 32px; align-items: start; }
+.vcols h3 { margin: 0 0 6px; font-size: 13.5px; }
+.ver { border-top: 1px solid var(--line); }
+.ver summary { display: grid; grid-template-columns: 3.2ch 1fr auto; gap: 10px; align-items: baseline; padding: 8px 2px; cursor: pointer; font-size: 13.5px; list-style: none; }
+.ver summary::-webkit-details-marker { display: none; }
+.ver summary::before { content: none; }
+.ver summary b { font: 600 12.5px/1.5 var(--font-mono); color: var(--muted); text-align: right; }
+.ver[open] summary b, .ver summary:hover b { color: var(--accent); }
+.ver summary time { font: 500 12px/1.5 var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.ver summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.vbody { padding: 2px 2px 14px calc(3.2ch + 12px); font-size: 13.5px; }
+.vbody ul { margin: 0 0 10px; padding-left: 16px; display: grid; gap: 4px; color: var(--muted); }
+.vbody img { display: block; width: 100%; max-width: 640px; height: auto; border-radius: 6px; border: 1px solid var(--line); background: var(--surface-2); }
+.vmeta { margin: 8px 0 0; font-size: 12.5px; color: var(--muted); }
+.vmeta a { color: inherit; font-family: var(--font-mono); }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
 </style>
 <!-- page:head-end -->
@@ -367,43 +383,10 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
     </section>
   </div>
 
-  <details class="card versions">
-    <summary>Версії</summary>
-    <div class="vcols">
-      <section>
-        <h3>Sandwalkers Main</h3>
-        <ol reversed>
-          <li><b>19.</b> Сардаукарський набір, кошторис у гранітному камені, одна сторінка з DD.</li>
-          <li><b>18.</b> Другий марш сходів притулено до галереї залу; сходи — сходинки на похилій плиті.</li>
-          <li><b>17.</b> Ангари орні місцями: асаулт ліворуч на всю грань, скаути праворуч; сходи в ангар грузових від переходу.</li>
-          <li><b>16.</b> Модель як збудовано в грі: склад, цех меланжу і рудний цех переставлено, одна колона, вужчий ангар скаутів.</li>
-          <li><b>15.</b> Без вікон, 3D без мерехтіння, чисті зрізи.</li>
-          <li><b>14.</b> Ангар грузових стоїть на стінах нижче, без вигаданих трикутників.</li>
-          <li><b>13.</b> Ліміти бази по 7 категоріях, запас фундаментів і декору.</li>
-          <li><b>12.</b> Склад на контейнери, етапи будівництва і кошторис, координати на плані; цехи на +5.</li>
-          <li><b>11.</b> Крила складу замість зайвих фундаментів за цехами.</li>
-          <li><b>10.</b> Фундамент без щілин, зал — витягнутий шестикутник, режим «тільки плити».</li>
-          <li><b>9.</b> Ангар грузових не нависає над ангарами орні, задній майданчик.</li>
-          <li><b>8.</b> Ангари орні над обривом, заглиблений задній вхід, фабрикатори в залі, вежі з +9.</li>
-          <li><b>6–7.</b> Ангари орні на тилу під кутом, задній зал, прямий центр, перехід із балконом, місток-брама.</li>
-          <li><b>5.</b> Прямі стіни біля ангарів, вільний заліт, вітряки 1×1 і вітропастки 1,5×1,5.</li>
-          <li><b>4.</b> Дах ангарів у 2 яруси, ступінчаста гора, центр на +9.</li>
-          <li><b>3.</b> Ангари з пентащитів, ангар грузових на 2 місця поруч, піраміда, вежі з балконами.</li>
-          <li><b>2.</b> 2×3 ділянки (20×30), заокруглений заїзд, ангар грузових із порталами, вежі.</li>
-          <li><b>1.</b> Перший проєкт на 6 ділянок: заїзд, гаражі, Великий зал, цехи, ангари, наскрізний ангар грузових.</li>
-        </ol>
-      </section>
-      <section>
-        <h3>Sandwalkers DD</h3>
-        <ol reversed>
-          <li><b>4.</b> Сардаукарський набір, кошторис зі знижкою Deep Desert, одна сторінка з Main.</li>
-          <li><b>3.</b> Гараж багі; ангар на один асаулт із вильотом угору крізь пентащит у даху; переробка нагорі.</li>
-          <li><b>2.</b> Нижче: 2 яруси замість 3, дах на +5.</li>
-          <li><b>1.</b> Кругла будівля 10×10 на 3 яруси: енергія і склад, переробка, ангар на асаулт і скаут.</li>
-        </ol>
-      </section>
-    </div>
-  </details>
+  <section class="card versions" aria-labelledby="h-ver">
+    <h2 id="h-ver">Версії</h2>
+    <div class="vcols" id="versions"></div>
+  </section>
 </div>
   </div>
 </div>
@@ -416,6 +399,7 @@ table.cost td.same { color: var(--muted); font-size: 12px; }
 <script src="src/plan2d.js"></script>
 <script src="src/build.js"></script>
 <script src="src/view3d.js"></script>
+<script src="src/versions.js"></script>
 <script src="src/app.js"></script>
 <!-- page:end -->
 </body>

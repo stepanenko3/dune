@@ -206,7 +206,7 @@
       for (const r of rows) r.sum = r.n * r.price;
       const stone = rows.reduce((a, r) => a + r.sum, 0);
       const shield = t.shield ? SHIELD.map(([name, per]) => ({ name, n: Math.ceil(t.shield * per * k) })) : [];
-      return { rows, stone, shields: t.shield, shield, factor: k };
+      return { rows, stone, shields: t.shield, shield, shieldPer: SHIELD.map(([name, per]) => ({ name, per: per * k })), factor: k };
     }
 
     function budget(res, { found = 4, decor = 10 } = {}) {

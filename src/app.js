@@ -128,15 +128,70 @@
     $('steps').innerHTML = html;
   }
 
+  // Кошторис: кількість і ціну можна виправити прямо в комірці; правки зберігаються для кожної бази окремо.
+  const num = (v) => Number(String(v).trim().replace(/\s/g, '').replace(',', '.'));
   function renderCost() {
-    const c = C.B.cost(C.res, C.lim);
-    let t = `<thead><tr><th>Деталь</th><th>К-сть</th><th>Ціна</th><th>Каменю</th></tr></thead><tbody>`;
-    for (const r of c.rows) t += `<tr${r.sub ? ' class="sub"' : ''}><td>${r.name}</td><td>${fmtN(r.n)}</td><td>${fmtP(r.price)}</td><td>${fmtN(r.sum)}</td></tr>`;
-    if (c.shields) t += `<tr><td>Пентащит (секція)</td><td>${fmtN(c.shields)}</td><td class="same">не камінь</td><td>—</td></tr>`;
-    t += `</tbody><tfoot><tr><td>Разом гранітного каменю</td><td></td><td></td><td>${fmtN(c.stone)}</td></tr></tfoot>`;
+    const c = C.B.cost(C.res, C.lim), ov = store.get(C.id + ':cost', {});
+    const rows = c.rows.map((r) => ({ id: r.id, name: r.name, sub: r.sub, n: r.n, price: r.price }));
+    if (c.shields) rows.push({ id: 'shield', name: 'Пентащит (секція)', n: c.shields, price: null });
+    const cell = (r, f, v, label) => {
+      const edited = ov[r.id] && ov[r.id][f] !== undefined;
+      return `<input class="cell${edited ? ' edited' : ''}" type="text" inputmode="decimal" data-row="${r.id}" data-f="${f}" data-def="${r[f]}" value="${f === 'n' ? Math.round(edited ? ov[r.id][f] : v) : fmtP(edited ? ov[r.id][f] : v)}" aria-label="${label}: ${r.name}">`;
+    };
+    let t = '<thead><tr><th>Деталь</th><th>К-сть</th><th>Ціна</th><th>Каменю</th></tr></thead><tbody>';
+    for (const r of rows)
+      t += `<tr${r.sub ? ' class="sub"' : ''}><td>${r.name}</td><td>${cell(r, 'n', r.n, 'Кількість')}</td>`
+        + `<td>${r.price === null ? '<span class="same">не камінь</span>' : cell(r, 'price', r.price, 'Ціна')}</td><td data-sum="${r.id}">—</td></tr>`;
+    t += '</tbody><tfoot><tr><td>Разом гранітного каменю</td><td></td><td></td><td id="cost-total">—</td></tr></tfoot>';
     $('cost').innerHTML = t;
+    for (const inp of $('cost').querySelectorAll('input.cell')) {
+      inp.addEventListener('input', () => {
+        const o = store.get(C.id + ':cost', {}), k = inp.dataset.row, f = inp.dataset.f, v = num(inp.value);
+        o[k] = o[k] || {};
+        if (inp.value.trim() === '' || !isFinite(v) || v < 0 || Math.abs(v - Number(inp.dataset.def)) < 1e-9) delete o[k][f];
+        else o[k][f] = v;
+        if (!Object.keys(o[k]).length) delete o[k];
+        store.set(C.id + ':cost', o);
+        inp.classList.toggle('edited', !!(o[k] && o[k][f] !== undefined));
+        recalcCost(c);
+      });
+      // порожня або хибна комірка після виходу показує стандартне значення
+      inp.addEventListener('change', () => { if (inp.value.trim() === '' || !isFinite(num(inp.value))) renderCost(); });
+    }
+    recalcCost(c);
+  }
+  function recalcCost(c) {
+    const val = (k, f) => { const el = $('cost').querySelector(`input[data-row="${k}"][data-f="${f}"]`); const v = el ? num(el.value) : NaN; return isFinite(v) && v >= 0 ? v : Number(el && el.dataset.def); };
+    let stone = 0;
+    for (const td of $('cost').querySelectorAll('[data-sum]')) {
+      const k = td.dataset.sum;
+      if (k === 'shield') { td.textContent = '—'; continue; }
+      const x = val(k, 'n') * val(k, 'price');
+      stone += x;
+      td.textContent = fmtN(x);
+    }
+    $('cost-total').textContent = fmtN(stone);
+    const sh = c.shields ? val('shield', 'n') : 0;
+    const edited = Object.keys(store.get(C.id + ':cost', {})).length > 0;
     $('cost-note').innerHTML = (c.factor !== 1 ? `Ціни вже зі знижкою Глибокої пустелі (×${fmtP(c.factor)}). ` : '')
-      + (c.shields ? `На пентащити: ${c.shield.map((m) => `<b>${fmtN(m.n)}</b> ${m.name}`).join(', ')}.` : '');
+      + (sh ? `На пентащити: ${c.shieldPer.map((m) => `<b>${fmtN(Math.ceil(sh * m.per))}</b> ${m.name}`).join(', ')}. ` : '')
+      + 'Кількість і ціну можна виправити в комірці.'
+      + (edited ? ' <button type="button" class="linkbtn" id="cost-reset">Скинути правки</button>' : '');
+    if (edited) $('cost-reset').addEventListener('click', () => { store.set(C.id + ':cost', {}); renderCost(); });
+  }
+
+  // ---------- версії ----------
+  const BASE_NAMES = { main: 'Sandwalkers Main', dd: 'Sandwalkers DD' };
+  const REPO = 'https://github.com/stepanenko3/dune/commit/';
+  function renderVersions() {
+    const V = window.VERSIONS || [];
+    const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const date = (d) => d.split('-').reverse().join('.');
+    $('versions').innerHTML = ORDER.map((b) => `<section><h3>${BASE_NAMES[b] || b}</h3>` + V.filter((v) => v.base === b).map((v) =>
+      `<details class="ver"><summary><b>${esc(v.n)}</b><span class="vt">${esc(v.title)}</span><time datetime="${v.date}">${date(v.date)}</time></summary>`
+      + `<div class="vbody"><ul>${v.changes.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`
+      + `<img src="${v.img}" alt="${esc(BASE_NAMES[b] || b)}, версія ${esc(v.n)}, вигляд 3D" width="960" height="655" loading="lazy">`
+      + `<p class="vmeta">${v.commit ? `Коміт <a href="${REPO}${v.commit}" target="_blank" rel="noopener">${v.commit}</a>` : 'Поточна версія'}</p></div></details>`).join('') + '</section>').join('');
   }
 
   function renderLimit() {
@@ -286,6 +341,7 @@
       renderCost();
     });
 
+  renderVersions();
   const fromHash = location.hash.replace('#', '');
   state.tab = state.tab === '3d' ? '3d' : 'plan';
   press(['tab-plan', 'tab-3d'], 'tab-' + state.tab);
