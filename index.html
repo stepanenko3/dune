@@ -198,7 +198,6 @@ table.cost th, table.cost td { padding: 5px 4px; border-bottom: 1px solid var(--
 table.cost th:first-child, table.cost td:first-child { text-align: left; padding-left: 0; }
 table.cost tfoot td { font-weight: 700; border-bottom: 0; }
 .small { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; }
-.steps .cnt .res { color: var(--muted); }
 table.cost tr.sub td:first-child { padding-left: 12px; color: var(--muted); }
 table.cost input.cell { width: 7.5ch; padding: 3px 5px; font: inherit; text-align: right; color: var(--ink); background: transparent; border: 1px solid transparent; border-radius: 5px; font-variant-numeric: tabular-nums; }
 table.cost input.cell:hover { border-color: var(--line); background: var(--surface-2); }
@@ -233,16 +232,11 @@ h2 + .cost-sub { margin-top: 0; }
 .s-w { background: var(--wall); }
 .s-g { background: var(--accent); }
 .s-o { background: var(--muted); }
-.s-rf { background: repeating-linear-gradient(135deg, var(--sq) 0 3px, transparent 3px 6px); }
-.s-rd { background: repeating-linear-gradient(135deg, var(--accent) 0 3px, transparent 3px 6px); }
 .s-e { background: var(--accent); }
 .lim-legend { list-style: none; margin: 0 0 14px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 4px 20px; font-size: 13px; }
 .lim-legend li { display: flex; align-items: center; gap: 8px; }
 .lim-legend b { margin-left: auto; font: 500 12.5px/1.4 var(--font-mono); font-variant-numeric: tabular-nums; }
 .lim-legend .sw { flex: none; width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--line); }
-.lim-opts { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 13px; color: var(--muted); }
-.lim-opts label { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.lim-opts input[type="number"] { width: 9ch; padding: 3px 5px; font: inherit; text-align: right; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; }
 .lim-sub { margin: 18px 0 10px; font-size: 13.5px; font-weight: 600; }
 .lim-cats { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px 22px; }
 .lim-cats li { min-width: 0; }
@@ -413,11 +407,6 @@ table.rm-cost tr.sum td { font-weight: 700; }
       </div>
       <div class="lim-bar" id="lim-bar" role="img" aria-label="Розподіл деталей відносно ліміту"></div>
       <ul class="lim-legend" id="lim-legend"></ul>
-      <div class="lim-opts">
-        <label>Запас фундаментів під кожну нижню плиту <input data-lim="found" type="number" min="0" step="1" inputmode="numeric"> шт.</label>
-        <label>Запас на декор <input data-lim="decor" type="number" min="0" step="1" inputmode="numeric"> %</label>
-      </div>
-      <p class="small" id="lim-hint"></p>
       <h3 class="lim-sub">Інші ліміти бази</h3>
       <ul class="lim-cats" id="lim-cats"></ul>
           </section>
@@ -435,7 +424,7 @@ table.rm-cost tr.sum td { font-weight: 700; }
       <h3 class="cost-sub">Що зібрати — усе разом</h3>
       <ul class="cost-all" id="cost-all"></ul>
       <p class="small" id="cost-note"></p>
-      <p class="src">Ціни сардаукарського набору (актуальні на жовтень 2026): <a href="https://dune.gaming.tools/buildables/sardaukar_foundation" target="_blank" rel="noopener">фундамент</a> · <a href="https://dune.gaming.tools/buildables/sardaukar_wall_02" target="_blank" rel="noopener">стіна</a> · <a href="https://dune.gaming.tools/buildables/sardaukar_column" target="_blank" rel="noopener">колона</a> · <a href="https://awakening.wiki/Sardaukar_Building_Set" target="_blank" rel="noopener">увесь набір</a> · <a href="https://dune.gaming.tools/placeables/choam_pentashieldsurfacevertical_placeable" target="_blank" rel="noopener">пентащит</a> · <a href="https://www.method.gg/dune-awakening/building-in-the-deep-desert-in-dune-awakening-a-full-guide" target="_blank" rel="noopener">−50% у Deep Desert</a>. Пристрої: <a href="https://dune.gaming.tools/placeables/generator_placeable" target="_blank" rel="noopener">генератор</a> · <a href="https://dune.gaming.tools/placeables/fabricator_placeable" target="_blank" rel="noopener">фабрикатор</a> · <a href="https://dune.gaming.tools/placeables/repairstation_placeable" target="_blank" rel="noopener">ремонтна станція</a> · <a href="https://dune.gaming.tools/placeables/storagecontainer_placeable" target="_blank" rel="noopener">контейнер</a> · <a href="https://dune.gaming.tools/placeables/totem_placeable" target="_blank" rel="noopener">розширена консоль</a> · <a href="https://dune.gaming.tools/items/oil" target="_blank" rel="noopener">паливний елемент</a> · <a href="https://awakening.wiki/Solido_Replicator" target="_blank" rel="noopener">реплікатор</a></p>
+      <p class="src">Джерела: <a href="https://dune.gaming.tools/buildables/sardaukar_foundation" target="_blank" rel="noopener">фундамент</a> · <a href="https://dune.gaming.tools/buildables/sardaukar_wall_02" target="_blank" rel="noopener">стіна</a> · <a href="https://dune.gaming.tools/buildables/sardaukar_column" target="_blank" rel="noopener">колона</a> · <a href="https://awakening.wiki/Sardaukar_Building_Set" target="_blank" rel="noopener">увесь набір</a> · <a href="https://dune.gaming.tools/placeables/choam_pentashieldsurfacevertical_placeable" target="_blank" rel="noopener">пентащит</a> · <a href="https://www.method.gg/dune-awakening/building-in-the-deep-desert-in-dune-awakening-a-full-guide" target="_blank" rel="noopener">−50% у Deep Desert</a> · <a href="https://dune.gaming.tools/placeables/generator_placeable" target="_blank" rel="noopener">генератор</a> · <a href="https://dune.gaming.tools/placeables/fabricator_placeable" target="_blank" rel="noopener">фабрикатор</a> · <a href="https://dune.gaming.tools/placeables/repairstation_placeable" target="_blank" rel="noopener">ремонтна станція</a> · <a href="https://dune.gaming.tools/placeables/storagecontainer_placeable" target="_blank" rel="noopener">контейнер</a> · <a href="https://dune.gaming.tools/placeables/totem_placeable" target="_blank" rel="noopener">розширена консоль</a> · <a href="https://dune.gaming.tools/items/oil" target="_blank" rel="noopener">паливний елемент</a> · <a href="https://awakening.wiki/Solido_Replicator" target="_blank" rel="noopener">реплікатор</a></p>
     </section>
   </div>
 

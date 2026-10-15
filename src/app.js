@@ -12,7 +12,6 @@
   const fmtP = (n) => String(Math.round(n * 10) / 10).replace('.', ',');
   const press = (ids, active) => { for (const id of ids) if ($(id)) $(id).setAttribute('aria-pressed', String(id === active)); };
   const listed = (r) => r.group !== 'crown';
-  const LIM_DEF = { found: 4, decor: 10 };
 
   // ---------- база: модель, план, підрахунки і 3D для кожної — один раз ----------
   const ctx = {};
@@ -27,7 +26,6 @@
       id, M, UI, B, P: window.PLAN2D.make(M), res: B.compute(),
       levelOf: (r) => (r.z0 < G ? 'g' : r.z0 < CAR ? 'u' : r.z0 < TOP ? 't' : 'r'),
       cuts: { ...UI.cuts, 'cut-all': [UI.all, 0] },
-      lim: Object.assign({}, LIM_DEF, store.get(id + ':limit', {})),
       level, cut: UI.all, view: null, box: null,
     });
   }
@@ -115,13 +113,12 @@
 
   // ---------- етапи, кошторис, ліміти ----------
   function renderSteps() {
-    const B = C.B, bud = B.budget(C.res, C.lim);
-    const short = { fsq: 'фунд. кв.', ftri: 'фунд. тр.', ramp: 'похилих', csq: 'перекр. кв.', ctri: 'перекр. тр.', wall: 'стін', door: 'дверей', shield: 'пентащитів', rail: 'парапетів', stairs: 'сходів', pillar: 'колон' };
+    const B = C.B;
+    const short = { fsq: 'фунд. кв.', ftri: 'фунд. тр.', ramp: 'похилих', csq: 'перекр. кв.', ctri: 'перекр. тр.', wall: 'стін', door: 'дверей', penta: 'пентащитів', rail: 'парапетів', stairs: 'сходів', pillar: 'колон' };
     let html = '';
     for (const st of C.res.stages) {
-      let parts = B.KINDS.filter((k) => st.n[k.id]).map((k) => `<span>${short[k.id]} ${fmtN(st.n[k.id])}</span>`).join('');
-      if (st.id === 'found' && C.lim.found > 0) parts += `<span class="res">+ запас: кв. ${fmtN(bud.resSq)}, тр. ${fmtN(bud.resTri)}</span>`;
-      html += `<li><div><b>${st.name}.</b> <span class="what">${st.note}</span><div class="cnt">${parts}</div></div></li>`;
+      const parts = B.KINDS.filter((k) => short[k.id] && st.n[k.id]).map((k) => `<span>${short[k.id]} ${fmtN(st.n[k.id])}</span>`).join('');
+      html +=`<li><div><b>${st.name}.</b> <span class="what">${st.note}</span><div class="cnt">${parts}</div></div></li>`;
     }
     const eq = B.equipment().map(([n, c]) => `<span>${n}${c > 1 ? ' ×' + c : ''}</span>`).join('');
     html += `<li><div><b>Пристрої й обладнання.</b><div class="cnt">${eq}</div></div></li>`;
@@ -132,7 +129,7 @@
   const num = (v) => Number(String(v).trim().replace(/\s/g, '').replace(',', '.'));
   const devId = (d) => (d.id === 'shield' ? 'shield' : 'd-' + d.id);
   function renderCost() {
-    const c = C.B.cost(C.res, C.lim), ov = store.get(C.id + ':cost', {});
+    const c = C.B.cost(C.res), ov = store.get(C.id + ':cost', {});
     const short = Object.fromEntries(c.MATS.map((m) => [m.id, m.short]));
     const cell = (r, f, v, label) => {
       const edited = ov[r.id] && ov[r.id][f] !== undefined;
@@ -180,7 +177,7 @@
     $('cost-total').textContent = fmtN(stone);
     // усе разом: камінь + матеріали пентащитів і пристроїв; паливо — на тиждень роботи генераторів
     const need = {}, n = {};
-    let gives = 0, takes = 0;
+    let gives = 0, takes = c.shieldDraw;
     for (const x of c.devices) {
       n[x.id] = val(devId(x), 'n');
       for (const [m, q] of Object.entries(x.mats)) need[m] = (need[m] || 0) + n[x.id] * q;
@@ -190,11 +187,9 @@
     if (n.generator) all.push([n.generator * c.fuelWeek, 'паливних елементів на тиждень']);
     $('cost-all').innerHTML = all.map(([q, name]) => `<li><b>${fmtN(q)}</b><span>${name}</span></li>`).join('');
     const edited = Object.keys(store.get(C.id + ':cost', {})).length > 0;
-    $('cost-note').innerHTML = (c.factor !== 1 ? `Ціни вже зі знижкою Глибокої пустелі (×${fmtP(c.factor)}), крім реплікаторів — їх роблять у Хагга. ` : '')
-      + (gives ? `Енергія: генератори дають <b>${fmtN(gives)}</b>, пентащити й верстаки беруть <b>${fmtN(takes)}</b>. ` : '')
-      + (n.generator ? `Паливо: один елемент на годину на генератор, ${fmtN(n.generator)} × ${c.fuelWeek} год на тиждень. ` : '')
-      + 'Кількість і ціну можна виправити в комірці.'
-      + (edited ? ' <button type="button" class="linkbtn" id="cost-reset">Скинути правки</button>' : '');
+    $('cost-note').innerHTML = (c.factor !== 1 ? `Знижка Deep Desert ×${fmtP(c.factor)}. ` : '')
+      + (gives ? `Енергія: ${fmtN(gives)} є, ${fmtN(takes)} треба. ` : '')
+      + (edited ? '<button type="button" class="linkbtn" id="cost-reset">Скинути правки</button>' : '');
     if (edited) $('cost-reset').addEventListener('click', () => { store.set(C.id + ':cost', {}); renderCost(); });
   }
 
@@ -213,13 +208,13 @@
   }
 
   function renderLimit() {
-    const B = C.B, bud = B.budget(C.res, C.lim);
+    const B = C.B, bud = B.budget(C.res);
     const cap = B.LIMITS[0].cap, over = bud.total - cap;
     $('lim-total').textContent = fmtN(bud.total);
     $('lim-cap').textContent = fmtN(cap);
     const st = $('lim-status');
     st.className = 'lim-status ' + (over > 0 ? 'bad' : 'ok');
-    st.textContent = over > 0 ? `не влазить: більше на ${fmtN(over)}` : `влазить: лишається ${fmtN(-over)}`;
+    st.textContent = over > 0 ? `більше на ${fmtN(over)}` : `лишається ${fmtN(-over)}`;
     const scale = Math.max(bud.total, cap) * 1.04;
     const pc = (n) => ((n / scale) * 100).toFixed(3) + '%';
     let bar = '';
@@ -228,11 +223,6 @@
     bar += `<span class="cap" style="left:${pc(cap)}"><span>ліміт ${fmtN(cap)}</span></span>`;
     $('lim-bar').innerHTML = bar;
     $('lim-legend').innerHTML = bud.groups.map((g) => `<li><span class="sw s-${g.id}"></span><span>${g.name}</span><b>${fmtN(g.n)}</b></li>`).join('');
-    const room = cap - bud.base - bud.decor;
-    const per = Math.floor((room / bud.bottom) * 10) / 10;
-    $('lim-hint').innerHTML = room < 0
-      ? `Навіть без запасу фундаментів конструкція з декором більша за ліміт на ${fmtN(-room)}.`
-      : `У ліміт уміщається до <b>${fmtP(per)}</b> фундаменту запасу на кожну нижню плиту.`;
     let cats = '';
     for (const c of bud.cats.slice(1)) {
       const what = c.items.map(([n, k]) => `${n}${k > 1 ? ' ×' + k : ''}`).join(' · ');
@@ -243,7 +233,6 @@
   }
 
   function renderBuild() {
-    for (const inp of document.querySelectorAll('[data-lim]')) inp.value = C.lim[inp.dataset.lim];
     const how = C.UI.howto;
     $('howto').hidden = !how;
     $('howto').innerHTML = how ? '<h3>Як будувати від кута ділянки</h3><ol>' + how.map((x) => `<li>${x}</li>`).join('') + '</ol>' : '';
@@ -371,16 +360,6 @@
     $('cam-' + c).addEventListener('click', () => {
       press(['cam-quarter', 'cam-front', 'cam-back', 'cam-top'], 'cam-' + c);
       if (C.view) C.view.setView(c);
-    });
-  for (const inp of document.querySelectorAll('[data-lim]'))
-    inp.addEventListener('input', () => {
-      const v = Number(inp.value);
-      if (inp.value === '' || !isFinite(v) || v < 0) return;
-      C.lim[inp.dataset.lim] = v;
-      store.set(C.id + ':limit', C.lim);
-      renderSteps();
-      renderLimit();
-      renderCost();
     });
 
   renderVersions();

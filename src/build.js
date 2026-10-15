@@ -19,7 +19,8 @@
       { id: 'ctri', name: 'Перекриття / дах, трикутник' },
       { id: 'wall', name: 'Стіна (секція)' },
       { id: 'door', name: 'Дверний проріз і двері' },
-      { id: 'shield', name: 'Пентащит (секція)' },
+      { id: 'shield', name: 'Пентащит (секція)' }, // секції — лише для енергії: по 3 на секцію
+      { id: 'penta', name: 'Пентащит' },           // цілий пентащит будь-якого розміру — у дасі чи в стіні
       { id: 'rail', name: 'Парапет (секція)' },
       { id: 'stairs', name: 'Сходи (проліт на 1 рівень)' },
       { id: 'pillar', name: 'Колона (секція на 1 рівень)' },
@@ -98,17 +99,25 @@
         const tp = top(r);
         const s = r.group === 'crown' ? 'tops' : stageOf(r) === 'orni' ? 'orni' : tp <= G ? 'deck1' : tp <= CAR ? 'car' : stageOf(r) === 'car' ? 'car' : 'tops';
         const sky = new Set((r.skylight || []).map(tileKey));
+        let any = false;
         for (const t of r.tiles) {
-          if (sky.has(tileKey(t)) && !r.crown) add(s, 'shield');
+          if (sky.has(tileKey(t)) && !r.crown) { add(s, 'shield'); any = true; }
           else add(s, t.k === 's' ? 'csq' : 'ctri');
         }
-        if (r.crown) for (const t of r.crown.tiles) add(s, sky.has(tileKey(t)) ? 'shield' : t.k === 's' ? 'csq' : 'ctri');
+        if (r.crown) for (const t of r.crown.tiles) {
+          if (sky.has(tileKey(t))) { add(s, 'shield'); any = true; }
+          else add(s, t.k === 's' ? 'csq' : 'ctri');
+        }
+        if (any) add(s, 'penta'); // пентащит у дасі приміщення — один на весь отвір
       }
 
       // стіни: секції по рівнях, спільні — один раз; більш відкритий тип перемагає
       const RANK = { none: 0, door: 1, shield: 2, wall: 4, rail: 5 };
       const cells = new Map();
       const doors = new Map();
+      // пентащит у стіні — один на проріз (сегмент open), хоч би скільки секцій він займав
+      const pentas = new Map();
+      const segKey = (o) => [o.a, o.b].map((p) => p.x.toFixed(2) + ',' + p.y.toFixed(2)).sort().join('|') + '@' + o.z0;
       for (const r of M.rooms) {
         const sg = stageOf(r);
         for (const e of M.roomEdges(r)) {
@@ -123,7 +132,7 @@
           const hi = Math.ceil(top(r) - 0.5);
           for (let z = Math.floor(r.z0); z < hi; z++) {
             const mid = z + 0.5;
-            let type = 'wall';
+            let type = 'wall', sh = null;
             for (const o of e.open) {
               const a = o.z0 !== undefined ? o.z0 : r.z0;
               const b = o.z1 !== undefined ? o.z1 : o.type === 'door' ? r.z0 + 2.5 : top(r);
@@ -131,8 +140,10 @@
               const t = o.type === 'open' || o.type === 'balcony' ? 'none' : o.type;
               if (RANK[t] < RANK[type]) type = t;
               if (o.type === 'door') doors.set(ek + '@' + a.toFixed(1), true);
+              if (o.type === 'shield') sh = o;
             }
             const s = sg === 'ground' ? (z < G ? 'ground' : 'upper') : sg === 'tops' && r.group === 'crown' ? 'tops' : sg;
+            if (type === 'shield' && sh) pentas.set(segKey(sh), s); // ставиться, коли стіни довкола вже до верху прорізу
             const key = ek + '@' + z;
             const prev = cells.get(key);
             if (!prev || RANK[type] < RANK[prev.type]) cells.set(key, { type, s: prev ? prev.s : s });
@@ -144,6 +155,7 @@
       const doorStage = new Map();
       for (const c of cells.entries()) if (c[1].type === 'door') doorStage.set(c[0].split('@')[0], c[1].s);
       for (const [k, s] of doorStage) add(s, 'door');
+      for (const s of pentas.values()) add(s, 'penta');
 
       // сходи — проліт на кожен рівень підйому; колони — секція на рівень
       for (const r of M.rooms) for (const it of r.items || []) {
@@ -182,11 +194,9 @@
       return out;
     }
 
-    // Скільки деталей піде з урахуванням запасів.
-    // found — додаткових фундаментів під кожну нижню плиту (вирівнювання під рельєф), decor — % на декор від конструкції.
     // Ціни сардаукарського набору в гранітному камені за деталь (база в Хагга; у Deep Desert — M.ui.costFactor).
-    // Двері: проріз 10 + стулка 17. Парапет — напівстіна. Запас на декор — клиноподібні стіни по 10.
-    const PRICES = { fsq: 15, ftri: 15, ramp: 10, csq: 10, ctri: 10, wall: 10, door: 27, rail: 10, stairs: 10, pillar: 10, decor: 10 };
+    // Двері: проріз 10 + стулка 17. Парапет — напівстіна.
+    const PRICES = { fsq: 15, ftri: 15, ramp: 10, csq: 10, ctri: 10, wall: 10, door: 27, rail: 10, stairs: 10, pillar: 10 };
     // Матеріали пентащитів і пристроїв: назва в підсумку і коротка — у таблиці.
     const MATS = [
       { id: 'steel', name: 'сталевих злитків', short: 'сталь' },
@@ -197,58 +207,47 @@
       { id: 'alu', name: 'алюмінієвих злитків', short: 'алюміній' },
       { id: 'silicone', name: 'силіконових блоків', short: 'силікон' },
     ];
-    // Рецепти з гри за одиницю (база в Хагга; у Deep Desert — M.ui.costFactor, крім того, що везуть із собою).
-    // power: скільки дає (+) чи бере (−) енергії.
+    // Рецепти з гри за одиницю (база в Хагга; у Deep Desert — M.ui.costFactor; fixed — без знижки).
+    // power: скільки дає (+) чи бере (−) енергії. Пентащит будь-якого розміру — 2 сталі, 20 пасти, 6 серво,
+    // а енергії бере по 3 на кожну секцію (SHIELD_POWER).
     const RECIPES = {
-      shield: { name: 'Пентащит (секція)', mats: { steel: 2, cobalt: 20, servo: 6 }, power: -3 },
+      shield: { name: 'Пентащит (будь-якого розміру)', mats: { steel: 2, cobalt: 20, servo: 6 }, fixed: true },
       generator: { name: 'Паливний генератор', mats: { scrap: 45 }, power: 75 },
       fabricator: { name: 'Фабрикатор (базовий верстак)', mats: { scrap: 75 }, power: -10 },
       repair: { name: 'Ремонтна станція', mats: { iron: 40 }, power: -20 },
       storage: { name: 'Контейнер для зберігання', mats: { alu: 35, silicone: 5 } },
       console: { name: 'Розширена консоль суб-фіфу', mats: { scrap: 40 } },
-      replicator: { name: 'Солідо-реплікатор (з собою)', mats: { scrap: 20 }, carry: true },
+      replicator: { name: 'Солідо-реплікатор (з собою)', mats: { scrap: 20 }, fixed: true },
     };
+    const SHIELD_POWER = 3;   // енергії на секцію пентащита
+    const SHIELD_ELEMS = 2;   // будівельних елементів на пентащит будь-якого розміру
     const FUEL_WEEK = 24 * 7; // паливний елемент горить 1 год — стільки на генератор за тиждень
 
     // Кошторис: рядки деталей із ціною в камені, разом каменю і окремо пентащити й пристрої з моделі (item.recipe).
-    function cost(res, lim) {
-      const k = (M.ui && M.ui.costFactor) || 1, t = res.total, bud = budget(res, lim);
-      const rows = [];
-      for (const kd of KINDS) {
-        if (kd.id === 'shield' || !t[kd.id]) continue;
-        rows.push({ id: kd.id, name: kd.name, n: t[kd.id], price: PRICES[kd.id] * k });
-        if (kd.id === 'ftri' && lim.found > 0) {
-          rows.push({ id: 'rsq', name: `Запас фундаментів, кв. (×${lim.found})`, n: bud.resSq, price: PRICES.fsq * k, sub: true });
-          rows.push({ id: 'rtri', name: `Запас фундаментів, тр. (×${lim.found})`, n: bud.resTri, price: PRICES.ftri * k, sub: true });
-        }
-      }
-      if (bud.decor) rows.push({ id: 'rdec', name: `Запас на декор, клиноподібні стіни (${lim.decor}%)`, n: bud.decor, price: PRICES.decor * k });
+    function cost(res) {
+      const k = (M.ui && M.ui.costFactor) || 1, t = res.total;
+      const rows = KINDS.filter((kd) => PRICES[kd.id] && t[kd.id]).map((kd) => ({ id: kd.id, name: kd.name, n: t[kd.id], price: PRICES[kd.id] * k }));
       for (const r of rows) r.sum = r.n * r.price;
       const stone = rows.reduce((a, r) => a + r.sum, 0);
-      const cnt = { shield: t.shield };
+      const cnt = { shield: t.penta };
       for (const r of M.rooms) for (const it of r.items || []) if (it.recipe) cnt[it.recipe] = (cnt[it.recipe] || 0) + 1;
       for (const [id, n] of Object.entries((M.ui && M.ui.extras) || {})) cnt[id] = (cnt[id] || 0) + n;
       const devices = Object.keys(RECIPES).filter((id) => cnt[id]).map((id) => {
-        const R = RECIPES[id], f = R.carry ? 1 : k;
+        const R = RECIPES[id], f = R.fixed ? 1 : k;
         return { id, name: R.name, n: cnt[id], power: R.power || 0, mats: Object.fromEntries(Object.entries(R.mats).map(([m, q]) => [m, q * f])) };
       });
-      return { rows, stone, devices, MATS, fuelWeek: FUEL_WEEK, factor: k };
+      return { rows, stone, devices, MATS, shieldDraw: t.shield * SHIELD_POWER, fuelWeek: FUEL_WEEK, factor: k };
     }
 
-    function budget(res, { found = 4, decor = 10 } = {}) {
+    // Будівельні елементи проти ліміту; декор до них не належить.
+    function budget(res) {
       const t = res.total;
-      const base = KINDS.reduce((s, k) => s + t[k.id], 0);
-      const bottom = t.fsq + t.ramp + t.ftri; // плити рівня 0, під кожною — стовпчик фундаментів
-      const resSq = found * (t.fsq + t.ramp), resTri = found * t.ftri;
-      const dec = Math.round((base * decor) / 100);
       const groups = [
         { id: 'f', name: 'Фундамент', n: t.fsq + t.ftri + t.ramp },
         { id: 'd', name: 'Перекриття й дахи', n: t.csq + t.ctri },
         { id: 'w', name: 'Стіни', n: t.wall },
-        { id: 'g', name: 'Пентащити', n: t.shield },
+        { id: 'g', name: 'Пентащити', n: t.penta * SHIELD_ELEMS },
         { id: 'o', name: 'Двері, парапети, сходи, колони', n: t.door + t.rail + t.stairs + t.pillar },
-        { id: 'rf', name: 'Запас фундаментів', n: resSq + resTri },
-        { id: 'rd', name: 'Запас на декор', n: dec },
       ];
       const total = groups.reduce((s, g) => s + g.n, 0);
       // решта категорій: пристрої з моделі, двері — по одній на дверний проріз
@@ -259,7 +258,7 @@
         const items = pl[l.id] || [];
         return { ...l, n: items.reduce((s, [, c]) => s + c, 0), items };
       });
-      return { base, bottom, resSq, resTri, decor: dec, groups, total, cats };
+      return { groups, total, cats };
     }
 
     return { KINDS, LIMITS, PRICES, compute, equipment, budget, cost };
