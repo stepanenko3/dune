@@ -73,7 +73,14 @@ header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-cont
 .brand { min-width: 0; max-width: 100%; }
 .seg.base-tabs { max-width: 100%; overflow-x: auto; }
 .seg.base-tabs button { padding: 9px 14px; font-size: 13.5px; }
-@media (max-width: 480px) { .seg.base-tabs button { padding: 8px 9px; font-size: 12.5px; } }
+/* на телефоні вкладки — сіткою 2 × 2, щоб не ширшали за екран */
+@media (max-width: 560px) {
+  .seg.base-tabs { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .seg.base-tabs button { padding: 9px 8px; font-size: 12.5px; white-space: normal; }
+  .seg.base-tabs button + button { border-left: 0; }
+  .seg.base-tabs button:nth-child(even) { border-left: 1px solid var(--line); }
+  .seg.base-tabs button:nth-child(n + 3) { border-top: 1px solid var(--line); }
+}
 .facts { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding: 0; list-style: none; font: 500 13px/1.4 var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
 .facts b { color: var(--ink); font-weight: 600; }
 
@@ -284,6 +291,52 @@ table.rm-cost tr.sum td { font-weight: 700; }
 .howto { margin: 0 0 14px; padding: 12px 14px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); font-size: 13.5px; }
 .howto h3 { margin: 0 0 6px; font-size: 13.5px; }
 .howto ol { margin: 0; padding-left: 18px; display: grid; gap: 5px; }
+/* унікальні ресурси */
+.res { display: grid; gap: 16px; }
+.res > * { min-width: 0; }
+.res-bar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.res-bar input[type="search"] { flex: 1 1 260px; min-width: 0; padding: 8px 11px; font: inherit; font-size: 13.5px; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; }
+.res-bar input[type="search"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.res-store { flex: 1 1 100%; font-size: 12.5px; color: var(--muted); }
+.res-list { padding: 6px 16px 14px; overflow-x: auto; }
+table.res-table { width: 100%; border-collapse: collapse; font-size: 13.5px; line-height: 1.45; }
+.res-table th { padding: 10px 8px 6px; text-align: left; font-size: 11.5px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line); }
+.res-table td { padding: 10px 8px; vertical-align: top; border-bottom: 1px solid var(--line); }
+.res-table tr.zone td { padding: 14px 8px 6px; font: 600 11px/1 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); border-bottom-color: var(--ink); }
+.res-table tr.editing td { background: var(--surface-2); }
+.res-table .r-res { width: 22%; font-weight: 600; }
+.res-table .r-place { width: 22%; }
+.res-table .r-en, .res-table .r-area { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; color: var(--muted); }
+.res-table .r-how { white-space: pre-line; }
+.res-table .r-ok { white-space: nowrap; }
+.res-table th.r-ok-h { font-size: 12px; }
+@media (min-width: 721px) { .res-table .r-ok .chk span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .res-table .r-ok { text-align: center; } }
+.res-table .r-act { white-space: nowrap; text-align: right; font-size: 12.5px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.res-msg { margin: 10px 8px 0; font-size: 13px; color: var(--muted); }
+.res-msg.err { color: var(--bad); }
+.res-form { display: grid; gap: 12px; padding: 16px 20px; }
+.res-form h2 { margin: 0; font-size: 15px; }
+.res-form .rf-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 10px 14px; }
+.res-form label { display: grid; gap: 4px; font-size: 12.5px; color: var(--muted); }
+.res-form input, .res-form select, .res-form textarea { width: 100%; padding: 8px 10px; font: inherit; font-size: 13.5px; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; }
+.res-form textarea { min-height: 76px; resize: vertical; }
+.res-form :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.rf-btns { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.btn { padding: 9px 16px; font: 600 13.5px/1 var(--font-body); color: var(--surface); background: var(--ink); border: 0; border-radius: 8px; cursor: pointer; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 720px) {
+  .res-list { padding: 4px 12px 12px; }
+  .res-table thead { display: none; }
+  .res-table, .res-table tbody, .res-table tr, .res-table td { display: block; width: auto !important; }
+  .res-table tr { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .res-table tr.zone { padding: 12px 0 4px; border-bottom: 1px solid var(--ink); }
+  .res-table td, .res-table tr.zone td { padding: 2px 0; border: 0; }
+  .res-table .r-how { padding-top: 6px; }
+  .res-table .r-ok, .res-table .r-act { display: inline-block; margin-top: 6px; }
+  .res-table .r-act { float: right; }
+}
 .versions { padding: 18px 20px; }
 .versions h2 { font-size: 15px; margin-bottom: 12px; }
 .vcols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px 32px; align-items: start; }
@@ -314,6 +367,7 @@ table.rm-cost tr.sum td { font-weight: 700; }
         <button id="base-main" type="button" aria-pressed="true">Sandwalkers Main</button>
         <button id="base-dd" type="button" aria-pressed="false">Sandwalkers DD</button>
         <button id="base-plan" type="button" aria-pressed="false">План розвитку</button>
+        <button id="base-res" type="button" aria-pressed="false">Ресурси</button>
       </div>
       <h1 id="base-title">Sandwalkers Main</h1>
       <p id="base-lead"></p>
@@ -554,6 +608,42 @@ table.rm-cost tr.sum td { font-weight: 700; }
     </section>
   </section>
 
+  <section class="res" id="res" data-view="res" hidden aria-label="Унікальні ресурси">
+    <div class="card res-bar">
+      <input type="search" id="res-q" placeholder="Пошук: ресурс, місце, регіон" aria-label="Пошук записів" autocomplete="off">
+      <div class="seg" id="res-zone" role="group" aria-label="Регіон">
+        <button type="button" data-zone="all" aria-pressed="true">Усі</button>
+        <button type="button" data-zone="hagga" aria-pressed="false">Хагга</button>
+        <button type="button" data-zone="dd" aria-pressed="false">Deep Desert</button>
+      </div>
+      <button class="btn" id="res-add" type="button">+ Додати</button>
+      <p class="res-store" id="res-store"></p>
+    </div>
+    <div class="card res-list">
+      <table class="res-table" id="res-table"></table>
+      <p class="res-msg" id="res-loading">Завантаження записів…</p>
+      <p class="res-msg" id="res-empty" hidden></p>
+      <p class="res-msg err" id="res-note" hidden></p>
+    </div>
+    <form class="card res-form" id="res-form" autocomplete="off">
+      <h2 id="rf-title">Додати запис</h2>
+      <div class="rf-row">
+        <label>Ресурс<input id="rf-res" required maxlength="160" placeholder="Промислові помпи"></label>
+        <label>Місце<input id="rf-place" required maxlength="160" placeholder="Вартове місто"></label>
+      </div>
+      <div class="rf-row">
+        <label>Регіон<select id="rf-zone"><option value="hagga">Хагга</option><option value="dd">Deep Desert</option></select></label>
+        <label>Район<input id="rf-area" list="res-areas" maxlength="200" placeholder="Східна Щитова стіна"></label>
+      </div>
+      <label>Як дістати<textarea id="rf-how" maxlength="2000" placeholder="Де саме скриня, що з ворогами, хто продає"></textarea></label>
+      <datalist id="res-areas"></datalist>
+      <div class="rf-btns">
+        <button class="btn" id="rf-submit" type="submit">Додати</button>
+        <button class="linkbtn" id="rf-cancel" type="button" hidden>Скасувати</button>
+      </div>
+    </form>
+  </section>
+
   <section class="card versions" aria-labelledby="h-ver">
     <h2 id="h-ver">Версії</h2>
     <div class="vcols" id="versions"></div>
@@ -571,6 +661,7 @@ table.rm-cost tr.sum td { font-weight: 700; }
 <script src="src/build.js"></script>
 <script src="src/view3d.js"></script>
 <script src="src/versions.js"></script>
+<script src="src/places.js"></script>
 <script src="src/app.js"></script>
 <!-- page:end -->
 </body>

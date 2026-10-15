@@ -284,30 +284,46 @@
   }
 
   // ---------- перемикання бази ----------
-  // Третя вкладка — план розвитку: замість плану бази показує, що будувати далі і скільки коштує.
-  const PLAN_HEAD = {
-    name: 'План розвитку',
-    lead: 'Що будувати далі, скільки це коштує і як добувати титан і ставрідій. Ціни переробників — з гри, деталі техніки — з актуальної бази, решта — оцінка.',
-    facts: ['<b>4</b> етапи', '≈ <b>2 000</b> пластану', '≈ <b>2 000</b> меланжу', 'указ Ландсрааду <b>−25%</b> на переробку'],
+  // Вкладки поза базами замість плану бази показують свою сторінку:
+  // план розвитку (що будувати далі і скільки коштує) і унікальні ресурси (де що брати).
+  const PAGES = {
+    plan: {
+      name: 'План розвитку',
+      lead: 'Що будувати далі, скільки це коштує і як добувати титан і ставрідій. Ціни переробників — з гри, деталі техніки — з актуальної бази, решта — оцінка.',
+      facts: () => ['<b>4</b> етапи', '≈ <b>2 000</b> пластану', '≈ <b>2 000</b> меланжу', 'указ Ландсрааду <b>−25%</b> на переробку'],
+    },
+    res: {
+      name: 'Унікальні ресурси',
+      lead: 'Де брати ресурси, які трапляються лише в певних місцях. Додавай свої знахідки, виправляй і познач «перевірено», коли побачив сам.',
+      facts: () => (window.PLACES ? window.PLACES.facts() : []),
+    },
   };
-  const TABS = [...ORDER, 'plan'];
+  const TABS = [...ORDER, ...Object.keys(PAGES)];
+  let shown = null;
   function setView(id) {
-    const plan = id === 'plan';
-    for (const el of document.querySelectorAll('[data-view]')) el.hidden = el.dataset.view !== (plan ? 'plan' : 'base');
+    const view = PAGES[id] ? id : 'base';
+    for (const el of document.querySelectorAll('[data-view]')) el.hidden = el.dataset.view !== view;
     press(TABS.map((k) => 'base-' + k), 'base-' + id);
+    shown = id;
     store.set('base', id);
     try { history.replaceState(null, '', id === ORDER[0] ? location.pathname : '#' + id); } catch (e) { /* без адреси */ }
   }
-  function showPlan() {
-    setView('plan');
-    $('base-title').textContent = PLAN_HEAD.name;
-    $('base-lead').textContent = PLAN_HEAD.lead;
-    $('base-facts').innerHTML = PLAN_HEAD.facts.map((f) => `<li>${f}</li>`).join('');
-    for (const k of ORDER) if (ctx[k] && ctx[k].view) ctx[k].view.stop();
+  function pageHead(id) {
+    const P = PAGES[id];
+    $('base-title').textContent = P.name;
+    $('base-lead').textContent = P.lead;
+    $('base-facts').innerHTML = P.facts().map((f) => `<li>${f}</li>`).join('');
   }
+  function showPage(id) {
+    setView(id);
+    pageHead(id);
+    for (const k of ORDER) if (ctx[k] && ctx[k].view) ctx[k].view.stop();
+    if (id === 'res' && window.PLACES) window.PLACES.start();
+  }
+  if (window.PLACES) window.PLACES.onChange(() => { if (shown === 'res') pageHead('res'); });
 
   function setBase(id) {
-    if (id === 'plan') return showPlan();
+    if (PAGES[id]) return showPage(id);
     if (!BASES[id]) id = ORDER[0];
     C = context(id);
     setView(id);
@@ -358,7 +374,7 @@
   $('plan-panel').hidden = state.tab !== 'plan';
   $('three-panel').hidden = state.tab === 'plan';
   const first = TABS.includes(fromHash) ? fromHash : store.get('base', ORDER[0]);
-  if (first === 'plan') setBase(ORDER[0]); // база готується наперед, щоб «назад» з плану був миттєвим
+  if (PAGES[first]) setBase(ORDER[0]); // база готується наперед, щоб «назад» зі сторінки був миттєвим
   setBase(TABS.includes(first) ? first : ORDER[0]);
 
   // для знімків екрана і перевірок
