@@ -27,7 +27,7 @@ const threeDir = process.env.THREE_DIR;
     return route.continue();
   });
   await page.addInitScript(() => { try { localStorage.clear(); } catch (e) {} });
-  await page.goto('file://' + path.join(root, 'index.html'));
+  await page.goto('file://' + path.join(root, 'classic.html'));
   await page.waitForTimeout(400);
 
   const plan = page.locator('#plan svg');

@@ -1,0 +1,1679 @@
+{
+ "syncedAt": "2026-10-15T16:12:54.284Z",
+ "maps": [
+  {
+   "id": "survival_1",
+   "title": "Hagga Basin",
+   "tiles": "survival_1-0c70ddebb3e41cf49915b22e103e94ed",
+   "minNativeZoom": 0,
+   "maxNativeZoom": 4,
+   "tileSize": 512,
+   "bounds": [
+    [
+     -457599,
+     -457599
+    ],
+    [
+     355199,
+     355199
+    ]
+   ],
+   "transformation": [
+    0.0006299212598425197,
+    288.251968503937,
+    0.0006299212598425197,
+    288.251968503937
+   ],
+   "nodes": "survival_1.23505e778e54d1604d97f42c139ae0f9.raw",
+   "layout": null,
+   "layouts": []
+  },
+  {
+   "id": "sh_arrakeen",
+   "title": "Arrakeen",
+   "tiles": "sh_arrakeen-6f4b617ae1c10fa1925b5761c828395d",
+   "minNativeZoom": 0,
+   "maxNativeZoom": 4,
+   "tileSize": 512,
+   "bounds": [
+    [
+     -14949,
+     -31649
+    ],
+    [
+     37449,
+     20749
+    ]
+   ],
+   "transformation": [
+    0.009770992366412214,
+    309.2519083969466,
+    0.009770992366412214,
+    146.0763358778626
+   ],
+   "nodes": "sh_arrakeen.f8775266f3cf9d26136933b8a0d297a2.raw",
+   "layout": null,
+   "layouts": []
+  },
+  {
+   "id": "sh_harkovillage",
+   "title": "Harko Village",
+   "tiles": "sh_harkovillage-ac277d707305f7985f0664324dc32322",
+   "minNativeZoom": 0,
+   "maxNativeZoom": 3,
+   "tileSize": 512,
+   "bounds": [
+    [
+     -22599,
+     -27199
+    ],
+    [
+     73399,
+     68799
+    ]
+   ],
+   "transformation": [
+    0.005333333333333333,
+    145.06666666666666,
+    0.005333333333333333,
+    120.53333333333333
+   ],
+   "nodes": "sh_harkovillage.c3f8ca3b8e982662dff26d5b750bbdec.raw",
+   "layout": null,
+   "layouts": []
+  },
+  {
+   "id": "deepdesert_1",
+   "title": "The Deep Desert",
+   "tiles": "deepdesert_1-afb56638fbb1d8f6057389ab4dcbba5c",
+   "minNativeZoom": 0,
+   "maxNativeZoom": 4,
+   "tileSize": 512,
+   "bounds": [
+    [
+     -1270399,
+     -1270399
+    ],
+    [
+     1167999,
+     1167999
+    ]
+   ],
+   "transformation": [
+    0.0002099737532808399,
+    266.750656167979,
+    0.0002099737532808399,
+    266.750656167979
+   ],
+   "nodes": "deepdesert_1.5d0c896bf2daf2975547f6a17383472d.raw",
+   "layout": 10,
+   "layouts": [
+    {
+     "id": 0,
+     "tiles": "deepdesert_1-cf2363030c4d402f6bc04be52816dca7",
+     "nodes": "deepdesert_1_layout_00.616ae33f706ae9ba65028885f7a703d4.raw",
+     "dicts": "layouts/deepdesert_1-00/{locale}.json?v=2b014826dbb0",
+     "resources": false
+    },
+    {
+     "id": 1,
+     "tiles": "deepdesert_1-0a965a9be10727cd69560bee7a08df30",
+     "nodes": "deepdesert_1_layout_01.8656b52bf4067f22485eb62a249ca3b7.raw",
+     "dicts": "layouts/deepdesert_1-01/{locale}.json?v=09c19a7d7aa0",
+     "resources": false
+    },
+    {
+     "id": 2,
+     "tiles": "deepdesert_1-69ff65bf0f30a35186eeb5aa813f8174",
+     "nodes": "deepdesert_1_layout_02.f78c59b7ef6d661a20f193c4f83bde9b.raw",
+     "dicts": "layouts/deepdesert_1-02/{locale}.json?v=9b327347d9ff",
+     "resources": true
+    },
+    {
+     "id": 3,
+     "tiles": "deepdesert_1-40f176fc4cce018dff08f3cd66b52f08",
+     "nodes": "deepdesert_1_layout_03.45c46ddc5afd2e9cc29ecd6707c11c78.raw",
+     "dicts": "layouts/deepdesert_1-03/{locale}.json?v=12e60a0097ed",
+     "resources": true
+    },
+    {
+     "id": 4,
+     "tiles": "deepdesert_1-d4dadd5af24ecfac2b6e7030317e7133",
+     "nodes": "deepdesert_1_layout_04.8d4c4413d66862f0952d9cd44dc50e2e.raw",
+     "dicts": "layouts/deepdesert_1-04/{locale}.json?v=c0afb6c37371",
+     "resources": true
+    },
+    {
+     "id": 5,
+     "tiles": "deepdesert_1-ea381eecb99180f54d5bf925a4ae8244",
+     "nodes": "deepdesert_1_layout_05.d631b7da61eda6b5d305309f0ed503d3.raw",
+     "dicts": "layouts/deepdesert_1-05/{locale}.json?v=b497bdf4430b",
+     "resources": true
+    },
+    {
+     "id": 6,
+     "tiles": "deepdesert_1-7634cab5640f740e9c0eca0e7df8521f",
+     "nodes": "deepdesert_1_layout_06.75dfe7f0d0597a08900d2f9ea26444cc.raw",
+     "dicts": "layouts/deepdesert_1-06/{locale}.json?v=fa8a6e2ad178",
+     "resources": true
+    },
+    {
+     "id": 7,
+     "tiles": "deepdesert_1-ce84793aea1d9e14e5898d7d10beb670",
+     "nodes": "deepdesert_1_layout_07.53651aea9992733b70965c779f9c8b95.raw",
+     "dicts": "layouts/deepdesert_1-07/{locale}.json?v=8b3216154f73",
+     "resources": true
+    },
+    {
+     "id": 8,
+     "tiles": "deepdesert_1-0d22aa96e0f7e8eb77b2c3a6623dad7c",
+     "nodes": "deepdesert_1_layout_08.ab645499b531ae2380d1a6b5dde91db7.raw",
+     "dicts": "layouts/deepdesert_1-08/{locale}.json?v=9f3289fad15e",
+     "resources": true
+    },
+    {
+     "id": 9,
+     "tiles": "deepdesert_1-f9a94ec70a53f05418c333ca1ce73c46",
+     "nodes": "deepdesert_1_layout_09.a19f85be20e26f7b2b2e0087904e5f52.raw",
+     "dicts": "layouts/deepdesert_1-09/{locale}.json?v=516ce2199bd0",
+     "resources": true
+    },
+    {
+     "id": 10,
+     "tiles": "deepdesert_1-afb56638fbb1d8f6057389ab4dcbba5c",
+     "nodes": "deepdesert_1_layout_10.5d0c896bf2daf2975547f6a17383472d.raw",
+     "dicts": "layouts/deepdesert_1-10/{locale}.json?v=99ed97db1782",
+     "resources": true
+    },
+    {
+     "id": 11,
+     "tiles": "deepdesert_1-5ac3bd23f6cb9468cfa87226881bdeaa",
+     "nodes": "deepdesert_1_layout_11.88ee1a186f454cc10443fb176207c3cf.raw",
+     "dicts": "layouts/deepdesert_1-11/{locale}.json?v=d08f7489dad6",
+     "resources": false
+    }
+   ]
+  },
+  {
+   "id": "cb_overland_s_04",
+   "title": "Blushing Cavern",
+   "tiles": "cb_overland_s_04-e6cf92f8f1f0d00937b881036a6594a4",
+   "minNativeZoom": 0,
+   "maxNativeZoom": 4,
+   "tileSize": 512,
+   "bounds": [
+    [
+     -25249,
+     -25249
+    ],
+    [
+     25249,
+     25249
+    ]
+   ],
+   "transformation": [
+    0.010138613861386139,
+    256,
+    0.010138613861386139,
+    256
+   ],
+   "nodes": "cb_overland_s_04.dd010a040584e31326e42076ca62b901.raw",
+   "layout": null,
+   "layouts": []
+  },
+  {
+   "id": "cb_overland_m_01",
+   "title": "Wreck of the Tyche",
+   "tiles": "cb_overland_m_01-02d119041f528e8884cdc20c4465b2f1",
+   "minNativeZoom": 0,
+   "maxNativeZoom": 4,
+   "tileSize": 512,
+   "bounds": [
+    [
+     -25249,
+     -25249
+    ],
+    [
+     25249,
+     25249
+    ]
+   ],
+   "transformation": [
+    0.010138613861386139,
+    256,
+    0.010138613861386139,
+    256
+   ],
+   "nodes": "cb_overland_m_01.ba2b0d418e55ef0006fc2dd4139902f3.raw",
+   "layout": null,
+   "layouts": []
+  },
+  {
+   "id": "cb_overland_s_06",
+   "title": "Smuggler's Run",
+   "tiles": "cb_overland_s_06-43ffa63a4b7ab1025f8a8cce85255a45",
+   "minNativeZoom": 0,
+   "maxNativeZoom": 4,
+   "tileSize": 512,
+   "bounds": [
+    [
+     -25249,
+     -25249
+    ],
+    [
+     25249,
+     25249
+    ]
+   ],
+   "transformation": [
+    0.010138613861386139,
+    256,
+    0.010138613861386139,
+    256
+   ],
+   "nodes": "cb_overland_s_06.31cd72dd445e63cfc8ab37f087c7827d.raw",
+   "layout": null,
+   "layouts": []
+  },
+  {
+   "id": "cb_overland_s_07",
+   "title": "The Ruins of Tsimpo",
+   "tiles": "cb_overland_s_07-0d061f9290b616fe69286ac7c3d4609e",
+   "minNativeZoom": 0,
+   "maxNativeZoom": 1,
+   "tileSize": 512,
+   "bounds": [
+    [
+     -23412.497664543524,
+     -24006.4
+    ],
+    [
+     24762.897664543525,
+     24219.2
+    ]
+   ],
+   "transformation": [
+    0.010616767857735309,
+    254.87037589993696,
+    0.010627831832048667,
+    248.82408794700072
+   ],
+   "nodes": "cb_overland_s_07.0d179dba6fbd98c5d4e195c0ea1544f6.raw",
+   "layout": null,
+   "layouts": []
+  },
+  {
+   "id": "cb_overland_s_08",
+   "title": "Wind Pass",
+   "tiles": "cb_overland_s_08-d25e48bfb524fc8232a15625e802e03d",
+   "minNativeZoom": 0,
+   "maxNativeZoom": 1,
+   "tileSize": 512,
+   "bounds": [
+    [
+     -17406.9,
+     -9650.879822616407
+    ],
+    [
+     35955.3,
+     43880.479822616406
+    ]
+   ],
+   "transformation": [
+    0.009564487122934411,
+    92.30571578840215,
+    0.009594806810813646,
+    167.01584267515207
+   ],
+   "nodes": "cb_overland_s_08.467d979e9fc1a01fa7bbb9b291ba461f.raw",
+   "layout": null,
+   "layouts": []
+  },
+  {
+   "id": "cb_story_banditfortress01",
+   "title": "The Broodworks",
+   "tiles": "cb_story_banditfortress01-3041890ef36e41cc57ed9bc20f3f5af5",
+   "minNativeZoom": 0,
+   "maxNativeZoom": 1,
+   "tileSize": 512,
+   "bounds": [
+    [
+     -25250,
+     -25250
+    ],
+    [
+     25250,
+     25250
+    ]
+   ],
+   "transformation": [
+    0.010138613861386139,
+    256,
+    0.010138613861386139,
+    256
+   ],
+   "nodes": "cb_story_banditfortress01.342b7e00c4e5f4e35197653d96332214.raw",
+   "layout": null,
+   "layouts": []
+  },
+  {
+   "id": "overmap",
+   "title": "Overland Map",
+   "tiles": "overmap-78c4545468ae578a6246ff9884238c14",
+   "minNativeZoom": 0,
+   "maxNativeZoom": 1,
+   "tileSize": 512,
+   "bounds": [
+    [
+     -199999,
+     -199999
+    ],
+    [
+     199999,
+     199999
+    ]
+   ],
+   "transformation": [
+    0.00128,
+    256,
+    0.00128,
+    256
+   ],
+   "nodes": "overmap.53d8e1703b89230ab3becd6affe69fcc.raw",
+   "layout": null,
+   "layouts": []
+  }
+ ],
+ "groups": [
+  {
+   "id": "locations",
+   "defaultOn": true,
+   "types": [
+    {
+     "id": "cave",
+     "icon": [
+      134,
+      2,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "enemycamp",
+     "icon": [
+      134,
+      68,
+      64,
+      64
+     ],
+     "size": 2
+    },
+    {
+     "id": "shipwreck",
+     "icon": [
+      266,
+      68,
+      64,
+      64
+     ],
+     "size": 2
+    },
+    {
+     "id": "intel_point",
+     "icon": [
+      596,
+      68,
+      64,
+      64
+     ],
+     "size": 1.5
+    },
+    {
+     "id": "enemyoutpost",
+     "icon": [
+      662,
+      68,
+      64,
+      64
+     ],
+     "size": 2
+    },
+    {
+     "id": "tradingpost",
+     "icon": [
+      134,
+      134,
+      64,
+      64
+     ],
+     "size": 2
+    },
+    {
+     "id": "sietch",
+     "icon": [
+      464,
+      134,
+      64,
+      64
+     ],
+     "size": 2
+    },
+    {
+     "id": "secret_door",
+     "icon": [
+      530,
+      134,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "ecolab",
+     "icon": [
+      596,
+      134,
+      64,
+      64
+     ],
+     "size": 2
+    },
+    {
+     "id": "explorationpointofinterest",
+     "icon": [
+      2,
+      200,
+      64,
+      64
+     ],
+     "size": 2
+    },
+    {
+     "id": "enemylaboroutpost",
+     "icon": [
+      2,
+      266,
+      64,
+      64
+     ],
+     "size": 2
+    },
+    {
+     "id": "atreides",
+     "icon": [
+      266,
+      266,
+      64,
+      64
+     ],
+     "size": 3
+    },
+    {
+     "id": "harkonnen",
+     "icon": [
+      596,
+      266,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "exploration",
+     "icon": [
+      266,
+      398,
+      64,
+      64
+     ],
+     "size": 3
+    },
+    {
+     "id": "taxiservice",
+     "icon": [
+      332,
+      398,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "bank",
+     "icon": [
+      2,
+      464,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "discoverable",
+     "icon": [
+      464,
+      464,
+      64,
+      64
+     ],
+     "size": 2
+    },
+    {
+     "id": "landsraad_control_point",
+     "icon": [
+      266,
+      530,
+      64,
+      64
+     ],
+     "size": 2
+    },
+    {
+     "id": "small_shipwreck",
+     "icon": [
+      266,
+      68,
+      64,
+      64
+     ],
+     "size": 1.3
+    }
+   ]
+  },
+  {
+   "id": "vehicles",
+   "defaultOn": true,
+   "types": [
+    {
+     "id": "sandbike",
+     "icon": [
+      68,
+      200,
+      64,
+      64
+     ],
+     "size": 1.7
+    },
+    {
+     "id": "buggy",
+     "icon": [
+      200,
+      200,
+      64,
+      64
+     ],
+     "size": 1.7
+    }
+   ]
+  },
+  {
+   "id": "trainers",
+   "defaultOn": true,
+   "types": [
+    {
+     "id": "trainerstrooper",
+     "icon": [
+      200,
+      134,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "trainersplanetologist",
+     "icon": [
+      662,
+      134,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "trainersbenegesserit",
+     "icon": [
+      134,
+      266,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "trainersmentat",
+     "icon": [
+      662,
+      266,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "trainersswordmaster",
+     "icon": [
+      134,
+      332,
+      64,
+      64
+     ],
+     "size": 2.5
+    }
+   ]
+  },
+  {
+   "id": "items",
+   "defaultOn": true,
+   "types": [
+    {
+     "id": "primitive",
+     "icon": [
+      2,
+      2,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "corpse",
+     "icon": [
+      200,
+      2,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "rare",
+     "icon": [
+      266,
+      2,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "basic",
+     "icon": [
+      332,
+      2,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "water_tank",
+     "icon": [
+      398,
+      2,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "medical",
+     "icon": [
+      464,
+      2,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "ammo",
+     "icon": [
+      530,
+      2,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "small_ultra_rare",
+     "icon": [
+      200,
+      68,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "contract",
+     "icon": [
+      332,
+      68,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "weapon",
+     "icon": [
+      398,
+      68,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "ultra_rare",
+     "icon": [
+      530,
+      68,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "fuel",
+     "icon": [
+      332,
+      134,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "wreck",
+     "icon": [
+      398,
+      134,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "refinery",
+     "icon": [
+      332,
+      200,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "treasure_loot_container",
+     "icon": [
+      398,
+      596,
+      64,
+      64
+     ],
+     "size": 1
+    }
+   ]
+  },
+  {
+   "id": "npcs",
+   "defaultOn": true,
+   "types": [
+    {
+     "id": "npc_unaffiliated",
+     "icon": [
+      2,
+      134,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "npc_atreides",
+     "icon": [
+      398,
+      200,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "npc_harkonnen",
+     "icon": [
+      464,
+      200,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "npc_bandits",
+     "icon": [
+      266,
+      332,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "npc_smugglers",
+     "icon": [
+      464,
+      332,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "npc_choam",
+     "icon": [
+      530,
+      332,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "npc_spacing_guild",
+     "icon": [
+      596,
+      332,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "npc_sardaukar",
+     "icon": [
+      662,
+      332,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "npc_bene_gesserit",
+     "icon": [
+      2,
+      398,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "npc_fremen",
+     "icon": [
+      68,
+      398,
+      64,
+      64
+     ],
+     "size": 1.3
+    }
+   ]
+  },
+  {
+   "id": "resources",
+   "defaultOn": true,
+   "types": [
+    {
+     "id": "primrose_field",
+     "icon": [
+      662,
+      464,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "flour_sand_field",
+     "icon": [
+      2,
+      530,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "spice_field_small",
+     "icon": [
+      68,
+      530,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "spice_field_medium",
+     "icon": [
+      134,
+      530,
+      64,
+      64
+     ],
+     "size": 1.7
+    },
+    {
+     "id": "spice_field_large",
+     "icon": [
+      200,
+      530,
+      64,
+      64
+     ],
+     "size": 2.2
+    },
+    {
+     "id": "titanium",
+     "icon": [
+      332,
+      530,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "stravidium",
+     "icon": [
+      398,
+      530,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "basalt",
+     "icon": [
+      464,
+      530,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "fiber_plant",
+     "icon": [
+      530,
+      530,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "bauxite",
+     "icon": [
+      596,
+      530,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "azurite",
+     "icon": [
+      662,
+      530,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "rhyolite",
+     "icon": [
+      2,
+      596,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "dolomite",
+     "icon": [
+      68,
+      596,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "erythrite",
+     "icon": [
+      134,
+      596,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "agave_seeds",
+     "icon": [
+      200,
+      596,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "magnetite",
+     "icon": [
+      266,
+      596,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "jasmium",
+     "icon": [
+      332,
+      596,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "fuel_cells",
+     "icon": [
+      464,
+      596,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "scrap_metal",
+     "icon": [
+      530,
+      596,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "scrap_electronics",
+     "icon": [
+      596,
+      596,
+      64,
+      64
+     ],
+     "size": 1.3
+    }
+   ]
+  },
+  {
+   "id": "resources_pickup",
+   "defaultOn": false,
+   "types": [
+    {
+     "id": "bauxite_pickup",
+     "icon": [
+      596,
+      530,
+      64,
+      64
+     ],
+     "size": 1
+    },
+    {
+     "id": "azurite_pickup",
+     "icon": [
+      662,
+      530,
+      64,
+      64
+     ],
+     "size": 1
+    },
+    {
+     "id": "rhyolite_pickup",
+     "icon": [
+      2,
+      596,
+      64,
+      64
+     ],
+     "size": 1
+    },
+    {
+     "id": "dolomite_pickup",
+     "icon": [
+      68,
+      596,
+      64,
+      64
+     ],
+     "size": 1
+    },
+    {
+     "id": "basalt_pickup",
+     "icon": [
+      464,
+      530,
+      64,
+      64
+     ],
+     "size": 1
+    },
+    {
+     "id": "titanium_pickup",
+     "icon": [
+      332,
+      530,
+      64,
+      64
+     ],
+     "size": 1
+    },
+    {
+     "id": "stravidium_pickup",
+     "icon": [
+      398,
+      530,
+      64,
+      64
+     ],
+     "size": 1
+    },
+    {
+     "id": "erythrite_pickup",
+     "icon": [
+      134,
+      596,
+      64,
+      64
+     ],
+     "size": 1
+    },
+    {
+     "id": "magnetite_pickup",
+     "icon": [
+      266,
+      596,
+      64,
+      64
+     ],
+     "size": 1
+    },
+    {
+     "id": "jasmium_pickup",
+     "icon": [
+      332,
+      596,
+      64,
+      64
+     ],
+     "size": 1
+    },
+    {
+     "id": "fuel_cells_pickup",
+     "icon": [
+      464,
+      596,
+      64,
+      64
+     ],
+     "size": 1
+    },
+    {
+     "id": "scrap_metal_pickup",
+     "icon": [
+      530,
+      596,
+      64,
+      64
+     ],
+     "size": 1
+    },
+    {
+     "id": "scrap_electronics_pickup",
+     "icon": [
+      596,
+      596,
+      64,
+      64
+     ],
+     "size": 1
+    }
+   ]
+  },
+  {
+   "id": "pentashield_keys",
+   "defaultOn": true,
+   "types": [
+    {
+     "id": "white_id_band",
+     "icon": [
+      68,
+      2,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "red_id_band",
+     "icon": [
+      596,
+      2,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "blue_id_band",
+     "icon": [
+      662,
+      2,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "purple_id_band",
+     "icon": [
+      2,
+      68,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "orange_id_band",
+     "icon": [
+      68,
+      68,
+      64,
+      64
+     ],
+     "size": 1.3
+    },
+    {
+     "id": "green_id_band",
+     "icon": [
+      464,
+      68,
+      64,
+      64
+     ],
+     "size": 1.3
+    }
+   ]
+  },
+  {
+   "id": "house_representatives",
+   "defaultOn": true,
+   "types": [
+    {
+     "id": "house_representativeswydras",
+     "icon": [
+      68,
+      134,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativesargosaz",
+     "icon": [
+      266,
+      134,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativestaligari",
+     "icon": [
+      134,
+      200,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativeskenola",
+     "icon": [
+      266,
+      200,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "controlpointhousetseida",
+     "icon": [
+      530,
+      200,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativesnovebruns",
+     "icon": [
+      596,
+      200,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativeshurata",
+     "icon": [
+      662,
+      200,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativesvernius",
+     "icon": [
+      68,
+      266,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativesrichese",
+     "icon": [
+      200,
+      266,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativeshagal",
+     "icon": [
+      332,
+      266,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativeslindaren",
+     "icon": [
+      398,
+      266,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativesmoritani",
+     "icon": [
+      464,
+      266,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativesdyvetz",
+     "icon": [
+      530,
+      266,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativesecaz",
+     "icon": [
+      2,
+      332,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativesthorvald",
+     "icon": [
+      68,
+      332,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativessor",
+     "icon": [
+      200,
+      332,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativesmikarrol",
+     "icon": [
+      332,
+      332,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativesimota",
+     "icon": [
+      398,
+      332,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativesalexin",
+     "icon": [
+      134,
+      398,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativesspinette",
+     "icon": [
+      200,
+      398,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativesvarota",
+     "icon": [
+      266,
+      464,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativesmutelli",
+     "icon": [
+      332,
+      464,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativeswallach",
+     "icon": [
+      398,
+      464,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativeswayku",
+     "icon": [
+      530,
+      464,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "house_representativesmaros",
+     "icon": [
+      596,
+      464,
+      64,
+      64
+     ],
+     "size": 2.5
+    }
+   ]
+  },
+  {
+   "id": "vendors",
+   "defaultOn": true,
+   "types": [
+    {
+     "id": "vehiclevendor",
+     "icon": [
+      398,
+      398,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "structurevendor",
+     "icon": [
+      464,
+      398,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "spicevendor",
+     "icon": [
+      530,
+      398,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "survivalvendor",
+     "icon": [
+      596,
+      398,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "resourcevendor",
+     "icon": [
+      662,
+      398,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "barkeepvendor",
+     "icon": [
+      68,
+      464,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "weaponsvendor",
+     "icon": [
+      134,
+      464,
+      64,
+      64
+     ],
+     "size": 2.5
+    },
+    {
+     "id": "landsraadvendor",
+     "icon": [
+      200,
+      464,
+      64,
+      64
+     ],
+     "size": 2.5
+    }
+   ]
+  }
+ ]
+}

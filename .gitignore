@@ -1,2 +1,5 @@
-artifact.html
 node_modules/
+dist/
+artifact.html
+# база записів і кеш мапи (тайли, точки, іконки з TH.GL) — локальні, у репозиторій не йдуть
+server/data/

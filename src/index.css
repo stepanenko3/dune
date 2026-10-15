@@ -1,0 +1,236 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Палітра: теплі пісочні нейтралі і акцент кольору спайсу. Значення — RGB-трійки,
+ * щоб у Tailwind працювало /<alpha>. Тема — класом .dark на <html> (src/lib/theme.ts).
+ */
+:root {
+  color-scheme: light;
+  --c-bg: 236 233 227;
+  --c-panel: 250 249 246;
+  --c-panel2: 231 227 219;
+  --c-line: 213 207 196;
+  --c-ink: 34 31 27;
+  --c-muted: 110 103 93;
+  --c-spice: 184 92 22;
+  --c-on-spice: 255 255 255;
+  --c-ok: 46 125 72;
+  --c-warn: 150 110 20;
+  --c-bad: 178 54 44;
+  --c-water: 38 106 158;
+  --shadow: rgba(40, 32, 22, 0.1);
+}
+.dark {
+  color-scheme: dark;
+  --c-bg: 19 18 17;
+  --c-panel: 28 26 24;
+  --c-panel2: 37 34 31;
+  --c-line: 50 46 41;
+  --c-ink: 234 227 215;
+  --c-muted: 152 143 131;
+  --c-spice: 238 147 64;
+  --c-on-spice: 24 16 8;
+  --c-ok: 111 191 115;
+  --c-warn: 224 182 83;
+  --c-bad: 222 110 100;
+  --c-water: 90 167 214;
+  --shadow: rgba(0, 0, 0, 0.45);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  @apply bg-bg font-sans text-ink antialiased;
+  font-size: 14px;
+}
+
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+*::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-line;
+  border: 2px solid rgb(var(--c-bg));
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+:focus-visible {
+  outline: 2px solid rgb(var(--c-spice));
+  outline-offset: 2px;
+}
+
+/* ---------- лист вузького екрана: панель мапи, бокова колонка бази ---------- */
+.sheet {
+  transform: translateY(0);
+}
+.sheet[data-open='no'] {
+  transform: translateY(105%);
+}
+/* на широкому екрані лист стає звичайною колонкою; рамку, тінь і ширину колонка задає сама (lg:…) */
+@media (min-width: 1024px) {
+  .sheet-lg {
+    position: static !important;
+    transform: none !important;
+    height: auto !important;
+    z-index: auto !important;
+  }
+}
+
+/* ---------- підказка data-tip (одна плаваюча, src/lib/tooltips.ts) ---------- */
+.data-tip-float {
+  position: fixed;
+  z-index: 2000;
+  pointer-events: none;
+  max-width: 280px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.35;
+  background: rgb(var(--c-ink));
+  color: rgb(var(--c-panel));
+  box-shadow: 0 4px 14px var(--shadow);
+  opacity: 0;
+  transition: opacity 0.08s;
+}
+.data-tip-float[data-on='yes'] {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
+
+/* ==== base: plan & 3D ==== */
+/*
+ * 2D-план (SVG-рядок із src/engine/plan2d.js) і 3D-сцена (view3d.js) стилізуються класами,
+ * які малює сам рушій, — тому тут звичайний CSS, а не Tailwind. Значення — з класичної сторінки;
+ * акцент плану — спайс застосунку, тема — класом .dark.
+ */
+:root {
+  --accent: rgb(var(--c-spice));
+  /* пентащит — бірюзовий, як акцент класичної сторінки: спайс майже збігається з трикутними плитами */
+  --shield: #0d8a7c;
+  --plan-bg: #fbfbfc;
+  --plan-grid: #e9ebee;
+  --frame: #24222e;
+  --sq: #3b82e6;
+  --tri: #f0963a;
+  --seam: #ffffff;
+  --wall: #191b21;
+  --halo: #fbfbfc;
+  --ghost: #dfe3e8;
+  --hatch-bg: #eef0f3;
+  --hatch-ln: #9aa1ad;
+  --item: #1b1d22;
+  --item-fill: rgba(255, 255, 255, 0.62);
+  --item-ink: #14161b;
+  --glass: #8cc3e6;
+  --sky-top: #f3e3cc;
+  --sky-bottom: #e7c9a2;
+}
+.dark {
+  --shield: #2dd4bf;
+  --plan-bg: #14171c;
+  --plan-grid: #1f232a;
+  --frame: #d4d7de;
+  --seam: #14171c;
+  --wall: #f1f2f5;
+  --halo: #14171c;
+  --ghost: #262b33;
+  --hatch-bg: #1b1f25;
+  --hatch-ln: #4b5361;
+  --item: #0c0d10;
+  --item-fill: rgba(255, 255, 255, 0.7);
+  --item-ink: #111317;
+  --glass: #7fb8dd;
+  --sky-top: #2a2622;
+  --sky-bottom: #4a3b2c;
+}
+
+.plan-wrap {
+  overflow-x: auto;
+  background: var(--plan-bg);
+}
+/* план ширший за телефон — гортається у своїй рамці, а не вся сторінка */
+.plan-wrap svg {
+  display: block;
+  width: 100%;
+  min-width: 700px;
+  height: auto;
+}
+.plan .bg { fill: var(--plan-bg); }
+.plan .grid line { stroke: var(--plan-grid); stroke-width: 1; }
+.plan .ghost polygon { fill: var(--ghost); stroke: none; }
+.plan .sq { fill: var(--sq); stroke: var(--seam); stroke-width: 1; }
+.plan .tri { fill: var(--tri); stroke: var(--seam); stroke-width: 1; }
+.plan .room { cursor: pointer; }
+.plan .room.dim { opacity: 0.25; }
+.plan .through polygon { stroke: var(--hatch-ln); stroke-width: 0.5; }
+.plan .hatch-bg { fill: var(--hatch-bg); }
+.plan .hatch-ln { stroke: var(--hatch-ln); stroke-width: 1.2; }
+.plan .shield-bg { fill: rgba(45, 212, 191, 0.28); }
+.plan .shield-ln { stroke: var(--shield); stroke-width: 1.4; }
+.plan line { stroke-linecap: round; }
+.plan .wall { stroke: var(--wall); stroke-width: 2.4; }
+.plan .parapet { stroke: var(--wall); stroke-width: 1.3; stroke-dasharray: 1.5 3.5; }
+.plan .op-door { stroke: var(--wall); stroke-width: 2.4; stroke-dasharray: 3 4; }
+.plan .op-shield { stroke: var(--shield); stroke-width: 4.5; }
+.plan .hl-edge { stroke: var(--accent); stroke-width: 3.6; }
+.plan .overhead polygon { fill: var(--ghost); fill-opacity: 0.55; stroke: none; }
+.plan .overhead line { stroke: rgb(var(--c-muted)); stroke-width: 1.6; stroke-dasharray: 6 4; }
+.plan .sq.rim, .plan .tri.rim { fill-opacity: 0.72; }
+.plan polygon.shieldfill { fill: url(#shieldHatch); fill-opacity: 1; }
+.plan .roofs .crown { fill-opacity: 1; stroke-width: 1.6; }
+.plan .step-edge { stroke: var(--wall); stroke-width: 2; opacity: 0.85; }
+.plan .roof-under .sq, .plan .roof-under .tri { fill-opacity: 0.45; }
+.plan .slope-ln { stroke: var(--seam); stroke-width: 1.2; opacity: 0.85; }
+.plan .it-stairs polygon { fill: var(--item-fill); stroke: var(--item); stroke-width: 1.2; stroke-dasharray: none; }
+.plan .it-stairs .step { stroke: var(--item); stroke-width: 0.8; opacity: 0.7; }
+.plan .it-stairs .arrow { stroke: var(--item); stroke-width: 1.6; }
+.plan .arrow-head { fill: var(--item); }
+.plan .it-hatch polygon { fill: none; stroke-dasharray: 3 2; }
+.plan .it-hatch .step { stroke: var(--item); stroke-width: 0.8; }
+.plan .it polygon { fill: var(--item-fill); stroke: var(--item); stroke-width: 1.1; stroke-dasharray: 4 2.5; }
+.plan .it-spot polygon { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 7 4; }
+.plan .it-turbine polygon, .plan .it-windtrap polygon { stroke-dasharray: none; }
+.plan .it .rotor { stroke: var(--item); stroke-width: 2.4; }
+.plan .it .hub { fill: var(--item); fill-opacity: 0.2; stroke: var(--item); stroke-width: 1.2; }
+.plan .it-pad polygon { fill: rgba(255, 255, 255, 0.35); }
+.plan .pad-ring { fill: none; stroke: var(--item); stroke-width: 1.6; }
+.plan .pad-h { font: 700 15px theme('fontFamily.display'); fill: var(--item-ink); text-anchor: middle; }
+.plan .it-label { font: 600 8.6px/1 theme('fontFamily.sans'); fill: var(--item-ink); text-anchor: middle; pointer-events: none; }
+.plan .lbl { font: 700 11.5px/1 theme('fontFamily.sans'); fill: rgb(var(--c-ink)); text-anchor: middle; paint-order: stroke; stroke: var(--halo); stroke-width: 3.6px; stroke-linejoin: round; pointer-events: none; }
+.plan .lbl.hl { fill: var(--accent); }
+.plan .lbl-sub { font: 500 9px/1 theme('fontFamily.mono'); fill: rgb(var(--c-muted)); text-anchor: middle; paint-order: stroke; stroke: var(--halo); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+.plan .coords text { font: 600 9.5px/1 theme('fontFamily.mono'); fill: rgb(var(--c-muted)); text-anchor: middle; dominant-baseline: middle; pointer-events: none; }
+.plan .coords line { stroke: var(--frame); stroke-width: 0.6; opacity: 0.35; pointer-events: none; }
+.plan .claims rect { fill: none; stroke: var(--frame); stroke-width: 2; }
+.plan .claims circle { fill: var(--frame); }
+.plan .anno text { font: 600 11px theme('fontFamily.sans'); fill: rgb(var(--c-muted)); }
+.plan .anno .front { font: 700 12px theme('fontFamily.sans'); fill: rgb(var(--c-ink)); text-anchor: middle; letter-spacing: 0.06em; }
+
+/* 3D: полотно, підписи і підказка створює view3d.js усередині .three-base */
+.three-wrap {
+  position: relative;
+  height: min(72vh, 780px);
+  min-height: 420px;
+  background: linear-gradient(180deg, var(--sky-top), var(--sky-bottom));
+  overflow: hidden;
+  touch-action: none;
+}
+.three-wrap canvas.gl { display: block; }
+.three-base { position: absolute; inset: 0; }
+.labels3d { position: absolute; inset: 0; pointer-events: none; }
+.lbl3d { position: absolute; left: 0; top: 0; font: 600 11.5px/1.2 theme('fontFamily.sans'); color: #f7f4ef; background: rgba(20, 21, 25, 0.72); padding: 3px 7px; border-radius: 4px; white-space: nowrap; }
+.tip3d { position: absolute; left: 0; top: 0; pointer-events: none; font: 600 12px/1.2 theme('fontFamily.sans'); background: #fff; color: #111; border: 1px solid #222; padding: 4px 8px; border-radius: 4px; }
+.three-msg { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: rgb(var(--c-ink)); }
+/* ==== /base ==== */
