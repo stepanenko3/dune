@@ -130,21 +130,30 @@
 
   // Кошторис: кількість і ціну можна виправити прямо в комірці; правки зберігаються для кожної бази окремо.
   const num = (v) => Number(String(v).trim().replace(/\s/g, '').replace(',', '.'));
+  const devId = (d) => (d.id === 'shield' ? 'shield' : 'd-' + d.id);
   function renderCost() {
     const c = C.B.cost(C.res, C.lim), ov = store.get(C.id + ':cost', {});
-    const rows = c.rows.map((r) => ({ id: r.id, name: r.name, sub: r.sub, n: r.n, price: r.price }));
-    if (c.shields) rows.push({ id: 'shield', name: 'Пентащит (секція)', n: c.shields, price: null });
+    const short = Object.fromEntries(c.MATS.map((m) => [m.id, m.short]));
     const cell = (r, f, v, label) => {
       const edited = ov[r.id] && ov[r.id][f] !== undefined;
       return `<input class="cell${edited ? ' edited' : ''}" type="text" inputmode="decimal" data-row="${r.id}" data-f="${f}" data-def="${r[f]}" value="${f === 'n' ? Math.round(edited ? ov[r.id][f] : v) : fmtP(edited ? ov[r.id][f] : v)}" aria-label="${label}: ${r.name}">`;
     };
     let t = '<thead><tr><th>Деталь</th><th>К-сть</th><th>Ціна</th><th>Каменю</th></tr></thead><tbody>';
-    for (const r of rows)
+    for (const r of c.rows)
       t += `<tr${r.sub ? ' class="sub"' : ''}><td>${r.name}</td><td>${cell(r, 'n', r.n, 'Кількість')}</td>`
-        + `<td>${r.price === null ? '<span class="same">не камінь</span>' : cell(r, 'price', r.price, 'Ціна')}</td><td data-sum="${r.id}">—</td></tr>`;
+        + `<td>${cell(r, 'price', r.price, 'Ціна')}</td><td data-sum="${r.id}">—</td></tr>`;
     t += '</tbody><tfoot><tr><td>Разом гранітного каменю</td><td></td><td></td><td id="cost-total">—</td></tr></tfoot>';
     $('cost').innerHTML = t;
-    for (const inp of $('cost').querySelectorAll('input.cell')) {
+    // пентащити й пристрої: кількість правиться, матеріали — за рецептом на одиницю
+    let d = '<thead><tr><th>Пристрій</th><th>К-сть</th><th>На один</th></tr></thead><tbody>';
+    for (const x of c.devices) {
+      const r = { id: devId(x), name: x.name, n: x.n };
+      d += `<tr><td>${x.name}</td><td>${cell(r, 'n', x.n, 'Кількість')}</td>`
+        + `<td class="per">${Object.entries(x.mats).map(([m, q]) => `${fmtP(q)} ${short[m]}`).join(' · ')}</td></tr>`;
+    }
+    $('cost-dev').innerHTML = d + '</tbody>';
+    $('cost-dev-h').hidden = $('cost-dev').hidden = !c.devices.length;
+    for (const inp of $('cost-card').querySelectorAll('input.cell')) {
       inp.addEventListener('input', () => {
         const o = store.get(C.id + ':cost', {}), k = inp.dataset.row, f = inp.dataset.f, v = num(inp.value);
         o[k] = o[k] || {};
@@ -161,20 +170,29 @@
     recalcCost(c);
   }
   function recalcCost(c) {
-    const val = (k, f) => { const el = $('cost').querySelector(`input[data-row="${k}"][data-f="${f}"]`); const v = el ? num(el.value) : NaN; return isFinite(v) && v >= 0 ? v : Number(el && el.dataset.def); };
+    const val = (k, f) => { const el = $('cost-card').querySelector(`input[data-row="${k}"][data-f="${f}"]`); const v = el ? num(el.value) : NaN; return isFinite(v) && v >= 0 ? v : Number(el && el.dataset.def); };
     let stone = 0;
     for (const td of $('cost').querySelectorAll('[data-sum]')) {
-      const k = td.dataset.sum;
-      if (k === 'shield') { td.textContent = '—'; continue; }
-      const x = val(k, 'n') * val(k, 'price');
+      const x = val(td.dataset.sum, 'n') * val(td.dataset.sum, 'price');
       stone += x;
       td.textContent = fmtN(x);
     }
     $('cost-total').textContent = fmtN(stone);
-    const sh = c.shields ? val('shield', 'n') : 0;
+    // усе разом: камінь + матеріали пентащитів і пристроїв; паливо — на тиждень роботи генераторів
+    const need = {}, n = {};
+    let gives = 0, takes = 0;
+    for (const x of c.devices) {
+      n[x.id] = val(devId(x), 'n');
+      for (const [m, q] of Object.entries(x.mats)) need[m] = (need[m] || 0) + n[x.id] * q;
+      if (x.power > 0) gives += n[x.id] * x.power; else takes -= n[x.id] * x.power;
+    }
+    const all = [[Math.ceil(stone), 'гранітного каменю'], ...c.MATS.filter((m) => need[m.id]).map((m) => [Math.ceil(need[m.id]), m.name])];
+    if (n.generator) all.push([n.generator * c.fuelWeek, 'паливних елементів на тиждень']);
+    $('cost-all').innerHTML = all.map(([q, name]) => `<li><b>${fmtN(q)}</b><span>${name}</span></li>`).join('');
     const edited = Object.keys(store.get(C.id + ':cost', {})).length > 0;
-    $('cost-note').innerHTML = (c.factor !== 1 ? `Ціни вже зі знижкою Глибокої пустелі (×${fmtP(c.factor)}). ` : '')
-      + (sh ? `На пентащити: ${c.shieldPer.map((m) => `<b>${fmtN(Math.ceil(sh * m.per))}</b> ${m.name}`).join(', ')}. ` : '')
+    $('cost-note').innerHTML = (c.factor !== 1 ? `Ціни вже зі знижкою Глибокої пустелі (×${fmtP(c.factor)}), крім реплікаторів — їх роблять у Хагга. ` : '')
+      + (gives ? `Енергія: генератори дають <b>${fmtN(gives)}</b>, пентащити й верстаки беруть <b>${fmtN(takes)}</b>. ` : '')
+      + (n.generator ? `Паливо: один елемент на годину на генератор, ${fmtN(n.generator)} × ${c.fuelWeek} год на тиждень. ` : '')
       + 'Кількість і ціну можна виправити в комірці.'
       + (edited ? ' <button type="button" class="linkbtn" id="cost-reset">Скинути правки</button>' : '');
     if (edited) $('cost-reset').addEventListener('click', () => { store.set(C.id + ':cost', {}); renderCost(); });

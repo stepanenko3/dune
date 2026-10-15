@@ -187,10 +187,30 @@
     // Ціни сардаукарського набору в гранітному камені за деталь (база в Хагга; у Deep Desert — M.ui.costFactor).
     // Двері: проріз 10 + стулка 17. Парапет — напівстіна. Запас на декор — клиноподібні стіни по 10.
     const PRICES = { fsq: 15, ftri: 15, ramp: 10, csq: 10, ctri: 10, wall: 10, door: 27, rail: 10, stairs: 10, pillar: 10, decor: 10 };
-    // Пентащит — не з каменю: матеріали за одну секцію.
-    const SHIELD = [['сталевих злитків', 2], ['кобальтової пасти', 20], ['каліброваних серво', 6]];
+    // Матеріали пентащитів і пристроїв: назва в підсумку і коротка — у таблиці.
+    const MATS = [
+      { id: 'steel', name: 'сталевих злитків', short: 'сталь' },
+      { id: 'cobalt', name: 'кобальтової пасти', short: 'кобальт. паста' },
+      { id: 'servo', name: 'каліброваних серво', short: 'серво' },
+      { id: 'scrap', name: 'утилізованого металу', short: 'утиль. метал' },
+      { id: 'iron', name: 'залізних злитків', short: 'залізо' },
+      { id: 'alu', name: 'алюмінієвих злитків', short: 'алюміній' },
+      { id: 'silicone', name: 'силіконових блоків', short: 'силікон' },
+    ];
+    // Рецепти з гри за одиницю (база в Хагга; у Deep Desert — M.ui.costFactor, крім того, що везуть із собою).
+    // power: скільки дає (+) чи бере (−) енергії.
+    const RECIPES = {
+      shield: { name: 'Пентащит (секція)', mats: { steel: 2, cobalt: 20, servo: 6 }, power: -3 },
+      generator: { name: 'Паливний генератор', mats: { scrap: 45 }, power: 75 },
+      fabricator: { name: 'Фабрикатор (базовий верстак)', mats: { scrap: 75 }, power: -10 },
+      repair: { name: 'Ремонтна станція', mats: { iron: 40 }, power: -20 },
+      storage: { name: 'Контейнер для зберігання', mats: { alu: 35, silicone: 5 } },
+      console: { name: 'Розширена консоль суб-фіфу', mats: { scrap: 40 } },
+      replicator: { name: 'Солідо-реплікатор (з собою)', mats: { scrap: 20 }, carry: true },
+    };
+    const FUEL_WEEK = 24 * 7; // паливний елемент горить 1 год — стільки на генератор за тиждень
 
-    // Кошторис: рядки деталей із ціною в камені, разом каменю і окремо матеріали на пентащити.
+    // Кошторис: рядки деталей із ціною в камені, разом каменю і окремо пентащити й пристрої з моделі (item.recipe).
     function cost(res, lim) {
       const k = (M.ui && M.ui.costFactor) || 1, t = res.total, bud = budget(res, lim);
       const rows = [];
@@ -205,8 +225,14 @@
       if (bud.decor) rows.push({ id: 'rdec', name: `Запас на декор, клиноподібні стіни (${lim.decor}%)`, n: bud.decor, price: PRICES.decor * k });
       for (const r of rows) r.sum = r.n * r.price;
       const stone = rows.reduce((a, r) => a + r.sum, 0);
-      const shield = t.shield ? SHIELD.map(([name, per]) => ({ name, n: Math.ceil(t.shield * per * k) })) : [];
-      return { rows, stone, shields: t.shield, shield, shieldPer: SHIELD.map(([name, per]) => ({ name, per: per * k })), factor: k };
+      const cnt = { shield: t.shield };
+      for (const r of M.rooms) for (const it of r.items || []) if (it.recipe) cnt[it.recipe] = (cnt[it.recipe] || 0) + 1;
+      for (const [id, n] of Object.entries((M.ui && M.ui.extras) || {})) cnt[id] = (cnt[id] || 0) + n;
+      const devices = Object.keys(RECIPES).filter((id) => cnt[id]).map((id) => {
+        const R = RECIPES[id], f = R.carry ? 1 : k;
+        return { id, name: R.name, n: cnt[id], power: R.power || 0, mats: Object.fromEntries(Object.entries(R.mats).map(([m, q]) => [m, q * f])) };
+      });
+      return { rows, stone, devices, MATS, fuelWeek: FUEL_WEEK, factor: k };
     }
 
     function budget(res, { found = 4, decor = 10 } = {}) {

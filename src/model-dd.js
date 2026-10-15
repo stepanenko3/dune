@@ -39,8 +39,9 @@
   // ---------- приміщення ----------
   const rooms = [];
   const addRoom = (r) => { rooms.push(r); return r; };
-  const box = (x, y) => item('Контейнер', 'storage', V(x, y), 0.9, 0.9, 2, 0);
-  const gen = (x, y) => item('Генератор', 'power', V(x, y), 1.2, 1.2, 1.8, 0, { full: 'Паливний генератор (75)' });
+  // recipe — рецепт пристрою в кошторисі (build.js, RECIPES)
+  const box = (x, y) => item('Контейнер', 'storage', V(x, y), 0.9, 0.9, 2, 0, { recipe: 'storage' });
+  const gen = (x, y) => item('Генератор', 'power', V(x, y), 1.2, 1.2, 1.8, 0, { full: 'Паливний генератор (75)', recipe: 'generator' });
   const sky = rect(-X1, YP, 2 * X1, Y1 - YP);   // пентащит 8×4 над краулером і контейнером
   const skyA = rect(-X1, Y0, 5, YP - Y0);        // пентащит 5×3 над асаултом
   const doorBay = seg(V(-1, YP), V(0, YP), 'door', 0, G);   // майстерня ↔ ангар важкої техніки
@@ -69,8 +70,8 @@
     items: [
       stairs('Сходи на +2', V(0.5, 2.5), 2, 0.95, 90, 0, G),
       gen(-3.7, 3.7), gen(-2.4, 3.7), gen(-3.7, 2.45), gen(-2.4, 2.45), gen(-3.0, 1.25),
-      item('Верстак', 'craft', V(-1.1, 1.5), 1.4, 1.6, 1.6, 0, { full: 'Базовий верстак' }),
-      item('Ремонт', 'craft', V(-1.25, 3.3), 2, 1.0, 1.2, 90, { full: 'Ремонтна станція' }),
+      item('Верстак', 'craft', V(-1.1, 1.5), 1.4, 1.6, 1.6, 0, { full: 'Базовий верстак', recipe: 'fabricator' }),
+      item('Ремонт', 'craft', V(-1.25, 3.3), 2, 1.0, 1.2, 90, { full: 'Ремонтна станція', recipe: 'repair' }),
     ],
   });
   addRoom({
@@ -100,7 +101,7 @@
     items: [
       ...[1.5, 2.5, 3.5].flatMap((x) => [2.0, 3.0].map((y) => box(x, y))),
       box(1.5, 1.1), box(2.5, 1.1),
-      item('Консоль суб-фіфу', 'console', V(3.5, 3.95), 1, 1, 1.4, 0),
+      item('Консоль суб-фіфу', 'console', V(3.5, 3.95), 1, 1, 1.4, 0, { recipe: 'console' }),
     ],
   });
 
@@ -124,6 +125,7 @@
     store: 'dd:',
     all: 8,
     costFactor: 0.5,
+    extras: { replicator: 2 },   // у кошторис: план бази + запасний (витрачається при розміщенні)
     planScale: 46,
     claimsText: '1 ділянка',
     levelButtons: { g: 'Рівень 0', t: '+2', r: 'Дах' },
