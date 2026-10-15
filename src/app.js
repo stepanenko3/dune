@@ -101,16 +101,6 @@
     renderRooms();
   }
 
-  function renderCounts() {
-    let s = 0, t = 0;
-    let html = '<thead><tr><th>Ярус</th><th><span class="dot" style="background:var(--sq)"></span>кв.</th><th><span class="dot" style="background:var(--tri);clip-path:polygon(50% 0,100% 100%,0 100%)"></span>тр.</th></tr></thead><tbody>';
-    for (const r of C.P.pieceCounts()) {
-      s += r.s; t += r.t;
-      html += `<tr><td>${r.name}</td><td>${r.s}</td><td>${r.t}</td></tr>`;
-    }
-    $('counts').innerHTML = html + `</tbody><tfoot><tr><td>Разом</td><td>${s}</td><td>${t}</td></tr></tfoot>`;
-  }
-
   // ---------- етапи, кошторис, ліміти ----------
   function renderSteps() {
     const B = C.B;
@@ -336,7 +326,6 @@
 
     state.highlight = null;
     select(null, false);
-    renderCounts();
     renderBuild();
     setCut(C.cut);
     show3D();

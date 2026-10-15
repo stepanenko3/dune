@@ -295,37 +295,7 @@
       return s + '</svg>';
     }
 
-    // Підрахунок плит для кошторису.
-    function pieceCounts() {
-      const rows = [];
-      if (UI.pieceRows) {
-        for (const [name, pick] of UI.pieceRows) {
-          let s = 0, t = 0;
-          for (const tiles of pick(M.rooms)) for (const x of tiles) x.k === 's' ? s++ : t++;
-          rows.push({ name, s, t });
-        }
-        return rows;
-      }
-      const add = (name, rooms) => {
-        let s = 0, t = 0;
-        for (const r of rooms) for (const x of r.tiles) x.k === 's' ? s++ : t++;
-        rows.push({ name, s, t });
-      };
-      const { G, CAR, BACK, TOWER, DECK, TOP } = M.heights;
-      const body = M.rooms.filter((r) => r.group !== 'crown' && !r.onRoof); // майданчик на даху — це плити даху під ним
-      add('Фундамент, рівень 0', body.filter((r) => r.z0 === 0));
-      add('Підлоги і палуби +5', body.filter((r) => r.z0 >= G && r.z0 < CAR));
-      add('Ангар грузових і підлоги веж +9', body.filter((r) => r.z0 === CAR));
-      add('Дахи до +9 (зал, блоки, перехід, ангари, гараж, склад)', body.filter((r) => r.roof !== 'none' && r.z0 + r.h <= BACK));
-      add('Верхній ярус дахів ангарів +9', body.filter((r) => r.crown).map((r) => ({ tiles: r.crown.tiles })));
-      add('Балкони веж і місток +15', body.filter((r) => r.z0 === DECK));
-      add('Дах ангара грузових +13', body.filter((r) => r.roof === 'solid' && r.z0 + r.h === TOP));
-      add('Піраміда', M.rooms.filter((r) => r.group === 'crown'));
-      add('Ліхтарі веж', body.filter((r) => r.z0 === TOWER));
-      return rows;
-    }
-
-    return { render, pieceCounts };
+    return { render };
   }
 
   root.PLAN2D = { make };
