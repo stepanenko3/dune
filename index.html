@@ -280,6 +280,12 @@ table.rm-cost tr.sum td { font-weight: 700; }
 .rm-big { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px 24px; }
 .rm-big b { display: block; font: 600 20px/1.2 var(--font-mono); font-variant-numeric: tabular-nums; }
 .rm-big span { font-size: 12.5px; color: var(--muted); }
+.rm-farm { grid-column: 1 / -1; padding: 16px 20px; display: grid; gap: 12px; }
+.rm-farm h2 { font-size: 15px; margin: 0; }
+.rm-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 16px 28px; align-items: start; }
+.rm-cols > div { min-width: 0; display: grid; gap: 8px; align-content: start; }
+.rm-cols h3 { margin: 0; font-size: 13.5px; }
+.rm-cols ul, .rm-cols ol { margin: 0; padding-left: 18px; display: grid; gap: 5px; font-size: 13.5px; }
 .howto { margin: 0 0 14px; padding: 12px 14px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); font-size: 13.5px; }
 .howto h3 { margin: 0 0 6px; font-size: 13.5px; }
 .howto ol { margin: 0; padding-left: 18px; display: grid; gap: 5px; }
@@ -499,10 +505,61 @@ table.rm-cost tr.sum td { font-weight: 700; }
       <ul class="rm-big">
         <li><b>≈ 2 000–2 100</b><span>пластанієвих злитків</span></li>
         <li><b>≈ 1 900–2 000</b><span>меланжу</span></li>
-        <li><b>≈ 7 000</b><span>титану (з великим рудним, без указу)</span></li>
+        <li><b>≈ 8 800</b><span>титану (300 злитків у середньому, решта у великому; без указу)</span></li>
+        <li><b>≈ 6 150</b><span>ставрідієвої маси (3 на злиток)</span></li>
         <li><b>≈ 2 500 л</b><span>води на пластан (1,25 л на злиток)</span></li>
       </ul>
       <p class="src">Ціни: <a href="https://dune.gaming.tools/placeables/largeorerefinery_placeable" target="_blank" rel="noopener">великий рудний</a> · <a href="https://dune.gaming.tools/placeables/largespicerefinery_placeable" target="_blank" rel="noopener">великий меланжевий</a> · <a href="https://dune.gaming.tools/items/melangespice" target="_blank" rel="noopener">рецепти меланжу</a> · <a href="https://dune.gaming.tools/items/t6refinedresourcea" target="_blank" rel="noopener">рецепти пластану</a> · <a href="https://dune.gaming.tools/items/ornithoptertransportchassis_6" target="_blank" rel="noopener">рама грузового</a> · <a href="https://dune.gaming.tools/items/containervehicle" target="_blank" rel="noopener">контейнер</a> · <a href="https://dune.gaming.tools/items/sandcrawlerchassis_6" target="_blank" rel="noopener">рама краулера</a></p>
+    </section>
+
+    <section class="card rm-farm" aria-labelledby="h-farm">
+      <h2 id="h-farm">Титан і ставрідій для пластану</h2>
+      <p class="rm-why">Обидва є лише в Deep Desert. Злиток пластану = титанова руда + 1 ставрідієве волокно + 1,25 л води. Волокно робить хімічний переробник із 3 ставрідієвих мас і 0,1 л води.</p>
+      <div class="rm-cols">
+        <div>
+          <h3>Скільки треба на 4 етапи</h3>
+          <table class="rm-cost">
+            <tr><th></th><th>На злиток</th><th>Разом</th></tr>
+            <tr><td>Титанова руда</td><td>6 → 4</td><td>≈ 8 800</td></tr>
+            <tr><td>Ставрідієва маса</td><td>3</td><td>≈ 6 150</td></tr>
+            <tr class="sum"><td>Об'єм</td><td></td><td>≈ 11 000</td></tr>
+          </table>
+          <p class="rm-meta">Перші 300 злитків (на сам великий рудний) — по 6 титану, решта — по 4 у великому. Після нього маси треба майже стільки ж, скільки титану (3 до 4): збирайте обидва, а не лише титан. Титан займає 0,9 об'єму, маса — 0,5, стак 500. Уся руда на план влазить в один вантажний контейнер (15 000).</p>
+          <p class="rm-meta">Указ −25% дає 5 титану замість 6 у середньому і 3 замість 4 у великому. Для 3 мас на волокно він, схоже, нічого не дає: 2,25 округлюється до 3, як 562,5 піску до 563.</p>
+        </div>
+        <div>
+          <h3>Де шукати</h3>
+          <ul>
+            <li>З квітня 2026 (патч 1.3.20) Deep Desert — два окремі світи: PvE на всю сітку 9×9 і PvP. У PvP вузлів більше і видобуток ×2,5 (за гайдами), у PvE — безпечно, але рідше.</li>
+            <li>Титан — темно-сині шипи на сіро-блакитних скелях. Ставрідій — бірюзово-зелені пластини на схилах червоних каньйонів. Обидва — біля скельних масивів і уламків кораблів.</li>
+            <li>Сектори з гайдів (E9, G4–G5…) застаріли: після бурі карта щотижня інша.</li>
+            <li>Найближче до Хагга — Щитова стіна і ряд A: з патча 1.1.20 вузли є і там.</li>
+            <li>Вузол у PvE відновлюється за 45 хв. Вичерпані вузли позначаються на карті до бурі.</li>
+            <li>Гравці пишуть, що щотижня є 2 невеликі райони з дуже густим титаном або ставрідієм — шукайте їх у перший день після бурі.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Чим добувати</h3>
+          <ul>
+            <li>Ручний різак — щонайменше Mk5, краще Mk6. Тільки в ручного є режим аналізу з бонусом до видобутку.</li>
+            <li>Багі: різак для багі Mk6 на задньому модулі Utility Rear (у ньому слот під турель) і модуль сховища. У таблиці Mk5 титану й ставрідію немає — схоже, не бере; перевірте в грі.</li>
+            <li>Різак багі Mk6 бере титан і ставрідій у 4 рази повільніше, ніж мідь чи граніт (90 проти 375), але не треба виходити з машини. Focused-версія — ще +20–30%.</li>
+            <li>Планетолог: Cutteray Mining +10/15/20% і Deep Analysis +10/15/20% до бонусу аналізу.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Форпост і коло — як з алюмінієм</h3>
+          <ol>
+            <li>Перший день після бурі облетіти сектори скаутом Mk5 зі сканером і знайти 2–3 скельні масиви, де є і титан, і ставрідій.</li>
+            <li>Форпост DD поставити на скелі між ними (черв'як не дістане). Краще в середніх рядах, де й середні поля спайсу: одна база і на руду, і на пісок.</li>
+            <li>Коло на 40–50 хв: поки його пройдете, перші вузли відновляться.</li>
+            <li>Удвох: один на багі по підніжжях і полицях, куди можна заїхати; другий на скауті з ручним різаком — по вершинах і стрімких схилах.</li>
+            <li>Пісок між масивами — черв'як: по ньому лише короткі перебіжки, далеко — орні.</li>
+            <li>Після кожного кола — у склад форпосту. На Main поки возити в орні, після етапу 2 — грузовим у контейнері. Переробляти великими партіями в тижні указу.</li>
+          </ol>
+        </div>
+      </div>
+      <p class="src">Джерела: <a href="https://www.method.gg/dune-awakening/where-to-find-and-farm-stravidium-mass-and-titanium-ore-in-dune-awakening" target="_blank" rel="noopener">де фармити</a> · <a href="https://awakening.wiki/Titanium_Ore" target="_blank" rel="noopener">титан</a> · <a href="https://awakening.wiki/Stravidium_Mass" target="_blank" rel="noopener">ставрідій</a> · <a href="https://awakening.wiki/Buggy_Cutteray_Mk6" target="_blank" rel="noopener">різак багі Mk6</a> · <a href="https://method.gg/dune-awakening/dune-awakening-patch-1-1-0-17-brings-first-deep-desert-pve-changes" target="_blank" rel="noopener">відновлення 45 хв</a> · <a href="https://mein-mmo.de/en/dune-awakening-patch-mehr-mats-deep-desert-pve,1519946" target="_blank" rel="noopener">вузли на Щитовій стіні</a> · <a href="https://howtoplayhub.com/dune-awakening/deep-desert-guide" target="_blank" rel="noopener">PvE і PvP з 1.3.20</a> · <a href="https://www.keengamer.com/articles/guides/best-planetologist-build-and-skills-guide-dune-awakening/" target="_blank" rel="noopener">планетолог</a></p>
     </section>
   </section>
 
