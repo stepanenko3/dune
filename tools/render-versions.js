@@ -9,7 +9,7 @@ const { execSync } = require('child_process');
 const { chromium } = require('playwright');
 
 const root = path.resolve(__dirname, '..');
-const VERSIONS = require('../src/versions.js');
+const VERSIONS = require('../src/engine/versions.js');
 const only = process.argv.slice(2);
 const out = path.join(root, 'versions');
 const threeDir = process.env.THREE_DIR;

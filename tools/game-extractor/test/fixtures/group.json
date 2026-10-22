@@ -1,0 +1,7 @@
+[{ "Type": "CompositeDataTable", "Name": "CDT_BuildableGroupData", "Rows": {
+  "Pillar": { "m_BuildableTierData": [{ "Key": { "Name": "Tier1" }, "Value": { "m_PlacementCosts": [{ "Key": { "Name": "Stone" }, "Value": 10 }, { "Key": { "Name": "Plastone" }, "Value": 2 }], "m_MaxHealth": 7000.0 } }] },
+  "Pillar_Corner": { "m_BuildableTierData": [{ "Key": { "Name": "Tier1" }, "Value": { "m_PlacementCosts": [{ "Key": { "Name": "Stone" }, "Value": 8 }], "m_MaxHealth": 5600.0 } }] },
+  "Wall": { "m_BuildableTierData": [{ "Key": { "Name": "Tier1" }, "Value": { "m_PlacementCosts": [], "m_MaxHealth": 7000.0 } }] },
+  "Foundation": { "m_BuildableTierData": [{ "Key": { "Name": "Tier1" }, "Value": { "m_PlacementCosts": [], "m_MaxHealth": 9000.0 } }] },
+  "Fabricator": { "m_BuildableTierData": [{ "Key": { "Name": "Tier2" }, "Value": { "m_PlacementCosts": [{ "Key": { "Name": "CopperBar" }, "Value": 30 }], "m_MaxHealth": 3000.0 } }] }
+} }]

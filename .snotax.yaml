@@ -1,0 +1,11 @@
+# snotax dev — frontend-only host-proxy site (як Satisfactory).
+# Консоль запускає dev-команду НА ХОСТІ і проксує dune.test на порт Vite.
+# `npm run dev` піднімає API (node server, :5181) і Vite (:5180) разом; Vite сам проксує /api,
+# /map-tiles і /versions на API, тож edge потрібен лише порт Vite.
+schemaVersion: 8
+proxy:
+  command: npm run dev
+  port: 5180
+domains:
+  - label: dune
+secured: true

@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- page:start -->
+<title>Sandwalkers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@500;700&display=swap">
+<style>
+/* Layout: робоче місце кресляра — вкладки баз угорі, велике полотно плану/3D ліворуч, довідкова колонка праворуч, етапи й кошторис нижче */
+:root {
+  --bg: #e9ecef;
+  --surface: #ffffff;
+  --surface-2: #f4f6f8;
+  --ok: #0b7a4b; --ok-bg: #e2f4ea; --bad: #b42318; --bad-bg: #fde7e4;
+  --ink: #14161b;
+  --muted: #586070;
+  --line: #d3d8df;
+  --accent: #0d8a7c;
+  --accent-ink: #ffffff;
+  --plan-bg: #fbfbfc;
+  --plan-grid: #e9ebee;
+  --frame: #24222e;
+  --sq: #3b82e6;
+  --tri: #f0963a;
+  --seam: #ffffff;
+  --wall: #191b21;
+  --halo: #fbfbfc;
+  --ghost: #dfe3e8;
+  --hatch-bg: #eef0f3;
+  --hatch-ln: #9aa1ad;
+  --item: #1b1d22;
+  --item-fill: rgba(255, 255, 255, 0.62);
+  --item-ink: #14161b;
+  --glass: #8cc3e6;
+  --sky-top: #f3e3cc;
+  --sky-bottom: #e7c9a2;
+  --font-display: 'Unbounded', 'Golos Text', system-ui, sans-serif;
+  --font-body: 'Golos Text', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101216; --surface: #171a1f; --surface-2: #1d2127; --ink: #e7e9ee; --muted: #9aa3b2; --line: #2a2f37;
+    --accent: #2dd4bf; --accent-ink: #062b27; --plan-bg: #14171c; --plan-grid: #1f232a; --frame: #d4d7de;
+    --seam: #14171c; --wall: #f1f2f5; --halo: #14171c; --ghost: #262b33; --hatch-bg: #1b1f25; --hatch-ln: #4b5361;
+    --item: #0c0d10; --item-fill: rgba(255, 255, 255, 0.7); --item-ink: #111317; --glass: #7fb8dd;
+    --sky-top: #2a2622; --sky-bottom: #4a3b2c; color-scheme: dark;
+    --ok: #4ade80; --ok-bg: #12291c; --bad: #f87171; --bad-bg: #331616;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101216; --surface: #171a1f; --surface-2: #1d2127; --ink: #e7e9ee; --muted: #9aa3b2; --line: #2a2f37;
+  --accent: #2dd4bf; --accent-ink: #062b27; --plan-bg: #14171c; --plan-grid: #1f232a; --frame: #d4d7de;
+  --seam: #14171c; --wall: #f1f2f5; --halo: #14171c; --ghost: #262b33; --hatch-bg: #1b1f25; --hatch-ln: #4b5361;
+  --item: #0c0d10; --item-fill: rgba(255, 255, 255, 0.7); --item-ink: #111317; --glass: #7fb8dd;
+  --sky-top: #2a2622; --sky-bottom: #4a3b2c; color-scheme: dark;
+  --ok: #4ade80; --ok-bg: #12291c; --bad: #f87171; --bad-bg: #331616;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 400 15px/1.55 var(--font-body); }
+.wrap { max-width: 1480px; margin: 0 auto; padding-inline: clamp(16px, 3vw, 36px); padding-block: 24px 56px; display: grid; gap: 22px; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 28px; }
+.brand h1 { font: 700 clamp(22px, 3.2vw, 34px)/1.1 var(--font-display); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.brand p { margin: 6px 0 0; color: var(--muted); max-width: 70ch; }
+.base-tabs { margin-bottom: 14px; }
+.brand { min-width: 0; max-width: 100%; }
+.seg.base-tabs { max-width: 100%; overflow-x: auto; }
+.seg.base-tabs button { padding: 9px 14px; font-size: 13.5px; }
+/* на телефоні вкладки — сіткою 2 × 2, щоб не ширшали за екран */
+@media (max-width: 560px) {
+  .seg.base-tabs { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .seg.base-tabs button { padding: 9px 8px; font-size: 12.5px; white-space: normal; }
+  .seg.base-tabs button + button { border-left: 0; }
+  .seg.base-tabs button:nth-child(even) { border-left: 1px solid var(--line); }
+  .seg.base-tabs button:nth-child(n + 3) { border-top: 1px solid var(--line); }
+}
+.facts { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding: 0; list-style: none; font: 500 13px/1.4 var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.facts b { color: var(--ink); font-weight: 600; }
+
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 20px; align-items: start; }
+@media (max-width: 1020px) { .workspace { grid-template-columns: minmax(0, 1fr); } }
+
+.stage { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; min-width: 0; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+.bar .grow { flex: 1 1 auto; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; background: var(--surface); }
+.seg button { font: 500 13px/1 var(--font-body); color: var(--muted); background: transparent; border: 0; padding: 8px 12px; cursor: pointer; white-space: nowrap; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.seg.tabs button { font-weight: 600; }
+.seg button:focus-visible, .chk input:focus-visible, .rooms button:focus-visible, input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chk { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); cursor: pointer; user-select: none; }
+.chk input { accent-color: var(--accent); }
+.lab { font: 600 11px/1 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+
+.plan-wrap { overflow-x: auto; background: var(--plan-bg); }
+/* план */
+.plan .bg { fill: var(--plan-bg); }
+.plan .grid line { stroke: var(--plan-grid); stroke-width: 1; }
+.plan .ghost polygon { fill: var(--ghost); stroke: none; }
+.plan .sq { fill: var(--sq); stroke: var(--seam); stroke-width: 1; }
+.plan .tri { fill: var(--tri); stroke: var(--seam); stroke-width: 1; }
+.plan .room { cursor: pointer; }
+.plan .room.dim { opacity: 0.25; }
+.plan .through polygon { stroke: var(--hatch-ln); stroke-width: 0.5; }
+.plan .hatch-bg { fill: var(--hatch-bg); }
+.plan .hatch-ln { stroke: var(--hatch-ln); stroke-width: 1.2; }
+.plan .shield-bg { fill: rgba(45, 212, 191, 0.28); }
+.plan .shield-ln { stroke: var(--accent); stroke-width: 1.4; }
+.plan line { stroke-linecap: round; }
+.plan .wall { stroke: var(--wall); stroke-width: 2.4; }
+.plan .parapet { stroke: var(--wall); stroke-width: 1.3; stroke-dasharray: 1.5 3.5; }
+.plan .op-door { stroke: var(--wall); stroke-width: 2.4; stroke-dasharray: 3 4; }
+.plan .op-shield { stroke: var(--accent); stroke-width: 4.5; }
+.plan .hl-edge { stroke: var(--accent); stroke-width: 3.6; }
+.plan .overhead polygon { fill: var(--ghost); fill-opacity: 0.55; stroke: none; }
+.plan .overhead line { stroke: var(--muted); stroke-width: 1.6; stroke-dasharray: 6 4; }
+.plan .sq.rim, .plan .tri.rim { fill-opacity: 0.72; }
+.plan polygon.shieldfill { fill: url(#shieldHatch); fill-opacity: 1; }
+.plan .roofs .crown { fill-opacity: 1; stroke-width: 1.6; }
+.plan .step-edge { stroke: var(--wall); stroke-width: 2; opacity: 0.85; }
+.plan .roof-under .sq, .plan .roof-under .tri { fill-opacity: 0.45; }
+.plan .slope-ln { stroke: var(--seam); stroke-width: 1.2; opacity: 0.85; }
+.plan .it-stairs polygon { fill: var(--item-fill); stroke: var(--item); stroke-width: 1.2; stroke-dasharray: none; }
+.plan .it-stairs .step { stroke: var(--item); stroke-width: 0.8; opacity: 0.7; }
+.plan .it-stairs .arrow { stroke: var(--item); stroke-width: 1.6; }
+.plan .arrow-head { fill: var(--item); }
+.plan .it-hatch polygon { fill: none; stroke-dasharray: 3 2; }
+.plan .it-hatch .step { stroke: var(--item); stroke-width: 0.8; }
+.plan .it polygon { fill: var(--item-fill); stroke: var(--item); stroke-width: 1.1; stroke-dasharray: 4 2.5; }
+.plan .it-spot polygon { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 7 4; }
+.plan .it-turbine polygon, .plan .it-windtrap polygon { stroke-dasharray: none; }
+.plan .it .rotor { stroke: var(--item); stroke-width: 2.4; }
+.plan .it .hub { fill: var(--item); fill-opacity: 0.2; stroke: var(--item); stroke-width: 1.2; }
+.plan .it-pad polygon { fill: rgba(255, 255, 255, 0.35); }
+.plan .pad-ring { fill: none; stroke: var(--item); stroke-width: 1.6; }
+.plan .pad-h { font: 700 15px var(--font-display); fill: var(--item-ink); text-anchor: middle; }
+.plan .it-label { font: 600 8.6px/1 var(--font-body); fill: var(--item-ink); text-anchor: middle; pointer-events: none; }
+.plan .lbl { font: 700 11.5px/1 var(--font-body); fill: var(--ink); text-anchor: middle; paint-order: stroke; stroke: var(--halo); stroke-width: 3.6px; stroke-linejoin: round; pointer-events: none; }
+.plan .lbl.hl { fill: var(--accent); }
+.plan .lbl-sub { font: 500 9px/1 var(--font-mono); fill: var(--muted); text-anchor: middle; paint-order: stroke; stroke: var(--halo); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+.plan .coords text { font: 600 9.5px/1 var(--font-mono); fill: var(--muted); text-anchor: middle; dominant-baseline: middle; pointer-events: none; }
+.plan .coords line { stroke: var(--frame); stroke-width: 0.6; opacity: 0.35; pointer-events: none; }
+.plan .claims rect { fill: none; stroke: var(--frame); stroke-width: 2; }
+.plan .claims circle { fill: var(--frame); }
+.plan .anno text { font: 600 11px var(--font-body); fill: var(--muted); }
+.plan .anno .front { font: 700 12px var(--font-body); fill: var(--ink); text-anchor: middle; letter-spacing: 0.06em; }
+.plan-wrap svg { display: block; width: 100%; min-width: 700px; height: auto; }
+.caption { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; padding: 10px 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.caption strong { color: var(--ink); font-weight: 600; }
+
+.three-wrap { position: relative; height: min(72vh, 780px); min-height: 420px; background: linear-gradient(180deg, var(--sky-top), var(--sky-bottom)); overflow: hidden; touch-action: none; }
+.three-wrap canvas.gl { display: block; }
+.three-base { position: absolute; inset: 0; }
+.labels3d { position: absolute; inset: 0; pointer-events: none; }
+.lbl3d { position: absolute; left: 0; top: 0; font: 600 11.5px/1.2 var(--font-body); color: #f7f4ef; background: rgba(20, 21, 25, 0.72); padding: 3px 7px; border-radius: 4px; white-space: nowrap; }
+.tip3d { position: absolute; left: 0; top: 0; pointer-events: none; font: 600 12px/1.2 var(--font-body); background: #fff; color: #111; border: 1px solid #222; padding: 4px 8px; border-radius: 4px; }
+.three-msg { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--ink); }
+input[type=range] { width: 170px; accent-color: var(--accent); }
+.cutval { font: 600 13px/1 var(--font-mono); min-width: 5ch; font-variant-numeric: tabular-nums; }
+
+aside.side { display: grid; gap: 16px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.card h2 { font: 700 13px/1.3 var(--font-display); letter-spacing: 0.02em; margin: 0 0 10px; }
+.legend { display: grid; grid-template-columns: 26px 1fr; gap: 7px 10px; align-items: center; font-size: 13px; }
+.legend svg { width: 26px; height: 18px; display: block; }
+.rooms { display: grid; gap: 2px; }
+.rooms .grp { font: 600 11px/1 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 10px 0 4px; }
+.rooms .grp:first-child { margin-top: 0; }
+.rooms button { display: grid; grid-template-columns: 1fr auto; gap: 8px; text-align: left; font: 500 13.5px/1.3 var(--font-body); color: var(--ink); background: transparent; border: 0; border-radius: 6px; padding: 6px 8px; cursor: pointer; }
+.rooms button:hover { background: var(--surface-2); }
+.rooms button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.rooms button span:last-child { font: 400 12px/1.3 var(--font-mono); color: inherit; opacity: 0.7; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.detail { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13.5px; }
+.detail h3 { margin: 0 0 4px; font-size: 14px; }
+.detail p { margin: 0 0 6px; color: var(--muted); }
+.detail ul { margin: 0; padding-left: 18px; }
+.dot { display: inline-block; width: 10px; height: 10px; vertical-align: -1px; margin-right: 4px; }
+
+.build { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 20px; margin-top: 20px; }
+@media (max-width: 1100px) { .build { grid-template-columns: minmax(0, 1fr); } }
+.build .card { padding: 18px 20px; }
+.build h2 { font-size: 15px; margin-bottom: 12px; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; font-size: 14px; counter-reset: st; }
+.steps li { display: grid; grid-template-columns: 2.2ch 1fr; gap: 8px; counter-increment: st; }
+.steps li::before { content: counter(st); font: 600 12.5px/1.6 var(--font-mono); color: var(--muted); text-align: right; }
+.steps b { font-weight: 600; }
+.steps .what { color: var(--muted); }
+.steps .cnt { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 4px; font: 500 12.5px/1.4 var(--font-mono); }
+.steps .cnt span { white-space: nowrap; }
+table.cost { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+table.cost th, table.cost td { padding: 5px 4px; border-bottom: 1px solid var(--line); text-align: right; vertical-align: middle; }
+table.cost th:first-child, table.cost td:first-child { text-align: left; padding-left: 0; }
+table.cost tfoot td { font-weight: 700; border-bottom: 0; }
+.small { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; }
+table.cost tr.sub td:first-child { padding-left: 12px; color: var(--muted); }
+table.cost input.cell { width: 7.5ch; padding: 3px 5px; font: inherit; text-align: right; color: var(--ink); background: transparent; border: 1px solid transparent; border-radius: 5px; font-variant-numeric: tabular-nums; }
+table.cost input.cell:hover { border-color: var(--line); background: var(--surface-2); }
+table.cost input.cell:focus { outline: none; border-color: var(--accent); background: var(--surface); }
+table.cost input.cell.edited { color: var(--accent); font-weight: 600; border-color: var(--line); }
+.linkbtn { padding: 0; font: inherit; color: var(--accent); background: none; border: 0; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.linkbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+table.cost td.same { color: var(--muted); font-size: 12px; }
+table.cost td.per { color: var(--muted); font-size: 12px; text-align: left; padding-left: 10px; }
+.cost-sub { margin: 16px 0 4px; font-size: 13px; }
+h2 + .cost-sub { margin-top: 0; }
+.cost-all { list-style: none; margin: 6px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 18px; }
+.cost-all b { display: block; font: 600 17px/1.2 var(--font-mono); font-variant-numeric: tabular-nums; }
+.cost-all span { font-size: 12.5px; color: var(--muted); }
+/* лічильник деталей */
+.build .lim { grid-column: 1 / -1; }
+.lim-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.build .lim-head h2 { margin: 0; }
+.lim-num { font: 600 22px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.lim-num span { margin-left: 6px; font-size: 13px; font-weight: 500; color: var(--muted); }
+.lim-status { padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+.lim-status.ok { color: var(--ok); background: var(--ok-bg); }
+.lim-status.bad { color: var(--bad); background: var(--bad-bg); }
+.lim-bar { position: relative; display: flex; height: 18px; margin: 30px 0 12px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface-2); }
+.lim-bar .seg { height: 100%; box-shadow: inset -1px 0 0 var(--surface); }
+.lim-bar .seg:first-child { border-radius: 4px 0 0 4px; }
+.lim-bar .cap { position: absolute; top: -7px; bottom: -7px; width: 2px; margin-left: -1px; background: var(--ink); }
+.lim-bar .over { position: absolute; bottom: -6px; height: 3px; border-radius: 2px; background: var(--bad); }
+.lim-bar .cap span { position: absolute; right: 0; bottom: 100%; padding: 0 0 3px; font: 500 11.5px/1 var(--font-mono); white-space: nowrap; color: var(--ink); }
+.s-f { background: var(--sq); }
+.s-d { background: var(--tri); }
+.s-w { background: var(--wall); }
+.s-g { background: var(--accent); }
+.s-o { background: var(--muted); }
+.s-e { background: var(--accent); }
+.lim-legend { list-style: none; margin: 0 0 14px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 4px 20px; font-size: 13px; }
+.lim-legend li { display: flex; align-items: center; gap: 8px; }
+.lim-legend b { margin-left: auto; font: 500 12.5px/1.4 var(--font-mono); font-variant-numeric: tabular-nums; }
+.lim-legend .sw { flex: none; width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--line); }
+.lim-sub { margin: 18px 0 10px; font-size: 13.5px; font-weight: 600; }
+.lim-cats { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px 22px; }
+.lim-cats li { min-width: 0; }
+.lc-top { display: flex; align-items: baseline; gap: 8px; font-size: 13px; }
+.lc-top b { margin-left: auto; font: 600 13px/1.4 var(--font-mono); font-variant-numeric: tabular-nums; }
+.lc-top i { font-style: normal; font-weight: 400; color: var(--muted); }
+.lim-cats .mini { height: 6px; margin: 4px 0 5px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.lim-cats .mini span { display: block; height: 100%; background: var(--accent); }
+.lim-cats li.bad .mini span { background: var(--bad); }
+.lim-cats li.bad .lc-top b { color: var(--bad); }
+.lc-what { font-size: 12px; line-height: 1.45; color: var(--muted); }
+.src { margin-top: 12px; font-size: 12.5px; color: var(--muted); }
+.src a { color: inherit; }
+/* план розвитку */
+.roadmap { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 1020px) { .roadmap { grid-template-columns: minmax(0, 1fr); } }
+.rm-now h2, .rm-total h2 { font-size: 15px; margin-bottom: 10px; }
+.rm-now h3 { margin: 12px 0 4px; font: 600 11px/1 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.rm-now ul { margin: 0; padding-left: 16px; display: grid; gap: 4px; font-size: 13.5px; }
+.rm-now b { font-family: var(--font-mono); font-weight: 600; }
+.muted { color: var(--muted); }
+.rm-note { margin: 14px 0 0; padding: 10px 12px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
+.roadmap > * { min-width: 0; }
+.rm-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr)); gap: 16px; }
+.rm-step { padding: 16px 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.rm-head { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+.rm-head h3 { flex: 1 1 14ch; min-width: 0; margin: 0; font: 700 14px/1.3 var(--font-display); text-wrap: balance; }
+.rm-n { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--ink); color: var(--surface); font: 600 13px/1 var(--font-mono); }
+.chip { padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.chip.ok { color: var(--ok); background: var(--ok-bg); }
+.chip.est { color: var(--muted); background: var(--surface-2); border: 1px solid var(--line); }
+.rm-why { margin: 0; font-size: 13.5px; }
+table.rm-cost { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+table.rm-cost td, table.rm-cost th { padding: 4px 0; border-bottom: 1px solid var(--line); text-align: right; }
+table.rm-cost th { font-size: 11.5px; font-weight: 600; color: var(--muted); }
+table.rm-cost td:first-child { text-align: left; padding-right: 10px; }
+table.rm-cost td + td { padding-left: 10px; font-family: var(--font-mono); }
+table.rm-cost tr.sum td { font-weight: 700; }
+.rm-meta { margin: 0; font-size: 12.5px; color: var(--muted); }
+.rm-total { grid-column: 1 / -1; padding: 16px 20px; }
+.rm-big { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px 24px; }
+.rm-big b { display: block; font: 600 20px/1.2 var(--font-mono); font-variant-numeric: tabular-nums; }
+.rm-big span { font-size: 12.5px; color: var(--muted); }
+.rm-farm { grid-column: 1 / -1; padding: 16px 20px; display: grid; gap: 12px; }
+.rm-farm h2 { font-size: 15px; margin: 0; }
+.rm-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 16px 28px; align-items: start; }
+.rm-cols > div { min-width: 0; display: grid; gap: 8px; align-content: start; }
+.rm-cols h3 { margin: 0; font-size: 13.5px; }
+.rm-cols ul, .rm-cols ol { margin: 0; padding-left: 18px; display: grid; gap: 5px; font-size: 13.5px; }
+.howto { margin: 0 0 14px; padding: 12px 14px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); font-size: 13.5px; }
+.howto h3 { margin: 0 0 6px; font-size: 13.5px; }
+.howto ol { margin: 0; padding-left: 18px; display: grid; gap: 5px; }
+/* унікальні ресурси */
+.res { display: grid; gap: 16px; }
+.res > * { min-width: 0; }
+.res-bar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.res-bar input[type="search"] { flex: 1 1 260px; min-width: 0; padding: 8px 11px; font: inherit; font-size: 13.5px; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; }
+.res-bar input[type="search"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.res-store { flex: 1 1 100%; font-size: 12.5px; color: var(--muted); }
+.res-list { padding: 6px 16px 14px; overflow-x: auto; }
+table.res-table { width: 100%; border-collapse: collapse; font-size: 13.5px; line-height: 1.45; }
+.res-table th { padding: 10px 8px 6px; text-align: left; font-size: 11.5px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line); }
+.res-table td { padding: 10px 8px; vertical-align: top; border-bottom: 1px solid var(--line); }
+.res-table tr.zone td { padding: 14px 8px 6px; font: 600 11px/1 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); border-bottom-color: var(--ink); }
+.res-table tr.editing td { background: var(--surface-2); }
+.res-table .r-res { width: 22%; font-weight: 600; }
+.res-table .r-place { width: 22%; }
+.res-table .r-en, .res-table .r-area { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; color: var(--muted); }
+.res-table .r-how { white-space: pre-line; }
+.res-table .r-ok { white-space: nowrap; }
+.res-table th.r-ok-h { font-size: 12px; }
+@media (min-width: 721px) { .res-table .r-ok .chk span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .res-table .r-ok { text-align: center; } }
+.res-table .r-act { white-space: nowrap; text-align: right; font-size: 12.5px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.res-msg { margin: 10px 8px 0; font-size: 13px; color: var(--muted); }
+.res-msg.err { color: var(--bad); }
+.res-form { display: grid; gap: 12px; padding: 16px 20px; }
+.res-form h2 { margin: 0; font-size: 15px; }
+.res-form .rf-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 10px 14px; }
+.res-form label { display: grid; gap: 4px; font-size: 12.5px; color: var(--muted); }
+.res-form input, .res-form select, .res-form textarea { width: 100%; padding: 8px 10px; font: inherit; font-size: 13.5px; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; }
+.res-form textarea { min-height: 76px; resize: vertical; }
+.res-form :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.rf-btns { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.btn { padding: 9px 16px; font: 600 13.5px/1 var(--font-body); color: var(--surface); background: var(--ink); border: 0; border-radius: 8px; cursor: pointer; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 720px) {
+  .res-list { padding: 4px 12px 12px; }
+  .res-table thead { display: none; }
+  .res-table, .res-table tbody, .res-table tr, .res-table td { display: block; width: auto !important; }
+  .res-table tr { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .res-table tr.zone { padding: 12px 0 4px; border-bottom: 1px solid var(--ink); }
+  .res-table td, .res-table tr.zone td { padding: 2px 0; border: 0; }
+  .res-table .r-how { padding-top: 6px; }
+  .res-table .r-ok, .res-table .r-act { display: inline-block; margin-top: 6px; }
+  .res-table .r-act { float: right; }
+}
+.versions { padding: 18px 20px; }
+.versions h2 { font-size: 15px; margin-bottom: 12px; }
+.vcols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px 32px; align-items: start; }
+.vcols h3 { margin: 0 0 6px; font-size: 13.5px; }
+.ver { border-top: 1px solid var(--line); }
+.ver summary { display: grid; grid-template-columns: 3.2ch 1fr auto; gap: 10px; align-items: baseline; padding: 8px 2px; cursor: pointer; font-size: 13.5px; list-style: none; }
+.ver summary::-webkit-details-marker { display: none; }
+.ver summary::before { content: none; }
+.ver summary b { font: 600 12.5px/1.5 var(--font-mono); color: var(--muted); text-align: right; }
+.ver[open] summary b, .ver summary:hover b { color: var(--accent); }
+.ver summary time { font: 500 12px/1.5 var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.ver summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.vbody { padding: 2px 2px 14px calc(3.2ch + 12px); font-size: 13.5px; }
+.vbody ul { margin: 0 0 10px; padding-left: 16px; display: grid; gap: 4px; color: var(--muted); }
+.vbody img { display: block; width: 100%; max-width: 640px; height: auto; border-radius: 6px; border: 1px solid var(--line); background: var(--surface-2); }
+.vmeta { margin: 8px 0 0; font-size: 12.5px; color: var(--muted); }
+.vmeta a { color: inherit; font-family: var(--font-mono); }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+<!-- page:head-end -->
+</head>
+<body>
+<!-- page:body -->
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="seg tabs base-tabs" role="group" aria-label="База">
+        <button id="base-main" type="button" aria-pressed="true">Sandwalkers Main</button>
+        <button id="base-dd" type="button" aria-pressed="false">Sandwalkers DD</button>
+        <button id="base-plan" type="button" aria-pressed="false">План розвитку</button>
+        <button id="base-res" type="button" aria-pressed="false">Ресурси</button>
+      </div>
+      <h1 id="base-title">Sandwalkers Main</h1>
+      <p id="base-lead"></p>
+    </div>
+    <ul class="facts" id="base-facts" aria-label="Основні цифри"></ul>
+  </header>
+
+  <div class="workspace" data-view="base">
+    <section class="stage" aria-label="Перегляд бази">
+      <div class="bar">
+        <div class="seg tabs" role="group" aria-label="Вид">
+          <button id="tab-plan" type="button" aria-pressed="true">План</button>
+          <button id="tab-3d" type="button" aria-pressed="false">3D</button>
+        </div>
+        <div class="grow"></div>
+      </div>
+
+      <div id="plan-panel">
+        <div class="bar">
+          <div class="seg" role="group" aria-label="Рівень" id="lvl-seg"></div>
+          <label class="chk"><input id="opt-items" type="checkbox" checked> Обладнання і техніка</label>
+          <label class="chk"><input id="opt-labels" type="checkbox" checked> Підписи</label>
+          <label class="chk"><input id="opt-coords" type="checkbox"> Координати</label>
+        </div>
+        <div class="plan-wrap" id="plan"></div>
+        <div class="caption" id="plan-caption"></div>
+      </div>
+
+      <div id="three-panel" hidden>
+        <div class="bar">
+          <div class="seg" role="group" aria-label="Камера">
+            <button id="cam-quarter" type="button" aria-pressed="true">3/4</button>
+            <button id="cam-front" type="button" aria-pressed="false">Фронт</button>
+            <button id="cam-back" type="button" aria-pressed="false">Тил</button>
+            <button id="cam-top" type="button" aria-pressed="false">Зверху</button>
+          </div>
+          <div class="seg" role="group" aria-label="Поверх" id="cut-seg"></div>
+          <label class="chk"><input id="opt-iso" type="checkbox"> Лише цей поверх</label>
+          <label class="chk" for="cut">Зріз <input id="cut" type="range" min="0.5" max="22" step="0.25" value="22"> <span class="cutval" id="cut-val">усе</span></label>
+          <label class="chk"><input id="opt-found" type="checkbox"> Тільки плити підлоги</label>
+          <label class="chk"><input id="opt-interior" type="checkbox" checked> Обладнання всередині</label>
+          <label class="chk"><input id="opt-tiles" type="checkbox" checked> Кольори плиток</label>
+          <label class="chk"><input id="opt-labels3d" type="checkbox" checked> Підписи</label>
+        </div>
+        <div class="three-wrap" id="three"></div>
+        <div class="caption"><span>Мишею — обертання, колесо — масштаб, права кнопка — зсув.</span></div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="card" aria-labelledby="h-legend">
+        <h2 id="h-legend">Легенда</h2>
+        <div class="legend">
+          <svg viewBox="0 0 26 18" aria-hidden="true"><rect x="4" y="1" width="16" height="16" fill="var(--sq)" stroke="var(--seam)"/></svg><span>Квадратна плита</span>
+          <svg viewBox="0 0 26 18" aria-hidden="true"><polygon points="3,16 21,16 12,1" fill="var(--tri)" stroke="var(--seam)"/></svg><span>Трикутна плита</span>
+          <svg viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--wall)" stroke-width="2.4"/></svg><span>Стіна</span>
+          <svg viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--wall)" stroke-width="2.4" stroke-dasharray="3 4"/></svg><span>Двері</span>
+          <svg viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--accent)" stroke-width="4.5"/></svg><span>Пентащит (проїзд, проліт)</span>
+          <svg data-only="main" viewBox="0 0 26 18" aria-hidden="true"><line x1="2" y1="9" x2="24" y2="9" stroke="var(--wall)" stroke-width="1.3" stroke-dasharray="1.5 3.5"/></svg><span data-only="main">Парапет (палуба, балкон)</span>
+          <svg viewBox="0 0 26 18" aria-hidden="true"><rect x="2" y="3" width="22" height="12" fill="var(--item-fill)" stroke="var(--item)"/><path d="M7 3v12M12 3v12M17 3v12" stroke="var(--item)" stroke-width="0.8"/><path d="M4 9h15" stroke="var(--item)" stroke-width="1.4"/><path d="M19 6l4 3-4 3z" fill="var(--item)"/></svg><span>Сходи, стрілка — вгору</span>
+          <svg data-only="main" viewBox="0 0 26 18" aria-hidden="true"><rect x="3" y="2" width="20" height="14" fill="var(--sq)"/><path d="M3 6h20M3 10h20M3 14h20" stroke="var(--seam)" stroke-width="1.2"/></svg><span data-only="main">Похилі плити (заокруглення)</span>
+          <svg viewBox="0 0 26 18" aria-hidden="true"><rect x="3" y="3" width="20" height="12" fill="var(--item-fill)" stroke="var(--item)" stroke-dasharray="4 2.5"/></svg><span>Техніка й обладнання</span>
+          <svg data-only="main" viewBox="0 0 26 18" aria-hidden="true"><defs><pattern id="lg-h" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="var(--hatch-bg)"/><line x1="0" y1="0" x2="0" y2="5" stroke="var(--hatch-ln)"/></pattern></defs><rect x="3" y="2" width="20" height="14" fill="url(#lg-h)" stroke="var(--wall)"/></svg><span data-only="main">Висота залу йде крізь рівень</span>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="h-rooms">
+        <h2 id="h-rooms">Приміщення</h2>
+        <div class="rooms" id="rooms"></div>
+        <div class="detail" id="detail"><p>Обери приміщення, щоб підсвітити його на плані й побачити, що в ньому.</p></div>
+      </section>
+
+    </aside>
+  </div>
+
+  <div class="build" data-view="base">
+    <section class="card lim" aria-labelledby="h-lim">
+      <div class="lim-head">
+        <h2 id="h-lim">Будівельні елементи</h2>
+        <div class="lim-num"><b id="lim-total">—</b><span>з <span id="lim-cap">—</span></span></div>
+        <span class="lim-status" id="lim-status" role="status"></span>
+      </div>
+      <div class="lim-bar" id="lim-bar" role="img" aria-label="Розподіл деталей відносно ліміту"></div>
+      <ul class="lim-legend" id="lim-legend"></ul>
+      <h3 class="lim-sub">Інші ліміти бази</h3>
+      <ul class="lim-cats" id="lim-cats"></ul>
+          </section>
+    <section class="card" aria-labelledby="h-build">
+      <h2 id="h-build">План будівництва</h2>
+      <div class="howto" id="howto" hidden></div>
+      <ol class="steps" id="steps"></ol>
+    </section>
+    <section class="card" id="cost-card" aria-labelledby="h-cost">
+      <h2 id="h-cost">Кошторис</h2>
+      <h3 class="cost-sub">Будівельні деталі</h3>
+      <table class="cost" id="cost"></table>
+      <h3 class="cost-sub" id="cost-dev-h">Пентащити й пристрої</h3>
+      <table class="cost" id="cost-dev"></table>
+      <h3 class="cost-sub">Що зібрати — усе разом</h3>
+      <ul class="cost-all" id="cost-all"></ul>
+      <p class="small" id="cost-note"></p>
+      <p class="src">Джерела: <a href="https://dune.gaming.tools/buildables/sardaukar_foundation" target="_blank" rel="noopener">фундамент</a> · <a href="https://dune.gaming.tools/buildables/sardaukar_wall_02" target="_blank" rel="noopener">стіна</a> · <a href="https://dune.gaming.tools/buildables/sardaukar_column" target="_blank" rel="noopener">колона</a> · <a href="https://awakening.wiki/Sardaukar_Building_Set" target="_blank" rel="noopener">увесь набір</a> · <a href="https://dune.gaming.tools/placeables/choam_pentashieldsurfacevertical_placeable" target="_blank" rel="noopener">пентащит</a> · <a href="https://www.method.gg/dune-awakening/building-in-the-deep-desert-in-dune-awakening-a-full-guide" target="_blank" rel="noopener">−50% у Deep Desert</a> · <a href="https://dune.gaming.tools/placeables/generator_placeable" target="_blank" rel="noopener">генератор</a> · <a href="https://dune.gaming.tools/placeables/fabricator_placeable" target="_blank" rel="noopener">фабрикатор</a> · <a href="https://dune.gaming.tools/placeables/repairstation_placeable" target="_blank" rel="noopener">ремонтна станція</a> · <a href="https://dune.gaming.tools/placeables/storagecontainer_placeable" target="_blank" rel="noopener">контейнер</a> · <a href="https://dune.gaming.tools/placeables/totem_placeable" target="_blank" rel="noopener">розширена консоль</a> · <a href="https://dune.gaming.tools/items/oil" target="_blank" rel="noopener">паливний елемент</a> · <a href="https://awakening.wiki/Solido_Replicator" target="_blank" rel="noopener">реплікатор</a></p>
+    </section>
+  </div>
+
+  <section class="roadmap" id="roadmap" data-view="plan" hidden aria-label="План розвитку">
+    <aside class="card rm-now">
+      <h2>Зараз є</h2>
+      <h3>Переробка</h3>
+      <ul>
+        <li>Середній переробник меланжу <b>×1</b></li>
+        <li>Середній переробник руди <b>×4</b></li>
+        <li>Середній хімічний <b>×2</b> <span class="muted">— більших немає</span></li>
+      </ul>
+      <h3>Техніка</h3>
+      <ul>
+        <li>Скаут Mk4, скаут Mk5</li>
+        <li>Асаулт Mk5</li>
+        <li>Багі Mk5, піскоцикл</li>
+      </ul>
+      <p class="rm-note">Цього тижня діє указ Ландсрааду: −25% на вхідні ресурси переробки. Середній бере 563 піску на 10 меланжу замість 750 і 5 титану на злиток пластану замість 6. Будівництво указ не здешевлює.</p>
+    </aside>
+
+    <ol class="rm-steps">
+      <li class="card rm-step">
+        <div class="rm-head"><span class="rm-n">1</span><h3>Великий переробник руди</h3><span class="chip ok">ціна з гри</span></div>
+        <p class="rm-why">Пластан з 4 титану замість 6 (з указом — 3 замість 5), злиток за 20 с замість 30. Усе далі коштує сотні злитків, тож він здешевлює кожен наступний етап.</p>
+        <table class="rm-cost">
+          <tr><td>Пластанієві злитки</td><td>300</td></tr>
+          <tr><td>Меланж</td><td>315</td></tr>
+          <tr><td>Силікон</td><td>450</td></tr>
+          <tr><td>Кобальтова паста</td><td>550</td></tr>
+          <tr><td>Складні механізми</td><td>160</td></tr>
+          <tr><td>Покращені механізми</td><td>40</td></tr>
+        </table>
+        <p class="rm-meta">Відкриття: 20 очок інтелу (від 1 200 витрачених). Бере 350 енергії.</p>
+      </li>
+      <li class="card rm-step">
+        <div class="rm-head"><span class="rm-n">2</span><h3>Грузовий орні і вантажний контейнер</h3><span class="chip est">частково оцінка</span></div>
+        <p class="rm-why">Доставляє краулер на поле і везе на Main контейнер: 15 000 об'єму — близько 100 000 спайс-піску за рейс.</p>
+        <table class="rm-cost">
+          <tr><th></th><th>Пластан</th><th>Меланж</th></tr>
+          <tr><td>Рама Mk6</td><td>85</td><td>42</td></tr>
+          <tr><td>Двигун Mk6</td><td>45</td><td>42</td></tr>
+          <tr><td>Головний корпус Mk6</td><td>79</td><td>42</td></tr>
+          <tr><td>Генератор, хвіст, бічні корпуси, крила</td><td>≈ 190–290</td><td>≈ 175–225</td></tr>
+          <tr class="sum"><td>Грузовий разом</td><td>≈ 400–500</td><td>≈ 300–350</td></tr>
+          <tr><td>Вантажний контейнер</td><td>≈ 225</td><td>≈ 105</td></tr>
+        </table>
+        <p class="rm-meta">Ще: кобальтова паста, покращені серво (контейнер — 68), конденсатори частинок, бронеплити, діамантиновий пил, гідропоршні. Відкриття: по 60 інтелу за деталь. Точний список — у наборі Carrier Ornithopter Mk6 Assembly у фабрикаторі.</p>
+      </li>
+      <li class="card rm-step">
+        <div class="rm-head"><span class="rm-n">3</span><h3>Краулер</h3><span class="chip est">частково оцінка</span></div>
+        <p class="rm-why">Середнє поле — близько 15 000 піску за кілька хвилин; з покращеним контейнером Regis вміщує до 75 000.</p>
+        <table class="rm-cost">
+          <tr><th></th><th>Пластан</th><th>Меланж</th></tr>
+          <tr><td>Рама Mk6</td><td>63</td><td>55</td></tr>
+          <tr><td>Кабіна, двигун, живлення, пилосос, гусениці, центрифуга</td><td>≈ 240–290</td><td>≈ 295–345</td></tr>
+          <tr class="sum"><td>Разом</td><td>≈ 300–350</td><td>≈ 350–400</td></tr>
+        </table>
+        <p class="rm-meta">Ще: кобальтова паста, покращені серво, конденсатори частинок, гідропоршні.</p>
+      </li>
+      <li class="card rm-step">
+        <div class="rm-head"><span class="rm-n">4</span><h3>Великий переробник меланжу</h3><span class="chip ok">ціна з гри</span></div>
+        <p class="rm-why">50 піску на меланж замість 75 (з указом — 37,5 замість 56): +50% меланжу з того самого піску. 200 меланжу за 45 хв — у 3,3 раза швидше, води вдвічі менше. Окупається приблизно за 125 000 піску — 8 середніх полів.</p>
+        <table class="rm-cost">
+          <tr><td>Пластанієві злитки</td><td>750</td></tr>
+          <tr><td>Меланж</td><td>840</td></tr>
+          <tr><td>Силікон</td><td>900</td></tr>
+          <tr><td>Кобальтова паста</td><td>825</td></tr>
+          <tr><td>Складні механізми</td><td>280</td></tr>
+          <tr><td>Покращені механізми</td><td>звір у грі</td></tr>
+        </table>
+        <p class="rm-meta">Відкриття: 40 очок інтелу (від 1 200 витрачених).</p>
+      </li>
+    </ol>
+
+    <section class="card rm-total">
+      <h2>Разом на 4 етапи</h2>
+      <ul class="rm-big">
+        <li><b>≈ 2 000–2 100</b><span>пластанієвих злитків</span></li>
+        <li><b>≈ 1 900–2 000</b><span>меланжу</span></li>
+        <li><b>≈ 8 800</b><span>титану (300 злитків у середньому, решта у великому; без указу)</span></li>
+        <li><b>≈ 6 150</b><span>ставрідієвої маси (3 на злиток)</span></li>
+        <li><b>≈ 2 500 л</b><span>води на пластан (1,25 л на злиток)</span></li>
+      </ul>
+      <p class="src">Ціни: <a href="https://dune.gaming.tools/placeables/largeorerefinery_placeable" target="_blank" rel="noopener">великий рудний</a> · <a href="https://dune.gaming.tools/placeables/largespicerefinery_placeable" target="_blank" rel="noopener">великий меланжевий</a> · <a href="https://dune.gaming.tools/items/melangespice" target="_blank" rel="noopener">рецепти меланжу</a> · <a href="https://dune.gaming.tools/items/t6refinedresourcea" target="_blank" rel="noopener">рецепти пластану</a> · <a href="https://dune.gaming.tools/items/ornithoptertransportchassis_6" target="_blank" rel="noopener">рама грузового</a> · <a href="https://dune.gaming.tools/items/containervehicle" target="_blank" rel="noopener">контейнер</a> · <a href="https://dune.gaming.tools/items/sandcrawlerchassis_6" target="_blank" rel="noopener">рама краулера</a></p>
+    </section>
+
+    <section class="card rm-farm" aria-labelledby="h-farm">
+      <h2 id="h-farm">Титан і ставрідій для пластану</h2>
+      <p class="rm-why">Обидва є лише в Deep Desert. Злиток пластану = титанова руда + 1 ставрідієве волокно + 1,25 л води. Волокно робить хімічний переробник із 3 ставрідієвих мас і 0,1 л води.</p>
+      <div class="rm-cols">
+        <div>
+          <h3>Скільки треба на 4 етапи</h3>
+          <table class="rm-cost">
+            <tr><th></th><th>На злиток</th><th>Разом</th></tr>
+            <tr><td>Титанова руда</td><td>6 → 4</td><td>≈ 8 800</td></tr>
+            <tr><td>Ставрідієва маса</td><td>3</td><td>≈ 6 150</td></tr>
+            <tr class="sum"><td>Об'єм</td><td></td><td>≈ 11 000</td></tr>
+          </table>
+          <p class="rm-meta">Перші 300 злитків (на сам великий рудний) — по 6 титану, решта — по 4 у великому. Після нього маси треба майже стільки ж, скільки титану (3 до 4): збирайте обидва, а не лише титан. Титан займає 0,9 об'єму, маса — 0,5, стак 500. Уся руда на план влазить в один вантажний контейнер (15 000).</p>
+          <p class="rm-meta">Указ −25% дає 5 титану замість 6 у середньому і 3 замість 4 у великому. Для 3 мас на волокно він, схоже, нічого не дає: 2,25 округлюється до 3, як 562,5 піску до 563.</p>
+        </div>
+        <div>
+          <h3>Де шукати</h3>
+          <ul>
+            <li>З квітня 2026 (патч 1.3.20) Deep Desert — два окремі світи: PvE на всю сітку 9×9 і PvP. У PvP вузлів більше і видобуток ×2,5 (за гайдами), у PvE — безпечно, але рідше.</li>
+            <li>Титан — темно-сині шипи на сіро-блакитних скелях. Ставрідій — бірюзово-зелені пластини на схилах червоних каньйонів. Обидва — біля скельних масивів і уламків кораблів.</li>
+            <li>Сектори з гайдів (E9, G4–G5…) застаріли: після бурі карта щотижня інша.</li>
+            <li>Найближче до Хагга — Щитова стіна і ряд A: з патча 1.1.20 вузли є і там.</li>
+            <li>Вузол у PvE відновлюється за 45 хв. Вичерпані вузли позначаються на карті до бурі.</li>
+            <li>Гравці пишуть, що щотижня є 2 невеликі райони з дуже густим титаном або ставрідієм — шукайте їх у перший день після бурі.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Чим добувати</h3>
+          <ul>
+            <li>Ручний різак — щонайменше Mk5, краще Mk6. Тільки в ручного є режим аналізу з бонусом до видобутку.</li>
+            <li>Багі: різак для багі Mk6 на задньому модулі Utility Rear (у ньому слот під турель) і модуль сховища. У таблиці Mk5 титану й ставрідію немає — схоже, не бере; перевірте в грі.</li>
+            <li>Різак багі Mk6 бере титан і ставрідій у 4 рази повільніше, ніж мідь чи граніт (90 проти 375), але не треба виходити з машини. Focused-версія — ще +20–30%.</li>
+            <li>Планетолог: Cutteray Mining +10/15/20% і Deep Analysis +10/15/20% до бонусу аналізу.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Форпост і коло — як з алюмінієм</h3>
+          <ol>
+            <li>Перший день після бурі облетіти сектори скаутом Mk5 зі сканером і знайти 2–3 скельні масиви, де є і титан, і ставрідій.</li>
+            <li>Форпост DD поставити на скелі між ними (черв'як не дістане). Краще в середніх рядах, де й середні поля спайсу: одна база і на руду, і на пісок.</li>
+            <li>Коло на 40–50 хв: поки його пройдете, перші вузли відновляться.</li>
+            <li>Удвох: один на багі по підніжжях і полицях, куди можна заїхати; другий на скауті з ручним різаком — по вершинах і стрімких схилах.</li>
+            <li>Пісок між масивами — черв'як: по ньому лише короткі перебіжки, далеко — орні.</li>
+            <li>Після кожного кола — у склад форпосту. На Main поки возити в орні, після етапу 2 — грузовим у контейнері. Переробляти великими партіями в тижні указу.</li>
+          </ol>
+        </div>
+      </div>
+      <p class="src">Джерела: <a href="https://www.method.gg/dune-awakening/where-to-find-and-farm-stravidium-mass-and-titanium-ore-in-dune-awakening" target="_blank" rel="noopener">де фармити</a> · <a href="https://awakening.wiki/Titanium_Ore" target="_blank" rel="noopener">титан</a> · <a href="https://awakening.wiki/Stravidium_Mass" target="_blank" rel="noopener">ставрідій</a> · <a href="https://awakening.wiki/Buggy_Cutteray_Mk6" target="_blank" rel="noopener">різак багі Mk6</a> · <a href="https://method.gg/dune-awakening/dune-awakening-patch-1-1-0-17-brings-first-deep-desert-pve-changes" target="_blank" rel="noopener">відновлення 45 хв</a> · <a href="https://mein-mmo.de/en/dune-awakening-patch-mehr-mats-deep-desert-pve,1519946" target="_blank" rel="noopener">вузли на Щитовій стіні</a> · <a href="https://howtoplayhub.com/dune-awakening/deep-desert-guide" target="_blank" rel="noopener">PvE і PvP з 1.3.20</a> · <a href="https://www.keengamer.com/articles/guides/best-planetologist-build-and-skills-guide-dune-awakening/" target="_blank" rel="noopener">планетолог</a></p>
+    </section>
+  </section>
+
+  <section class="res" id="res" data-view="res" hidden aria-label="Унікальні ресурси">
+    <div class="card res-bar">
+      <input type="search" id="res-q" placeholder="Пошук: ресурс, місце, регіон" aria-label="Пошук записів" autocomplete="off">
+      <div class="seg" id="res-zone" role="group" aria-label="Регіон">
+        <button type="button" data-zone="all" aria-pressed="true">Усі</button>
+        <button type="button" data-zone="hagga" aria-pressed="false">Хагга</button>
+        <button type="button" data-zone="dd" aria-pressed="false">Deep Desert</button>
+      </div>
+      <button class="btn" id="res-add" type="button">+ Додати</button>
+      <p class="res-store" id="res-store"></p>
+    </div>
+    <div class="card res-list">
+      <table class="res-table" id="res-table"></table>
+      <p class="res-msg" id="res-loading">Завантаження записів…</p>
+      <p class="res-msg" id="res-empty" hidden></p>
+      <p class="res-msg err" id="res-note" hidden></p>
+    </div>
+    <form class="card res-form" id="res-form" autocomplete="off">
+      <h2 id="rf-title">Додати запис</h2>
+      <div class="rf-row">
+        <label>Ресурс<input id="rf-res" required maxlength="160" placeholder="Промислові помпи"></label>
+        <label>Місце<input id="rf-place" required maxlength="160" placeholder="Вартове місто"></label>
+      </div>
+      <div class="rf-row">
+        <label>Регіон<select id="rf-zone"><option value="hagga">Хагга</option><option value="dd">Deep Desert</option></select></label>
+        <label>Район<input id="rf-area" list="res-areas" maxlength="200" placeholder="Східна Щитова стіна"></label>
+      </div>
+      <label>Як дістати<textarea id="rf-how" maxlength="2000" placeholder="Де саме скриня, що з ворогами, хто продає"></textarea></label>
+      <datalist id="res-areas"></datalist>
+      <div class="rf-btns">
+        <button class="btn" id="rf-submit" type="submit">Додати</button>
+        <button class="linkbtn" id="rf-cancel" type="button" hidden>Скасувати</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card versions" aria-labelledby="h-ver">
+    <h2 id="h-ver">Версії</h2>
+    <div class="vcols" id="versions"></div>
+  </section>
+</div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="src/engine/geom.js"></script>
+<script src="src/engine/model.js"></script>
+<script src="src/engine/model-dd.js"></script>
+<script src="src/engine/plan2d.js"></script>
+<script src="src/engine/build.js"></script>
+<script src="src/engine/view3d.js"></script>
+<script src="src/engine/versions.js"></script>
+<script src="classic/places.js"></script>
+<script src="classic/app.js"></script>
+<!-- page:end -->
+</body>
+</html>

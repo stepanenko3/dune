@@ -1,0 +1,13 @@
+Content Manifest for Depot 4754532 
+
+Manifest ID / date     : 7714035349234915047 / 10/19/2026 13:58:35 
+Total number of files  : 3 
+Total number of chunks : 4250 
+Total bytes on disk    : 4453453848 
+Total bytes compressed : 4400000000 
+
+
+          Size Chunks File SHA                                 Flags Name
+             0      0 0000000000000000000000000000000000000000    40 images/battlegroup
+    4453453824   4248 b42fa11002a70add0717edc191c3ae345e1289da     0 images/battlegroup/server.tar
+            18      1 4fea2613a8143ee729f6320b5cc0102ba80b6cd5     0 images/battlegroup/version.txt

@@ -1,7 +1,7 @@
 // Перевірка моделі: межі ділянок, перекриття плиток, предмети всередині приміщень.
 // Запуск: node tools/check-model.js [src/model-dd.js]
 'use strict';
-const M = require(process.argv[2] ? require('path').resolve(process.argv[2]) : '../src/model.js');
+const M = require(process.argv[2] ? require('path').resolve(process.argv[2]) : '../src/engine/model.js');
 
 const EPS = 1e-6;
 const fmt = (n) => n.toFixed(2);

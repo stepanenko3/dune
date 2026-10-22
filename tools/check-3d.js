@@ -9,7 +9,7 @@ const path = require('path'); const { chromium } = require('playwright');
     if (u.includes('three@0.128.0/')) return r.fulfill({ path: path.join(process.env.THREE_DIR, u.split('three@0.128.0/')[1]), contentType: 'application/javascript' });
     return r.abort(); });
   await p.addInitScript(() => { try { localStorage.clear(); } catch (e) {} });
-  await p.goto('file://' + path.resolve(__dirname, '..', 'index.html') + '#' + (process.argv[2] || 'main'));
+  await p.goto('file://' + path.resolve(__dirname, '..', 'classic.html') + '#' + (process.argv[2] || 'main'));
   await p.evaluate(() => window.SANDWALKERS.setTab('3d'));
   await p.waitForTimeout(800);
   const res = await p.evaluate(() => {

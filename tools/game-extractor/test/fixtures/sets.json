@@ -1,0 +1,4 @@
+[{ "Type": "DataTable", "Name": "DT_BuildableUnlockableSetsData", "Rows": {
+  "MTX_Neut_DesertMechanicSet1_Patent": { "m_Buildables": [{ "Name": "Col_Center" }, { "Name": "Col_Corner" }, { "Name": "Block_Wall" }] },
+  "FabricatorsSet": { "m_Buildables": [{ "Name": "Fabricator_Placeable" }] }
+} }]

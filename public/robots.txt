@@ -1,0 +1,9 @@
+# Публічні сторінки — для пошуку; особисте, вхід і службове — ні
+User-agent: *
+Disallow: /api/
+Disallow: /admin
+Disallow: /login
+Disallow: /me
+Disallow: /account
+Disallow: /invite/
+Disallow: /bases/*/edit

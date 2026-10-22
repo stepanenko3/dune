@@ -1,0 +1,17 @@
+diff --git a/jmap_dumper/unreal/src/objects.gs b/jmap_dumper/unreal/src/objects.gs
+index 89d6ae5..c03729b 100644
+--- a/jmap_dumper/unreal/src/objects.gs
++++ b/jmap_dumper/unreal/src/objects.gs
+@@ -241,6 +241,12 @@ class UClass : UStruct,
+     if (UE_VERSION >= 408 && UE_VERSION < 418) bool bCooked;
+     TArray<FRepRecord> ClassReps;
+     TArray<UField*> NetFields;
++    // Dune: Awakening (UE 5.2.1 fork): 0x18 extra bytes before ClassDefaultObject
++    if (UE_VERSION == 502) {
++        STUB* DuneUnk0;
++        uint64_t DuneUnk1;
++        uint64_t DuneUnk2;
++    }
+     if (UE_VERSION >= 425 && UE_VERSION < 500) int32_t FirstOwnedClassRep;
+     UObject* ClassDefaultObject;
+     if (UE_VERSION == 407) bool bCooked;

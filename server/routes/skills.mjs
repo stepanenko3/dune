@@ -1,0 +1,20 @@
+/*
+ * Уміння для планувальника: GET /api/skills — дані мовою запиту (200) чи «даних гри ще нема» (503 — сторінка покаже
+ * «Спробувати ще»)
+ */
+import express from 'express'
+import { wrap } from './auth.mjs'
+
+export function createSkillsRoutes({ skills }) {
+  const r = express.Router()
+  r.get('/api/skills', wrap(async (req, res) => {
+    const d = await skills.get(req.lang)
+    if (!d) return res.status(503).json({ error: req.t('дані гри ще не завантажено') })
+    // мова — з ?lang= (так питає сайт): тоді відповідь від cookie не залежить і браузер її кешує
+    res.set('cache-control', 'no-cache').set('etag', d.etag)
+    if (!req.query.lang) res.set('vary', 'cookie, accept-language')
+    if (req.headers['if-none-match'] === d.etag) return res.status(304).end()
+    res.json(d)
+  }))
+  return r
+}
