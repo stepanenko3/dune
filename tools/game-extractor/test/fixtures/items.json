@@ -1,0 +1,26 @@
+[{ "Type": "CompositeDataTable", "Name": "CDT_BaseItems", "Rows": {
+  "AluminiumBar": {
+    "Icon": { "AssetPathName": "/Game/Dune/GUI/Textures/Icons/Gameplay/Items/Resources/T_UI_IconResourceAluminiumBar_D.T_UI_IconResourceAluminiumBar_D", "SubPathString": "" },
+    "StaticData": { "Name": { "TableId": "/Game/Dune/Localization/ST_Localization_Items.ST_Localization_Items", "Key": "ITEMS/RESOURCE_ALUMINUM_INGOT_NAME", "SourceString": "Aluminum Ingot" },
+      "LongDesc": { "TableId": "/Game/Dune/Localization/ST_Localization_Items.ST_Localization_Items", "Key": "ITEMS/RESOURCE_ALUMINUM_INGOT_LONGDESC", "SourceString": "An Aluminum ingot." },
+      "ItemTags": ["Items.RefinedResources.Metal", "LootTier.4"], "bIsEnabled": true, "ItemSize": 0.7, "ItemSizeOverride": -1.0 },
+    "StackAndDurability": { "MaxStackSize": 500 }, "bIsDeprecated": false },
+  "Combat_Light_Unique_Stamina_Bottom_04": {
+    "Icon": { "AssetPathName": "/Game/Dune/GUI/Textures/Icons/Gameplay/Clothing/T_UI_X_D.T_UI_X_D", "SubPathString": "" },
+    "StaticData": { "Name": { "TableId": "/Game/Dune/Localization/ST_Localization_Items.ST_Localization_Items", "Key": "K2", "SourceString": "Stamina Leggings" },
+      "ItemTags": ["Items.Clothes.ScoutArmor.Legs", "LootTier.4", "Rarity.Rare"], "ItemSize": 2.0, "ItemSizeOverride": -1.0 },
+    "StackAndDurability": { "MaxStackSize": 1 }, "bIsDeprecated": false },
+  "HarkRocketLauncher": {
+    "Icon": { "AssetPathName": "None", "SubPathString": "" },
+    "StaticData": { "Name": { "TableId": "x", "Key": "K3", "SourceString": "Rocket Launcher" },
+      "ItemTags": ["Items.Holsters.RangedWeapons.Heavy.RocketLauncher", "LootTier.5"], "ItemSize": 3.0, "ItemSizeOverride": 2.5 },
+    "StackAndDurability": { "MaxStackSize": 1 }, "bIsDeprecated": false },
+  "OldThing": {
+    "Icon": { "AssetPathName": "None", "SubPathString": "" },
+    "StaticData": { "Name": { "TableId": "x", "Key": "K4", "SourceString": "Old Thing" }, "ItemTags": [], "ItemSize": 1.0, "ItemSizeOverride": -1.0 },
+    "StackAndDurability": { "MaxStackSize": 1 }, "bIsDeprecated": true },
+  "Kindjal": {
+    "Icon": { "AssetPathName": "None", "SubPathString": "" },
+    "StaticData": { "Name": { "TableId": "x", "Key": "K5", "SourceString": "Kindjal" }, "ItemTags": ["Items.Holsters.MeleeWeapons.Dagger"], "ItemSize": 1.0, "ItemSizeOverride": -1.0 },
+    "StackAndDurability": { "MaxStackSize": 1 }, "bIsDeprecated": false }
+} }]

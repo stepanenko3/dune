@@ -1,0 +1,130 @@
+/*
+ * Головна. Палітра hero — нічна пустеля, сталa в обох темах (це «вікно» на Арракіс):
+ *   умбра #1c130c — тінь дюн, вохра #c68b4e — пісок під місяцем, пил #ebdcc4 — текст,
+ *   спайс — акцент застосунку, ібад #5b97d6 — лише позначка «зараз».
+ * Єдина анімація сторінки — «скан орнітоптера»: смуга проходить мапою згори вниз і проявляє точки
+ * (полотно, src/pages/DesertScan.tsx).
+ */
+.home-hero {
+  --umber: 28 19 12;
+  --ochre: 198 139 78;
+  --dust: 235 220 196;
+  --ibad: 91 151 214;
+  background:
+    radial-gradient(120% 90% at 85% 10%, rgb(var(--ochre) / 0.22), transparent 60%),
+    linear-gradient(160deg, rgb(43 29 18), rgb(var(--umber)) 55%);
+  color: rgb(var(--dust));
+}
+
+.home-lead {
+  container-type: inline-size;
+}
+.home-word {
+  font-family: Unbounded, 'Golos Text', sans-serif;
+  font-weight: 700;
+  /* слово завжди влазить у свою колонку: 11 літер Unbounded ≈ 9,6 em */
+  font-size: clamp(34px, 10.2cqw, 96px);
+  line-height: 0.92;
+  letter-spacing: -0.035em;
+  /* пісок «просвічує» крізь літери: градієнт від пилу до вохри, як світанок на гребені */
+  background: linear-gradient(180deg, rgb(var(--dust)) 30%, rgb(var(--ochre)) 115%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.home-map {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgb(var(--dust) / 0.12), 0 30px 60px -20px rgb(0 0 0 / 0.6);
+}
+.home-map img {
+  position: absolute;
+  width: 50%;
+  height: 50%;
+  object-fit: cover;
+  filter: saturate(0.9) brightness(0.92);
+}
+
+/* найкращі сектори проступають, щойно скан дійшов до низу (клас — з DesertScan) */
+.home-late {
+  opacity: 0;
+  transition: opacity 0.6s ease-out;
+}
+.home-late.is-on {
+  opacity: 1;
+}
+@keyframes home-fade {
+  to {
+    opacity: 1;
+  }
+}
+/* «зараз»: від крапки розходиться коло. Масштаб і прозорість, а не тінь — це рахує сам композитор, без
+   перемальовування сторінки щокадру (тінь-анімація не давала сторінці «заснути», телефон грівся) */
+.home-now {
+  position: relative;
+  background: rgb(var(--ibad));
+}
+.home-now::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgb(var(--ibad) / 0.7);
+  animation: home-pulse 2.4s ease-out infinite;
+}
+@keyframes home-pulse {
+  70%,
+  100% {
+    transform: scale(2.75);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-late {
+    transition: none;
+  }
+  .home-now::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* ---------- орнітоптер (3D, src/pages/Orni3D.tsx) ---------- */
+/* світіння за прозорим полотном: спайс у центрі, згасає в ніч */
+.orni-stage {
+  position: relative;
+}
+.orni-stage::before {
+  content: '';
+  position: absolute;
+  inset: 4% 6% 18%;
+  /* градієнт і так м'який: розмиття (filter: blur) під живим 3D коштувало телефону щокадру */
+  background: radial-gradient(closest-side, rgb(238 147 64 / 0.5), rgb(198 139 78 / 0.16) 55%, transparent);
+  animation: orni-breathe 6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes orni-breathe {
+  50% {
+    opacity: 0.7;
+  }
+}
+.orni3d canvas {
+  display: block;
+  cursor: grab;
+}
+.orni-hud:empty {
+  display: none;
+}
+.orni-hud-line {
+  opacity: 0;
+  animation: home-fade 0.35s ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .orni-stage::before {
+    animation: none;
+  }
+}

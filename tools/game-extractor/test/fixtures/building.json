@@ -1,0 +1,10 @@
+[{ "Type": "CompositeDataTable", "Name": "CDT_BuildingData", "Rows": {
+  "Col_Center": { "m_BuildableGroupType": { "Name": "Pillar" }, "m_BuildableTier": { "Name": "Tier1" }, "m_BuildableFaction": { "Name": "ExtraSets" }, "m_bShowInList": true,
+    "m_DisplayName": { "TableId": "x", "Key": "C", "SourceString": "Center Column" }, "m_BuildableIcon": { "AssetPathName": "/Game/DLC/MTX/GUI/T_UI_Col_D.T_UI_Col_D", "SubPathString": "" } },
+  "Col_Corner": { "m_BuildableGroupType": { "Name": "Pillar_Corner" }, "m_BuildableTier": { "Name": "Tier1" }, "m_BuildableFaction": { "Name": "ExtraSets" }, "m_bShowInList": true,
+    "m_DisplayName": { "TableId": "x", "Key": "K", "SourceString": "Corner Column" }, "m_BuildableIcon": { "AssetPathName": "/Game/DLC/MTX/GUI/T_UI_Col_D.T_UI_Col_D", "SubPathString": "" } },
+  "Block_Wall": { "m_BuildableGroupType": { "Name": "Wall" }, "m_BuildableTier": { "Name": "Tier1" }, "m_BuildableFaction": { "Name": "Blockout" }, "m_bShowInList": true,
+    "m_DisplayName": { "TableId": "x", "Key": "B", "SourceString": "Wall" }, "m_BuildableIcon": { "AssetPathName": "None", "SubPathString": "" } },
+  "Hidden_Foundation": { "m_BuildableGroupType": { "Name": "Foundation" }, "m_BuildableTier": { "Name": "Tier1" }, "m_BuildableFaction": { "Name": "Choam" }, "m_bShowInList": false,
+    "m_DisplayName": { "TableId": "x", "Key": "H", "SourceString": "Foundation" }, "m_BuildableIcon": { "AssetPathName": "None", "SubPathString": "" } }
+} }]

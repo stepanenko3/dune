@@ -5,16 +5,19 @@
 /*
  * Палітра: теплі пісочні нейтралі і акцент кольору спайсу. Значення — RGB-трійки,
  * щоб у Tailwind працювало /<alpha>. Тема — класом .dark на <html> (src/lib/theme.ts).
+ * .page-theme — повертає палітру сайту всередині місць зі своєю (вміст вікон поверх «нічної» сторінки умінь).
  */
-:root {
+:root, .page-theme {
   color-scheme: light;
   --c-bg: 236 233 227;
   --c-panel: 250 249 246;
   --c-panel2: 231 227 219;
   --c-line: 213 207 196;
   --c-ink: 34 31 27;
-  --c-muted: 110 103 93;
-  --c-spice: 184 92 22;
+  /* темніші, ніж були (110 103 93 і 184 92 22): дрібний текст і активний розділ на panel2 мали контраст 3,6-4,4:1,
+     тепер ≥ 4,5:1 на всіх тлах світлої теми */
+  --c-muted: 100 93 84;
+  --c-spice: 160 76 14;
   --c-on-spice: 255 255 255;
   --c-ok: 46 125 72;
   --c-warn: 150 110 20;
@@ -22,7 +25,7 @@
   --c-water: 38 106 158;
   --shadow: rgba(40, 32, 22, 0.1);
 }
-.dark {
+.dark, .dark .page-theme {
   color-scheme: dark;
   --c-bg: 19 18 17;
   --c-panel: 28 26 24;
@@ -38,7 +41,131 @@
   --c-water: 90 167 214;
   --shadow: rgba(0, 0, 0, 0.45);
 }
+.page-theme { color: rgb(var(--c-ink)); }
 
+/*
+ * Токени @snotax/ui (sn-*): їхні змінні в стилі shadcn — з нашої пісочної палітри, тож компоненти бібліотеки
+ * виглядають як решта сайту й самі перемикаються з темою (.dark разом із .sn-theme-dark — src/lib/theme.ts).
+ */
+:root {
+  --radius: 0.5rem;
+  --font-sans: 'Golos Text', system-ui, sans-serif;
+  --font-heading: Unbounded, 'Golos Text', system-ui, sans-serif;
+  --background: rgb(var(--c-bg));
+  --foreground: rgb(var(--c-ink));
+  --card: rgb(var(--c-panel));
+  --card-foreground: rgb(var(--c-ink));
+  --popover: rgb(var(--c-panel));
+  --popover-foreground: rgb(var(--c-ink));
+  --primary: rgb(var(--c-spice));
+  --primary-foreground: rgb(var(--c-on-spice));
+  --secondary: rgb(var(--c-panel2));
+  --secondary-foreground: rgb(var(--c-ink));
+  --muted: rgb(var(--c-panel2));
+  --muted-foreground: rgb(var(--c-muted));
+  --accent: rgb(var(--c-panel2));
+  --accent-foreground: rgb(var(--c-ink));
+  --destructive: rgb(var(--c-bad));
+  --destructive-foreground: rgb(255 255 255);
+  --success: rgb(var(--c-ok));
+  --warning: rgb(var(--c-warn));
+  --info: rgb(var(--c-water));
+  --border: rgb(var(--c-line));
+  --input: rgb(var(--c-line));
+  --ring: rgb(var(--c-spice));
+  --chart-1: rgb(var(--c-spice));
+  --chart-2: rgb(var(--c-water));
+  --chart-3: rgb(var(--c-ok));
+  --chart-4: rgb(var(--c-warn));
+  --chart-5: rgb(var(--c-muted));
+  --sidebar: rgb(var(--c-panel));
+  --sidebar-foreground: rgb(var(--c-ink));
+  --sidebar-primary: rgb(var(--c-spice));
+  --sidebar-primary-foreground: rgb(var(--c-on-spice));
+  --sidebar-accent: rgb(var(--c-panel2));
+  --sidebar-accent-foreground: rgb(var(--c-ink));
+  --sidebar-border: rgb(var(--c-line));
+  --sidebar-ring: rgb(var(--c-spice));
+  --z-dropdown: 1100;
+  --z-sticky: 1150;
+  --z-overlay: 1200;
+  --z-modal: 1300;
+  --z-popover: 1400;
+  --z-toast: 1500;
+}
+.sn-theme-dark {
+  --destructive-foreground: rgb(24 16 8);
+}
+
+/* iPhone збільшує сторінку, коли фокус у полі з шрифтом менше 16px — так і в полях @snotax/ui (їхні поля в тіньовому
+   DOM, дістаємо через ::part) */
+@media (pointer: coarse) {
+  sn-input::part(input),
+  sn-textarea::part(textarea),
+  sn-number-field::part(input),
+  sn-combobox-input::part(input),
+  sn-input-otp,
+  sn-color-picker::part(hex) {
+    font-size: 16px;
+  }
+}
+
+/* вкладки-«пігулки»: вибрана — біла (у темній темі — світліша панель), а не кольору тла */
+sn-tabs {
+  --sn-tabs-active-bg: #fff;
+}
+.dark sn-tabs {
+  --sn-tabs-active-bg: rgb(var(--c-panel2));
+}
+
+/* назви стовпців таблиць — одним рядком («Нік у грі» не складається в стовпчик по слову); широка таблиця гортається вбік */
+sn-datatable::part(thead) {
+  white-space: nowrap;
+}
+
+/* код і JSON у полях панелі: моноширинний, з прокруткою — довгі рядки не розтягують сторінку */
+sn-textarea.sn-code::part(textarea) {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12.5px;
+  white-space: pre;
+  field-sizing: fixed;
+  max-height: 420px;
+  overflow: auto;
+}
+
+/* іконка lucide поруч із текстом у кнопці: діти слота (іконка й текст) лежать в одному span кнопки, і її власний
+   gap їх не розставляє — робимо цей span рядком із проміжком (сам текст — не елемент, тож :only-child тут не допоможе) */
+sn-button::part(label),
+sn-press-button::part(label) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+/* область прокрутки — опора для «absolute»-нащадків (приховані підписи полів, службові span-и таблиць у shadow DOM):
+   без неї вони рахуються від усього документа, і документ ставав вищим за екран — сторінку можна було прокрутити
+   «під» вміст. :where — нульова вага: будь-який клас позиції (fixed, sticky…) усе одно головніший */
+@layer base {
+  :where(.overflow-auto, .overflow-y-auto, .overflow-x-auto) {
+    position: relative;
+  }
+}
+
+/* вікна (діалог, бічний лист, підтвердження) малюються поверх сторінки, а їхній елемент стоїть там, де його відкрили:
+   у рядку кнопок він ставав ще одним пунктом нульової ширини, і gap рядка зсував сусідні кнопки (напр. «Доступ») */
+sn-dialog,
+sn-sheet,
+sn-alert-dialog {
+  position: absolute;
+}
+
+/* сторінка — завжди рівно на екран (прокручується вміст усередині): документ не скролиться, навіть якщо спливне
+   вікно чи підказка десь виступає за край — інакше з'являвся другий скролбар і все їхало вгору */
+html,
+body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
 html,
 body,
 #root {
@@ -64,6 +191,9 @@ body {
   outline: 2px solid rgb(var(--c-spice));
   outline-offset: 2px;
 }
+/* вміст сторінки отримує фокус після переходу з меню (App.tsx, для клавіатури) — рамка навколо всієї сторінки
+   не потрібна: виглядала як помаранчева лінія під шапкою */
+#main:focus, #main:focus-visible { outline: none; }
 
 /* ---------- лист вузького екрана: панель мапи, бокова колонка бази ---------- */
 .sheet {
@@ -116,7 +246,7 @@ body {
  * акцент плану — спайс застосунку, тема — класом .dark.
  */
 :root {
-  --accent: rgb(var(--c-spice));
+  --plan-accent: rgb(var(--c-spice));
   /* пентащит — бірюзовий, як акцент класичної сторінки: спайс майже збігається з трикутними плитами */
   --shield: #0d8a7c;
   --plan-bg: #fbfbfc;
@@ -174,6 +304,9 @@ body {
 .plan .tri { fill: var(--tri); stroke: var(--seam); stroke-width: 1; }
 .plan .room { cursor: pointer; }
 .plan .room.dim { opacity: 0.25; }
+/* редактор: тло з інших поверхів притемнене, щоб було видно, що правиться на цьому рівні */
+.plan .ctx { opacity: 0.32; }
+.plan line.ctx { opacity: 0.35; }
 .plan .through polygon { stroke: var(--hatch-ln); stroke-width: 0.5; }
 .plan .hatch-bg { fill: var(--hatch-bg); }
 .plan .hatch-ln { stroke: var(--hatch-ln); stroke-width: 1.2; }
@@ -184,7 +317,7 @@ body {
 .plan .parapet { stroke: var(--wall); stroke-width: 1.3; stroke-dasharray: 1.5 3.5; }
 .plan .op-door { stroke: var(--wall); stroke-width: 2.4; stroke-dasharray: 3 4; }
 .plan .op-shield { stroke: var(--shield); stroke-width: 4.5; }
-.plan .hl-edge { stroke: var(--accent); stroke-width: 3.6; }
+.plan .hl-edge { stroke: var(--plan-accent); stroke-width: 3.6; }
 .plan .overhead polygon { fill: var(--ghost); fill-opacity: 0.55; stroke: none; }
 .plan .overhead line { stroke: rgb(var(--c-muted)); stroke-width: 1.6; stroke-dasharray: 6 4; }
 .plan .sq.rim, .plan .tri.rim { fill-opacity: 0.72; }
@@ -193,6 +326,7 @@ body {
 .plan .step-edge { stroke: var(--wall); stroke-width: 2; opacity: 0.85; }
 .plan .roof-under .sq, .plan .roof-under .tri { fill-opacity: 0.45; }
 .plan .slope-ln { stroke: var(--seam); stroke-width: 1.2; opacity: 0.85; }
+.plan polygon.lean { fill: var(--wall); fill-opacity: 0.38; stroke: var(--wall); stroke-width: 0.8; }
 .plan .it-stairs polygon { fill: var(--item-fill); stroke: var(--item); stroke-width: 1.2; stroke-dasharray: none; }
 .plan .it-stairs .step { stroke: var(--item); stroke-width: 0.8; opacity: 0.7; }
 .plan .it-stairs .arrow { stroke: var(--item); stroke-width: 1.6; }
@@ -200,7 +334,7 @@ body {
 .plan .it-hatch polygon { fill: none; stroke-dasharray: 3 2; }
 .plan .it-hatch .step { stroke: var(--item); stroke-width: 0.8; }
 .plan .it polygon { fill: var(--item-fill); stroke: var(--item); stroke-width: 1.1; stroke-dasharray: 4 2.5; }
-.plan .it-spot polygon { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 7 4; }
+.plan .it-spot polygon { fill: none; stroke: var(--plan-accent); stroke-width: 2; stroke-dasharray: 7 4; }
 .plan .it-turbine polygon, .plan .it-windtrap polygon { stroke-dasharray: none; }
 .plan .it .rotor { stroke: var(--item); stroke-width: 2.4; }
 .plan .it .hub { fill: var(--item); fill-opacity: 0.2; stroke: var(--item); stroke-width: 1.2; }
@@ -209,7 +343,7 @@ body {
 .plan .pad-h { font: 700 15px theme('fontFamily.display'); fill: var(--item-ink); text-anchor: middle; }
 .plan .it-label { font: 600 8.6px/1 theme('fontFamily.sans'); fill: var(--item-ink); text-anchor: middle; pointer-events: none; }
 .plan .lbl { font: 700 11.5px/1 theme('fontFamily.sans'); fill: rgb(var(--c-ink)); text-anchor: middle; paint-order: stroke; stroke: var(--halo); stroke-width: 3.6px; stroke-linejoin: round; pointer-events: none; }
-.plan .lbl.hl { fill: var(--accent); }
+.plan .lbl.hl { fill: var(--plan-accent); }
 .plan .lbl-sub { font: 500 9px/1 theme('fontFamily.mono'); fill: rgb(var(--c-muted)); text-anchor: middle; paint-order: stroke; stroke: var(--halo); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
 .plan .coords text { font: 600 9.5px/1 theme('fontFamily.mono'); fill: rgb(var(--c-muted)); text-anchor: middle; dominant-baseline: middle; pointer-events: none; }
 .plan .coords line { stroke: var(--frame); stroke-width: 0.6; opacity: 0.35; pointer-events: none; }
@@ -234,3 +368,32 @@ body {
 .tip3d { position: absolute; left: 0; top: 0; pointer-events: none; font: 600 12px/1.2 theme('fontFamily.sans'); background: #fff; color: #111; border: 1px solid #222; padding: 4px 8px; border-radius: 4px; }
 .three-msg { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: rgb(var(--c-ink)); }
 /* ==== /base ==== */
+
+/* iOS Safari збільшує сторінку, коли фокус у полі з шрифтом менше 16 px (і не повертає назад). На сенсорних екранах
+   поля введення — не менше 16 px, хай би що казали класи компонентів */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  select,
+  textarea,
+  [contenteditable='true'] {
+    font-size: max(16px, 1em) !important;
+  }
+}
+
+/* поле пошуку з власним хрестиком (clearable) — без другого, браузерного (у Safari й Chrome їх було два) */
+input[type='search']::-webkit-search-cancel-button,
+sn-input::part(input)::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/*
+ * Смуга завантаження вгорі (components/TopLoader) — проста тонка смужка спайсу з відблиском на голові, як nprogress.
+ */
+.top-loader { transition: opacity 0.3s ease 0.1s; }
+.top-loader-bar {
+  height: 100%;
+  background: rgb(var(--c-spice));
+  box-shadow: 0 0 8px rgb(var(--c-spice) / 0.6);
+  transition: width 0.3s ease-out;
+}

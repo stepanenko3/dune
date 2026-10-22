@@ -1,0 +1,14 @@
+[{ "Type": "DataTable", "Name": "DT_ItemsCraftingRecipes", "Rows": {
+  "AluminiumBarRecipe": { "Recipe": { "Outcome": [{ "Key": { "Name": "AluminiumBar" }, "Value": { "Amount": 1 } }], "WaterOutcome": 0, "CraftingTimeInSec": 30.0,
+    "IngredientsPerQuality": [{ "Ingredients": [{ "Key": { "Name": "BauxiteOre" }, "Value": { "Amount": 7 } }, { "Key": { "Name": "None" }, "Value": { "Amount": 1 } }], "m_WaterIngredientAmount": 150 },
+                              { "Ingredients": [{ "Key": { "Name": "BauxiteOre" }, "Value": { "Amount": 5 } }], "m_WaterIngredientAmount": 100 }] },
+    "RequiredProductionTypes": [{ "Name": "MediumOreRefinery" }] },
+  "BuggyRecipe": { "Recipe": { "Outcome": [{ "Key": { "Name": "Buggy" }, "Value": { "Amount": 1 } }], "WaterOutcome": 0, "CraftingTimeInSec": 60.0,
+    "IngredientsPerQuality": [{ "Ingredients": [{ "Key": { "Name": "AluminiumBar" }, "Value": { "Amount": 10 } }], "m_WaterIngredientAmount": 0 }] },
+    "RequiredProductionTypes": [{ "Name": "VehicleFabricator" }] },
+  "WaterRecipe": { "Recipe": { "Outcome": [], "WaterOutcome": 250, "CraftingTimeInSec": 5.0, "IngredientsPerQuality": [{ "Ingredients": [{ "Key": { "Name": "BauxiteOre" }, "Value": { "Amount": 1 } }], "m_WaterIngredientAmount": 0 }] },
+    "RequiredProductionTypes": [{ "Name": "Personal" }] },
+  "OldTankRecipe": { "Recipe": { "Outcome": [{ "Key": { "Name": "OldTank" }, "Value": { "Amount": 1 } }], "WaterOutcome": 0, "CraftingTimeInSec": 10.0,
+    "IngredientsPerQuality": [{ "Ingredients": [{ "Key": { "Name": "AluminiumBar" }, "Value": { "Amount": 1 } }], "m_WaterIngredientAmount": 0 }] },
+    "RequiredProductionTypes": [{ "Name": "Personal" }] }
+} }]

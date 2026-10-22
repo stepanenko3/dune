@@ -5,7 +5,13 @@ export type ThemePref = 'system' | 'light' | 'dark'
 
 const media = window.matchMedia('(prefers-color-scheme: dark)')
 const resolve = (p: ThemePref): 'light' | 'dark' => (p === 'system' ? (media.matches ? 'dark' : 'light') : p)
-const apply = (r: 'light' | 'dark') => document.documentElement.classList.toggle('dark', r === 'dark')
+// .sn-theme-dark — темна тема компонентів @snotax/ui (їхні dark:-варіанти дивляться на цей клас)
+const apply = (r: 'light' | 'dark') => {
+  document.documentElement.classList.toggle('dark', r === 'dark')
+  document.documentElement.classList.toggle('sn-theme-dark', r === 'dark')
+  // колір смуги браузера й рядка стану на телефоні — під тло сторінки
+  document.querySelector<HTMLMetaElement>('meta[name=theme-color]')?.setAttribute('content', r === 'dark' ? '#131211' : '#ece9e3')
+}
 
 const initial = prefGet<ThemePref>('theme', 'system')
 

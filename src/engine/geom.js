@@ -153,7 +153,72 @@
       }
     return [...m.values()].filter((e) => e.n === 1).map(({ a, b }) => ({ a, b }));
   }
-  function edgeOpenings(room, a, b) {
+  // ---------- стіна поштучно ----------
+  // Стіна на краю — стовпчик блоків від підлоги приміщення до верху стін: кожен 1 чи 0,5 заввишки, з типом
+  // (стіна, двері, пентащит, прохід). Редактор записує стовпчик краю в room.walls: [{ a, b, s: [{ h, type }] }]
+  // (знизу вгору); край без запису — як було: прорізи з room.open. Стовпчик коротший за стіни — далі суцільна
+  // стіна, довший — обрізаний: висоту приміщення можна міняти, не переписуючи стовпчики.
+  const PIECE_TYPES = ['wall', 'door', 'shield', 'open'];
+  const PIECE_RANK = { wall: 0, door: 1, shield: 2, open: 3 }; // відкритіший перемагає (як у прорізах)
+  const EPS = 1e-6;
+  const wsCache = new WeakMap(); // за масивом room.walls: редактор щоразу записує новий
+  function wallStack(room, a, b) {
+    const list = room.walls;
+    if (!list || !list.length) return null;
+    let m = wsCache.get(list);
+    if (!m) { m = new Map(list.map((w) => [edgeKey(w.a, w.b), w.s])); wsCache.set(list, m); }
+    return m.get(edgeKey(a, b)) || null;
+  }
+  // тип блоку з давніх прорізів (за серединою блоку): двері без висоти — 2,5 від підлоги, парапет — пів блоку стіни
+  function legacyType(room, a, b) {
+    const ops = legacyOpenings(room, a, b);
+    if (!ops.length) return null;
+    const top = room.z0 + room.h;
+    return (mid) => {
+      let t = 'wall';
+      for (const o of ops) {
+        const lo = o.z0 !== undefined ? o.z0 : room.z0;
+        const hi = o.z1 !== undefined ? o.z1 : o.type === 'door' ? room.z0 + 2.5 : top;
+        if (mid < lo || mid > hi) continue;
+        const k = o.type === 'balcony' ? (mid > room.z0 + 0.5 ? 'open' : 'wall') : PIECE_TYPES.includes(o.type) ? o.type : 'wall';
+        if (PIECE_RANK[k] > PIECE_RANK[t]) t = k;
+      }
+      return t;
+    };
+  }
+  /** блоки краю знизу вгору: [{ z0, z1, h, type }]; у палуби (без стін) — жодного */
+  function edgePieces(room, a, b) {
+    const H = room.h || 0;
+    if (!(H > 0)) return [];
+    const out = [];
+    let z = room.z0;
+    const left = () => room.z0 + H - z;
+    const push = (h, type) => { out.push({ z0: z, z1: z + h, h, type }); z += h; };
+    const s = wallStack(room, a, b);
+    if (s) for (const p of s) {
+      if (left() < 0.5 - EPS) break;
+      push(p.h > 0.5 + EPS && left() >= 1 - EPS ? 1 : 0.5, PIECE_TYPES.includes(p.type) ? p.type : 'wall');
+    }
+    const old = s ? null : legacyType(room, a, b);
+    while (left() >= 1 - EPS) push(1, old ? old(z + 0.5) : 'wall');
+    if (left() >= 0.5 - EPS) push(0.5, old ? old(z + 0.25) : 'wall');
+    return out;
+  }
+  // прорізи краю зі стовпчика: блоки одного типу поспіль — один проріз; увесь край відкритий — прохід без висот
+  function stackOpenings(room, a, b) {
+    const ps = edgePieces(room, a, b);
+    if (ps.length && ps.every((p) => p.type === 'open')) return [{ a, b, type: 'open' }];
+    const out = [];
+    for (const p of ps) {
+      if (p.type === 'wall') continue;
+      const last = out[out.length - 1];
+      if (last && last.type === p.type && Math.abs(last.z1 - p.z0) < EPS) last.z1 = p.z1;
+      else out.push({ a, b, type: p.type, z0: p.z0, z1: p.z1 });
+    }
+    return out;
+  }
+  const edgeOpenings = (room, a, b) => (wallStack(room, a, b) ? stackOpenings(room, a, b) : legacyOpenings(room, a, b));
+  function legacyOpenings(room, a, b) {
     const m = V((a.x + b.x) / 2, (a.y + b.y) / 2);
     const out = [];
     for (const o of room.open || []) {
@@ -190,7 +255,7 @@
 
   // ---------- зовнішні стіни ----------
   // Ребро зовнішнє, якщо його не накриває межа іншого приміщення на тих самих висотах.
-  const beCache = new Map();
+  const beCache = new WeakMap(); // за об'єктом приміщення: редактор замінює змінені приміщення новими — старі звільняються
   const bEdges = (r) => { if (!beCache.has(r)) beCache.set(r, boundaryEdges(r.tiles)); return beCache.get(r); };
   const overlapsZ = (a, b) => a.z0 < b.z0 + Math.max(b.h, 0.01) - 1e-6 && b.z0 < a.z0 + Math.max(a.h, 0.01) - 1e-6;
   function collinearOverlap(e1, f) {
@@ -207,7 +272,7 @@
     return roomEdges(room).filter((ed) => !segs.some((f) => collinearOverlap(ed, f)));
   };
 
-  const GEOM = { R3, V, add, sub, mul, clean, dir, mirrorPt, centroid, pointInPoly, distToSeg, distToPoly, inOrOn, squares, rect, triangles, cornerPiece, strip, roundedBlock, mirrorTiles, mirrorSeg, item, mirrorItem, stairs, wallPt, seg, keyOf, edgeKey, boundaryEdges, edgeOpenings, roomEdges, tileArea, labelPoint, roomArea, exteriorEdgesIn };
+  const GEOM = { R3, V, add, sub, mul, clean, dir, mirrorPt, centroid, pointInPoly, distToSeg, distToPoly, inOrOn, squares, rect, triangles, cornerPiece, strip, roundedBlock, mirrorTiles, mirrorSeg, item, mirrorItem, stairs, wallPt, seg, keyOf, edgeKey, boundaryEdges, edgeOpenings, legacyOpenings, wallStack, edgePieces, PIECE_TYPES, roomEdges, tileArea, labelPoint, roomArea, exteriorEdgesIn };
   if (typeof module !== 'undefined' && module.exports) module.exports = GEOM;
   else root.GEOM = GEOM;
 })(typeof window !== 'undefined' ? window : globalThis);

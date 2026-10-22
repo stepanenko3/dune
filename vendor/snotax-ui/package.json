@@ -1,0 +1,30 @@
+{
+  "name": "@snotax/ui",
+  "version": "0.0.0-vendored",
+  "description": "Vendored build of @snotax/ui (Lit web components). Synced by scripts/sync-snotax-ui.mjs — do not edit.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./elements": {
+      "types": "./dist/elements.d.ts",
+      "import": "./dist/elements.js"
+    },
+    "./elements/*": {
+      "types": "./dist/elements/*.d.ts",
+      "import": "./dist/elements/*.js"
+    },
+    "./style.css": "./dist/ui.css",
+    "./properties.css": "./dist/properties.css"
+  },
+  "sideEffects": [
+    "*.css",
+    "./dist/elements.js",
+    "./dist/elements/*.js"
+  ],
+  "dependencies": {
+    "lit": "^3.2.0"
+  }
+}

@@ -1,16 +1,21 @@
-/** Шапка сторінки: назва, вступ і ключові цифри (факти — HTML із <b>, тексти з репозиторію). */
-export function PageHead({ title, lead, facts }: { title: string; lead: string; facts: string[] }) {
+import type { ReactNode } from 'react'
+import { t } from '@/lib/i18n'
+import { PageHeader } from '@/components/PageHeader'
+
+/**
+ * Шапка сторінки бази — спільна шапка сайту (PageHeader), щільніша: назва зі значком версії, поруч — доступ і власник (шлях —
+ * у хлібних крихтах), вступ, усі дії праворуч одним рядком; під ними — ключові цифри (факти — HTML із <b>, очищений сервером).
+ */
+export function PageHead({ title, badges, lead, facts, actions, meta }: { title: ReactNode; badges?: ReactNode; lead: string; facts: string[]; actions?: ReactNode; meta?: ReactNode }) {
   return (
-    <header className="flex flex-wrap items-end justify-between gap-x-7 gap-y-2 rounded-xl border border-line bg-panel px-4 py-3.5 shadow-sm">
-      <div className="min-w-0 max-w-full">
-        <h1 className="text-balance font-display text-[clamp(19px,2.6vw,28px)] font-bold leading-tight tracking-[-0.01em]">{title}</h1>
-        <p className="mt-1 max-w-[70ch] text-[14px] text-muted">{lead}</p>
-      </div>
-      <ul className="flex flex-wrap gap-x-[18px] gap-y-1.5 font-mono text-[13px] font-medium tabular-nums text-muted [&_b]:font-semibold [&_b]:text-ink" aria-label="Основні цифри">
-        {facts.map((f, i) => (
-          <li key={i} dangerouslySetInnerHTML={{ __html: f }} />
-        ))}
-      </ul>
-    </header>
+    <PageHeader title={title} badges={badges} lead={lead || undefined} actions={actions} meta={meta} className="gap-2 py-3">
+      {facts.length > 0 && (
+        <ul className="flex flex-wrap gap-x-[18px] gap-y-1.5 font-mono text-[13px] font-medium tabular-nums text-muted [&_b]:font-semibold [&_b]:text-ink" aria-label={t('Основні цифри')}>
+          {facts.map((f, i) => (
+            <li key={i} dangerouslySetInnerHTML={{ __html: f }} />
+          ))}
+        </ul>
+      )}
+    </PageHeader>
   )
 }

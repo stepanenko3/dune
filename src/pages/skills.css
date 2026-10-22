@@ -1,0 +1,76 @@
+/*
+ * Навички. Дерево — на «нічній пустелі» головної (умбра, пил, спайс), стала в обох темах: іконки гри — світлі
+ * гліфи, їм потрібне темне тло. Усередині .sk-night токени теми перевизначено, тож ink / muted / line / spice
+ * працюють як завжди, лише в нічних значеннях.
+ */
+.sk-night {
+  --c-panel: 28 19 12;
+  --c-panel2: 43 29 18;
+  --c-line: 96 78 60;
+  --c-ink: 235 220 196;
+  --c-muted: 176 160 138;
+  --c-spice: 238 147 64;
+  --c-on-spice: 24 16 8;
+  --c-bad: 222 110 100;
+  background:
+    radial-gradient(120% 90% at 85% 10%, rgb(198 139 78 / 0.18), transparent 60%),
+    linear-gradient(160deg, rgb(43 29 18), rgb(28 19 12) 55%);
+  color: rgb(var(--c-ink));
+}
+
+/*
+ * Картка навички: з'являється й зникає коротко (м'яке проявлення з легким збільшенням від боку вузла),
+ * між вузлами — пливе на нове місце, а не блимає. На телефоні — шторка, що виїжджає знизу.
+ */
+.sk-tip {
+  animation: sk-tip-in 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition:
+    opacity 130ms ease,
+    transform 130ms ease,
+    left 170ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    top 170ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.sk-tip[data-out] {
+  opacity: 0;
+  transform: scale(0.96);
+  pointer-events: none;
+}
+@keyframes sk-tip-in {
+  from { opacity: 0; transform: scale(0.96); }
+}
+.sk-tip.sk-sheet {
+  animation-name: sk-sheet-in;
+  animation-duration: 220ms;
+  transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.sk-tip.sk-sheet[data-out] {
+  opacity: 1;
+  transform: translateY(100%);
+}
+@keyframes sk-sheet-in {
+  from { transform: translateY(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sk-tip,
+  .sk-tip.sk-sheet { animation: none; transition: none; }
+}
+
+/*
+ * Стрічки спеціалізацій: без смуги прокрутки (під стрічкою вже є смуга прогресу) — гортаються колесом миші,
+ * перетягуванням і стрілками з боків; краї, за якими ще є картки, плавно згасають (маска).
+ */
+.sk-strip {
+  scrollbar-width: none;
+  cursor: grab;
+}
+.sk-strip::-webkit-scrollbar {
+  display: none;
+}
+.sk-strip.sk-drag,
+.sk-strip.sk-drag * {
+  cursor: grabbing !important;
+  user-select: none;
+}
+.sk-strip[data-fade='l'] { mask-image: linear-gradient(to right, transparent, #000 48px); }
+.sk-strip[data-fade='r'] { mask-image: linear-gradient(to left, transparent, #000 48px); }
+.sk-strip[data-fade='lr'] { mask-image: linear-gradient(to right, transparent, #000 48px, #000 calc(100% - 48px), transparent); }

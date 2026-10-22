@@ -1,0 +1,17 @@
+[{ "Type": "CompositeDataTable", "Name": "CDT_PlaceableData", "Rows": {
+  "MediumOreRefinery_Placeable": {
+    "m_DisplayName": { "TableId": "/Game/Dune/Localization/ST_Localization_Buildings.ST_Localization_Buildings", "Key": "BUILDINGS/MEDIUMOREREFINERY_PLACEABLE", "SourceString": "Medium Ore Refinery" },
+    "m_BuildableIcon": { "AssetPathName": "/Game/Dune/GUI/Textures/Icons/Gameplay/Placeables/T_UI_IconPlacChoamOreRefinery01_D.T_UI_IconPlacChoamOreRefinery01_D", "SubPathString": "" },
+    "m_BuildableGroupType": { "Name": "OreRefinery" }, "m_BuildableTier": { "Name": "Tier1" },
+    "m_PowerProduction": 0, "m_PowerConsumption": 45, "m_WaterCapacity": 0, "m_WaterGenerationRateInSecs": 0.0 },
+  "Windtrap_Placeable": {
+    "m_DisplayName": { "TableId": "x", "Key": "W", "SourceString": "Windtrap" },
+    "m_BuildableIcon": { "AssetPathName": "/Game/Dune/GUI/Textures/Icons/Gameplay/Placeables/T_UI_W_D.T_UI_W_D", "SubPathString": "" },
+    "m_BuildableGroupType": { "Name": "Windtrap" }, "m_BuildableTier": { "Name": "Tier3" },
+    "m_PowerProduction": 0, "m_PowerConsumption": 0, "m_WaterCapacity": 1500, "m_WaterGenerationRateInSecs": 10.0 },
+  "XX_Test_Placeable": {
+    "m_DisplayName": { "TableId": "x", "Key": "T", "SourceString": "XX_Test" },
+    "m_BuildableIcon": { "AssetPathName": "None", "SubPathString": "" },
+    "m_BuildableGroupType": { "Name": "Debug" }, "m_BuildableTier": { "Name": "Tier1" },
+    "m_PowerProduction": 0, "m_PowerConsumption": 0, "m_WaterCapacity": 0, "m_WaterGenerationRateInSecs": 0.0 }
+} }]

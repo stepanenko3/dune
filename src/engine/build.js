@@ -1,6 +1,7 @@
 /*
  * План будівництва по етапах і підрахунок деталей для кошторису.
  * Стіни рахуються секціями: 1 плита завширшки x 1 рівень заввишки; спільна стіна двох приміщень — один раз.
+ * Стіна поштучно (room.walls, з редактора) — блок за блоком: пів блоку стіни — напівстіна (як парапет).
  */
 (function (root) {
   'use strict';
@@ -36,8 +37,8 @@
       { id: 'doors', name: 'Двері', cap: 70 },
       { id: 'proj', name: 'Проєкція', cap: 20 },
     ];
-    // Категорія ліміту для пристрою з моделі; null — не рахується (консоль, техніка, сходи).
-    const CAT = { turbine: 'prod', windtrap: 'prod', craft: 'prod', refine: 'prod', power: 'prod', water: 'store', storage: 'store', light: 'light', furniture: 'decor' };
+    // Категорія ліміту для пристрою з моделі; null — не рахується (консоль; техніка й сходи — без ключа).
+    const CAT = { turbine: 'prod', windtrap: 'prod', craft: 'prod', refine: 'prod', power: 'prod', water: 'store', storage: 'store', light: 'light', furniture: 'decor', console: null };
 
     // До якого етапу належить приміщення.
     function stageOf(r) {
@@ -129,6 +130,21 @@
             }
             continue;
           }
+          // стіна поштучно (з редактора): кожен блок — секція; пів блоку стіни — як парапет (напівстіна);
+          // пентащит — один на кожен стовпчик блоків-щитів поспіль
+          if (M.wallStack && M.wallStack(r, e.a, e.b)) {
+            let shieldRun = null;
+            for (const p of M.edgePieces(r, e.a, e.b)) {
+              const type = p.type === 'open' ? 'none' : p.type === 'wall' && p.h < 1 - 1e-6 ? 'rail' : p.type;
+              const s = sg === 'ground' ? (p.z0 < G ? 'ground' : 'upper') : sg === 'tops' && r.group === 'crown' ? 'tops' : sg;
+              if (type === 'door') doors.set(ek + '@' + p.z0.toFixed(1), true);
+              if (type === 'shield') { if (!shieldRun) { shieldRun = ek + '@p' + p.z0.toFixed(2); pentas.set(shieldRun, s); } } else shieldRun = null;
+              const key = ek + '@' + Math.round(p.z0 * 100) / 100;
+              const prev = cells.get(key);
+              if (!prev || RANK[type] < RANK[prev.type]) cells.set(key, { type, s: prev ? prev.s : s });
+            }
+            continue;
+          }
           const hi = Math.ceil(top(r) - 0.5);
           for (let z = Math.floor(r.z0); z < hi; z++) {
             const mid = z + 0.5;
@@ -208,16 +224,16 @@
       { id: 'silicone', name: 'силіконових блоків', short: 'силікон' },
     ];
     // Рецепти з гри за одиницю (база в Хагга; у Deep Desert — M.ui.costFactor; fixed — без знижки).
-    // power: скільки дає (+) чи бере (−) енергії. Пентащит будь-якого розміру — 2 сталі, 20 пасти, 6 серво,
-    // а енергії бере по 3 на кожну секцію (SHIELD_POWER).
+    // power: скільки дає (+) чи бере (−) енергії (запасне — калькулятор бере потужність із довідника); cat — категорія
+    // ліміту. Пентащит будь-якого розміру — 2 сталі, 20 пасти, 6 серво, а енергії бере по 3 на кожну секцію (SHIELD_POWER).
     const RECIPES = {
-      shield: { name: 'Пентащит (будь-якого розміру)', mats: { steel: 2, cobalt: 20, servo: 6 }, fixed: true },
-      generator: { name: 'Паливний генератор', mats: { scrap: 45 }, power: 75 },
-      fabricator: { name: 'Фабрикатор (базовий верстак)', mats: { scrap: 75 }, power: -10 },
-      repair: { name: 'Ремонтна станція', mats: { iron: 40 }, power: -20 },
-      storage: { name: 'Контейнер для зберігання', mats: { alu: 35, silicone: 5 } },
-      console: { name: 'Розширена консоль суб-фіфу', mats: { scrap: 40 } },
-      replicator: { name: 'Солідо-реплікатор (з собою)', mats: { scrap: 20 }, fixed: true },
+      shield: { name: 'Пентащит (будь-якого розміру)', mats: { steel: 2, cobalt: 20, servo: 6 }, fixed: true, cat: null },
+      generator: { name: 'Паливний генератор', mats: { scrap: 45 }, power: 75, cat: 'prod' },
+      fabricator: { name: 'Фабрикатор (базовий верстак)', mats: { scrap: 75 }, power: -10, cat: 'prod' },
+      repair: { name: 'Ремонтна станція', mats: { iron: 40 }, power: -20, cat: 'prod' },
+      storage: { name: 'Контейнер для зберігання', mats: { alu: 35, silicone: 5 }, cat: 'store' },
+      console: { name: 'Розширена консоль суб-фіфу', mats: { scrap: 40 }, cat: null },
+      replicator: { name: 'Солідо-реплікатор (з собою)', mats: { scrap: 20 }, fixed: true, cat: null },
     };
     const SHIELD_POWER = 3;   // енергії на секцію пентащита
     const SHIELD_ELEMS = 2;   // будівельних елементів на пентащит будь-якого розміру
@@ -234,20 +250,23 @@
       for (const [id, n] of Object.entries((M.ui && M.ui.extras) || {})) cnt[id] = (cnt[id] || 0) + n;
       const devices = Object.keys(RECIPES).filter((id) => cnt[id]).map((id) => {
         const R = RECIPES[id], f = R.fixed ? 1 : k;
-        return { id, name: R.name, n: cnt[id], power: R.power || 0, mats: Object.fromEntries(Object.entries(R.mats).map(([m, q]) => [m, q * f])) };
+        return { id, name: R.name, n: cnt[id], power: R.power || 0, cat: R.cat, mats: Object.fromEntries(Object.entries(R.mats).map(([m, q]) => [m, q * f])) };
       });
       return { rows, stone, devices, MATS, shieldDraw: t.shield * SHIELD_POWER, fuelWeek: FUEL_WEEK, factor: k };
     }
 
-    // Будівельні елементи проти ліміту; декор до них не належить.
+    // Будівельні елементи проти ліміту; декор до них не належить. GROUP_OF — у яку групу йде вид (і рядок
+    // калькулятора з цим id): той самий розподіл і в картці «Будівельні елементи», і тут.
+    const GROUP_OF = { fsq: 'f', ftri: 'f', ramp: 'f', csq: 'd', ctri: 'd', wall: 'w', door: 'o', rail: 'o', stairs: 'o', pillar: 'o' };
+    const groupSum = (t, g) => Object.keys(GROUP_OF).reduce((s, k) => s + (GROUP_OF[k] === g ? t[k] || 0 : 0), 0);
     function budget(res) {
       const t = res.total;
       const groups = [
-        { id: 'f', name: 'Фундамент', n: t.fsq + t.ftri + t.ramp },
-        { id: 'd', name: 'Перекриття й дахи', n: t.csq + t.ctri },
-        { id: 'w', name: 'Стіни', n: t.wall },
+        { id: 'f', name: 'Фундамент', n: groupSum(t, 'f') },
+        { id: 'd', name: 'Перекриття й дахи', n: groupSum(t, 'd') },
+        { id: 'w', name: 'Стіни', n: groupSum(t, 'w') },
         { id: 'g', name: 'Пентащити', n: t.penta * SHIELD_ELEMS },
-        { id: 'o', name: 'Двері, парапети, сходи, колони', n: t.door + t.rail + t.stairs + t.pillar },
+        { id: 'o', name: 'Двері, парапети, сходи, колони', n: groupSum(t, 'o') },
       ];
       const total = groups.reduce((s, g) => s + g.n, 0);
       // решта категорій: пристрої з моделі, двері — по одній на дверний проріз
@@ -261,7 +280,145 @@
       return { groups, total, cats };
     }
 
-    return { KINDS, LIMITS, PRICES, compute, equipment, budget, cost };
+    // ---------- база з деталей (format 2): рахуємо самі деталі, етапи — за рівнями ----------
+    if (M.format === 2) return makePieces();
+
+    return { KINDS, LIMITS, PRICES, CAT, compute, equipment, budget, cost, groupOf: (id) => GROUP_OF[id] || null };
+
+    function makePieces() {
+      const P = (typeof module !== 'undefined' && module.exports) ? require('./pieces.js') : root.PIECES;
+      const KINDS2 = [
+        { id: 'fsq', name: 'Фундамент, квадрат' },
+        { id: 'ftri', name: 'Фундамент, трикутник' },
+        { id: 'csq', name: 'Перекриття / дах, квадрат' },
+        { id: 'ctri', name: 'Перекриття / дах, трикутник' },
+        { id: 'slope', name: 'Скат даху' },
+        { id: 'wall', name: 'Стіна' },
+        { id: 'window', name: 'Вікно' },
+        { id: 'door', name: 'Двері й ворота' },
+        { id: 'open', name: 'Прохід, арка' },
+        { id: 'wedge', name: 'Скісна стіна' },
+        { id: 'lean', name: 'Похила стіна' },
+        { id: 'stairs', name: 'Сходи' },
+        { id: 'ramp', name: 'Пандус' },
+        { id: 'pillar', name: 'Колона' },
+        { id: 'rail', name: 'Поручень, драбина' },
+        { id: 'shield', name: 'Пентащит (секція)' },
+        { id: 'penta', name: 'Пентащит' },
+      ];
+      const blank2 = () => Object.fromEntries(KINDS2.map((k) => [k.id, 0]));
+      const floors = M.levels.filter((l) => l.key !== 'r');
+      const stageOfPiece = (p) => {
+        const s = P.SHAPES[p.shape];
+        if (s && s.cat === 'found') return 'found';
+        const z = p.z;
+        const L = floors.find((l) => z >= l.z0 - 1e-6 && z < l.z1 - 1e-6) || floors[floors.length - 1];
+        return L ? 'lvl-' + L.key : 'found';
+      };
+      /** пентащити: клітинки, що торкаються (на одній прямій поруч чи одна над одною; плитки — спільним краєм), — одна поверхня */
+      function shieldGroups() {
+        const cells = M.pieces.filter((p) => P.SHAPES[p.shape] && P.SHAPES[p.shape].family === 'shield');
+        const parent = cells.map((_, i) => i);
+        const find = (i) => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+        const fp = cells.map((c) => P.footprint(c));
+        const same = (a, b) => Math.abs(a.x - b.x) < 1e-3 && Math.abs(a.y - b.y) < 1e-3;
+        const sharedEdge = (pa, pb) => pa.some((q, i) => { const q2 = pa[(i + 1) % pa.length]; return pb.some((r, j) => { const r2 = pb[(j + 1) % pb.length]; return (same(q, r) && same(q2, r2)) || (same(q, r2) && same(q2, r)); }); });
+        for (let i = 0; i < cells.length; i++)
+          for (let j = i + 1; j < cells.length; j++) {
+            const a = fp[i], b = fp[j];
+            if (a.at !== b.at) continue;
+            let touch = false;
+            if (a.at === 'edge') {
+              const col = P.segsOverlap(a.seg, b.seg) || (P.segsOverlap({ a: a.seg.a, b: { x: 2 * a.seg.b.x - a.seg.a.x, y: 2 * a.seg.b.y - a.seg.a.y } }, b.seg) || P.segsOverlap({ a: { x: 2 * a.seg.a.x - a.seg.b.x, y: 2 * a.seg.a.y - a.seg.b.y }, b: a.seg.b }, b.seg));
+              const sameSeg = P.segsOverlap(a.seg, b.seg);
+              touch = (sameSeg && (Math.abs(a.z1 - b.z0) < 1e-6 || Math.abs(b.z1 - a.z0) < 1e-6)) || (col && !sameSeg && a.z0 < b.z1 && b.z0 < a.z1);
+            } else touch = Math.abs(a.z1 - b.z1) < 1e-6 && sharedEdge(a.poly, b.poly);
+            if (touch) parent[find(i)] = find(j);
+          }
+        const groups = new Map();
+        cells.forEach((c, i) => { const r = find(i); if (!groups.has(r)) groups.set(r, []); groups.get(r).push(c); });
+        return [...groups.values()];
+      }
+      function compute2() {
+        const st = new Map();
+        const stage = (id) => {
+          if (!st.has(id)) st.set(id, blank2());
+          return st.get(id);
+        };
+        stage('found');
+        for (const p of M.pieces) {
+          const s = P.SHAPES[p.shape];
+          if (!s) continue;
+          stage(stageOfPiece(p))[s.kind] += 1;
+        }
+        for (const g of shieldGroups()) stage(stageOfPiece(g[0])).penta += 1;
+        // сходи й колони, поставлені станціями (давні бази): проліт на кожен блок підйому, колона — секція на блок
+        const fromItems = new Map();
+        for (const it of M.items || []) {
+          if (it.kind !== 'stairs' && it.kind !== 'pillar') continue;
+          const at = stage(stageOfPiece({ shape: '', z: it.z !== undefined ? it.z : 0 }));
+          const n = it.kind === 'stairs' ? Math.ceil((it.to || 0) - (it.from || 0)) : Math.ceil(it.h || 1);
+          at[it.kind] += n;
+          const shape = it.kind === 'stairs' ? 'Sardaukar_Stairs' : 'Sardaukar_Pillar_Middle';
+          fromItems.set(shape, (fromItems.get(shape) || 0) + n);
+        }
+        const names = { found: { name: 'Фундамент', note: 'Плити на землі: спершу фундамент, далі — стіни на ньому.' } };
+        for (const l of floors) names['lvl-' + l.key] = { name: l.name + (l.sub ? ' · ' + l.sub : ''), note: '' };
+        const custom = (M.ui && M.ui.stages) || {};
+        const order = ['found', ...floors.map((l) => 'lvl-' + l.key)];
+        const stages = order.filter((id) => st.has(id) && KINDS2.some((k) => st.get(id)[k.id])).map((id) => ({ id, ...names[id], ...(custom[id] || {}), n: st.get(id) }));
+        const total = blank2();
+        for (const x of stages) for (const k of KINDS2) total[k.id] += x.n[k.id];
+        const byShape = new Map();
+        for (const p of M.pieces) if (P.SHAPES[p.shape] && P.SHAPES[p.shape].family !== 'shield') byShape.set(p.shape, (byShape.get(p.shape) || 0) + 1);
+        for (const [shape, n] of fromItems) byShape.set(shape, (byShape.get(shape) || 0) + n);
+        return { stages, total, byShape };
+      }
+      function cost2(res) {
+        const k = (M.ui && M.ui.costFactor) || 1, t = res.total;
+        // рядки — за формами: ціна з довідника (камінь; інші матеріали — у cost рядка)
+        const rows = [...res.byShape].sort((a, b) => b[1] - a[1]).map(([id, n]) => {
+          const s = P.SHAPES[id];
+          const stone = (s.cost.find(([i]) => i === 'Stone') || [, 0])[1];
+          return { id, ref: id, name: s.name, n, price: stone * k, sum: stone * k * n, cost: s.cost.map(([i, q]) => [i, q * k]) };
+        });
+        const stone = rows.reduce((a, r) => a + r.sum, 0);
+        const cnt = { shield: t.penta };
+        for (const r of M.rooms) for (const it of r.items || []) if (it.recipe) cnt[it.recipe] = (cnt[it.recipe] || 0) + 1;
+        for (const it of M.roofItems || []) if (it.recipe) cnt[it.recipe] = (cnt[it.recipe] || 0) + 1;
+        for (const [id, n] of Object.entries((M.ui && M.ui.extras) || {})) cnt[id] = (cnt[id] || 0) + n;
+        const devices = Object.keys(RECIPES).filter((id) => cnt[id]).map((id) => {
+          const R = RECIPES[id], f = R.fixed ? 1 : k;
+          return { id, name: R.name, n: cnt[id], power: R.power || 0, cat: R.cat, mats: Object.fromEntries(Object.entries(R.mats).map(([m, q]) => [m, q * f])) };
+        });
+        return { rows, stone, devices, MATS, shieldDraw: t.shield * SHIELD_POWER, fuelWeek: FUEL_WEEK, factor: k };
+      }
+      // вид деталі → група ліміту; рядки калькулятора тут — форми деталей, їхня група — за видом форми (groupOf).
+      // Похилі стіни («Високий пандус») — теж стіни: раніше вони не входили в жодну групу.
+      const KIND_GROUP = { fsq: 'f', ftri: 'f', csq: 'd', ctri: 'd', slope: 'd', wall: 'w', window: 'w', open: 'w', wedge: 'w', lean: 'w', door: 'o', rail: 'o', stairs: 'o', ramp: 'o', pillar: 'o' };
+      const kindSum = (t, g) => Object.keys(KIND_GROUP).reduce((s, k) => s + (KIND_GROUP[k] === g ? t[k] || 0 : 0), 0);
+      const groupOf2 = (shape) => KIND_GROUP[(P.SHAPES[shape] || {}).kind] || null;
+      function budget2(res) {
+        const t = res.total;
+        const groups = [
+          { id: 'f', name: 'Фундамент', n: kindSum(t, 'f') },
+          { id: 'd', name: 'Перекриття й дахи', n: kindSum(t, 'd') },
+          { id: 'w', name: 'Стіни', n: kindSum(t, 'w') },
+          { id: 'g', name: 'Пентащити', n: t.penta * SHIELD_ELEMS },
+          { id: 'o', name: 'Двері, поручні, сходи, колони', n: kindSum(t, 'o') },
+        ];
+        const total = groups.reduce((s, g) => s + g.n, 0);
+        const pl = placeables();
+        if (t.door) (pl.doors || (pl.doors = [])).unshift(['Двері', t.door]);
+        const cats = LIMITS.map((l) => {
+          if (l.id === 'build') return { ...l, n: total, items: [] };
+          const items = pl[l.id] || [];
+          return { ...l, n: items.reduce((s, [, c]) => s + c, 0), items };
+        });
+        return { groups, total, cats };
+      }
+      return { KINDS: KINDS2, LIMITS, PRICES, CAT, compute: compute2, equipment, budget: budget2, cost: cost2, shieldGroups, groupOf: groupOf2 };
+    }
   }
 
   root.BUILD = { make };

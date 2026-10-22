@@ -13,11 +13,17 @@
     craft: 0x9b7fc4, power: 0xd6b13a, console: 0xe4572e, stairs: 0x8b8f96, turbine: 0xe3e7ec,
     windtrap: 0xcfd6dc, furniture: 0x6b5b4b, pillar: 0x585c64, pad: 0xf2f2f2, gate: 0x2dd4bf, light: 0xfff6d8, hatch: 0x30333a,
   };
+  // підказки мовою сайту (як у plan2d.js: root.BASE_T — перекладач сайту, BASE_LAB — підписи станцій, BASE_NUM — числа)
+  const fillT = (k, v) => String(k).replace(/\{(\w+)\}/g, (m, x) => (v && x in v ? v[x] : m));
+  const T = (k, v) => (root.BASE_T ? root.BASE_T(k, v) : fillT(k, v));
+  const LAB = (s) => (root.BASE_LAB ? root.BASE_LAB(s) : s);
+  const NUM = (v) => (root.BASE_NUM ? root.BASE_NUM(v) : String(Math.round(v * 100) / 100));
   const MINOR = /^(gallery|lantern|towerBalcony|pyr|lobby|rearBalcony|frontBalcony|court|rearDeck)/;
   // Відтінки стін за типом блоку: збоку видно, де закінчується один корпус і починається інший.
   const WALL_TONES = { drive: 0x605b54, core: 0x4d5058, store: 0x5b6169, craft: 0x535b64, refine: 0x5d5351, tower: 0x6b6256, air: 0x4b4f57, crown: 0x4b4e56 };
 
-  function create(container, opts = {}, M = root.BASE) {
+  function create(container, opts = {}, M0 = root.BASE) {
+    let M = M0;
     const THREE = root.THREE;
     // центр і розмір ділянки: камери, сонце, земля і сітка рахуються від них
     const B = M.bounds, CX = (B.x0 + B.x1) / 2, CY = (B.y0 + B.y1) / 2;
@@ -25,7 +31,9 @@
     const top = (r) => r.z0 + r.h;
     const tileKey = (t) => M.centroid(t.p).x.toFixed(3) + ',' + M.centroid(t.p).y.toFixed(3);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+    // кадр малюємо лише при змінах (камера, зріз, шари, правка) — без обмеження частоти, поки щось рухається;
+    // буфер кадру після показу не зберігаємо (знімки малює сервер)
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(root.devicePixelRatio || 1, 2));
     renderer.localClippingEnabled = true;
     renderer.shadowMap.enabled = true;
@@ -41,6 +49,16 @@
     controls.maxPolarAngle = Math.PI * 0.495;
     controls.minDistance = 5;
     controls.maxDistance = 150;
+    // будівельник: камера може дивитися й знизу вгору (днище ангарів, звисання) і підходити ближче, але не під пісок
+    if (opts && opts.freeLook) {
+      controls.maxPolarAngle = Math.PI * 0.97;
+      controls.minDistance = 1.5;
+      controls.addEventListener('change', () => { if (camera.position.y < 0.25) camera.position.y = 0.25; });
+      // м'яке світло знизу — днище й звисання видно, а не чорну тінь
+      const under = new THREE.DirectionalLight(0xfff1dc, 0.45);
+      under.position.set(0.3, -1, 0.2);
+      scene.add(under);
+    }
 
     const VIEWS = (M.ui && M.ui.views) || {
       quarter: { pos: [-30, 27, 18], target: [0, 3.5, -14] },
@@ -52,6 +70,8 @@
       const v = VIEWS[name] || VIEWS.quarter;
       camera.position.set(...v.pos);
       controls.target.set(...v.target);
+      // від першої особи — той самий погляд, але центр обертання — одразу перед камерою
+      if (navFly) controls.target.sub(camera.position).normalize().multiplyScalar(0.05).add(camera.position);
       controls.update();
     }
     setView('quarter');
@@ -77,16 +97,31 @@
     const std = (color, extra = {}) =>
       new THREE.MeshStandardMaterial({ color, roughness: 0.78, metalness: 0.18, side: THREE.DoubleSide, clippingPlanes: planes, clipShadows: true, ...extra });
 
-    // Плити трохи відсунуті в глибину, щоб шви й ребра поверх них не миготіли пунктиром.
+    /** матеріали обрисів станцій — спільні на всю сцену (сотні станцій — кілька матеріалів) */
+    const stationMats = new Map();
+    const stationMat = (color, extra = {}) => {
+      const k = color + JSON.stringify(extra);
+      if (!stationMats.has(k)) stationMats.set(k, std(color, { roughness: 0.62, metalness: 0.22, side: THREE.FrontSide, ...extra }));
+      return stationMats.get(k);
+    };
+
+    // Плити трохи відсунуті в глибину, щоб шви й ребра поверх них не миготіли пунктиром. Стіни — ще глибше: торець
+    // стіни, що впирається верхом у плиту (стіна під дахом, напівстіна, що звисає під підлогою), лежить у площині плити
+    // й інакше просвічує крізь неї смугою.
     const behind = { polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 };
+    const deeper = { polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 3 };
     const mats = {
       sq: std(0x2f6fd0, { roughness: 0.9, metalness: 0, ...behind }),
       tri: std(0xe0812a, { roughness: 0.9, metalness: 0, ...behind }),
-      wall: std(0x585c64, { metalness: 0.3 }),
+      wall: std(0x585c64, { metalness: 0.3, ...deeper }),
       wallLight: std(0x80848b, { metalness: 0.2, ...behind }),
       roof: std(0x3a3d43, { metalness: 0.3, ...behind }),
       frame: std(0x2a2c31, { metalness: 0.45, roughness: 0.55 }),
       shield: std(0x2dd4bf, { transparent: true, opacity: 0.24, emissive: 0x0d6b60, emissiveIntensity: 0.6, depthWrite: false, roughness: 0.2 }),
+      // деталі будівельника: скло вікон, стулки дверей і воріт
+      glass: std(0x9fd4e8, { transparent: true, opacity: 0.35, depthWrite: false, roughness: 0.1, metalness: 0.1 }),
+      door: std(0x6b4f35, { metalness: 0.2 }),
+      gate: std(0x45494f, { metalness: 0.5 }),
       // пісок відсунутий у глибину сильніше за плити, інакше під кутом він перекриває підлогу рівня 0
       ground: new THREE.MeshStandardMaterial({ color: 0xa07d55, roughness: 1, metalness: 0, polygonOffset: true, polygonOffsetFactor: 6, polygonOffsetUnits: 12 }),
     };
@@ -117,7 +152,15 @@
     const S = () => L().seams, SS = () => L().seamsShield, E = () => L().edges;
     const roofTop = new Map(); // шар даху -> верх приміщення (з другим ярусом)
     const floorZ = new Map(); // шар плити -> рівень підлоги: торці, днища і консолі ховаються, коли зріз нижче підлоги
-    const tri = (arr, a, b, c) => arr.push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z);
+    const tri = (arr, a, b, c) => {
+      arr.push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z);
+      if (owner >= 0) {
+        let o = owners.get(arr);
+        if (!o) { o = new Array(arr.length / 9 - 1).fill(-1); owners.set(arr, o); }
+        while (o.length < arr.length / 9 - 1) o.push(-1);
+        o.push(owner);
+      } else { const o = owners.get(arr); if (o) o.push(-1); }
+    };
     const quad = (arr, a, b, c, d) => { tri(arr, a, b, c); tri(arr, a, c, d); };
     // плити підлоги окремо: режим «тільки плити» показує лише їх
     const floorBuckets = new Map(), floorSeams = [];
@@ -190,6 +233,37 @@
         quad(bucket(mat), v3(A.x, A.y, z - thick), v3(B.x, B.y, z - thick), v3(B.x, B.y, z), v3(A.x, A.y, z));
       }
     }
+    const mkLines = (arr, mat) => {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
+      return new THREE.LineSegments(geo, mat);
+    };
+    const visibleMeshes = (root) => {
+      const out = [];
+      root.traverse((o) => {
+        if (!o.isMesh) return;
+        for (let p = o; p; p = p.parent) if (p.visible === false) return;
+        out.push(o);
+      });
+      return out;
+    };
+    // хто власник трикутника (деталь у M.pieces) — для вибору й заміни в будівельнику: масив буфера → індекси деталей
+    const owners = new Map();
+    let owner = -1;
+    // рамки деталей (у координатах three): вибір під курсором і перевірка «підпис за стіною» — спершу рамки, а точні
+    // трикутники — лише кількох найближчих (на тисячах деталей промінь крізь усі трикутники гальмує кадр)
+    let boxes = [];
+
+    // ---------- збирання будови з моделі: на старті й після кожної правки (update) ----------
+    function buildAll() {
+    layer = 'base';
+    layers.clear();
+    floorBuckets.clear();
+    floorSeams.length = 0;
+    roofTop.clear();
+    floorZ.clear();
+    owners.clear();
+    owner = -1;
     // Прорізи на кожному ребрі від усіх приміщень, що його ділять (абсолютні висоти): двері в спільній стіні
     // видно з обох боків, навіть якщо записані лише в одному приміщенні.
     const edgeHoles = new Map();
@@ -660,7 +734,7 @@
       for (const it of r.items || []) addItem(it, z0, STRUCTURAL.includes(it.kind) ? itemGroups.base : itemGroups.interior);
     }
 
-    function addItem(it, baseZ, group) {
+    function addItem(it, baseZ, group, idx) {
       const z = (it.z !== undefined ? it.z : baseZ) * LH;
       const color = ITEM_COLORS[it.kind] || 0x999999;
       const mat = std(color, { roughness: 0.6, metalness: 0.25, side: THREE.FrontSide });
@@ -675,7 +749,11 @@
         g.add(mesh);
         return mesh;
       };
-      if (it.kind === 'stairs') {
+      // пристрій гри — його обрис (stations3d.js); інші станції — як були
+      const ST = root.STATIONS3D;
+      const gameType = ST && ST.typeOf(it);
+      if (gameType && ST.build(gameType, g, it.w, it.d, h, { THREE, mat: stationMat })) mat.dispose();
+      else if (it.kind === 'stairs') {
         const steep = h / it.w > 1.6;
         if (steep) {
           // гвинтові сходи в шахті башти
@@ -741,7 +819,7 @@
         ring.position.y = 0.07;
         g.add(ring);
       } else if (it.kind === 'light') {
-        box(it.w, 0.02, it.d, 0, std(0xfff6d8, { emissive: 0xfff1c4, emissiveIntensity: 0.6 }));
+        box(it.w, 0.02, it.d, 0.012, std(0xfff6d8, { emissive: 0xfff1c4, emissiveIntensity: 0.6 })); // трохи над підлогою — не мерехтить
       } else if (it.kind === 'gate') {
         box(it.w, h, it.d, 0, std(0x2dd4bf, { transparent: true, opacity: 0.35, emissive: 0x0d6b60, emissiveIntensity: 0.5 }));
       } else if (it.kind === 'hatch') {
@@ -759,19 +837,131 @@
       } else {
         box(it.w, h, it.d, 0);
       }
-      const nm = it.kind === 'stairs' ? `${it.name} (+${it.from} → +${it.to})` : it.full || it.name;
-      g.traverse((o) => { if (o.isMesh) { o.userData.name = nm; hoverables.push(o); } });
+      const nm = it.kind === 'stairs' ? T('{name} (+{from} → +{to})', { name: LAB(it.name), from: NUM(it.from), to: NUM(it.to) }) : LAB(it.full || it.name);
+      g.traverse((o) => { if (o.isMesh) { o.userData.name = nm; if (idx !== undefined) o.userData.item = idx; hoverables.push(o); } });
       group.add(g);
     }
 
-    for (const r of M.rooms) buildRoom(r);
-    for (const it of M.roofItems) addItem(it, it.z, itemGroups.base);
+    if (M.format === 2) buildPieces();
+    else {
+      for (const r of M.rooms) buildRoom(r);
+      for (const it of M.roofItems) addItem(it, it.z, itemGroups.base);
+    }
 
-    const mkLines = (arr, mat) => {
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
-      return new THREE.LineSegments(geo, mat);
-    };
+    // верх стіни чи напівстіни, що впирається в підлогу знизу (днище ангара, стіна під дахом), лежить точно в площині
+    // плити: його ребра й торець проступають крізь неї подвійним швом і штрихами. Їх і не видно ні звідки — не малюємо:
+    // край плити й так обведено її власним контуром. covered(x, y, z) — чи точка в площині якоїсь плити (верх) і в ній
+    function underSlab(P) {
+      const cells = new Map();
+      const key = (z, x, y) => z.toFixed(3) + '|' + Math.floor(x) + '|' + Math.floor(y);
+      for (const p of M.pieces) {
+        const s = P.SHAPES[p.shape];
+        if (!s || s.family !== 'slab') continue;
+        const poly = P.footprint(p).poly;
+        const xs = poly.map((q) => q.x), ys = poly.map((q) => q.y);
+        for (let cx = Math.floor(Math.min(...xs) - 0.01); cx <= Math.floor(Math.max(...xs) + 0.01); cx++)
+          for (let cy = Math.floor(Math.min(...ys) - 0.01); cy <= Math.floor(Math.max(...ys) + 0.01); cy++) {
+            const k = key(p.z, cx, cy);
+            if (!cells.has(k)) cells.set(k, []);
+            cells.get(k).push(poly);
+          }
+      }
+      const E = 1e-3;
+      const nearSeg = (x, y, a, b) => {
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / (dx * dx + dy * dy || 1)));
+        return Math.hypot(a.x + dx * t - x, a.y + dy * t - y) < E;
+      };
+      const inside = (x, y, poly) => {
+        let c = false;
+        for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+          const a = poly[i], b = poly[j];
+          if (nearSeg(x, y, a, b)) return true;
+          if ((a.y > y) !== (b.y > y) && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) c = !c;
+        }
+        return c;
+      };
+      const covered = (x, y, z) => {
+        for (const dx of [-E, E]) for (const dy of [-E, E]) for (const poly of cells.get(key(z, x + dx, y + dy)) || []) if (inside(x, y, poly)) return true;
+        return false;
+      };
+      return covered;
+    }
+
+    // база з деталей: геометрія кожної деталі (PIECES.geom) у ті самі кошики матеріалів; плити й скати вище землі —
+    // окремими шарами за висотою (зріз нижче ховає їх цілком); власник кожного трикутника — для вибору
+    function buildPieces() {
+      const P = root.PIECES;
+      const MAT = { sq: mats.sq, tri: mats.tri, roof: mats.roof, wall: mats.wall, wallLight: mats.wallLight, trim: mats.wallLight, frame: mats.frame, glass: mats.glass, door: mats.door, gate: mats.gate, shield: mats.shield };
+      const covered = underSlab(P);
+      const flat = (t, k, n) => { for (let i = 1; i < n; i++) if (Math.abs(t[k + 3 * i + 2] - t[k + 2]) > 1e-4) return false; return true; };
+      // ребро чи трикутник у площині плити й під нею цілком (точки, а для ребра — і середина)
+      const hidden = (t, k, n) => {
+        if (!flat(t, k, n)) return false;
+        let cx = 0, cy = 0;
+        for (let i = 0; i < n; i++) { if (!covered(t[k + 3 * i], t[k + 3 * i + 1], t[k + 2])) return false; cx += t[k + 3 * i] / n; cy += t[k + 3 * i + 1] / n; }
+        return covered(cx, cy, t[k + 2]);
+      };
+      // деталь, що впирається верхом у плиту знизу, з плитою по обидва боки (стіна між плитами, ребра днища ангара), —
+      // верх у товщу плити: плита відсунута в глибину (щоб шви на ній не миготіли), і під кутом крізь неї проступав
+      // верхній край бічних граней такої стіни штрихами. Кінець, що виходить за край плити, і стіна по краю плити
+      // (наполовину назовні) лишаються як є.
+      const sink = (p, s, g) => {
+        let top = -Infinity;
+        for (const f of g.faces) for (let k = 2; k < f.tris.length; k += 3) top = Math.max(top, f.tris[k]);
+        if (!Number.isFinite(top)) return;
+        if (s.at === 'edge') {
+          const { a, b } = P.edgeSeg(p.x, p.y, p.rot, s.len || 1);
+          const L = Math.hypot(b.x - a.x, b.y - a.y) || 1, nx = (a.y - b.y) / L * 0.15, ny = (b.x - a.x) / L * 0.15;
+          const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+          if (!covered(mx + nx, my + ny, top) || !covered(mx - nx, my - ny, top)) return;
+        } else if (!covered(p.x, p.y, top)) return;
+        const low = top - P.DIM.slab;
+        const lower = (t) => { for (let k = 0; k < t.length; k += 3) if (Math.abs(t[k + 2] - top) < 1e-4 && covered(t[k], t[k + 1], top)) t[k + 2] = low; };
+        for (const f of g.faces) lower(f.tris);
+        lower(g.lines);
+      };
+      boxes = [];
+      M.pieces.forEach((p, i) => {
+        const s = P.SHAPES[p.shape];
+        if (!s) return;
+        const g = P.geom(p);
+        if (s.at !== 'tile' && s.family !== 'shield') sink(p, s, g);
+        const bx = new THREE.Box3();
+        for (const f of g.faces) for (let k = 0; k < f.tris.length; k += 3) bx.expandByPoint(v3(f.tris[k], f.tris[k + 1], f.tris[k + 2]));
+        bx.expandByScalar(0.01);
+        boxes.push({ i, box: bx, opaque: s.family !== 'shield', lifted: false, top: 0 });
+        const lifted = p.z > 0.01 && (s.family === 'slab' || (s.family === 'slope' && s.cat === 'roof') || (s.family === 'shield' && s.at === 'tile'));
+        boxes[boxes.length - 1].lifted = lifted;
+        boxes[boxes.length - 1].top = p.z + (s.family === 'slope' ? s.h : 0);
+        layer = lifted ? 'slab:' + (p.z + (s.family === 'slope' ? s.h : 0)).toFixed(2) : 'base';
+        if (lifted) roofTop.set(layer, p.z + (s.family === 'slope' ? s.h : 0));
+        owner = i;
+        for (const f of g.faces) {
+          const m = MAT[f.mat] || mats.wall;
+          const isFloor = m === mats.sq || m === mats.tri;
+          const arr = isFloor && !lifted ? floorBucket(m) : bucket(m);
+          const t = f.tris;
+          for (let k = 0; k < t.length; k += 9) {
+            if (s.family !== 'slab' && hidden(t, k, 3)) continue;
+            tri(arr, v3(t[k], t[k + 1], t[k + 2]), v3(t[k + 3], t[k + 4], t[k + 5]), v3(t[k + 6], t[k + 7], t[k + 8]));
+          }
+        }
+        const ln = g.lines, ea = s.family === 'shield' ? SS() : E();
+        for (let k = 0; k < ln.length; k += 6) {
+          if (s.family !== 'slab' && hidden(ln, k, 2)) continue;
+          line(ea, v3(ln[k], ln[k + 1], ln[k + 2]), v3(ln[k + 3], ln[k + 4], ln[k + 5]));
+        }
+      });
+      owner = -1;
+      layer = 'base';
+      M.items.forEach((it, i) => addItem(it, it.z !== undefined ? it.z : 0, STRUCTURAL.includes(it.kind) ? itemGroups.base : itemGroups.interior, i));
+      for (const r of M.rooms) {
+        if (!r.tiles.length) continue;
+        labelPts.push({ id: r.id, name: r.short || r.name, z0: r.z0, h: r.h, minor: MINOR.test(r.id), covered: !!r.covered, at: r.label3d || M.labelPoint(r), p: new THREE.Vector3() });
+      }
+    }
+
     const structure = new THREE.Group();
     const roofGroups = [], floorGroups = [];
     for (const [key, lay] of layers) {
@@ -783,6 +973,7 @@
         const mesh = new THREE.Mesh(geo, mat);
         mesh.castShadow = !mat.transparent;
         mesh.receiveShadow = true;
+        mesh.userData.owners = owners.get(arr) || null;
         g.add(mesh);
       }
       for (const [arr, mat] of [[lay.seams, seamMat], [lay.seamsShield, seamMatShield], [lay.edges, edgeMat]]) if (arr.length) g.add(mkLines(arr, mat));
@@ -790,15 +981,6 @@
       if (floorZ.has(key)) floorGroups.push({ g, z: floorZ.get(key) });
       structure.add(g);
     }
-    const visibleMeshes = (root) => {
-      const out = [];
-      root.traverse((o) => {
-        if (!o.isMesh) return;
-        for (let p = o; p; p = p.parent) if (p.visible === false) return;
-        out.push(o);
-      });
-      return out;
-    };
     const floors = new THREE.Group();
     for (const [mat, arr] of floorBuckets) {
       const geo = new THREE.BufferGeometry();
@@ -806,10 +988,14 @@
       geo.computeVertexNormals();
       const mesh = new THREE.Mesh(geo, mat);
       mesh.receiveShadow = true;
+      mesh.userData.owners = owners.get(arr) || null;
       floors.add(mesh);
     }
     floors.add(mkLines(floorSeams, seamMat));
     scene.add(structure, floors, itemGroups.base, itemGroups.interior);
+    return { structure, floors, itemGroups, labelPts, hoverables, roofGroups, floorGroups };
+    }
+    let { structure, floors, itemGroups, labelPts, hoverables, roofGroups, floorGroups } = buildAll();
 
     // земля, сітка і ділянки
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), mats.ground);
@@ -835,18 +1021,24 @@
     const labelLayer = document.createElement('div');
     labelLayer.className = 'labels3d';
     container.appendChild(labelLayer);
-    for (const L of labelPts) {
-      L.el = document.createElement('div');
-      L.el.className = 'lbl3d';
-      L.el.textContent = L.name;
-      labelLayer.appendChild(L.el);
+    function mountLabels() {
+      labelLayer.textContent = '';
+      for (const L of labelPts) {
+        L.el = document.createElement('div');
+        L.el.className = 'lbl3d';
+        L.el.textContent = L.name;
+        labelLayer.appendChild(L.el);
+      }
     }
+    mountLabels();
     const tip = document.createElement('div');
     tip.className = 'tip3d';
     tip.hidden = true;
     container.appendChild(tip);
 
-    const state = { cut: 99, floor: -1, labels: true, running: false, w: 1, h: 1, interior: true, found: false, colors: true };
+    const state = { cut: 99, floor: -1, labels: true, running: false, w: 1, h: 1, interior: true, found: false, colors: true, lost: false };
+    // цикл кадрів (див. frame нижче): запланований кадр, чи треба перемалювати, чи камера рухалась минулого кадру
+    let raf = 0, dirty = true, wasMoving = false;
     function setInterior(on) {
       state.interior = on;
       itemGroups.interior.visible = on && !state.found;
@@ -894,6 +1086,7 @@
       renderer.domElement.style.height = h + 'px';
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
+      invalidate(); // нове полотно порожнє
     }
     const ro = new ResizeObserver(resize);
     ro.observe(container);
@@ -918,9 +1111,10 @@
     }
     const occRay = new THREE.Raycaster();
     let occTick = 0;
-    function updateOcclusion() {
-      if (occTick++ % 8 !== 0) return;
-      const solids = visibleMeshes(structure).filter((o) => !o.material.transparent);
+    // force — камера зупинилась: перевірити зараз, а не на восьмому кадрі
+    function updateOcclusion(force) {
+      if (occTick++ % 8 !== 0 && !force) return;
+      const solids = M.format === 2 ? null : visibleMeshes(structure).filter((o) => !o.material.transparent);
       for (const L of labelPts) {
         if (!labelVisible(L)) continue;
         labelAnchor(L);
@@ -928,13 +1122,14 @@
         const dist = d.length();
         occRay.set(camera.position, d.normalize());
         occRay.far = dist - 0.6;
+        if (!solids) { L.hiddenByWall = !!rayPieces(occRay.ray, dist - 0.6, true, true); continue; }
         const hits = occRay.intersectObjects(solids, false).filter((hh) => hh.point.y < state.cut * LH && hh.point.y > state.floor * LH);
         L.hiddenByWall = hits.length > 0;
       }
     }
-    function placeLabels() {
+    function placeLabels(force) {
       if (!state.labels || state.found) return;
-      updateOcclusion();
+      updateOcclusion(force);
       const shown = [];
       for (const L of labelPts) {
         labelAnchor(L);
@@ -943,7 +1138,9 @@
         if (!on) { L.el.hidden = true; continue; }
         const x = ((tmp.x + 1) / 2) * state.w, y = ((1 - tmp.y) / 2) * state.h;
         if (L.el.hidden) L.el.hidden = false;
-        const w = (L.w = L.el.offsetWidth || L.w || 90), h = 22;
+        // ширину підпису міряємо раз (текст не змінюється), а не щокадру — інакше кожен кадр перераховує розкладку
+        if (!L.w) L.w = L.el.offsetWidth;
+        const w = L.w || 90, h = 22;
         const b = { x0: x - w / 2 - 4, x1: x + w / 2 + 4, y0: y - h / 2, y1: y + h / 2 };
         const clash = shown.some((s) => s.x0 < b.x1 && b.x0 < s.x1 && s.y0 < b.y1 && b.y0 < s.y1);
         L.el.hidden = clash;
@@ -959,6 +1156,7 @@
     renderer.domElement.addEventListener('pointermove', (ev) => {
       const rect = renderer.domElement.getBoundingClientRect();
       hoverReq = { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
+      wake();
     });
     renderer.domElement.addEventListener('pointerleave', () => { hoverReq = null; tip.hidden = true; });
     function hover() {
@@ -978,21 +1176,267 @@
       hoverReq = null;
     }
 
+    // Кадр — лише коли щось змінилось (dirty) чи камера ще рухається (тягнуть, гасне інерція); у спокої — нічого.
+    // Поки рухається — кадр за кадром, без обмеження частоти.
+    const RAF = (f) => (root.requestAnimationFrame ? root.requestAnimationFrame(f) : 0);
     function frame() {
-      if (!state.running) return;
-      controls.update();
-      renderer.render(scene, camera);
-      placeLabels();
+      raf = -1; // поки кадр іде, invalidate() нового не планує — вирішуємо в кінці
+      if (!state.running || state.lost) { raf = 0; return; }
+      const flying = stepNav();
+      const moving = controls.update() === true || flying;
+      if (moving || dirty) {
+        dirty = false;
+        renderer.render(scene, camera);
+        placeLabels(!moving);
+      } else if (wasMoving) placeLabels(true); // камера зупинилась — які підписи за стінами, перевіряємо востаннє
+      wasMoving = moving;
       hover();
-      requestAnimationFrame(frame);
+      raf = moving || dirty ? RAF(frame) : 0;
     }
+    /** щось змінилось — намалювати наступним кадром */
+    function invalidate() {
+      dirty = true;
+      wake();
+    }
+    /** кадр без перемальовки (підказка під курсором) */
+    function wake() {
+      if (state.running && !raf) raf = RAF(frame);
+    }
+    controls.addEventListener('change', invalidate);
+    // браузер забрав контекст WebGL (забагато відкритих сцен, сон) — кажемо власнику; повернув — малюємо знову
+    renderer.domElement.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      state.lost = true;
+      if (opts && opts.onContextLost) opts.onContextLost();
+    });
+    renderer.domElement.addEventListener('webglcontextrestored', () => { state.lost = false; invalidate(); });
     function start() {
       if (state.running) return;
       state.running = true;
       resize();
-      requestAnimationFrame(frame);
+      invalidate();
     }
-    function stop() { state.running = false; }
+    function stop() {
+      state.running = false;
+      if (raf > 0 && root.cancelAnimationFrame) root.cancelAnimationFrame(raf);
+      raf = 0;
+    }
+
+
+    // ---------- рух камери ----------
+    // Два режими (setNav): «orbit» — крутити навколо центру (як було), «fly» — від першої особи: тягни — погляд з місця
+    // (центр обертання — за 0,05 перед камерою), коліщатко — крок уперед чи назад туди, куди курсор.
+    // Від першої особи: WASD — уперед, назад, убік (по землі, куди дивиться камера), Q/E — нижче, вище, Shift — утричі
+    // швидше (фізичні клавіші — працює й на кирилиці); навколо центру клавіші камеру не рухають. В обох: пробіл + тягни — зсув; коліщатко миші — до точки під курсором;
+    // трекпад: два пальці — зсув, щипок — масштаб; подвійний клік — камера туди (не під час будування).
+    // Лише в будівельнику (opts.freeLook): звичайний перегляд бази — тільки обертання навколо центру, як було.
+    // var, а не let: setView (вище) читає його ще до цього рядка, на старті сцени
+    var navFly = false; // eslint-disable-line no-var
+    const nav = { mode: 'orbit', keys: new Set(), fast: false, hover: false, space: false, last: 0, trackpad: false, mouse: 'view', glide: null };
+    const NAV_KEYS = { KeyW: [0, 1, 0], KeyS: [0, -1, 0], KeyA: [-1, 0, 0], KeyD: [1, 0, 0], KeyQ: [0, 0, -1], KeyE: [0, 0, 1] };
+    const FLY_GAP = 0.05;
+    const NAV_ON = !!(opts && opts.freeLook);
+    const navNow = () => (root.performance ? root.performance.now() : Date.now());
+    const typingIn = (e) => {
+      const el = (e.composedPath && e.composedPath()[0]) || e.target;
+      const host = e.target;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)) return true;
+      return !!host && /^SN-(INPUT|TEXTAREA|SELECT|NUMBER-FIELD|COMBOBOX)/.test(host.tagName || '');
+    };
+    /** куди дивиться камера по землі (одиничний, у координатах three) і праворуч від нього */
+    function groundAxes() {
+      const d = new THREE.Vector3().subVectors(controls.target, camera.position);
+      d.y = 0;
+      if (d.lengthSq() < 1e-9) camera.getWorldDirection(d), (d.y = 0);
+      d.normalize();
+      return { fwd: d, right: new THREE.Vector3(-d.z, 0, d.x) };
+    }
+    /** зсунути камеру й центр разом (не нижче піску) */
+    function shiftBy(v) {
+      camera.position.add(v);
+      controls.target.add(v);
+      const lowCam = opts && opts.freeLook ? 0.25 : 1;
+      if (camera.position.y < lowCam) { const dy = lowCam - camera.position.y; camera.position.y += dy; controls.target.y += dy; }
+      if (nav.mode === 'orbit' && controls.target.y < 0) controls.target.y = 0;
+    }
+    /** крок руху за кадр: клавіші й плавний переліт; true — камера рухалась */
+    function stepNav() {
+      let moved = false;
+      const t = navNow();
+      if (nav.glide) {
+        const g = nav.glide, k = Math.min(1, (t - g.t0) / 320), e = 1 - Math.pow(1 - k, 3);
+        camera.position.lerpVectors(g.p0, g.p1, e);
+        controls.target.lerpVectors(g.c0, g.c1, e);
+        if (k >= 1) nav.glide = null;
+        moved = true;
+      }
+      if (!nav.keys.size) { nav.last = 0; return moved; }
+      const dt = nav.last ? Math.min(0.05, (t - nav.last) / 1000) : 1 / 60;
+      nav.last = t;
+      let mx = 0, my = 0, mz = 0;
+      for (const k of nav.keys) { const m = NAV_KEYS[k]; mx += m[0]; my += m[1]; mz += m[2]; }
+      if (!mx && !my && !mz) return moved;
+      const dist = camera.position.distanceTo(controls.target);
+      const speed = (nav.mode === 'fly' ? 7 : Math.min(60, Math.max(4, dist * 0.9))) * (nav.fast ? 3 : 1) * dt;
+      const { fwd, right } = groundAxes();
+      const v = new THREE.Vector3().addScaledVector(right, mx).addScaledVector(fwd, my);
+      if (v.lengthSq() > 1) v.normalize();
+      v.multiplyScalar(speed);
+      v.y += mz * speed * 0.7;
+      shiftBy(v);
+      return true;
+    }
+    /** точка під курсором у координатах three: поверхня, а як нема — пісок */
+    function pointUnder(cx, cy) {
+      const h = pick(cx, cy);
+      if (h) return v3(h.point.x, h.point.y, h.point.z);
+      const q = planeAt(cx, cy, 0);
+      return q ? v3(q.x, q.y, 0) : null;
+    }
+    /** масштаб до точки під курсором: k < 1 — ближче */
+    function zoomAt(cx, cy, k) {
+      const P = pointUnder(cx, cy);
+      if (!P) return;
+      if (nav.mode === 'fly') {
+        // від першої особи — крок уперед чи назад у бік курсора, не ближче за пів блоку до поверхні
+        const dir = new THREE.Vector3().subVectors(P, camera.position);
+        const len = dir.length();
+        if (len < 1e-6) return;
+        dir.normalize();
+        let step = (1 - k) * Math.max(4, len * 0.6);
+        if (step > 0) step = Math.min(step, Math.max(0, len - 0.5));
+        shiftBy(dir.multiplyScalar(step));
+      } else {
+        const dist = camera.position.distanceTo(controls.target);
+        const nd = Math.min(controls.maxDistance, Math.max(controls.minDistance, dist * k));
+        const s = nd / (dist || 1);
+        camera.position.sub(P).multiplyScalar(s).add(P);
+        controls.target.sub(P).multiplyScalar(s).add(P);
+      }
+      controls.update();
+      invalidate();
+    }
+    /** зсув у площині землі на dx, dy пікселів (трекпад) */
+    function panPixels(dx, dy) {
+      const dist = Math.max(2, camera.position.distanceTo(nav.mode === 'fly' ? (pointUnder(state.w / 2 + renderer.domElement.getBoundingClientRect().left, state.h / 2 + renderer.domElement.getBoundingClientRect().top) || controls.target) : controls.target));
+      const px = (2 * Math.tan((camera.fov * Math.PI) / 360) * dist) / Math.max(1, state.h);
+      const { fwd, right } = groundAxes();
+      shiftBy(new THREE.Vector3().addScaledVector(right, dx * px).addScaledVector(fwd, -dy * px));
+      invalidate();
+    }
+    /** кнопки миші: режим власника (build/view) і пробіл (ліва — зсув) */
+    function applyButtons() {
+      const MO = THREE.MOUSE;
+      const b = nav.mouse === 'build' ? { LEFT: -1, MIDDLE: MO.PAN, RIGHT: MO.ROTATE } : { LEFT: MO.ROTATE, MIDDLE: nav.mode === 'fly' ? MO.PAN : MO.DOLLY, RIGHT: MO.PAN };
+      if (nav.space) b.LEFT = MO.PAN;
+      controls.mouseButtons = b;
+      renderer.domElement.style.cursor = nav.space ? 'grab' : '';
+    }
+    /** режим камери: «orbit» — навколо центру, «fly» — від першої особи */
+    function setNav(mode) {
+      const next = NAV_ON && mode === 'fly' ? 'fly' : 'orbit';
+      if (next === nav.mode) return;
+      nav.mode = next;
+      navFly = next === 'fly';
+      nav.glide = null;
+      nav.keys.clear(); // натиснуте в іншому режимі не має їхати далі
+      const dir = new THREE.Vector3().subVectors(controls.target, camera.position).normalize();
+      if (next === 'fly') {
+        controls.minDistance = 0;
+        controls.enableZoom = false;
+        controls.rotateSpeed = 0.6; // мишу праворуч — погляд праворуч, як у грі
+        controls.minPolarAngle = Math.PI * 0.03;
+        controls.maxPolarAngle = Math.PI * 0.97; // і вгору, і вниз
+        controls.target.copy(camera.position).addScaledVector(dir, FLY_GAP);
+      } else {
+        controls.minDistance = opts && opts.freeLook ? 1.5 : 5;
+        controls.enableZoom = true;
+        controls.rotateSpeed = 1;
+        controls.minPolarAngle = 0;
+        controls.maxPolarAngle = Math.PI * (opts && opts.freeLook ? 0.97 : 0.495);
+        // назад до обертання навколо центру — у стартове положення (центр бази), а не там, де стоїш: інакше
+        // центр обертання опиняється збоку і крутить дивно
+        setView('quarter');
+      }
+      controls.screenSpacePanning = next === 'fly';
+      applyButtons();
+      controls.update();
+      invalidate();
+    }
+    const cvs = renderer.domElement;
+    // від першої особи центр обертання — за 0,05 перед камерою, а OrbitControls зсувають пропорційно до відстані до
+    // нього: на початку кожного жесту — швидкість зсуву як для того, що в середині кадру
+    controls.addEventListener('start', () => {
+      if (nav.mode !== 'fly') { controls.panSpeed = 1; return; }
+      const r = cvs.getBoundingClientRect();
+      const P = r.width ? pointUnder(r.left + r.width / 2, r.top + r.height / 2) : null;
+      const d = P ? Math.min(80, Math.max(3, P.distanceTo(camera.position))) : 15;
+      controls.panSpeed = d / FLY_GAP;
+    });
+    if (NAV_ON) {
+      cvs.addEventListener('pointerenter', () => { nav.hover = true; });
+      cvs.addEventListener('pointerleave', () => { nav.hover = false; });
+    }
+    // коліщатко — раніше за OrbitControls (вони слухають саме полотно): ловимо на контейнері в фазі захоплення
+    const onWheel = (e) => {
+      if (e.target !== cvs) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (!e.ctrlKey && !e.shiftKey && e.deltaMode === 0 && e.deltaX !== 0) nav.trackpad = true;
+      else if (!e.ctrlKey && e.deltaX === 0 && Math.abs(e.deltaY) >= 100 && Number.isInteger(e.deltaY)) nav.trackpad = false;
+      if (nav.trackpad && !e.ctrlKey) return panPixels(e.deltaX, e.deltaY);
+      const dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
+      zoomAt(e.clientX, e.clientY, Math.exp(Math.max(-3, Math.min(3, dy * (e.ctrlKey ? 0.01 : 0.0015)))));
+    };
+    if (NAV_ON) container.addEventListener('wheel', onWheel, { capture: true, passive: false });
+    const onKeyDown = (e) => {
+      if (!state.running || e.metaKey || e.ctrlKey || e.altKey || typingIn(e)) return;
+      nav.fast = e.shiftKey;
+      if (e.code === 'Space') {
+        if (!nav.hover && !nav.space) return;
+        e.preventDefault();
+        if (!nav.space) { nav.space = true; applyButtons(); }
+        return;
+      }
+      // ходити клавішами (WASD, Q/E) — лише від першої особи; навколо центру клавіші камеру не рухають
+      if (!NAV_KEYS[e.code] || nav.mode !== 'fly' || (!nav.hover && !nav.keys.size)) return;
+      e.preventDefault();
+      if (!nav.keys.has(e.code)) { nav.keys.add(e.code); wake(); }
+    };
+    const onKeyUp = (e) => {
+      nav.fast = e.shiftKey;
+      if (e.code === 'Space' && nav.space) { nav.space = false; applyButtons(); }
+      nav.keys.delete(e.code);
+    };
+    const onBlur = () => { nav.keys.clear(); if (nav.space) { nav.space = false; applyButtons(); } };
+    if (NAV_ON && root.addEventListener) {
+      root.addEventListener('keydown', onKeyDown);
+      root.addEventListener('keyup', onKeyUp);
+      root.addEventListener('blur', onBlur);
+    }
+    // подвійний клік — плавно туди (будування — ні: там клік ставить деталь)
+    cvs.addEventListener('dblclick', (e) => {
+      if (!NAV_ON || nav.mouse === 'build' || !state.running) return;
+      const P = pointUnder(e.clientX, e.clientY);
+      if (!P) return;
+      const p0 = camera.position.clone(), c0 = controls.target.clone();
+      let p1, c1;
+      if (nav.mode === 'fly') {
+        const dir = new THREE.Vector3().subVectors(P, p0);
+        const len = dir.length();
+        dir.normalize();
+        p1 = p0.clone().addScaledVector(dir, Math.max(0, len - 3));
+        c1 = p1.clone().add(new THREE.Vector3().subVectors(c0, p0));
+      } else {
+        c1 = P.clone();
+        p1 = p0.clone().add(new THREE.Vector3().subVectors(P, c0));
+      }
+      if (p1.y < 0.25) p1.y = 0.25;
+      nav.glide = { p0, p1, c0, c1, t0: navNow() };
+      invalidate();
+    });
+    /** пробіл затиснуто — ліва кнопка зсуває камеру (будівельник тоді не ставить і не вибирає) */
+    const navBusy = () => nav.space;
 
     // довільна камера (для знімків): pos і target у координатах three
     function setCamera(pos, target) {
@@ -1000,9 +1444,289 @@
       controls.target.set(...target);
       controls.update();
     }
+    // поточна камера — щоб нова сцена (редактор перебудовує її після правок) стала там само
+    function getCamera() {
+      return { pos: camera.position.toArray(), target: controls.target.toArray() };
+    }
+    // прибрати сцену цілком: геометрія, матеріали, контекст WebGL, підписи — інакше після кількох перебудов
+    // браузер вичерпає контексти
+    function dispose() {
+      stop();
+      ro.disconnect();
+      container.removeEventListener('wheel', onWheel, { capture: true });
+      if (root.removeEventListener) { root.removeEventListener('keydown', onKeyDown); root.removeEventListener('keyup', onKeyUp); root.removeEventListener('blur', onBlur); }
+      controls.dispose();
+      scene.traverse((o) => {
+        if (o.geometry) o.geometry.dispose();
+        const m = o.material;
+        if (Array.isArray(m)) m.forEach((x) => x.dispose());
+        else if (m) m.dispose();
+      });
+      for (const m of Object.values(mats)) m.dispose();
+      for (const m of Object.values(toneMats)) m.dispose();
+      seamMat.dispose(); seamMatShield.dispose(); edgeMat.dispose();
+      renderer.dispose();
+      renderer.forceContextLoss();
+      renderer.domElement.remove();
+      labelLayer.remove();
+      tip.remove();
+    }
 
-    return { start, stop, setCut, setInterior, setFoundation, setTileColors, setLabels, setView, setCamera, LH, debug: { scene, structure, floors, roofGroups } };
+    // позначка вибраного в редакторі (блок стіни, приміщення й плитка, станція) — бірюзою поверх усього, щоб було
+    // видно, що саме вибрано, навіть під дахом. m: { walls: [{a,b,z0,z1}], tiles: [{p,z,strong}], boxes: [{p,z0,z1}], guides: [{a,b,z,kind}] }
+    const markGroup = new THREE.Group();
+    scene.add(markGroup);
+    function setMark(m) {
+      for (const o of [...markGroup.children]) { markGroup.remove(o); o.geometry.dispose(); o.material.dispose(); }
+      if (!m) return;
+      const tris = [], soft = [], lines = [];
+      const poly = (q, out) => { for (let i = 1; i < q.length - 1; i++) out.push(q[0], q[i], q[i + 1]); };
+      const loop = (q) => { for (let i = 0; i < q.length; i++) lines.push(q[i], q[(i + 1) % q.length]); };
+      for (const w of m.walls || []) {
+        const q = [v3(w.a.x, w.a.y, w.z0), v3(w.b.x, w.b.y, w.z0), v3(w.b.x, w.b.y, w.z1), v3(w.a.x, w.a.y, w.z1)];
+        poly(q, tris); loop(q);
+      }
+      for (const t of m.tiles || []) {
+        const q = t.p.map((p) => v3(p.x, p.y, t.z));
+        poly(q, t.strong ? tris : soft);
+        if (t.strong) loop(q);
+      }
+      for (const b of m.boxes || []) {
+        const lo = b.p.map((p) => v3(p.x, p.y, b.z0)), hi = b.p.map((p) => v3(p.x, p.y, b.z1));
+        poly(lo, tris); poly(hi, tris); loop(lo); loop(hi);
+        for (let i = 0; i < lo.length; i++) { const j = (i + 1) % lo.length; poly([lo[i], lo[j], hi[j], hi[i]], soft); lines.push(lo[i], hi[i]); }
+      }
+      const add = (pts, opacity) => {
+        if (!pts.length) return;
+        const me = new THREE.Mesh(new THREE.BufferGeometry().setFromPoints(pts), new THREE.MeshBasicMaterial({ color: 0x2dd4bf, transparent: true, opacity, side: THREE.DoubleSide, depthTest: false, depthWrite: false }));
+        me.renderOrder = 20;
+        markGroup.add(me);
+      };
+      add(soft, 0.22);
+      add(tris, 0.45);
+      if (lines.length) {
+        const ls = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(lines), new THREE.LineBasicMaterial({ color: 0x5eead4, transparent: true, opacity: 0.95, depthTest: false }));
+        ls.renderOrder = 21;
+        markGroup.add(ls);
+      }
+      // напрямні вирівнювання (станції): малинові смужки на підлозі (лінії WebGL — завжди в 1 px і губляться на піску) —
+      // суцільна «в лінію», штрихова — відступ від краю й рівний крок, з рисками на кінцях; поверх усього
+      const rib = [];
+      const strip = (a, b, z, w) => {
+        const dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy);
+        if (L < 1e-6) return;
+        const nx = (-dy / L) * w / 2, ny = (dx / L) * w / 2;
+        poly([v3(a.x - nx, a.y - ny, z), v3(b.x - nx, b.y - ny, z), v3(b.x + nx, b.y + ny, z), v3(a.x + nx, a.y + ny, z)], rib);
+      };
+      for (const g of m.guides || []) {
+        const dx = g.b.x - g.a.x, dy = g.b.y - g.a.y, L = Math.hypot(dx, dy);
+        if (L < 1e-6) continue;
+        const ux = dx / L, uy = dy / L;
+        if (g.kind === 'line') strip(g.a, g.b, g.z, 0.035);
+        else {
+          for (let t = 0; t < L; t += 0.22) strip({ x: g.a.x + ux * t, y: g.a.y + uy * t }, { x: g.a.x + ux * Math.min(L, t + 0.14), y: g.a.y + uy * Math.min(L, t + 0.14) }, g.z, 0.05);
+          for (const q of [g.a, g.b]) strip({ x: q.x + uy * 0.16, y: q.y - ux * 0.16 }, { x: q.x - uy * 0.16, y: q.y + ux * 0.16 }, g.z, 0.05);
+        }
+      }
+      if (rib.length) {
+        const me = new THREE.Mesh(new THREE.BufferGeometry().setFromPoints(rib), new THREE.MeshBasicMaterial({ color: 0xe11d74, side: THREE.DoubleSide, depthTest: false, depthWrite: false }));
+        me.renderOrder = 22;
+        markGroup.add(me);
+      }
+    }
+
+    // ---------- будівельник: перебудова, вибір під курсором, примара, підсвітка ----------
+    const own = (m) => Object.values(mats).includes(m) || [...stationMats.values()].includes(m) || Object.values(toneMats).includes(m) || m === seamMat || m === seamMatShield || m === edgeMat;
+    /** нова модель (після правки) — та сама сцена, камера, зріз; будова й станції — наново */
+    function update(M2) {
+      M = M2;
+      for (const g of [structure, floors, itemGroups.base, itemGroups.interior]) {
+        scene.remove(g);
+        g.traverse((o) => {
+          if (o.geometry) o.geometry.dispose();
+          if (o.material && !own(o.material)) o.material.dispose();
+        });
+      }
+      ({ structure, floors, itemGroups, labelPts, hoverables, roofGroups, floorGroups } = buildAll());
+      mountLabels();
+      setCut(state.cut, state.floor);
+      setInterior(state.interior);
+      setFoundation(state.found);
+    }
+
+    /**
+     * промінь по деталях: рамки → кандидати за відстанню → точні трикутники (PIECES.geom); враховує зріз (деталі над
+     * ним сховані, плити вище — цілком) і far; opaqueOnly — без прозорих (щит)
+     */
+    const triA = new THREE.Vector3(), triB = new THREE.Vector3(), triC = new THREE.Vector3(), hitP = new THREE.Vector3(), boxHit = new THREE.Vector3();
+    function rayPieces(ray, far = Infinity, opaqueOnly = false, firstAny = false) {
+      const cutY = (state.cut - CUT_EPS) * LH;
+      const cand = [];
+      for (const b of boxes) {
+        if (opaqueOnly && !b.opaque) continue;
+        if (b.lifted && state.cut < 98 && b.top > state.cut - CUT_EPS) continue; // плита над зрізом — схована цілком
+        if (b.box.min.y > cutY) continue;
+        const at = ray.intersectBox(b.box, boxHit);
+        if (!at) continue;
+        const d = at.distanceTo(ray.origin);
+        if (d < far) cand.push({ b, d });
+      }
+      cand.sort((u, w) => u.d - w.d);
+      let best = null;
+      for (const { b, d } of cand) {
+        if (best && d > best.dist) break;
+        const g = root.PIECES.geom(M.pieces[b.i]);
+        for (const f of g.faces) {
+          const t = f.tris;
+          for (let k = 0; k < t.length; k += 9) {
+            triA.copy(v3(t[k], t[k + 1], t[k + 2])); triB.copy(v3(t[k + 3], t[k + 4], t[k + 5])); triC.copy(v3(t[k + 6], t[k + 7], t[k + 8]));
+            const q = ray.intersectTriangle(triA, triB, triC, false, hitP);
+            if (!q || q.y > cutY + 1e-4) continue;
+            const dist = q.distanceTo(ray.origin);
+            if (dist >= far || (best && dist >= best.dist)) continue;
+            const n = new THREE.Vector3().subVectors(triC, triB).cross(new THREE.Vector3().subVectors(triA, triB)).normalize();
+            best = { i: b.i, dist, point: q.clone(), normal: n };
+            if (firstAny) return best;
+          }
+        }
+      }
+      return best;
+    }
+    const pickRay = new THREE.Raycaster();
+    const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const toPlan = (v) => ({ x: v.x, y: -v.z, z: v.y / LH });
+    /** що під курсором: деталь (id), станція (індекс у M.items) чи земля; точка й нормаль — у координатах плану; зріз враховано */
+    function pick(cx, cy) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pickRay.setFromCamera({ x: ((cx - rect.left) / rect.width) * 2 - 1, y: -((cy - rect.top) / rect.height) * 2 + 1 }, camera);
+      const cut = (state.cut - CUT_EPS) * LH, low = state.floor * LH - 0.01;
+      const targets = M.format === 2 ? [...visibleMeshes(itemGroups.base), ...visibleMeshes(itemGroups.interior)] : [...visibleMeshes(structure), ...visibleMeshes(floors), ...visibleMeshes(itemGroups.base), ...visibleMeshes(itemGroups.interior)];
+      const hits = pickRay.intersectObjects(targets, false).filter((h) => h.point.y <= cut + 1e-4 && h.point.y > low);
+      if (M.format === 2) {
+        const hp = rayPieces(pickRay.ray);
+        if (hp && (!hits[0] || hp.dist < hits[0].distance)) {
+          const n = hp.normal;
+          if (n.dot(pickRay.ray.direction) > 0) n.negate();
+          const gd = new THREE.Vector3();
+          const og = pickRay.ray.intersectPlane(groundPlane, gd);
+          if (!og || hp.dist <= pickRay.ray.origin.distanceTo(gd) + 1e-3)
+            return { piece: M.pieces[hp.i].id, item: null, ground: false, point: toPlan(hp.point), normal: { x: n.x, y: -n.z, z: n.y } };
+        }
+      }
+      const g = new THREE.Vector3();
+      const onGround = pickRay.ray.intersectPlane(groundPlane, g);
+      const h = hits[0];
+      if (h && (!onGround || h.distance <= pickRay.ray.origin.distanceTo(g) + 1e-3)) {
+        const ow = h.object.userData.owners;
+        const pi = ow && h.faceIndex != null ? ow[h.faceIndex] : -1;
+        const n = h.face ? h.face.normal.clone() : new THREE.Vector3(0, 1, 0);
+        if (n.dot(pickRay.ray.direction) > 0) n.negate(); // двобічні грані — нормаль до камери
+        const item = h.object.userData.item;
+        return { piece: pi >= 0 && M.pieces && M.pieces[pi] ? M.pieces[pi].id : null, item: item !== undefined ? item : null, ground: false, point: toPlan(h.point), normal: { x: n.x, y: -n.z, z: n.y } };
+      }
+      if (onGround) return { piece: null, item: null, ground: true, point: toPlan(g), normal: { x: 0, y: 0, z: 1 } };
+      return null;
+    }
+
+    const clearGroup = (grp) => { for (const o of [...grp.children]) { grp.remove(o); o.geometry.dispose(); o.material.dispose(); } };
+    /** трикутники й лінії деталей (у координатах three) */
+    function pieceMesh(ps) {
+      const tris = [], lines = [];
+      for (const p of ps) {
+        const g = root.PIECES.geom(p);
+        for (const f of g.faces) for (let k = 0; k < f.tris.length; k += 3) tris.push(v3(f.tris[k], f.tris[k + 1], f.tris[k + 2]));
+        for (let k = 0; k < g.lines.length; k += 3) lines.push(v3(g.lines[k], g.lines[k + 1], g.lines[k + 2]));
+      }
+      return { tris, lines };
+    }
+    const overlay = (grp, pts, color, opacity, depthTest, order) => {
+      if (!pts.length) return;
+      const me = new THREE.Mesh(new THREE.BufferGeometry().setFromPoints(pts), new THREE.MeshBasicMaterial({ color, transparent: true, opacity, side: THREE.DoubleSide, depthTest, depthWrite: false }));
+      me.renderOrder = order;
+      grp.add(me);
+    };
+    const overlayLines = (grp, pts, color, depthTest, order) => {
+      if (!pts.length) return;
+      const ls = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.95, depthTest }));
+      ls.renderOrder = order;
+      grp.add(ls);
+    };
+    const ghostGroup = new THREE.Group();
+    scene.add(ghostGroup);
+    /** примара деталей під курсором: зелена — можна поставити, червона — ні */
+    function setGhost(ps, ok = true) {
+      clearGroup(ghostGroup);
+      if (!ps || !ps.length) return;
+      const { tris, lines } = pieceMesh(ps);
+      overlay(ghostGroup, tris, ok ? 0x4ade80 : 0xef4444, 0.5, true, 12);
+      overlayLines(ghostGroup, lines, ok ? 0x16a34a : 0xb91c1c, true, 13);
+    }
+    const tintGroup = new THREE.Group();
+    scene.add(tintGroup);
+    /** забарвлення деталей групами (стабільність): [{ ids, color, alpha }]; null — прибрати */
+    function setTint(groups) {
+      clearGroup(tintGroup);
+      if (!groups) return;
+      const byId = new Map((M.pieces || []).map((p) => [p.id, p]));
+      groups.forEach((g, i) => {
+        const { tris } = pieceMesh(g.ids.map((id) => byId.get(id)).filter(Boolean));
+        overlay(tintGroup, tris, g.color, g.alpha, true, 10 + i * 0.01);
+      });
+    }
+    const hlGroup = new THREE.Group();
+    scene.add(hlGroup);
+    /** підсвітка: наведене (помаранчеве) і вибране (бірюзове, видно крізь стіни); плитки зони */
+    function setHighlight(o) {
+      clearGroup(hlGroup);
+      if (!o) return;
+      const byId = new Map((M.pieces || []).map((p) => [p.id, p]));
+      const of = (ids) => (ids || []).map((id) => byId.get(id)).filter(Boolean);
+      const hov = pieceMesh(of(o.hover)), sel = pieceMesh(of(o.sel));
+      overlay(hlGroup, hov.tris, 0xf0963a, 0.35, true, 14);
+      overlayLines(hlGroup, hov.lines, 0xf0963a, true, 15);
+      overlay(hlGroup, sel.tris, 0x2dd4bf, 0.42, false, 16);
+      overlayLines(hlGroup, sel.lines, 0x5eead4, false, 17);
+      const tp = [];
+      for (const t of o.tiles || []) { const q = t.p.map((p) => v3(p.x, p.y, t.z + 0.02)); for (let i = 1; i < q.length - 1; i++) tp.push(q[0], q[i], q[i + 1]); }
+      overlay(hlGroup, tp, 0x2dd4bf, 0.3, false, 16);
+    }
+
+    /** будівельник: точка плану під курсором на горизонтальній площині висоти z (перетягування вибраного) */
+    const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    function planeAt(cx, cy, z) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pickRay.setFromCamera({ x: ((cx - rect.left) / rect.width) * 2 - 1, y: -((cy - rect.top) / rect.height) * 2 + 1 }, camera);
+      dragPlane.constant = -z * LH;
+      const g = new THREE.Vector3();
+      return pickRay.ray.intersectPlane(dragPlane, g) ? toPlan(g) : null;
+    }
+    /**
+     * напрямки екрана на землі (у координатах плану, одиничні): right — праворуч, forward — «від себе» (угору екрана);
+     * forward — з осі «вгору» й погляду камери разом, тож і згори, і збоку він визначений
+     */
+    function screenAxes() {
+      camera.updateMatrixWorld();
+      const e = camera.matrixWorld.elements;
+      const unit = (x, y) => { const l = Math.hypot(x, y) || 1; return { x: x / l, y: y / l }; };
+      return { right: unit(e[0], -e[2]), forward: unit(e[4] - e[8], -(e[6] - e[10])) };
+    }
+
+    /** кнопки миші для камери: build — ліва зайнята будуванням (камера — права й середня), view — як завжди */
+    function setMouse(mode) {
+      nav.mouse = mode === 'build' ? 'build' : 'view';
+      applyButtons();
+    }
+
+    // усе, що змінює картинку, — з перемальовкою наступним кадром
+    const redraw = (fn) => (...a) => { const r = fn(...a); invalidate(); return r; };
+    return {
+      start, stop, dispose, pick, planeAt, screenAxes, setMouse, getCamera, invalidate, navBusy, setNav: redraw(setNav), getNav: () => nav.mode,
+      setCut: redraw(setCut), setInterior: redraw(setInterior), setFoundation: redraw(setFoundation), setTileColors: redraw(setTileColors),
+      setLabels: redraw(setLabels), setView: redraw(setView), setCamera: redraw(setCamera), setMark: redraw(setMark), update: redraw(update),
+      setGhost: redraw(setGhost), setHighlight: redraw(setHighlight), setTint: redraw(setTint),
+      canvas: renderer.domElement, LH, debug: { scene, camera, get structure() { return structure; }, get floors() { return floors; }, get roofGroups() { return roofGroups; } },
+    };
   }
 
-  root.VIEW3D = { create };
+  root.VIEW3D = { create, ITEM_COLORS };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -1,32 +1,48 @@
-import * as React from 'react'
-import { cva, type VariantProps } from 'class-variance-authority'
-import { cn } from '@/lib/utils'
+/**
+ * Кнопка сайту — sn-button з @snotax/ui. Назви варіантів і розмірів — ті самі, що були (default/secondary/ghost/
+ * destructive/outline; default/sm/icon/xs), тож сторінки їх не міняли. Іконки lucide — дітьми, як і раніше.
+ */
+import type { CSSProperties, MouseEventHandler, ReactNode } from 'react'
+import { SnButton } from '@/components/sn'
 
-const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-spice disabled:pointer-events-none disabled:opacity-50',
-  {
-    variants: {
-      variant: {
-        default: 'bg-spice font-semibold text-on-spice hover:bg-spice/90',
-        secondary: 'border border-line bg-panel2 text-ink hover:bg-line/60',
-        ghost: 'text-muted hover:bg-panel2 hover:text-ink',
-        destructive: 'border border-bad/30 bg-bad/15 text-bad hover:bg-bad/25',
-        outline: 'border border-line text-ink hover:bg-panel2',
-      },
-      size: {
-        default: 'h-9 px-3.5',
-        sm: 'h-8 px-2.5 text-xs',
-        icon: 'h-8 w-8',
-        xs: 'h-6 px-2 text-[11px]',
-      },
-    },
-    defaultVariants: { variant: 'default', size: 'default' },
-  },
-)
+const VARIANT = { default: 'primary', secondary: 'secondary', ghost: 'ghost', destructive: 'destructive', outline: 'outline', link: 'link' } as const
+const SIZE = { default: 'lg', sm: 'default', icon: 'icon', xs: 'xs', lg: 'lg' } as const
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {}
+export interface ButtonProps {
+  variant?: keyof typeof VARIANT | null
+  size?: keyof typeof SIZE | null
+  type?: 'button' | 'submit' | 'reset'
+  disabled?: boolean
+  loading?: boolean
+  href?: string
+  className?: string
+  style?: CSSProperties
+  title?: string
+  children?: ReactNode
+  onClick?: MouseEventHandler<HTMLElement>
+  'aria-label'?: string
+  'aria-pressed'?: boolean
+  'data-tip'?: string
+}
 
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({ className, variant, size, type = 'button', ...props }, ref) => (
-  <button type={type} className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
-))
-Button.displayName = 'Button'
+export function Button({ variant, size, type = 'button', disabled, loading, href, className, style, title, children, onClick, ...aria }: ButtonProps) {
+  return (
+    <SnButton
+      variant={VARIANT[variant ?? 'default']}
+      size={SIZE[size ?? 'default']}
+      type={type}
+      disabled={!!disabled}
+      loading={!!loading}
+      href={href}
+      className={className}
+      style={style}
+      title={title}
+      onClick={disabled || loading ? undefined : onClick}
+      accessibilityLabel={aria['aria-label']}
+      {...(aria['aria-pressed'] != null ? { 'aria-pressed': String(aria['aria-pressed']) } : {})}
+      {...(aria['data-tip'] ? { 'data-tip': aria['data-tip'] } : {})}
+    >
+      {children}
+    </SnButton>
+  )
+}

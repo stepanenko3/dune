@@ -1,0 +1,5 @@
+[{ "Type": "DataTable", "Name": "DT_DuneBuildableUiSubcategory", "Rows": {
+  "Foundations": { "m_Buildables": [{ "Name": "Foundation" }, { "Name": "Pillar" }, { "Name": "Pillar_Corner" }] },
+  "Walls": { "m_Buildables": [{ "Name": "Wall" }] },
+  "Fabricators": { "m_Buildables": [{ "Name": "Fabricator" }] }
+} }]

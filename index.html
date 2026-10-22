@@ -4,13 +4,26 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <!-- «Додати на головний екран»: без маніфесту нагадування про бурю на iPhone не працюють -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Sandwalkers" />
+    <meta name="theme-color" content="#ece9e3" />
     <title>Sandwalkers · Dune: Awakening</title>
+    <!-- загальний опис; на робочому сайті сервер підставляє свій для бази, роадмапу, людини, гільдії (server/lib/og.mjs) -->
+    <meta name="description" content="Гільдійський помічник для Dune: Awakening: бази в 3D, роадмапи, мапа з ресурсами, довідник, калькулятор і вміння." />
+    <meta property="og:site_name" content="Sandwalkers" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Sandwalkers · Dune: Awakening" />
+    <meta property="og:image" content="/icons/icon-512.png" />
+    <meta name="twitter:card" content="summary" />
     <script>
       // тема до першого кадру, щоб не блимало: налаштування лежать одним JSON під ключем prefs
       try {
         var t = (JSON.parse(localStorage.getItem('prefs') || '{}').theme) || 'system'
         var dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
         document.documentElement.classList.toggle('dark', dark)
+        document.querySelector('meta[name=theme-color]').content = dark ? '#131211' : '#ece9e3'
       } catch (e) {}
     </script>
   </head>

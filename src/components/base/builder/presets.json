@@ -1,0 +1,462 @@
+{
+ "groups": [
+  [
+   "fab",
+   "Фабрикатори"
+  ],
+  [
+   "refine",
+   "Переробники"
+  ],
+  [
+   "store",
+   "Сховища"
+  ],
+  [
+   "water",
+   "Вода"
+  ],
+  [
+   "power",
+   "Енергія"
+  ],
+  [
+   "misc",
+   "Різне"
+  ],
+  [
+   "vehicle",
+   "Техніка (місце стоянки)"
+  ]
+ ],
+ "items": [
+  {
+   "type": "Fabricator_Placeable",
+   "name": "Фабрикатор",
+   "kind": "craft",
+   "group": "fab",
+   "w": 1.4,
+   "d": 1.6,
+   "h": 1.6,
+   "recipe": "fabricator"
+  },
+  {
+   "type": "WearablesFabricator_Placeable",
+   "name": "Фабрикатор одягу",
+   "kind": "craft",
+   "group": "fab",
+   "w": 1.4,
+   "d": 1.6,
+   "h": 1.6
+  },
+  {
+   "type": "AdvancedWearablesFabricator_Placeable",
+   "name": "Удосконалений фабрикатор одягу",
+   "kind": "craft",
+   "group": "fab",
+   "w": 1.6,
+   "d": 1.8,
+   "h": 1.8
+  },
+  {
+   "type": "SurvivalFabricator_Placeable",
+   "name": "Фабрикатор виживання",
+   "kind": "craft",
+   "group": "fab",
+   "w": 1.4,
+   "d": 1.6,
+   "h": 1.6
+  },
+  {
+   "type": "Advanced_SurvivalFabricator_Placeable",
+   "name": "Удосконалений фабрикатор виживання",
+   "kind": "craft",
+   "group": "fab",
+   "w": 1.6,
+   "d": 1.8,
+   "h": 1.8
+  },
+  {
+   "type": "WeaponsFabricator_Placeable",
+   "name": "Фабрикатор зброї",
+   "kind": "craft",
+   "group": "fab",
+   "w": 1.4,
+   "d": 1.6,
+   "h": 1.6
+  },
+  {
+   "type": "AdvancedWeaponsFabricator_Placeable",
+   "name": "Удосконалений фабрикатор зброї",
+   "kind": "craft",
+   "group": "fab",
+   "w": 1.6,
+   "d": 1.8,
+   "h": 1.8
+  },
+  {
+   "type": "VehiclesFabricator_Placeable",
+   "name": "Фабрикатор техніки",
+   "kind": "craft",
+   "group": "fab",
+   "w": 3,
+   "d": 2.4,
+   "h": 2
+  },
+  {
+   "type": "Advanced_VehiclesFabricator_Placeable",
+   "name": "Удосконалений фабрикатор техніки",
+   "kind": "craft",
+   "group": "fab",
+   "w": 3.4,
+   "d": 2.8,
+   "h": 2.4
+  },
+  {
+   "type": "SmallOreRefinery_Placeable",
+   "name": "Малий переробник руди",
+   "kind": "refine",
+   "group": "refine",
+   "w": 1.2,
+   "d": 1.2,
+   "h": 1.6
+  },
+  {
+   "type": "MediumOreRefinery_Placeable",
+   "name": "Середній переробник руди",
+   "kind": "refine",
+   "group": "refine",
+   "w": 1.5,
+   "d": 1.5,
+   "h": 2
+  },
+  {
+   "type": "LargeOreRefinery_Placeable",
+   "name": "Великий переробник руди",
+   "kind": "refine",
+   "group": "refine",
+   "w": 2.9,
+   "d": 1.9,
+   "h": 2
+  },
+  {
+   "type": "SmallChemicalRefinery_Placeable",
+   "name": "Малий хімічний переробник",
+   "kind": "refine",
+   "group": "refine",
+   "w": 1.2,
+   "d": 1.2,
+   "h": 1.8
+  },
+  {
+   "type": "MediumChemicalRefinery_Placeable",
+   "name": "Середній хімічний переробник",
+   "kind": "refine",
+   "group": "refine",
+   "w": 1.5,
+   "d": 1.4,
+   "h": 2.2
+  },
+  {
+   "type": "SpiceRefinery_Placeable",
+   "name": "Переробник спайсу",
+   "kind": "refine",
+   "group": "refine",
+   "w": 1.5,
+   "d": 1.5,
+   "h": 2.5
+  },
+  {
+   "type": "MediumSpiceRefinery_Placeable",
+   "name": "Середній переробник спайсу",
+   "kind": "refine",
+   "group": "refine",
+   "w": 1.9,
+   "d": 1.9,
+   "h": 3.5
+  },
+  {
+   "type": "LargeSpiceRefinery_Placeable",
+   "name": "Великий переробник спайсу",
+   "kind": "refine",
+   "group": "refine",
+   "w": 1.9,
+   "d": 2.9,
+   "h": 5
+  },
+  {
+   "type": "SpiceSilo_Placeable",
+   "name": "Малий контейнер для зберігання",
+   "kind": "storage",
+   "group": "store",
+   "w": 0.6,
+   "d": 0.6,
+   "h": 0.6
+  },
+  {
+   "type": "GenericContainer_Placeable",
+   "name": "Скриня",
+   "kind": "storage",
+   "group": "store",
+   "w": 0.9,
+   "d": 0.6,
+   "h": 0.6
+  },
+  {
+   "type": "StorageContainer_Placeable",
+   "name": "Контейнер для зберігання",
+   "kind": "storage",
+   "group": "store",
+   "w": 0.9,
+   "d": 0.9,
+   "h": 2,
+   "recipe": "storage"
+  },
+  {
+   "type": "MediumStorageContainer_Placeable",
+   "name": "Середній контейнер для зберігання",
+   "kind": "storage",
+   "group": "store",
+   "w": 1.2,
+   "d": 1.2,
+   "h": 2
+  },
+  {
+   "type": "Windtrap_Placeable",
+   "name": "Вітропастка",
+   "kind": "windtrap",
+   "group": "water",
+   "w": 1,
+   "d": 1,
+   "h": 2.2
+  },
+  {
+   "type": "LargeWindtrap_Placeable",
+   "name": "Велика вітропастка",
+   "kind": "windtrap",
+   "group": "water",
+   "w": 1.5,
+   "d": 1.5,
+   "h": 2.6
+  },
+  {
+   "type": "BloodWaterExtractor_Placeable",
+   "name": "Очищувач крові",
+   "kind": "water",
+   "group": "water",
+   "w": 1,
+   "d": 1,
+   "h": 1.4
+  },
+  {
+   "type": "BloodWaterExtractionAdvanced_Placeable",
+   "name": "Покращений очищувач крові",
+   "kind": "water",
+   "group": "water",
+   "w": 1.2,
+   "d": 1.2,
+   "h": 1.6
+  },
+  {
+   "type": "Fremen_Deathstill_Placeable",
+   "name": "Фрименський дистилятор смерті",
+   "kind": "water",
+   "group": "water",
+   "w": 1.2,
+   "d": 1.2,
+   "h": 2
+  },
+  {
+   "type": "Deathstill_Placeable",
+   "name": "Удосконалений фрименський дистилятор смерті",
+   "kind": "water",
+   "group": "water",
+   "w": 1.5,
+   "d": 1.5,
+   "h": 2.4
+  },
+  {
+   "type": "WaterCistern_Placeable",
+   "name": "Цистерна для води",
+   "kind": "water",
+   "group": "water",
+   "w": 1.5,
+   "d": 1.5,
+   "h": 2.5
+  },
+  {
+   "type": "MediumWaterCistern_Placeable",
+   "name": "Середня цистерна для води",
+   "kind": "water",
+   "group": "water",
+   "w": 2,
+   "d": 2,
+   "h": 3
+  },
+  {
+   "type": "LargeWaterCistern_Placeable",
+   "name": "Велика цистерна для води",
+   "kind": "water",
+   "group": "water",
+   "w": 2.5,
+   "d": 2.5,
+   "h": 3.5
+  },
+  {
+   "type": "Generator_Placeable",
+   "name": "Паливний генератор",
+   "kind": "power",
+   "group": "power",
+   "w": 1.2,
+   "d": 1.2,
+   "h": 1.8,
+   "recipe": "generator"
+  },
+  {
+   "type": "SpiceGenerator_Placeable",
+   "name": "Спайсовий генератор",
+   "kind": "power",
+   "group": "power",
+   "w": 2,
+   "d": 2,
+   "h": 2.5
+  },
+  {
+   "type": "WindTurbineDirectional_Placeable",
+   "name": "Спрямований вітряк",
+   "kind": "turbine",
+   "group": "power",
+   "w": 0.8,
+   "d": 0.8,
+   "h": 3
+  },
+  {
+   "type": "WindTurbineOmnidirectional_Placeable",
+   "name": "Всенапрямний вітряк",
+   "kind": "turbine",
+   "group": "power",
+   "w": 0.8,
+   "d": 0.8,
+   "h": 3
+  },
+  {
+   "type": "Totem_Small_Placeable",
+   "name": "Консоль суб-фіфу",
+   "kind": "console",
+   "group": "misc",
+   "w": 1,
+   "d": 1,
+   "h": 1.4
+  },
+  {
+   "type": "Totem_Placeable",
+   "name": "Розширена консоль суб-фіфу",
+   "kind": "console",
+   "group": "misc",
+   "w": 1,
+   "d": 1,
+   "h": 1.6,
+   "recipe": "console"
+  },
+  {
+   "type": "RepairStation_Placeable",
+   "name": "Ремонтна станція",
+   "kind": "craft",
+   "group": "misc",
+   "w": 2,
+   "d": 1.2,
+   "h": 1.2,
+   "recipe": "repair"
+  },
+  {
+   "type": "Recycler_Placeable",
+   "name": "Ресайклер",
+   "kind": "craft",
+   "group": "misc",
+   "w": 1.6,
+   "d": 0.9,
+   "h": 1.4
+  },
+  {
+   "type": "ModdingStation_Placeable",
+   "name": "Станція аугментації",
+   "kind": "craft",
+   "group": "misc",
+   "w": 1.4,
+   "d": 1,
+   "h": 1.4
+  },
+  {
+   "type": "Sandbike",
+   "name": "Піскоцикл",
+   "kind": "vehicle",
+   "group": "vehicle",
+   "w": 2,
+   "d": 1,
+   "h": 1.1
+  },
+  {
+   "type": "TreadWheel",
+   "name": "Мотодицикл",
+   "kind": "vehicle",
+   "group": "vehicle",
+   "w": 2.2,
+   "d": 1,
+   "h": 1.2
+  },
+  {
+   "type": "Buggy",
+   "name": "Багі",
+   "kind": "vehicle",
+   "group": "vehicle",
+   "w": 3,
+   "d": 2,
+   "h": 1.4
+  },
+  {
+   "type": "Sandcrawler",
+   "name": "Піщаний краулер",
+   "kind": "vehicle",
+   "group": "vehicle",
+   "w": 5.5,
+   "d": 2.6,
+   "h": 2.2
+  },
+  {
+   "type": "OrnithopterLight",
+   "name": "Орнітоптер-розвідник",
+   "kind": "air",
+   "group": "vehicle",
+   "w": 3.6,
+   "d": 2.4,
+   "h": 1.5
+  },
+  {
+   "type": "OrnithopterMedium",
+   "name": "Штурмовий орнітоптер",
+   "kind": "air",
+   "group": "vehicle",
+   "w": 4,
+   "d": 2.7,
+   "h": 1.8
+  },
+  {
+   "type": "OrnithopterTransport",
+   "name": "Транспортний орнітоптер",
+   "kind": "air",
+   "group": "vehicle",
+   "w": 9,
+   "d": 4,
+   "h": 2.2
+  },
+  {
+   "type": "ContainerVehicle",
+   "name": "Вантажний контейнер грузового",
+   "kind": "vehicle",
+   "group": "vehicle",
+   "w": 4.5,
+   "d": 2.5,
+   "h": 2.5
+  }
+ ]
+}

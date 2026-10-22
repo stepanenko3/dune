@@ -4,6 +4,7 @@
 import type { ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { useStore } from '@/store'
+import { t } from '@/lib/i18n'
 
 export const SHEET_BASE =
   'sheet fixed inset-x-0 bottom-0 z-[960] h-[78dvh] w-full rounded-t-2xl border-t border-line bg-panel shadow-2xl transition-transform duration-200'
@@ -20,7 +21,7 @@ export function SheetHead({ title, className, aside }: { title: string; classNam
       {aside}
       <button
         onClick={() => useStore.getState().setSheet(null)}
-        aria-label="Закрити"
+        aria-label={t('Закрити')}
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-line text-muted transition-colors hover:text-ink"
       >
         <X size={15} />
