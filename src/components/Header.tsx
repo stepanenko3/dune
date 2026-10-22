@@ -3,7 +3,7 @@
  * z-[900]: вище за панелі Leaflet (до 800).
  */
 import { useSyncExternalStore } from 'react'
-import { BookOpen, Calculator, Castle, Map as MapIcon, Monitor, Moon, MoreHorizontal, Sparkles, Sun, TrendingUp } from 'lucide-react'
+import { BookOpen, Calculator, CalendarDays, Castle, Map as MapIcon, Monitor, Moon, MoreHorizontal, Sparkles, Sun, TrendingUp } from 'lucide-react'
 import { pathOf, useStore, type View } from '@/store'
 import { useBusyStore } from '@/lib/busy'
 import { DuneLoader } from '@/components/ui/dune-loader'
@@ -23,6 +23,7 @@ const NAV: { id: View; label: string; icon: typeof Castle; tip: string }[] = [
   // калькулятор і вміння — сторінки збереженого (розрахунки, білди), звідти — до самого інструмента
   { id: 'calcs', label: t('Калькулятор'), icon: Calculator, tip: t('Скільки сировини, крафтів, води й часу на будь-який набір предметів і будівель') },
   { id: 'builds', label: t('Уміння'), icon: Sparkles, tip: t('Планувальник умінь: п’ять шкіл, очки, збірка — посиланням') },
+  { id: 'events', label: t('Події'), icon: CalendarDays, tip: t('Події спільноти: бої, турніри, перегони й збори — з часом, призами й реєстрацією') },
 ]
 
 /**

@@ -14,11 +14,11 @@ import { fail, fill, newId } from './util.mjs'
  */
 /** ліміти за замовчуванням: на людину й на гільдію (змінюються в «Налаштуваннях сайту») */
 export const DEFAULT_LIMITS = {
-  user: { base: 10, roadmap: 10, build: 30, calc: 30, marker: 100, place: 50 },
-  guild: { base: 30, roadmap: 30, build: 100, calc: 100, marker: 300, place: 200 },
+  user: { base: 10, roadmap: 10, build: 30, calc: 30, marker: 100, place: 50, event: 20 },
+  guild: { base: 30, roadmap: 30, build: 100, calc: 100, marker: 300, place: 200, event: 60 },
 }
 
-export function createContent({ items, guilds, auth, bases, roadmaps, builds, calcs, markers, places }) {
+export function createContent({ items, guilds, auth, bases, roadmaps, builds, calcs, markers, places, events }) {
   const H = {
     base: {
       meta: (doc, t = fill) => ({ title: doc.ui?.name || t('База'), summary: baseSummary(doc, t).lead || '' }),
@@ -59,6 +59,13 @@ export function createContent({ items, guilds, auth, bases, roadmaps, builds, ca
       create: async (doc) => (await places.add(doc)).id,
       purge: (id) => places.remove(id),
     },
+    event: {
+      meta: (doc) => ({ title: doc.title, summary: doc.about?.replace(/\s+/g, ' ').slice(0, 160) || '' }),
+      read: async (id) => { const e = await events.get(id); if (!e) return null; const { id: _, created, updated, ...doc } = e; return doc },
+      create: async (doc) => (await events.create(doc)).id,
+      // разом із командами, гравцями й глядачами
+      purge: (id) => events.remove(id),
+    },
   }
 
   /** власник нової речі чи передачі; o — { kind, id } із запиту (порожньо — сам) */
@@ -90,7 +97,7 @@ export function createContent({ items, guilds, auth, bases, roadmaps, builds, ca
    * Ліміт кількості речей одного виду на людину чи гільдію (налаштування сайту «limits»; 0 — без обмежень). Рахується
    * все, що має власник, разом із базами в кошику. Адміністрація й сам сайт — без лімітів.
    */
-  const LIMIT_WHAT = (t) => ({ base: t('бази'), roadmap: t('роадмапи'), build: t('білди'), calc: t('розрахунки'), marker: t('позначки на мапі'), place: t('записи ресурсів') })
+  const LIMIT_WHAT = (t) => ({ base: t('бази'), roadmap: t('роадмапи'), build: t('білди'), calc: t('розрахунки'), marker: t('позначки на мапі'), place: t('записи ресурсів'), event: t('події') })
   async function checkLimit(req, kind, o) {
     if (!o || o.kind === 'site' || req.ctx?.superuser || req.user?.role === 'admin') return
     const limits = await auth.settings.get('limits', null)

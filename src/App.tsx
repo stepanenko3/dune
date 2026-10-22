@@ -31,6 +31,7 @@ const TITLE: Partial<Record<string, () => string>> = {
   bases: () => t('Бази'), roadmap: () => t('Роадмапи'), map: () => t('Мапа'), catalog: () => t('Довідник'), calculator: () => t('Розрахунок'),
   skills: () => t('Планувальник'), builds: () => t('Уміння'), calcs: () => t('Калькулятор'), library: () => t('Бібліотека'), login: () => t('Вхід'), account: () => t('Налаштування профілю'), guilds: () => t('Гільдії'),
   guild: () => t('Гільдія'), invite: () => t('Запрошення'), admin: () => t('Панель керування'), data: () => t('Оновлення даних'), notfound: () => t('Такої сторінки нема'),
+  events: () => t('Події'),
 }
 
 // панель керування — рідко й не всім: окремим шматком
@@ -42,6 +43,8 @@ const Catalog = lazy(() => import('@/pages/Catalog'))
 const CalcPage = lazy(() => import('@/pages/CalcPage'))
 const SkillsPage = lazy(() => import('@/pages/SkillsPage'))
 const DataUpdates = lazy(() => import('@/pages/DataUpdates'))
+// події: список, сторінка й редактор (з мапою для точок — Leaflet своїм шматком)
+const Events = lazy(() => import('@/pages/Events'))
 // сторінка бази — рушій баз, three.js і редактор: найважче на сайті, тож теж окремо
 const loadBasePage = () => import('@/pages/BasePage')
 const BasePage = lazy(() => loadBasePage().then((m) => ({ default: m.BasePage })))
@@ -101,6 +104,10 @@ function Page({ r }: { r: Route }) {
           <Suspense fallback={<Fallback label={t('Завантаження…')} title={t('Оновлення даних')} />}>
             <DataUpdates />
           </Suspense>
+        ) : view === 'events' ? (
+          <Suspense fallback={<Fallback label={t('Завантаження подій…')} title={param ? undefined : t('Події спільноти')} />}>
+            <Events id={param} edit={r.sub === 'edit'} />
+          </Suspense>
         ) : view === 'roadmap' ? (
           param ? <Roadmap key={param} id={param} /> : <RoadmapList />
         ) : view === 'library' ? (
@@ -151,7 +158,8 @@ export default function App() {
   // перехід на іншу сторінку: попередня лишається на екрані, поки нова (поруч, невидима) не завантажиться — без порожнього
   // екрана й індикатора на всю сторінку; вкладки (sub) — та сама сторінка, тож міняються одразу
   // панель керування — одна сторінка (розділи й записи міняє сама, з бічним меню на місці), тож переходи в ній — не нова сторінка
-  const key = view === 'admin' ? 'admin' : `${view}|${base ?? ''}|${param ?? ''}|${edit ? 1 : 0}`
+  // редагування події — своя сторінка (sub «edit»), а не вкладка тієї самої
+  const key = view === 'admin' ? 'admin' : `${view}|${base ?? ''}|${param ?? ''}|${edit || (view === 'events' && sub === 'edit') ? 1 : 0}`
   const route: Route & { key: string } = { view, base, param, edit, sub, key }
   const [{ slots, front }, setSlots] = useState<{ slots: [(Route & { key: string }) | null, (Route & { key: string }) | null]; front: 0 | 1 }>(() => ({ slots: [route, null], front: 0 }))
   const at = slots.findIndex((x) => x?.key === key)

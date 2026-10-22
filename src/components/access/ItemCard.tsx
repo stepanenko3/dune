@@ -5,7 +5,7 @@
  */
 import { useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { Calculator, Castle, Copy, Inbox, MapPin, RotateCcw, Sparkles, Star, Trash2, TrendingUp } from 'lucide-react'
+import { Calculator, CalendarDays, Castle, Copy, Inbox, MapPin, RotateCcw, Sparkles, Star, Trash2, TrendingUp } from 'lucide-react'
 import { toast } from 'sonner'
 import { hrefOf, KIND_LABEL, type Item } from '@/lib/items'
 import { purgeBase, removeBase } from '@/lib/bases'
@@ -23,13 +23,14 @@ import { RoadmapProgress } from '@/pages/RoadmapList'
 import { ConfirmDialog } from '@/pages/Account'
 import { AccessBadge, OwnerLink } from './Access'
 
-const ICON = { base: Castle, roadmap: TrendingUp, build: Sparkles, calc: Calculator, marker: MapPin, place: MapPin }
+const ICON = { base: Castle, roadmap: TrendingUp, build: Sparkles, calc: Calculator, marker: MapPin, place: MapPin, event: CalendarDays }
 
 /** відкрити річ: бази й роадмапи — розділом застосунку, решта — адресою */
 export function openItem(it: Pick<Item, 'kind' | 'id'>) {
   const setView = useStore.getState().setView
   if (it.kind === 'base') setView('bases', { base: it.id })
   else if (it.kind === 'roadmap') setView('roadmap', { param: it.id })
+  else if (it.kind === 'event') setView('events', { param: it.id })
   else {
     const href = hrefOf(it)
     const [path, search] = href.split('?')
@@ -68,6 +69,8 @@ function KindHead({ it }: { it: Item }) {
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-spice/15 text-spice"><TI size={22} /></span>
         <span className="min-w-0 flex-1 truncate font-display text-[12px] font-semibold uppercase tracking-wide text-muted">{top ? name(top[0]) : KIND_LABEL[it.kind][0]}</span>
         {about && <span className="shrink-0 font-mono text-[13px] font-semibold text-ink">{plural(about.total, [t('очко'), t('очки'), t('очок')])}</span>}
+        {/* подія — коли (за часом того, хто дивиться) */}
+        {it.kind === 'event' && it.when && <span className="shrink-0 text-[13px] font-semibold text-ink">{new Date(it.when.starts).toLocaleString(locale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>}
       </div>
       {schools.length > 1 && (
         <div className="flex flex-wrap gap-1.5">

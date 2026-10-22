@@ -6,6 +6,7 @@
 import { cleanBase } from '../lib/bases.mjs'
 import { cleanRoadmap } from '../lib/roadmap.mjs'
 import { cleanBuild, cleanCalc, cleanMarker } from '../lib/docs.mjs'
+import { cleanEvent, EVENT_TYPE_L, EVENT_TYPES, TEAM_STATUS } from '../lib/events.mjs'
 import { GUILD_ROLES } from '../lib/guilds.mjs'
 import { KINDS, normVis, VIS } from '../lib/items.mjs'
 import { GAME, LANGS } from '../lib/gamedata.mjs'
@@ -15,7 +16,8 @@ import { AUDIT_OPTIONS, REVISION_ACTIONS, REVISION_TONES, STATUS_OPTIONS, STATUS
 
 const opts = (list, labels = {}) => list.map((v) => ({ value: v, label: labels[v] ?? v }))
 const GROLE_L = { leader: 'Лідер', officer: 'Офіцер', member: 'Учасник', recruit: 'Новобранець' }
-const KIND_L = { base: 'База', roadmap: 'Роадмап', build: 'Білд', calc: 'Розрахунок', marker: 'Позначка', place: 'Ресурс' }
+const KIND_L = { base: 'База', roadmap: 'Роадмап', build: 'Білд', calc: 'Розрахунок', marker: 'Позначка', place: 'Ресурс', event: 'Подія' }
+const TEAM_STATUS_L = { pending: 'Чекає рішення', confirmed: 'Бере участь', reserve: 'У резерві', rejected: 'Відхилено' }
 const VIS_L = { private: 'Особисте', guild: 'Гільдійське', link: 'За посиланням', public: 'Публічне' }
 const OWNER_L = { user: 'Людина', guild: 'Гільдія', site: 'Сайт' }
 const TONE_L = { info: 'Інформація', success: 'Успіх', warning: 'Увага', critical: 'Тривога' }
@@ -30,7 +32,7 @@ const created = { key: 'created', label: 'Створено', type: 'datetime', r
 const updated = { key: 'updated', label: 'Змінено', type: 'datetime', readonly: true, sort: true }
 
 export function buildResources(d) {
-  const { db, auth, guilds, items, content, bases, roadmaps, builds, calcs, markers, places, game, i18n, announcements, catalog, skills, removeUser, deleteGuild, mapData, roles, revisions, cron } = d
+  const { db, auth, guilds, items, content, bases, roadmaps, builds, calcs, markers, places, events, game, i18n, announcements, catalog, skills, removeUser, deleteGuild, mapData, roles, revisions, cron } = d
   const now = () => Date.now()
 
   /** «людина / гільдія» для колонки власника */
@@ -585,6 +587,34 @@ export function buildResources(d) {
       clean: (doc) => { if (!doc || typeof doc !== 'object' || Array.isArray(doc)) throw fail('порожній запис'); return doc },
       write: async (id, doc) => { const cur = await places.get(id); if (!cur) throw fail('немає такого запису', 404); await db.run('UPDATE places SET doc = ?, updated = ? WHERE id = ?', JSON.stringify(doc), now(), id) },
     }),
+    docResource({
+      name: 'events', kind: 'event', table: 'events', label: 'Події', one: 'Подія', icon: 'calendar-days',
+      about: 'Події спільноти: бої, турніри, перегони, збори. Документ — як із редактора події; команди — у вкладці «Команди».',
+      extra: [
+        { key: 'type', label: 'Вид', type: 'select', options: opts(EVENT_TYPES, EVENT_TYPE_L), sql: 't.type', readonly: true, filter: true },
+        { key: 'starts', label: 'Початок', type: 'datetime', sql: 't.starts', readonly: true, sort: true, filter: true },
+        { key: 'teams_n', label: 'Команд', type: 'int', readonly: true, form: false, sql: '(SELECT COUNT(*) FROM event_teams et WHERE et.event_id = t.id)', sort: true },
+      ],
+      relations: [{ resource: 'event-teams', field: 'event_id', label: 'Команди' }],
+      // з панелі можна правити й давню подію (на сайті початок — не раніше як рік тому)
+      clean: (doc) => cleanEvent(doc, { maps: mapData, now: Number.isFinite(doc?.starts) ? Math.min(Date.now(), doc.starts) : Date.now() }),
+      write: docPut(events),
+    }),
+    {
+      name: 'event-teams', label: 'Команди подій', one: 'Команда', group: 'Вміст', icon: 'users', table: 'event_teams', key: 'id', title: 'name', create: false, sort: 'created DESC',
+      fields: [
+        { key: 'id', label: 'ID', type: 'text', readonly: true, mono: true, hidden: true },
+        { key: 'event_id', label: 'Подія', type: 'relation', resource: 'events', filter: true, readonly: true },
+        { key: 'name', label: 'Назва', type: 'text', search: true, sort: true, required: true, max: 40 },
+        { key: 'captain', label: 'Капітан', type: 'relation', resource: 'users', filter: true, readonly: true },
+        { key: 'status', label: 'Статус', type: 'select', options: opts(TEAM_STATUS, TEAM_STATUS_L), filter: true, sort: true, tones: { pending: 'info', confirmed: 'success', reserve: 'warning', rejected: 'neutral' } },
+        { key: 'members', label: 'Гравці (JSON)', type: 'json', readonly: true, list: false },
+        { key: 'note', label: 'Примітка', type: 'textarea', list: false, max: 300 },
+        { ...created }, updated,
+      ],
+      // гравців із сайту — разом із командою (інакше вони «вже в команді» події, якої нема)
+      hooks: { remove: (id) => events.removeTeam(id) },
+    },
     {
       name: 'base-history', label: 'Версії баз', one: 'Версія бази', group: 'Вміст', icon: 'history', table: 'base_history', key: 'hid', create: false, sort: 'hid DESC',
       fields: [

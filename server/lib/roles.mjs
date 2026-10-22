@@ -16,7 +16,7 @@ const MOD = [
   'users.view', 'users.ban', 'users.unban', 'sessions.view',
   'guilds.view', 'members.view', 'invites.view', 'requests.view',
   'items.view', 'items.hide', 'items.unhide', 'items.feature', 'items.unfeature',
-  'bases.view', 'roadmaps.view', 'builds.view', 'calcs.view', 'markers.view', 'places.view', 'base-history.view', 'roadmap-history.view', 'stars.view',
+  'bases.view', 'roadmaps.view', 'builds.view', 'calcs.view', 'markers.view', 'places.view', 'events.view', 'event-teams.view', 'base-history.view', 'roadmap-history.view', 'stars.view',
   'game-items.view', 'game-placeables.view', 'game-recipes.view', 'game-buildables.view', 'game-skills.view', 'game-texts.view',
   'announcements.*', 'audit.view', 'revisions.view', 'cron-jobs.view', 'cron-runs.view',
 ]

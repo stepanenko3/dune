@@ -42,7 +42,7 @@ let seq = 0
 const routeKey = () => { const s = useStore.getState(); return `${s.view}|${s.base ?? ''}|${s.param ?? ''}` }
 /** сторінки, чий шлях залежить від завантаженого (назва, вкладка, де лежить річ): без їхнього слова шляху не показуємо */
 const needsPage = (v: View, base: string | null, param: string | null) =>
-  (v === 'bases' && !!base) || (v === 'roadmap' && !!param) || v === 'skills' || v === 'calculator' || v === 'user' || v === 'guild'
+  (v === 'bases' && !!base) || (v === 'roadmap' && !!param) || (v === 'events' && !!param) || v === 'skills' || v === 'calculator' || v === 'user' || v === 'guild'
 /** поточна сторінка вже знає свій шлях (тобто завантажилась) — для App: коли показати її замість попередньої */
 export function pageReady() {
   const s = useStore.getState()
@@ -107,6 +107,7 @@ const CRUMBS: Partial<Record<View, () => Crumb[]>> = {
   // з гільдії — до списку всіх гільдій
   guild: () => [{ label: t('Гільдії'), view: 'guilds', value: t('Усі') }],
   invite: () => [{ label: t('Гільдії'), view: 'guilds', value: t('Усі') }, { label: t('Запрошення') }],
+  events: () => [{ label: t('Події'), view: 'events' }],
   notfound: () => [{ label: t('Сторінку не знайдено') }],
   // людина: окремого списку людей нема — шлях через її гільдію (сторінка додає сама), без гільдії — одразу з головної
   user: () => [],

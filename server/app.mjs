@@ -1,6 +1,6 @@
 /*
- * API-сервер Sandwalkers: облікові записи, гільдії, бібліотека й панель керування; бази, роадмапи, білди, позначки й
- * записи «Ресурсів» з власником і видимістю (SQLite); дані мапи (кеш TH.GL), довідник.
+ * API-сервер Sandwalkers: облікові записи, гільдії, бібліотека й панель керування; бази, роадмапи, білди, позначки,
+ * записи «Ресурсів» і події спільноти з власником і видимістю (SQLite); дані мапи (кеш TH.GL), довідник.
  * У розробці його проксує Vite (/api, /map-tiles, /versions); з --serve-dist віддає і зібраний фронт.
  */
 import path from 'node:path'
@@ -43,6 +43,8 @@ import { createGuildRoutes } from './routes/guilds.mjs'
 import { createItemRoutes } from './routes/items.mjs'
 import { createAdminRoutes } from './routes/admin.mjs'
 import { createDocRoutes } from './routes/docs.mjs'
+import { createEvents } from './lib/events.mjs'
+import { createEventRoutes } from './routes/events.mjs'
 import { createGameData } from './lib/gamedata.mjs'
 import { createI18n, langMiddleware, pickLang } from './lib/i18n.mjs'
 import { createAnnouncements } from './lib/announcements.mjs'
@@ -75,6 +77,8 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   const builds = await createDocs(db, 'builds', 'b')
   const calcs = await createDocs(db, 'calcs', 'c')
   const markers = await createDocs(db, 'markers', 'm')
+  // події спільноти: документ, команди й глядачі
+  const events = await createEvents(db)
   const auth = await createAuth(db, codeGap !== undefined ? { codeGap } : {})
   // паскеї, двофакторна перевірка й одноразові виклики входу
   const security = await createSecurity(db)
@@ -97,6 +101,7 @@ export async function createApp({ dataDir, serveDist = false, background = true,
     track(calcs, 'calcs', revisions, docSpec(calcs, 'create'))
     track(markers, 'markers', revisions, docSpec(markers, 'create'))
     track(places, 'places', revisions, docSpec(places, 'add'))
+    track(events, 'events', revisions, docSpec(events, 'create'))
     // бази й роадмапи: повні документи — у їхній власній історії, тут — лише назва й версія
     const head = (store) => async (id) => { const d = await store.get(id); return d && { name: d.doc?.ui?.name ?? d.doc?.title, version: d.version, deleted: d.deleted ?? null } }
     track(bases, 'bases', revisions, { create: { action: 'create', id: (a, r) => r?.id, read: head(bases) }, put: { action: 'update', pre: true, id: (a) => a[0], read: head(bases) }, remove: { action: 'trash', pre: true, id: (a) => a[0], read: head(bases) }, undelete: { action: 'restore', pre: true, id: (a) => a[0], read: head(bases) }, purge: { action: 'delete', pre: true, id: (a) => a[0], read: head(bases) }, restore: { action: 'restore-version', pre: true, id: (a) => a[0], read: head(bases) } })
@@ -111,7 +116,7 @@ export async function createApp({ dataDir, serveDist = false, background = true,
     track(items, 'items', revisions, { setAccess: { action: 'access', pre: true, id: (a) => [a[0], String(a[1])], read: item }, moderate: { action: 'moderate', pre: true, id: (a) => [a[0], String(a[1])], read: item }, remove: { action: 'delete', pre: true, id: (a) => [a[0], String(a[1])], read: item } })
   }
   const decrees = createDecrees({ db, auth, guilds })
-  const content = createContent({ items, guilds, auth, bases, roadmaps, builds, calcs, markers, places })
+  const content = createContent({ items, guilds, auth, bases, roadmaps, builds, calcs, markers, places, events })
   // роадмапи: права й прогрес (у списках — прогрес глядача); річ перейшла до іншого власника будь-яким шляхом
   // («Доступ», видалення гільдії, панель) — права підлаштовуються під нового власника, запис прогресу роадмапу — за ним
   const roadmapService = createRoadmapService({ roadmaps, items, progress })
@@ -127,7 +132,7 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   }
   const thumbs = createThumbs({ dataDir, bases, log })
   // річ стерто назавжди — разом із нею її знімки й історія змін (там лежали повні документи)
-  const KIND_ENTITY = { base: 'bases', roadmap: 'roadmaps', build: 'builds', calc: 'calcs', marker: 'markers', place: 'places' }
+  const KIND_ENTITY = { base: 'bases', roadmap: 'roadmaps', build: 'builds', calc: 'calcs', marker: 'markers', place: 'places', event: 'events' }
   content.afterPurge(async (kind, id) => {
     if (kind === 'base') { try { thumbs.drop(id) } catch { /* знімків могло й не бути */ } }
     if (kind === 'roadmap') await progress.purge(id)
@@ -140,7 +145,7 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   const catalog = createCatalog({ dataDir, game })
   const skills = createSkills({ game })
   const announcements = await createAnnouncements(db)
-  const hubs = { base: createHub(access), roadmap: createHub(access), place: createHub(access), marker: createHub(access), spice: createHub(access) }
+  const hubs = { base: createHub(access), roadmap: createHub(access), place: createHub(access), marker: createHub(access), spice: createHub(access), event: createHub(access) }
   // активні поля меланжу — позначки гравців
   const spice = await createSpice({ db, guilds })
   // джерела ігрових даних і журнал змін (індикатор оновлень); без GAMEDATA=1 — null, у базу нічого не пише
@@ -223,6 +228,7 @@ export async function createApp({ dataDir, serveDist = false, background = true,
     await progress.forgetUser(uid)
     await push.forgetUser(uid)
     await spice.forgetUser(uid)
+    await events.forgetUser(uid)
     await guilds.leaveAll(uid)
     await security.removeUser(uid)
     await auth.remove(uid)
@@ -280,7 +286,16 @@ export async function createApp({ dataDir, serveDist = false, background = true,
     if (req.method !== 'POST' || req.path !== '/' || !req.user) return next()
     next(spam.hit(req.user.id) ? undefined : fail('забагато нових позначок за годину — спробуй трохи згодом', 429))
   })
-  const CREATES = [[/^\/api\/bases(\/import|\/generate)?$/, 'base'], [/^\/api\/roadmaps$/, 'roadmap'], [/^\/api\/builds$/, 'build'], [/^\/api\/calcs$/, 'calc'], [/^\/api\/markers$/, 'marker'], [/^\/api\/places$/, 'place']]
+  // нові події — не частіше 20 на годину на людину, реєстрації команд — 60 (публічне видно всім — без спаму)
+  const spamEvents = createLimiter({ max: 20, ms: 60 * 60_000 })
+  const spamTeams = createLimiter({ max: 60, ms: 60 * 60_000 })
+  app.use('/api/events', (req, res, next) => {
+    if (req.method !== 'POST' || !req.user) return next()
+    if (req.path === '/') return next(spamEvents.hit(req.user.id) ? undefined : fail('забагато нових подій за годину — спробуй трохи згодом', 429))
+    if (/^\/[^/]+\/teams$/.test(req.path)) return next(spamTeams.hit(req.user.id) ? undefined : fail('забагато реєстрацій за годину — спробуй трохи згодом', 429))
+    next()
+  })
+  const CREATES = [[/^\/api\/bases(\/import|\/generate)?$/, 'base'], [/^\/api\/roadmaps$/, 'roadmap'], [/^\/api\/builds$/, 'build'], [/^\/api\/calcs$/, 'calc'], [/^\/api\/markers$/, 'marker'], [/^\/api\/places$/, 'place'], [/^\/api\/events$/, 'event']]
   app.use('/api', (req, res, next) => Promise.resolve().then(async () => {
     if (!req.user) return next()
     const path = '/api' + req.path
@@ -308,7 +323,7 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   app.use(createGuildRoutes({ auth, guilds, items, deleteGuild, decrees }))
   app.use(createItemRoutes({ items, content, hubs, auth, roadmapService, progress, revisions }))
   app.use(createSiteRoutes({ i18n, announcements, auth }))
-  app.use(createAdminRoutes({ db, auth, guilds, items, content, bases, roadmaps, builds, calcs, markers, places, game, i18n, announcements, catalog, skills, removeUser, deleteGuild, mapData, roles, revisions, cron }))
+  app.use(createAdminRoutes({ db, auth, guilds, items, content, bases, roadmaps, builds, calcs, markers, places, events, game, i18n, announcements, catalog, skills, removeUser, deleteGuild, mapData, roles, revisions, cron }))
   app.use(createPlacesRoutes({ places, mapData, items, content, hub: hubs.place }))
   app.use(createSpiceRoutes({ spice, mapData, hub: hubs.spice }))
   app.use(createMapRoutes({ mapData, game, gamemap }))
@@ -321,6 +336,7 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   app.use(createDocRoutes({ kind: 'build', path: 'builds', store: builds, clean: cleanBuild, items, content, label: 'білду' }))
   app.use(createDocRoutes({ kind: 'calc', path: 'calcs', store: calcs, clean: cleanCalc, items, content, label: 'розрахунку' }))
   app.use(createDocRoutes({ kind: 'marker', path: 'markers', store: markers, clean: (d) => cleanMarker(d, mapData), items, content, hub: hubs.marker, label: 'позначки' }))
+  app.use(createEventRoutes({ events, items, content, hub: hubs.event, mapData, db }))
   app.use(createDecreeRoutes({ decrees, roles }))
   app.use(createPushRoutes({ push }))
   app.use('/versions', express.static(path.join(root, 'versions'), { maxAge: '1d' }))
@@ -342,9 +358,9 @@ export async function createApp({ dataDir, serveDist = false, background = true,
     app.use('/assets', express.static(path.join(dist, 'assets'), { maxAge: '1y', immutable: true, index: false }), (req, res) => res.status(404).end())
     app.use(express.static(dist, { maxAge: '1d', index: false }))
     // сторінка сайту: відомі розділи — 200; невідома адреса — та сама сторінка (вона скаже «не знайдено»), але з кодом 404
-    const KNOWN = new Set(['', 'bases', 'roadmap', 'map', 'catalog', 'calculator', 'skills', 'builds', 'calcs', 'library', 'login', 'register', 'reset', 'me', 'account', 'u', 'g', 'guilds', 'invite', 'admin', 'plan', 'dd', 'data'])
+    const KNOWN = new Set(['', 'bases', 'roadmap', 'map', 'catalog', 'calculator', 'skills', 'builds', 'calcs', 'library', 'login', 'register', 'reset', 'me', 'account', 'u', 'g', 'guilds', 'invite', 'admin', 'plan', 'dd', 'data', 'events'])
     // у сторінку — заголовок, опис і картинка того, на що веде адреса (прев'ю посилань у Discord, Telegram)
-    const og = createOg({ file: path.join(dist, 'index.html'), db, items, auth, guilds, thumbs, access })
+    const og = createOg({ file: path.join(dist, 'index.html'), db, items, auth, guilds, thumbs, access, events })
     app.get('*', (req, res, next) => Promise.resolve().then(async () => {
       const seg = req.path.split('/')[1] || ''
       res.status(KNOWN.has(seg) ? 200 : 404).set({ 'cache-control': 'no-cache', 'content-type': 'text/html; charset=utf-8' }).send(await og.render(req))

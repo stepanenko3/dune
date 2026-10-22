@@ -8,18 +8,21 @@
  *   підсторінки — сегментом шляху, а не параметром (sub): вкладка списку /bases/public, /roadmap/guild, /builds/public,
  *   /calcs/public (mine — без сегмента), вкладка гільдії /g/<адреса>/items (головна гільдії — без сегмента); давні ?show=,
  *   ?kind=, ?tab= — переписуються на них; /guilds/open — гільдії, що приймають заявки. У параметрах лишаються фільтри й дані (пошук, порядок, код білду, цілі), /login — вхід поштою (давні /register і /reset — туди ж), /me — налаштування профілю,
- *   /u/<логін> — людина, /u/<логін>/settings — налаштування свого профілю (давнє /me — туди ж), /guilds — гільдії, /g/<адреса> — гільдія, /invite/<код> — запрошення, /admin/<розділ> — панель.
+ *   /u/<логін> — людина, /u/<логін>/settings — налаштування свого профілю (давнє /me — туди ж), /guilds — гільдії, /g/<адреса> — гільдія, /invite/<код> — запрошення, /admin/<розділ> — панель,
+ *   /events — події спільноти (вкладки /events/mine, /events/guild, /events/past), /events/new — нова, /events/<id> — подія, /events/<id>/edit — редагування.
  */
 import { createContext, useContext } from 'react'
 import { create } from 'zustand'
 
 export type View =
   | 'home' | 'bases' | 'roadmap' | 'map' | 'catalog' | 'calculator' | 'skills' | 'builds' | 'calcs'
-  | 'library' | 'login' | 'account' | 'user' | 'guilds' | 'guild' | 'invite' | 'admin' | 'data' | 'notfound'
+  | 'library' | 'login' | 'account' | 'user' | 'guilds' | 'guild' | 'invite' | 'admin' | 'data' | 'events' | 'notfound'
 
 /** вкладки списків (сегмент після розділу); «мої» — без сегмента */
 export const SCOPES = ['mine', 'guild', 'public'] as const
-export const GUILD_TABS = ['home', 'members', 'items', 'requests', 'invites', 'settings'] as const
+export const GUILD_TABS = ['home', 'members', 'items', 'events', 'requests', 'invites', 'settings'] as const
+/** вкладки подій (сегмент після /events); «найближчі» — без сегмента */
+export const EVENT_TABS = ['mine', 'guild', 'past'] as const
 
 export function pathOf(v: View, base?: string | null, edit?: boolean, param?: string | null, sub?: string | null): string {
   const p = param ? encodeURIComponent(param) : ''
@@ -40,6 +43,8 @@ export function pathOf(v: View, base?: string | null, edit?: boolean, param?: st
     case 'user': return `/u/${p}`
     case 'guild': return `/g/${p}${tail}`
     case 'invite': return `/invite/${p}`
+    // подія — param (id чи «new»), редагування — sub «edit»; список — вкладка сегментом
+    case 'events': return p ? `/events/${p}${sub === 'edit' && param !== 'new' ? '/edit' : ''}` : `/events${sub && (EVENT_TABS as readonly string[]).includes(sub) ? `/${sub}` : ''}`
     // у панелі param — увесь шлях після /admin/ («users», «users/u12…», «game-items/new»), уже закодований
     case 'admin': return param ? `/admin/${param}` : '/admin'
     // невідома адреса лишається такою, як її ввели (сторінка каже «не знайдено»)
@@ -81,6 +86,11 @@ export function fromLocation(): Loc {
     return at('guild', word, tab && (GUILD_TABS as readonly string[]).includes(tab) ? tab : null)
   }
   if (seg === 'invite' && word) return at('invite', word)
+  if (seg === 'events') {
+    if (!word) return at('events')
+    if ((EVENT_TABS as readonly string[]).includes(word)) return at('events', null, word)
+    return at('events', word, act === 'edit' && word !== 'new' ? 'edit' : null)
+  }
   if (seg === 'admin') return at('admin', location.pathname.split('/').slice(2).filter(Boolean).join('/') || null)
   if (seg === 'plan') return at('roadmap') // стара адреса «Плану розвитку»
   if (seg === 'bases') {
@@ -127,6 +137,8 @@ export const setLeaveGuard = (fn: typeof leaveGuard) => { leaveGuard = fn }
 /** перейти без перевірки: щойно збережено, а смуга ще не встигла сховатись (напр. новий запис у панелі) */
 export function leaveFreely(go: () => void) { free = true; try { go() } finally { free = false } }
 const blocked = () => !free && !!leaveGuard && !leaveGuard()
+/** редагування події — окрема сторінка (вкладка sub «edit»): піти з неї — як піти зі сторінки */
+const editsEvent = (v: View, sub: string | null) => v === 'events' && sub === 'edit'
 
 const store = create<S>((set, get) => ({
   ...fromLocation(),
@@ -137,7 +149,7 @@ const store = create<S>((set, get) => ({
     const param = opts?.param ?? null
     const sub = opts?.sub ?? null
     const cur = get()
-    const away = cur.view !== view || cur.base !== base || cur.edit !== edit || cur.param !== param
+    const away = cur.view !== view || cur.base !== base || cur.edit !== edit || cur.param !== param || editsEvent(cur.view, cur.sub) !== editsEvent(view, sub)
     if (away && blocked()) return
     const url = pathOf(view, base, edit, param, sub) + (opts?.search ?? '')
     if (location.pathname + location.search !== url) {
@@ -211,7 +223,7 @@ window.addEventListener('popstate', (e) => {
   // «Назад» / «Вперед» на іншу сторінку, поки є незбережене, — повертаємо адресу, з якої пішли (новим кроком; самі
   // сторінки цієї події вже не бачать)
   const next = fromLocation(), cur = useStore.getState()
-  if ((next.view !== cur.view || next.base !== cur.base || next.edit !== cur.edit || next.param !== cur.param) && blocked()) {
+  if ((next.view !== cur.view || next.base !== cur.base || next.edit !== cur.edit || next.param !== cur.param || editsEvent(next.view, next.sub) !== editsEvent(cur.view, cur.sub)) && blocked()) {
     e.stopImmediatePropagation()
     history.pushState(lastState, '', lastUrl)
     return

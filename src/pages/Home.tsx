@@ -1,6 +1,6 @@
 /**
  * Головна: «вікно» на Глибоку пустелю цього тижня (справжні тайли, сітка секторів, скан, що
- * проявляє меланж і титан), під ним — що корисного зараз у пустелі, розділи застосунку і стан
+ * проявляє меланж і титан), під ним — що корисного зараз у пустелі, найближчі події спільноти, розділи застосунку і стан
  * записів про ресурси. Числа — з /api/home, тобто з тих самих даних, що й мапа.
  */
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -11,6 +11,7 @@ import { useAuth } from '@/lib/auth'
 import { thumbUrl, useBases } from '@/lib/bases'
 import { StormCard, StormLeft } from '@/components/DDTimer'
 import { DecreeCard } from '@/components/DecreeCard'
+import { UpcomingEvents } from '@/components/events/bits'
 import { cn, fmtP, plural, splitEn, word } from '@/lib/utils'
 import { locale, t, T } from '@/lib/i18n'
 import { get } from '@/lib/api'
@@ -143,6 +144,9 @@ export function Home() {
           <StormCard since={dd?.since} />
           <DecreeCard />
         </div>
+
+        {/* події спільноти: найближчі бої, турніри, збори */}
+        <UpcomingEvents onNew={() => { if (useAuth.getState().user) setView('events', { param: 'new' }); else setView('login', { search: `?next=${encodeURIComponent('/events/new')}` }) }} />
 
         {dd && <WeekSection dd={dd} go={go} />}
 

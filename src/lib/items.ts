@@ -1,11 +1,11 @@
 /**
- * Речі з власником і видимістю (бази, роадмапи, білди, позначки, записи ресурсів) — як їх віддає сервер (реєстр
+ * Речі з власником і видимістю (бази, роадмапи, білди, позначки, записи ресурсів, події) — як їх віддає сервер (реєстр
  * речей, server/lib/items.mjs), і дії над ними: доступ, зірка, копія собі, бібліотека.
  */
 import { get, patch, post } from './api'
 import { t } from './i18n'
 
-export type Kind = 'base' | 'roadmap' | 'build' | 'calc' | 'marker' | 'place'
+export type Kind = 'base' | 'roadmap' | 'build' | 'calc' | 'marker' | 'place' | 'event'
 export type Visibility = 'private' | 'guild' | 'link' | 'public'
 export interface Owner {
   /** site — сам сайт (офіційний вміст від адміністрації) */
@@ -47,6 +47,8 @@ export interface Item {
   starred?: boolean
   /** база в кошику (коли видалили); інші речі — без кошика */
   deleted?: number | null
+  /** подія: коли починається й закінчується */
+  when?: { starts: number; ends: number } | null
 }
 
 export const KIND_LABEL: Record<Kind, [string, string]> = {
@@ -56,6 +58,7 @@ export const KIND_LABEL: Record<Kind, [string, string]> = {
   calc: [t('Розрахунок'), t('Розрахунки')],
   marker: [t('Позначка'), t('Позначки')],
   place: [t('Запис ресурсу'), t('Ресурси')],
+  event: [t('Подія'), t('Події')],
 }
 
 /** адреса речі на сайті */
@@ -65,6 +68,7 @@ export function hrefOf(it: Pick<Item, 'kind' | 'id'>): string {
   if (it.kind === 'build') return `/skills?build=${it.id}`
   if (it.kind === 'calc') return `/calculator?calc=${it.id}`
   if (it.kind === 'marker') return `/map?marker=${it.id}`
+  if (it.kind === 'event') return `/events/${it.id}`
   return `/map?r=${it.id}`
 }
 

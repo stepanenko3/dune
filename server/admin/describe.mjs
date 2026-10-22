@@ -54,6 +54,15 @@ const AUDIT = [
   ['POST /api/places', 'Новий запис ресурсу'],
   ['PATCH /api/places/:id', 'Зміна запису ресурсу'],
   ['DELETE /api/places/:id', 'Видалення запису ресурсу'],
+  ['POST /api/events', 'Нова подія'],
+  ['PUT /api/events/:id', 'Збереження події'],
+  ['DELETE /api/events/:id', 'Видалення події'],
+  ['POST /api/events/:id/watch', 'Глядач події'],
+  ['POST /api/events/:id/teams', 'Реєстрація на подію'],
+  ['PATCH /api/events/:id/teams/:tid', 'Зміна команди події'],
+  ['DELETE /api/events/:id/teams/:tid', 'Команда знялась з події'],
+  ['POST /api/events/:id/teams/:tid/join', 'Приєднання до команди події'],
+  ['POST /api/events/:id/teams/:tid/leave', 'Вихід із команди події'],
   ['PATCH /api/items/:kind/:id/access', 'Зміна доступу', ['item.access']],
   ['POST /api/items/:kind/:id/copy', 'Копія собі'],
   ['POST /api/items/:kind/:id/star', 'Зірка'],
@@ -96,8 +105,8 @@ export const REVISION_ACTIONS = {
 export const REVISION_TONES = { create: 'success', update: 'info', access: 'info', 'access-settings': 'info', 'progress-reset': 'warning', delete: 'critical', trash: 'warning', ban: 'critical', restore: 'info', unban: 'info' }
 
 /** вид речі → розділ панелі */
-const KIND_RES = { base: 'bases', build: 'builds', roadmap: 'roadmaps', calc: 'calcs', marker: 'markers', place: 'places' }
-const DOC_RES = new Set(['bases', 'builds', 'roadmaps', 'calcs', 'markers', 'places'])
+const KIND_RES = { base: 'bases', build: 'builds', roadmap: 'roadmaps', calc: 'calcs', marker: 'markers', place: 'places', event: 'events' }
+const DOC_RES = new Set(['bases', 'builds', 'roadmaps', 'calcs', 'markers', 'places', 'events'])
 
 const parse = (s) => { try { return JSON.parse(s) } catch { return null } }
 

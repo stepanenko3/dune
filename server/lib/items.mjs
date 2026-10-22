@@ -1,5 +1,5 @@
 /*
- * Реєстр речей: бази, роадмапи, білди, позначки на мапі, записи «Ресурсів». У кожної — власник (людина чи гільдія)
+ * Реєстр речей: бази, роадмапи, білди, позначки на мапі, записи «Ресурсів», події спільноти. У кожної — власник (людина чи гільдія)
  * і видимість; документи лежать у своїх таблицях, а тут — те, що спільне: хто власник, хто бачить, назва й короткий
  * опис для списків, хто створив і на основі чого, модерація (приховано, виділено), зірки й копії.
  *
@@ -13,7 +13,7 @@ import { localSummary, summaryText } from './roadmap.mjs'
 import { rightsOf } from './roadmap-access.mjs'
 import { fail, fill } from './util.mjs'
 
-export const KINDS = ['base', 'roadmap', 'build', 'calc', 'marker', 'place']
+export const KINDS = ['base', 'roadmap', 'build', 'calc', 'marker', 'place', 'event']
 export const LIBRARY_KINDS = ['base', 'build', 'roadmap', 'calc']
 export const VIS = ['private', 'guild', 'link', 'public']
 
@@ -101,6 +101,11 @@ export async function createItems(db) {
     }
     // база в кошику: картки показують її сірою (повернути чи стерти назавжди)
     if (it.kind === 'base') out.deleted = pre ? pre.deleted.get(it.id) ?? null : (await db.get('SELECT deleted FROM bases WHERE id = ?', it.id).catch(() => null))?.deleted ?? null
+    // подія: коли (картки показують дату)
+    if (it.kind === 'event') {
+      const e = pre ? pre.events.get(it.id) : await db.get('SELECT starts, ends FROM events WHERE id = ?', it.id).catch(() => null)
+      out.when = e ? { starts: e.starts, ends: e.ends } : null
+    }
     // «змінювати» й «копіювати (куди)» — за правами самої речі (вікно «Доступ»), решта — за власником
     if (ctx) { const rt = rightsOf(ctx, it); out.can = { ...can(ctx, it), edit: rt.edit, copy: rt.copy, copyTo: rt.copyTo } }
     if (starred) out.starred = starred.has(`${it.kind}:${it.id}`)
@@ -121,14 +126,16 @@ export async function createItems(db) {
     const uids = [...new Set(rows.flatMap((r) => [r.created_by, r.owner_kind === 'user' ? r.owner_id : null]).filter(Boolean))]
     const gids = [...new Set(rows.filter((r) => r.owner_kind === 'guild').map((r) => r.owner_id))]
     const bids = rows.filter((r) => r.kind === 'base').map((r) => r.id)
-    const [us, gs, bs, site, progress] = await Promise.all([
+    const eids = rows.filter((r) => r.kind === 'event').map((r) => r.id)
+    const [us, gs, bs, es, site, progress] = await Promise.all([
       byIds('SELECT id, login, name, color FROM users WHERE id IN (?)', uids),
       byIds('SELECT id, slug, name, tag, color FROM guilds WHERE id IN (?)', gids),
       byIds('SELECT id, deleted FROM bases WHERE id IN (?)', bids).catch(() => []),
+      byIds('SELECT id, starts, ends FROM events WHERE id IN (?)', eids).catch(() => []),
       rows.some((r) => r.owner_kind === 'site') ? siteName() : 'Sandwalkers',
       roadmapProgress && rows.some((r) => r.kind === 'roadmap') ? roadmapProgress(rows.filter((r) => r.kind === 'roadmap'), ctx) : null,
     ])
-    const pre = { users: new Map(us.map((u) => [u.id, u])), guilds: new Map(gs.map((g) => [g.id, g])), deleted: new Map(bs.map((b) => [b.id, b.deleted])), site, progress }
+    const pre = { users: new Map(us.map((u) => [u.id, u])), guilds: new Map(gs.map((g) => [g.id, g])), deleted: new Map(bs.map((b) => [b.id, b.deleted])), events: new Map(es.map((e) => [e.id, e])), site, progress }
     return Promise.all(rows.map((it) => view(it, ctx, starred, pre)))
   }
   /** прогрес роадмапів для списків: (рядки, ctx) → Map(id → { n, done }); ставить app.mjs (lib/roadmap-progress) */

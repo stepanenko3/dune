@@ -87,6 +87,8 @@ export interface UrlState {
   marker?: string
   /** точка гри за стабільним ключем, «тип.ключ» (npc_unaffiliated.weapon_vendor — торговець указу Ландсрааду) */
   pt?: string
+  /** просто точка (x, y) — з події: місце бою, зона для глядачів */
+  at?: [number, number]
 }
 export function readUrl(): UrlState {
   const p = new URLSearchParams(location.search)
@@ -105,6 +107,8 @@ export function readUrl(): UrlState {
   if (marker && /^[\w-]{1,64}$/.test(marker)) out.marker = marker
   const pt = p.get('pt')
   if (pt && /^[a-z0-9_]{1,64}\.[a-z0-9_]{1,64}$/.test(pt)) out.pt = pt
+  const at = /^(-?\d{1,8}),(-?\d{1,8})$/.exec(p.get('at') || '')
+  if (at) out.at = [Number(at[1]), Number(at[2])]
   return out
 }
 /** мапа: id з адреси — лише такий, як у TH.GL */

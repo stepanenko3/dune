@@ -141,3 +141,28 @@
   .spice-pulse i { transform: scale(0.7); opacity: 0.9; }
   .spice-pulse i + i { display: none; }
 }
+
+/* Мітки подій (components/events/EventMap) і точки з посилання /map?at=x,y: крапля вістрям униз */
+.event-pin span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px 999px 999px 4px;
+  transform: rotate(-45deg);
+  border: 2px solid rgb(255 255 255 / 0.92);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.45);
+  color: #fff;
+}
+.event-pin span svg {
+  transform: rotate(45deg);
+}
+.event-pin--arena span {
+  background: rgb(var(--c-spice));
+}
+.event-pin--watch span {
+  background: #2f9e8f;
+}
+.event-pin--at span {
+  background: #6a5acd;
+}

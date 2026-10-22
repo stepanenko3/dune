@@ -848,6 +848,15 @@ export default function MapPage() {
     }).catch(() => live && setPt(null))
     return () => { live = false }
   }, [pt, def, index, !!enabled]) // eslint-disable-line react-hooks/exhaustive-deps
+  // просто точка з посилання (/map?m=…&at=x,y — місце події, зона для глядачів): мітка й переліт, коли мапу вписано
+  const atParam = useRef(url0.current.at ?? null)
+  useEffect(() => {
+    const map = mapRef.current, at = atParam.current
+    if (!map || !def || !at || (!OPEN_MAPS.has(def.id) && fitted.current !== def.id)) return
+    const pin = L.marker(at, { keyboard: false, interactive: false, icon: L.divIcon({ className: 'event-pin event-pin--at', iconSize: [30, 30], iconAnchor: [15, 36], html: '<span></span>' }) }).addTo(map)
+    const h = setTimeout(() => fly(at[0], at[1]), 400)
+    return () => { clearTimeout(h); pin.remove() }
+  }, [def, tilesDir, index]) // eslint-disable-line react-hooks/exhaustive-deps
   // картку цієї точки закрили чи вибрали іншу — з адреси її прибираємо
   useEffect(() => {
     if (ptFocus.current && focus !== ptFocus.current) { ptFocus.current = null; setPt(null) }

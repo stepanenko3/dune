@@ -14,11 +14,11 @@ describe('рівні прав роадмапу: клієнт = сервер', ()
     }
   })
   it('права за видами речей', () => {
-    for (const k of ['roadmap', 'base', 'build', 'calc', 'marker', 'place'] as const) expect(client.rightsFor(k)).toEqual(server.rightsFor(k))
+    for (const k of ['roadmap', 'base', 'build', 'calc', 'marker', 'place', 'event'] as const) expect(client.rightsFor(k)).toEqual(server.rightsFor(k))
   })
   it('типові, підрізані й чинні права', () => {
     const samples = [null, { mark: 'users', progress: 'all', edit: 'recruit', settings: 'officer', copyTo: ['guild'] }, { mark: 'nobody', seeProgress: 'member', history: 'anyone' }]
-    for (const kind of ['roadmap', 'base', 'build', 'calc', 'marker', 'place'] as const) for (const ok of owners) {
+    for (const kind of ['roadmap', 'base', 'build', 'calc', 'marker', 'place', 'event'] as const) for (const ok of owners) {
       expect(client.defaultAccess(ok, kind)).toEqual(server.defaultAccess(ok, kind))
       for (const a of samples) {
         expect(client.normAccess(a as never, ok, kind)).toEqual(server.normAccess(a, ok, kind))

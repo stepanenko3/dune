@@ -1,17 +1,19 @@
 /*
  * Прев'ю посилань (Discord, Telegram, пошук): сервер сам вписує в сторінку заголовок, опис і картинку того, на що
- * веде адреса — база (зі знімком 3D), роадмап, білд, людина, гільдія. Лише те, що видно без входу (публічне чи «за
+ * веде адреса — база (зі знімком 3D), роадмап, білд, людина, гільдія, подія (коли, формат, призи). Лише те, що видно без входу (публічне чи «за
  * посиланням»); решта — загальний опис сайту, без жодного слова про приховане. Мова — мовою запиту (у ботів
  * зазвичай українська за замовчуванням).
  */
 import fs from 'node:fs'
 import { can } from './items.mjs'
+import { STORM_REGIONS } from './storm.mjs'
+import { endsOf, EVENT_TYPE_L, formatOf } from './events.mjs'
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 const cut = (s, n) => { const x = String(s || '').replace(/\s+/g, ' ').trim(); return x.length > n ? x.slice(0, n - 1).trimEnd() + '…' : x }
 const SITE = 'Sandwalkers'
 
-export function createOg({ file, db, items, auth, guilds, thumbs, access }) {
+export function createOg({ file, db, items, auth, guilds, thumbs, access, events }) {
   // index.html збірки — перечитуємо, лише коли файл змінився (нова збірка)
   let html = '', at = 0
   const page = () => {
@@ -45,6 +47,19 @@ export function createOg({ file, db, items, auth, guilds, thumbs, access }) {
     if (a === 'roadmap' && id) {
       const it = await open('roadmap', id)
       return it ? { title: it.title || t('Роадмап'), description: it.summary || t('Що будувати далі, скільки коштує і що вже зроблено.') } : null
+    }
+    if (a === 'events' && id && events) {
+      const it = await open('event', id)
+      const ev = it && (await events.get(id))
+      if (!ev) return null
+      // час — за поясом серверів регіону події (у бота свого поясу нема), з назвою поясу
+      const tz = STORM_REGIONS[ev.region]?.tz || 'UTC'
+      let when = ''
+      try { when = new Intl.DateTimeFormat(req.lang || 'uk', { timeZone: tz, weekday: 'short', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' }).format(ev.starts) } catch { when = new Date(ev.starts).toISOString() }
+      const state = ev.cancelled ? t('Скасовано') : endsOf(ev) <= Date.now() ? t('Завершено') : ''
+      const prizes = ev.prizes.slice(0, 3).map((p) => (p.label ? `${p.label}: ${p.prize}` : p.prize)).join('; ')
+      const head = [state, when, `${t(EVENT_TYPE_L[ev.type] || 'Подія')} · ${formatOf(ev, t)}`, ev.server].filter(Boolean).join(' · ')
+      return { title: it.title, description: [head, prizes && `${t('Призи')}: ${prizes}`, cut(ev.about, 120)].filter(Boolean).join('. ') }
     }
     if (a === 'u' && id) {
       const u = await auth.byLogin(id)

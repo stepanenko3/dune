@@ -1,7 +1,7 @@
 /**
  * Гільдії (як у грі — людина лише в одній, у гільдії — не більше guildCap людей): усі гільдії картками з пошуком і
  * заявкою на вступ (чи причиною, чому подати не можна), створення нової; сторінка гільдії — учасники й ролі, вміст
- * гільдії, запрошення й заявки (офіцерам), налаштування (лідеру); сторінка запрошення.
+ * гільдії, події гільдії, запрошення й заявки (офіцерам), налаштування (лідеру); сторінка запрошення.
  */
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Calculator, Castle, Check, Settings, ChevronRight, Crown, Inbox, Link2, LogOut, MapPin, Plus, Shield, Sparkles, Trash2, TrendingUp, UserMinus, Users, X } from 'lucide-react'
@@ -26,6 +26,7 @@ import { Field } from './Auth'
 import { ColorPick, ConfirmDialog, Section, submitOnEnter } from './Account'
 import { useCrumb } from '@/components/Crumbs'
 import { useUnsaved } from '@/components/UnsavedBar'
+import { GuildEvents } from '@/components/events/bits'
 
 const run = async (fn: () => Promise<unknown>, ok?: string) => {
   try { await fn(); if (ok) toast.success(ok); return true } catch (e) { toast.error((e as Error).message); return false }
@@ -279,8 +280,8 @@ interface GuildData {
   invites: { code: string; created: number; expires: number | null; uses: number; maxUses: number | null; role: GuildRole; by: string | null; live: boolean }[]
   public: Item[]
 }
-type Tab = 'home' | 'members' | 'items' | 'invites' | 'requests' | 'settings'
-const TABS: Tab[] = ['home', 'members', 'items', 'invites', 'requests', 'settings']
+type Tab = 'home' | 'members' | 'items' | 'events' | 'invites' | 'requests' | 'settings'
+const TABS: Tab[] = ['home', 'members', 'items', 'events', 'invites', 'requests', 'settings']
 
 export function GuildPage() {
   const slug = useStore((s) => s.param)
@@ -303,7 +304,7 @@ export function GuildPage() {
   // вміст гільдії — учасникам на головній і у «Вмісті» (решті — лише публічне, воно вже в d.public)
   useEffect(() => { if (d?.rank && (tabParam === 'items' || tabParam === 'home') && !own) void loadOwn() }, [d, tabParam])
   // шлях: «Гільдії [Усі]» › назва › вкладка (окрема сторінка; головна — без неї)
-  const TAB_CRUMB: Partial<Record<Tab, string>> = { members: t('Учасники'), items: d?.rank ? t('Вміст гільдії') : t('Публічне'), invites: t('Запрошення'), requests: t('Заявки'), settings: t('Налаштування') }
+  const TAB_CRUMB: Partial<Record<Tab, string>> = { members: t('Учасники'), items: d?.rank ? t('Вміст гільдії') : t('Публічне'), events: t('Події'), invites: t('Запрошення'), requests: t('Заявки'), settings: t('Налаштування') }
   useCrumb(error ? [] : d ? [{ label: d.guild.name, view: 'guild', param: slug ?? undefined }, ...(TAB_CRUMB[tabParam] ? [{ label: TAB_CRUMB[tabParam]! }] : [])] : null)
   if (error) return <PageError page message={error} onRetry={load} />
   if (!d) return <Loading page />
@@ -315,6 +316,7 @@ export function GuildPage() {
     { id: 'home' as const, label: t('Головна') },
     { id: 'members' as const, label: t('Учасники · {n} з {cap}', { n: g.members, cap: d.cap }) },
     { id: 'items' as const, label: d.rank ? t('Вміст гільдії') : t('Публічне') },
+    { id: 'events' as const, label: t('Події') },
     ...(officer ? [{ id: 'invites' as const, label: t('Запрошення') }, { id: 'requests' as const, label: d.requests.length ? t('Заявки · {n}', { n: d.requests.length }) : t('Заявки') }] : []),
     ...(leader ? [{ id: 'settings' as const, label: t('Налаштування') }] : []),
   ]
@@ -381,6 +383,7 @@ export function GuildPage() {
         {tab === 'home' && <GuildHome d={d} own={own} go={setTab} />}
         {tab === 'members' && <Members d={d} reload={load} />}
         {tab === 'items' && (d.rank ? (own ? <OwnContent items={own} onChange={() => void loadOwn()} /> : <Loading />) : <ItemGrid items={d.public} empty={t('Гільдія ще нічого не виклала публічно.')} />)}
+        {tab === 'events' && <GuildEvents guild={g} canCreate={d.rank >= GUILD_RANK.member} />}
         {tab === 'invites' && officer && <Invites d={d} reload={load} />}
         {tab === 'requests' && officer && (
           <Section title={t('Заявки на вступ')} hint={t('Прийнятий за заявкою — новобранець: бачить гільдійське, але не змінює. Підвищити можна в «Учасниках».')}>
@@ -453,8 +456,8 @@ function DeleteGuild({ g }: { g: Guild }) {
 
 /** гільдійське, поділене за видами */
 function OwnContent({ items, onChange }: { items: Item[]; onChange: () => void }) {
-  const groups = useMemo(() => (['base', 'roadmap', 'build', 'calc', 'marker', 'place'] as const).map((k) => [k, items.filter((i) => i.kind === k)] as const).filter(([, l]) => l.length), [items])
-  const NAME = { base: t('Бази'), roadmap: t('Роадмапи'), build: t('Білди'), calc: t('Розрахунки'), marker: t('Позначки на мапі'), place: t('Записи ресурсів') }
+  const groups = useMemo(() => (['base', 'roadmap', 'build', 'calc', 'event', 'marker', 'place'] as const).map((k) => [k, items.filter((i) => i.kind === k)] as const).filter(([, l]) => l.length), [items])
+  const NAME = { base: t('Бази'), roadmap: t('Роадмапи'), build: t('Білди'), calc: t('Розрахунки'), event: t('Події'), marker: t('Позначки на мапі'), place: t('Записи ресурсів') }
   if (!groups.length) return <ItemGrid items={[]} empty={t('У гільдії поки нічого нема. Створюючи базу, роадмап чи білд, вибери власником гільдію.')} />
   return (
     <div className="grid gap-3">

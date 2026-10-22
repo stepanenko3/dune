@@ -35,6 +35,7 @@ export const RIGHTS_FOR: Record<Kind, RightKey[]> = {
   calc: ['edit', 'copy', 'settings'],
   marker: ['edit', 'settings'],
   place: ['edit', 'settings'],
+  event: ['edit', 'settings'],
 }
 export const rightsFor = (kind: Kind): RightKey[] => RIGHTS_FOR[kind] ?? RIGHTS_FOR.roadmap
 

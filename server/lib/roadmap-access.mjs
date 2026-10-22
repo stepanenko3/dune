@@ -43,6 +43,7 @@ export const RIGHTS_FOR = {
   calc: ['edit', 'copy', 'settings'],
   marker: ['edit', 'settings'],
   place: ['edit', 'settings'],
+  event: ['edit', 'settings'],
 }
 export const rightsFor = (kind) => RIGHTS_FOR[kind] || RIGHTS_FOR.roadmap
 export const COPY_TO = ['user', 'guild']
