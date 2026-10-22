@@ -99,7 +99,8 @@ export const watchEvent = (id: string, on: boolean) => post<{ watching: boolean;
 export const registerTeam = (id: string, body: { name?: string; members: string[]; note?: string }) => post<EventFull>(`/api/events/${id}/teams`, body)
 export const patchTeam = (id: string, tid: string, body: { name?: string; members?: { nick: string; user?: string | null }[]; note?: string; status?: TeamStatus }) => patch<EventFull>(`/api/events/${id}/teams/${tid}`, body)
 export const dropTeam = (id: string, tid: string) => del<EventFull>(`/api/events/${id}/teams/${tid}`)
-export const joinTeam = (id: string, tid: string, code: string) => post<EventFull>(`/api/events/${id}/teams/${tid}/join`, { code })
+/** slot — місце з ніком, вписаним капітаном («це я»); склад повний і нік не збігся — сервер відповідає 409 з pick */
+export const joinTeam = (id: string, tid: string, code: string, slot?: number) => post<EventFull>(`/api/events/${id}/teams/${tid}/join`, { code, slot })
 export const leaveTeam = (id: string, tid: string) => post<EventFull>(`/api/events/${id}/teams/${tid}/leave`)
 
 // ---------- підписи ----------

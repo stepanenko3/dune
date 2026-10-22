@@ -2,7 +2,7 @@
  * Шапка: окремі «пігулки» на фоні, як у Satisfactory — логотип, розділи, тема, мова, обліковий запис.
  * z-[900]: вище за панелі Leaflet (до 800).
  */
-import { useSyncExternalStore } from 'react'
+import { useLayoutEffect, useRef, useState, useSyncExternalStore, type RefObject } from 'react'
 import { BookOpen, Calculator, CalendarDays, Castle, Map as MapIcon, Monitor, Moon, MoreHorizontal, Sparkles, Sun, TrendingUp } from 'lucide-react'
 import { pathOf, useStore, type View } from '@/store'
 import { useBusyStore } from '@/lib/busy'
@@ -27,9 +27,9 @@ const NAV: { id: View; label: string; icon: typeof Castle; tip: string }[] = [
 ]
 
 /**
- * до великого екрана в рядку — перші розділи (на телефоні три, далі чотири), решта — у меню «Ще» (усі шість не влазять,
- * а прокрутка рядка непомітна): до md — іконками, далі — з підписами; від lg — усі шість іконками (і назва біля знака),
- * від 1360 px — з підписами (на 1280 сім підписів з іменем людини вже не влазять)
+ * до великого екрана в рядку — перші розділи (на телефоні три, далі чотири), решта — у меню «Ще» (усі сім не влазять,
+ * а прокрутка рядка непомітна): до md — іконками, далі — з підписами; від lg — усі сім (і назва біля знака): з підписами,
+ * коли вони влазять (у кожній мові своя довжина — французькі й німецькі не влазять і на 1440), інакше — іконками
  */
 const phoneQuery = typeof matchMedia === 'function' ? matchMedia('(min-width: 640px)') : null
 const useInRow = () => useSyncExternalStore(
@@ -40,6 +40,34 @@ const useInRow = () => useSyncExternalStore(
 /** сторінки, що належать розділу меню: планувальник — розділу «Уміння», калькулятор — «Калькулятор» (бібліотеки в меню нема —
  * вона в кожному розділі вкладкою «Публічні») */
 const PARENT: Partial<Record<View, View>> = { skills: 'builds', calculator: 'calcs' }
+
+/**
+ * чи влазять підписи всіх розділів (від lg): рядок із підписами ширший за місце — іконки, і запам'ятати, скільки треба;
+ * місця стало стільки — знову підписи. Міряє ResizeObserver до малювання, тож підписи не блимають
+ */
+function useLabelsFit(nav: RefObject<HTMLElement>, row: RefObject<HTMLElement>) {
+  const [wide, setWide] = useState(true)
+  const need = useRef(0)
+  useLayoutEffect(() => {
+    const n = nav.current, r = row.current
+    if (!n || !r) return
+    const check = () => {
+      const st = getComputedStyle(n)
+      const room = n.clientWidth - parseFloat(st.paddingLeft) - parseFloat(st.paddingRight)
+      setWide((on) => {
+        if (on && r.scrollWidth > r.clientWidth + 1) { need.current = r.scrollWidth; return false }
+        if (!on && room >= need.current) return true
+        return on
+      })
+    }
+    check()
+    const ro = new ResizeObserver(check)
+    ro.observe(n)
+    ro.observe(r)
+    return () => ro.disconnect()
+  }, [nav, row])
+  return wide
+}
 
 const THEMES: { id: ThemePref; icon: typeof Sun; tip: string }[] = [
   { id: 'system', icon: Monitor, tip: t('Тема як у системі') },
@@ -53,6 +81,9 @@ export function Header() {
   const { pref, setPref } = useTheme()
   const pill = 'flex h-12 items-center rounded-xl border border-line bg-panel shadow-lg'
   const inRow = useInRow()
+  const navRef = useRef<HTMLElement>(null)
+  const rowRef = useRef<HTMLDivElement>(null)
+  const labels = useLabelsFit(navRef, rowRef)
   // лого живе, поки щось вантажиться: розгойдується й затихає саме, плавно (components/ui/dune-loader)
   const busy = useBusyStore((s) => s.n > 0)
   const starts = useBusyStore((s) => s.starts)
@@ -68,9 +99,9 @@ export function Header() {
         <DuneLoader size={24} active={busy} kick={starts} />
         <span className="hidden font-display text-[13px] font-bold uppercase tracking-[0.12em] lg:inline">Sandwalkers</span>
       </a>
-      <nav className={cn(pill, 'min-w-0 flex-1 px-1.5')} aria-label={t('Розділи')}>
+      <nav ref={navRef} className={cn(pill, 'min-w-0 flex-1 px-1.5')} aria-label={t('Розділи')}>
         {/* розділи прямо на панелі шапки (без другої рамки всередині — «блок у блоці»); активний — плашкою спайсу */}
-        <div className="flex min-w-0 gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div ref={rowRef} className="flex min-w-0 gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {NAV.map((n, i) => {
             // сторінки розділу підсвічують сам розділ: «Білди» — «Уміння», «Розрахунки» — «Калькулятор»
             const on = n.id === (PARENT[view] ?? view)
@@ -89,7 +120,7 @@ export function Header() {
                 )}
               >
                 <n.icon size={15} className="shrink-0" />
-                <span className="hidden md:inline lg:hidden min-[1360px]:inline">{n.label}</span>
+                <span className={cn('hidden md:inline', !labels && 'lg:hidden')}>{n.label}</span>
               </a>
             )
           })}

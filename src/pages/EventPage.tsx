@@ -244,7 +244,8 @@ function Podium({ ev, byId, edit, onEdit }: { ev: EventFull; byId: Map<string, T
             <span className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-full bg-panel2 font-display text-[15px] font-bold', MEDAL[i])}>{i < 3 ? <Trophy size={17} /> : i + 1}</span>
             <div className="min-w-0 flex-1">
               <div className="break-words font-display text-[15px] font-bold">{names.join(' · ')}</div>
-              {ev.prizes[i] && <div className="text-[12.5px] text-muted">{ev.prizes[i].label ? `${ev.prizes[i].label}: ` : ''}{ev.prizes[i].prize}</div>}
+              {/* приз за це місце; назва — лише своя («MVP»), «N місце» вже праворуч */}
+              {ev.prizes[i] && <div className="text-[12.5px] text-muted">{ev.prizes[i].label && ev.prizes[i].label !== t('{n} місце', { n: i + 1 }) ? `${ev.prizes[i].label}: ` : ''}{ev.prizes[i].prize}</div>}
             </div>
             <span className="shrink-0 text-[12px] font-semibold text-muted">{t('{n} місце', { n: i + 1 })}</span>
           </li>
@@ -260,6 +261,8 @@ function Podium({ ev, byId, edit, onEdit }: { ev: EventFull; byId: Map<string, T
 function JoinBanner({ ev, onJoined }: { ev: EventFull; onJoined: (e: EventFull) => void }) {
   const me = useAuth((s) => s.user)
   const [param, setParam] = useState(() => new URLSearchParams(location.search).get('join'))
+  /** склад повний, а ніки вписав капітан: «хто з них ти?» */
+  const [pick, setPick] = useState<{ i: number; nick: string }[] | null>(null)
   const [tid, code] = (param ?? '').split('.')
   if (!param || !tid || !code || ev.me.team === tid) return null
   const team = ev.teams.find((x) => x.id === tid)
@@ -269,15 +272,27 @@ function JoinBanner({ ev, onJoined }: { ev: EventFull; onJoined: (e: EventFull) 
     history.replaceState(history.state, '', location.pathname + (q.toString() ? `?${q}` : ''))
     setParam(null)
   }
-  const join = () => run(async () => { onJoined(await joinTeam(ev.id, tid, code)); close() }, t('Ти в команді'))
+  const join = async (slot?: number) => {
+    try {
+      onJoined(await joinTeam(ev.id, tid, code, slot))
+      close()
+      toast.success(t('Ти в команді'))
+    } catch (e) {
+      const body = (e as ApiError).body as { pick?: { i: number; nick: string }[] } | null
+      if (body?.pick?.length) setPick(body.pick)
+      else toast.error((e as Error).message)
+    }
+  }
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-xl border border-spice/50 bg-spice/10 px-4 py-3">
       <Users size={18} className="shrink-0 text-spice" />
       <p className="min-w-[min(100%,16rem)] flex-1 text-[13.5px] leading-snug">
         {team ? <T text="Тебе кличуть у команду {name}." name={<b>«{team.name}»</b>} /> : t('Тебе кличуть у команду цієї події.')}{' '}
-        {ev.me.team ? t('Ти вже в іншій команді цієї події — спершу вийди з неї.') : t('Якщо капітан вписав твій нік у грі, займеш своє місце; інакше — вільне.')}
+        {ev.me.team ? t('Ти вже в іншій команді цієї події — спершу вийди з неї.') : pick ? t('Капітан уже вписав ніки всіх гравців. Хто з них ти?') : t('Якщо капітан вписав твій нік у грі, займеш своє місце; інакше — вільне.')}
       </p>
-      {!ev.me.team && (me ? <Button size="sm" onClick={join}>{t('Приєднатися')}</Button> : <Button size="sm" onClick={() => openPath(loginHref())}>{t('Увійти, щоб приєднатися')}</Button>)}
+      {!ev.me.team && (pick
+        ? <span className="flex flex-wrap gap-1.5">{pick.map((x) => <Button key={x.i} size="sm" variant="secondary" onClick={() => void join(x.i)}>{x.nick}</Button>)}</span>
+        : me ? <Button size="sm" onClick={() => void join()}>{t('Приєднатися')}</Button> : <Button size="sm" onClick={() => openPath(loginHref())}>{t('Увійти, щоб приєднатися')}</Button>)}
       <Button size="sm" variant="ghost" onClick={close} aria-label={t('Сховати')}><X size={14} /></Button>
     </div>
   )
@@ -303,14 +318,14 @@ const TeamsSection = forwardRef<HTMLElement, { ev: EventFull; onChange: (e: Even
   return (
     <section ref={ref} className="scroll-mt-3 rounded-xl border border-line bg-panel p-4 shadow-sm sm:p-5" aria-labelledby="h-teams">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <h2 id="h-teams" className="font-display text-[16px] font-bold">{teamWord(ev.reg.teamSize)} <span className="font-normal text-muted">{counts}</span></h2>
+        <h2 id="h-teams" className="font-display text-[16px] font-bold">{teamWord(ev.reg.teamSize)} <span className="font-sans text-[14px] font-normal tabular-nums text-muted">{counts}</span></h2>
         {ev.counts.reserve > 0 && <span className="text-[12.5px] text-muted">{t('у резерві: {n}', { n: ev.counts.reserve })}</span>}
         {ev.rights.edit && ev.counts.pending > 0 && <span className="rounded-full bg-spice/15 px-2 py-0.5 text-[12px] font-semibold text-spice">{t('чекають рішення: {n}', { n: ev.counts.pending })}</span>}
         {ev.regState === 'open' && !ev.me.team && <Button size="sm" className="ml-auto" onClick={onRegister}><UserPlus size={14} />{solo ? t('Зареєструватися') : t('Зареєструвати команду')}</Button>}
       </div>
       <p className="mt-1 text-[13px] leading-snug text-muted">
         {[
-          solo ? t('Кожен сам за себе.') : t('Команди по {n} гравці.', { n: ev.reg.teamSize }),
+          solo ? t('Кожен сам за себе.') : t('Формат — {format}.', { format: formatOf(ev.reg.teamSize) }),
           ev.reg.slots ? t('Місць: {n}; далі — резерв, звільниться місце — перший із резерву проходить.', { n: ev.reg.slots }) : t('Місць без обмежень.'),
           ev.reg.approval ? t('Склад підтверджує організатор.') : '',
         ].filter(Boolean).join(' ')}
@@ -354,7 +369,7 @@ const TeamsSection = forwardRef<HTMLElement, { ev: EventFull; onChange: (e: Even
                   {team.note && <p className="mt-1.5 text-[12.5px] text-muted">«{team.note}»</p>}
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5">
-                  {captain && !solo && team.code && missing >= 0 && (
+                  {captain && !solo && team.code && (missing > 0 || team.members.some((m) => !m.user)) && (
                     <Button size="sm" variant="secondary" onClick={() => copyText(joinUrl(ev.id, team), t('Посилання в команду скопійовано — дай його согравцям'))} title={t('Согравці з сайту приєднаються за ним і побачать подію в «Моїх»')}><Link2 size={14} />{t('Посилання в команду')}</Button>
                   )}
                   {captain && !ev.rights.edit && <Button size="sm" variant="ghost" onClick={() => onEdit(team)}><Pencil size={14} />{t('Змінити')}</Button>}
@@ -577,7 +592,7 @@ function ResultsDialog({ ev, onClose, onSave }: { ev: EventFull; onClose: () => 
         {rows.map((r, i) => (
           <div key={i} className="grid grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-2 sm:grid-cols-[2.5rem_minmax(0,1fr)_minmax(0,1fr)]">
             <span className={cn('font-display text-[15px] font-bold', MEDAL[i])}>{i + 1}</span>
-            <SnSelect modelValue={r.team} options={[{ value: '', label: t('— вписати вручну —') }, ...teams.map((x) => ({ value: x.id, label: x.name }))]} accessibilityLabel={t('{n} місце', { n: i + 1 })}
+            <SnSelect size="lg" modelValue={r.team} options={[{ value: '', label: t('— вписати вручну —') }, ...teams.map((x) => ({ value: x.id, label: x.name }))]} accessibilityLabel={t('{n} місце', { n: i + 1 })}
               onChange={(e: Event) => setRows((l) => l.map((x, j) => (j === i ? { ...x, team: valueOf(e) || '' } : x)))} />
             {!r.team && <SnInput size="lg" className="col-span-2 sm:col-span-1" modelValue={r.name} maxLength={80} placeholder={ev.prizes[i]?.label || t('Хто (нік чи команда)')} accessibilityLabel={t('Хто на {n} місці', { n: i + 1 })}
               onInput={(e: Event) => setRows((l) => l.map((x, j) => (j === i ? { ...x, name: valueOf(e) } : x)))} />}

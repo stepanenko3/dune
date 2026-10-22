@@ -54,6 +54,8 @@ export default function EventMap({ arena, watch, picking = null, onPick, classNa
   const box = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const pins = useRef<L.LayerGroup | null>(null)
+  /** мапа, до точок якої вже підлетіли */
+  const flown = useRef('')
   const pickRef = useRef({ picking, onPick, def, layout })
   pickRef.current = { picking, onPick, def, layout }
 
@@ -62,13 +64,20 @@ export default function EventMap({ arena, watch, picking = null, onPick, classNa
     const tr = def.transformation
     const crs = L.extend({}, L.CRS.Simple, { transformation: new L.Transformation(tr[0], tr[1], tr[2], tr[3]) })
     const bounds = L.latLngBounds(def.bounds)
-    const map = L.map(box.current, { crs, zoomControl: true, minZoom: -6, maxZoom: def.maxNativeZoom + 2, zoomSnap: 0.5, maxBounds: bounds.pad(0.05), attributionControl: true })
+    // масштаб без кроків (як на мапі сайту): ціла мапа точно вписується у висоту, а не на пів кроку дрібніше
+    const map = L.map(box.current, { crs, zoomControl: true, minZoom: -6, maxZoom: def.maxNativeZoom + 2, zoomSnap: 0, zoomDelta: 0.5, maxBounds: bounds.pad(0.05), attributionControl: true,
+      // на сторінці події колесо гортає сторінку, а не масштабує маленьку мапу (масштаб — кнопками й пальцями)
+      scrollWheelZoom: edit })
     map.attributionControl.setPrefix(false)
     L.tileLayer(`/map-tiles/${tiles}/{z}/{y}/{x}.webp`, {
       tileSize: def.tileSize, minZoom: -6, minNativeZoom: def.minNativeZoom, maxNativeZoom: def.maxNativeZoom, bounds, noWrap: true,
       attribution: '<a href="https://duneawakening.th.gl" target="_blank" rel="noopener">TH.GL</a>',
     }).addTo(map)
     map.fitBounds(bounds, { animate: false })
+    // дрібніше за цілу мапу — нема куди
+    map.setMinZoom(map.getZoom())
+    map.on('resize', () => map.setMinZoom(map.getBoundsZoom(bounds, false)))
+    flown.current = ''
     pins.current = L.layerGroup().addTo(map)
     map.on('click', (e: L.LeafletMouseEvent) => {
       const { picking: k, onPick: cb, def: d, layout: l } = pickRef.current
@@ -84,13 +93,13 @@ export default function EventMap({ arena, watch, picking = null, onPick, classNa
   // мітки: обидві точки, що на цій мапі; у перегляді — підлетіти до них
   const here = useMemo(() => ([['arena', arena], ['watch', watch]] as const).filter(([, p]) => p && def && p.map === def.id) as [PinKind, Point][], [arena, watch, def])
   const key = JSON.stringify(here)
-  const flown = useRef('')
   useEffect(() => {
     const map = mapRef.current, g = pins.current
     if (!map || !g || !def) return
     g.clearLayers()
     for (const [k, p] of here) L.marker([p.x, p.y], { icon: pinIcon(k), keyboard: false, title: PIN_LABEL[k] }).addTo(g)
-    // у редакторі мапа не стрибає за кожним кліком — лише вперше (точки, що вже були)
+    // у редакторі мапа не стрибає за кожним кліком — лише вперше, до точок, що вже були (точок нема — лишається вся мапа)
+    if (edit && !here.length) flown.current = def.id
     if (!here.length || (edit && flown.current === def.id)) return
     flown.current = def.id
     const b = L.latLngBounds(here.map(([, p]) => [p.x, p.y] as [number, number]))

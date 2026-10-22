@@ -8,7 +8,7 @@ import { Check, Shuffle, Trophy } from 'lucide-react'
 import { cleanPicks, matchesOf, seedOf, type Match } from '@/engine/bracket.mjs'
 import type { Bracket, Team, Win } from '@/lib/events'
 import { t } from '@/lib/i18n'
-import { cn } from '@/lib/utils'
+import { cn, plural } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Seg } from '@/components/ui/seg'
 
@@ -89,7 +89,7 @@ export function MakeBracket({ teams, busy, onMake }: { teams: Team[]; busy?: boo
   return (
     <div className="flex flex-wrap items-center gap-2.5">
       <Seg size="sm" label={t('Порядок у сітці')} value={order} onChange={setOrder} items={[{ id: 'reg', label: t('Як зареєструвались') }, { id: 'random', label: <span className="inline-flex items-center gap-1"><Shuffle size={12} />{t('Навмання')}</span> }]} />
-      <Button size="sm" loading={busy} onClick={make}><Trophy size={14} />{t('Скласти сітку ({n} команд)', { n: ids.length })}</Button>
+      <Button size="sm" loading={busy} onClick={make}><Trophy size={14} />{t('Скласти сітку ({n})', { n: plural(ids.length, [t('команда'), t('команди'), t('команд')]) })}</Button>
     </div>
   )
 }

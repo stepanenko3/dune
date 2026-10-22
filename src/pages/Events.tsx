@@ -139,7 +139,7 @@ function EventsList() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <SnInput type="search" size="lg" className="min-w-[min(240px,100%)] flex-1" modelValue={q} placeholder={t('Пошук за назвою')} accessibilityLabel={t('Пошук подій')} onInput={(e: Event) => setQ(valueOf(e), { replace: true })} />
-            <SnSelect className="w-[200px] max-w-full" modelValue={type} options={[{ value: '', label: t('Усі види') }, ...EVENT_TYPES.map((x) => ({ value: x, label: TYPE_LABEL[x] }))]} accessibilityLabel={t('Вид події')} onChange={(e: Event) => setType(valueOf(e) || '')} />
+            <SnSelect size="lg" className="w-[200px] max-w-full" modelValue={type} options={[{ value: '', label: t('Усі види') }, ...EVENT_TYPES.map((x) => ({ value: x, label: TYPE_LABEL[x] }))]} accessibilityLabel={t('Вид події')} onChange={(e: Event) => setType(valueOf(e) || '')} />
             <Seg size="sm" label={t('Регіон')} value={region} onChange={setRegion} href={regionHref} items={[{ id: '', label: t('Усі регіони') }, ...(Object.keys(REGIONS) as Region[]).map((r) => ({ id: r, label: REGIONS[r].label }))]} />
           </div>
         </PageHeader>

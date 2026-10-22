@@ -267,7 +267,8 @@ export function createEventRoutes({ events, items, content, hub, mapData, db }) 
 
   /**
    * Приєднатися до команди кодом від капітана: місце з твоїм ніком у грі (вписане капітаном) — твоє; інакше — нове
-   * місце, якщо склад ще не повний.
+   * місце, якщо склад ще не повний. Склад повний, а ніки вписав капітан (нік на сайті не збігся чи не вказаний) —
+   * 409 з переліком таких місць (pick), людина вибирає своє (slot).
    */
   r.post('/api/events/:id/teams/:tid/join', need(), wrap(async (req, res) => {
     await lock(req.params.id, async () => {
@@ -283,12 +284,18 @@ export function createEventRoutes({ events, items, content, hub, mapData, db }) 
       const nick = plain(req.user.nick, 40)
       const members = [...tm.members]
       const at = nick ? members.findIndex((m) => !m.user && m.nick.toLowerCase() === nick.toLowerCase()) : -1
-      if (at >= 0) members[at] = { ...members[at], user: req.user.id }
+      const open = members.flatMap((m, i) => (m.user ? [] : [{ i, nick: m.nick }]))
+      const slot = req.body.slot
+      if (slot !== undefined && slot !== null) {
+        if (!open.some((x) => x.i === slot)) throw fail('це місце вже зайняте — онови сторінку', 409)
+        members[slot] = { ...members[slot], user: req.user.id }
+      } else if (at >= 0) members[at] = { ...members[at], user: req.user.id }
       else if (members.length < ev.reg.teamSize) {
         const mine = nick || plain(req.user.name, 40)
         if (members.some((m) => m.nick.toLowerCase() === mine.toLowerCase())) throw fail('нік «{nick}» у команді двічі', 400, { nick: mine })
         members.push({ nick: mine, user: req.user.id })
-      } else throw fail('у команді вже повний склад — попроси капітана звільнити місце чи вписати твій нік у грі', 409)
+      } else if (open.length) throw fail('хто з них ти? Вибери свій нік у грі', 409, { pick: open })
+      else throw fail('у команді вже повний склад — попроси капітана звільнити місце', 409)
       await events.saveTeam({ ...tm, members })
     })
     await emit(req.params.id)

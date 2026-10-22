@@ -8,7 +8,7 @@ import { fmtServer, fmtShort, formatOf, listEvents, PHASE_LABEL, phaseOf, TYPE_L
 import { fmtLeft } from '@/lib/ddReset'
 import { locale, t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
-import { plainClick } from '@/lib/urlState'
+import { plainClick, useUrlParam } from '@/lib/urlState'
 import { useStore } from '@/store'
 import { AccessBadge, OwnerLink } from '@/components/access/Access'
 import { Seg } from '@/components/ui/seg'
@@ -156,9 +156,9 @@ export function UpcomingEvents({ onNew }: { onNew: () => void }) {
   )
 }
 
-/** вкладка «Події» гільдії: найближчі й минулі події, які влаштовує гільдія (чужим — лише публічні) */
+/** вкладка «Події» гільдії: найближчі й минулі події, які влаштовує гільдія (чужим — лише публічні); минулі — ?when=past */
 export function GuildEvents({ guild, canCreate }: { guild: { id: string; name: string }; canCreate: boolean }) {
-  const [when, setWhen] = useState<'upcoming' | 'past'>('upcoming')
+  const [when, setWhen, whenHref] = useUrlParam<'upcoming' | 'past'>('when', 'upcoming', (v) => v === 'past')
   const [rows, setRows] = useState<EventRow[] | null>(null)
   const [failed, setFailed] = useState(false)
   const setView = useStore((s) => s.setView)
@@ -172,7 +172,7 @@ export function GuildEvents({ guild, canCreate }: { guild: { id: string; name: s
   return (
     <section className="grid gap-2.5">
       <div className="flex flex-wrap items-center gap-2">
-        <Seg label={t('Які події')} value={when} onChange={setWhen} items={[{ id: 'upcoming', label: t('Найближчі') }, { id: 'past', label: t('Минулі') }]} />
+        <Seg label={t('Які події')} value={when} onChange={setWhen} href={whenHref} items={[{ id: 'upcoming', label: t('Найближчі') }, { id: 'past', label: t('Минулі') }]} />
         {canCreate && <button type="button" onClick={() => setView('events', { param: 'new', search: `?guild=${guild.id}` })} className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-lg bg-spice px-3.5 text-[13px] font-semibold text-on-spice hover:bg-spice/90"><CalendarPlus size={15} />{t('Влаштувати подію гільдії')}</button>}
       </div>
       {failed ? <p className="text-[13.5px] text-muted">{t('Події не завантажились')}</p>

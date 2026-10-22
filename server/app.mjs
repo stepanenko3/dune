@@ -387,6 +387,8 @@ export async function createApp({ dataDir, serveDist = false, background = true,
       ...(err.vars?.already ? { already: true } : {}),
       // вхід застарів (квиток другого кроку згорів) — сторінка входу повертається до пошти
       ...(err.vars?.restart ? { restart: 1 } : {}),
+      // приєднання до команди: місця з ніками, вписаними капітаном, — людина вибирає своє
+      ...(err.vars?.pick ? { pick: err.vars.pick } : {}),
     })
   })
 

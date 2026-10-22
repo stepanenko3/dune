@@ -226,6 +226,20 @@ describe.each(ENGINES)('%s', (_name, pgCfg) => {
       expect(ids((await frank.get('/api/events?scope=mine')).body.rows)).toContain(ev.id)
     })
 
+    it('приєднання до повного складу з ніками капітана: сервер питає, хто ти, — і людина займає вибране місце', async () => {
+      const hark = (await carol.get(`/api/events/${ev.id}`)).body.teams.find((x) => x.id === teams.hark.id)
+      const ask = await grace.post(`/api/events/${ev.id}/teams/${hark.id}/join`, { code: hark.code })
+      expect(ask.status).toBe(409)
+      expect(ask.body.pick).toEqual([{ i: 1, nick: 'Rabban' }])
+      // зайняте місце (капітана) не вибрати
+      expect((await grace.post(`/api/events/${ev.id}/teams/${hark.id}/join`, { code: hark.code, slot: 0 })).status).toBe(409)
+      const r = await grace.post(`/api/events/${ev.id}/teams/${hark.id}/join`, { code: hark.code, slot: 1 })
+      expect(r.status).toBe(200)
+      expect(r.body.teams.find((x) => x.id === hark.id).members[1]).toMatchObject({ nick: 'Rabban', user: { name: expect.any(String) } })
+      expect(r.body.me.team).toBe(hark.id)
+      expect((await grace.post(`/api/events/${ev.id}/teams/${hark.id}/leave`)).status).toBe(200)
+    })
+
     it('капітан змінює склад: гравець із сайту лишається на місці, чужого не додати; капітан — у складі', async () => {
       const keep = (await eve.get(`/api/events/${ev.id}`)).body.teams.find((x) => x.id === teams.fremen.id).members
       const r = await eve.patch(`/api/events/${ev.id}/teams/${teams.fremen.id}`, { name: 'Фремени Сієчу', members: keep.map((m) => ({ nick: m.nick, user: m.user?.id })) })

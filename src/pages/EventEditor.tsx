@@ -112,18 +112,19 @@ export function EventEditor({ id }: { id: string | null }) {
       setVis(guild ? 'guild' : 'public')
       const from = params.get('from')
       if (from) {
-        // схожа: усе те саме, без скасування й результатів, через тиждень (минула — від сьогодні в той самий час)
+        // схожа: усе те саме, без скасування й результатів, через тиждень (минула — від сьогодні в той самий час);
+        // тиждень — за календарем, а не 7 × 24 год: інакше після переходу на зимовий чи літній час зсунеться година
         getEvent(from).then((ev) => {
-          let starts = ev.starts + 7 * 86400_000
-          while (starts < Date.now() + 3600_000) starts += 7 * 86400_000
-          start({ ...docOf(ev), title: ev.title, starts, cancelled: false, cancelNote: '', results: [], resultsNote: '', bracket: null, reg: { ...ev.reg, open: true, closes: null } }, null)
+          const d = new Date(ev.starts)
+          do d.setDate(d.getDate() + 7); while (d.getTime() < Date.now() + 3600_000)
+          start({ ...docOf(ev), title: ev.title, starts: d.getTime(), cancelled: false, cancelNote: '', results: [], resultsNote: '', bracket: null, reg: { ...ev.reg, open: true, closes: null } }, null)
         }).catch(() => start(blankEvent(), null))
       } else start(blankEvent(), null)
     }
     return () => { live = false }
   }, [id, ready, me?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useCrumb(loadError ? [] : doc ? [...(id ? [{ label: saved?.title || t('Подія'), view: 'events' as const, param: id }] : []), { label: id ? t('Редагування') : t('Нова подія') }] : null)
+  useCrumb(loadError ? [] : ready && !me ? [{ label: t('Нова подія') }] : doc ? [...(id ? [{ label: saved?.title || t('Подія'), view: 'events' as const, param: id }] : []), { label: id ? t('Редагування') : t('Нова подія') }] : null)
   const dirty = !!doc && !!saved && !same(doc, saved)
   const set = <K extends keyof EventDoc>(k: K, v: EventDoc[K]) => setDoc((d) => (d ? { ...d, [k]: v } : d))
   const setReg = (patch: Partial<EventDoc['reg']>) => setDoc((d) => (d ? { ...d, reg: { ...d.reg, ...patch } } : d))
@@ -272,7 +273,7 @@ export function EventEditor({ id }: { id: string | null }) {
                   <Field label={doc.reg.teamSize > 1 ? t('Скільки команд') : t('Скільки учасників')} hint={t('0 — без обмежень; далі — резерв')}>
                     <SnNumberField className="w-[200px]" modelValue={doc.reg.slots} min={0} max={256} step={1} accessibilityLabel={t('Скільки місць')} onChange={(e: Event) => setReg({ slots: Math.min(256, Math.max(0, Number(valueOf(e)) || 0)) })} />
                   </Field>
-                  <div className="grid content-start gap-2 pt-6">
+                  <div className="grid content-start gap-2 sm:pt-6">
                     <SnCheckbox modelValue={doc.reg.approval} label={t('Підтверджую кожну заявку сам')} onChange={(e: Event) => setReg({ approval: checkedOf(e) })} />
                     <SnCheckbox modelValue={doc.reg.closes != null} label={t('Закрити реєстрацію раніше за початок')} onChange={(e: Event) => setReg({ closes: checkedOf(e) ? doc.starts - 3600_000 : null })} />
                   </div>
@@ -288,14 +289,15 @@ export function EventEditor({ id }: { id: string | null }) {
         <Section title={t('Призовий фонд')} hint={t('Що отримають переможці: солари, предмети, техніку. Порядок — за місцями.')}>
           <div className="grid gap-2">
             {doc.prizes.map((p, i) => (
-              <div key={i} className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_auto] items-center gap-2">
+              // на телефоні — за що приз і кнопка в рядку, сам приз — на всю ширину під ними (рядок — плашкою, щоб пари не злипались)
+              <div key={i} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 max-sm:rounded-lg max-sm:bg-panel2/50 max-sm:p-2 sm:grid-cols-[minmax(0,9rem)_minmax(0,1fr)_auto]">
                 <SnInput size="lg" modelValue={p.label} maxLength={60} placeholder={t('{n} місце', { n: i + 1 })} accessibilityLabel={t('За що приз')} onInput={(e: Event) => set('prizes', doc.prizes.map((x, j) => (j === i ? { ...x, label: valueOf(e) } : x)))} />
-                <SnInput size="lg" modelValue={p.prize} maxLength={200} placeholder={t('Напр.: 50 000 соларів')} accessibilityLabel={t('Приз')} onInput={(e: Event) => set('prizes', doc.prizes.map((x, j) => (j === i ? { ...x, prize: valueOf(e) } : x)))} />
+                <SnInput size="lg" className="order-3 col-span-2 sm:order-none sm:col-span-1" modelValue={p.prize} maxLength={200} placeholder={t('Напр.: 50 000 соларів')} accessibilityLabel={t('Приз')} onInput={(e: Event) => set('prizes', doc.prizes.map((x, j) => (j === i ? { ...x, prize: valueOf(e) } : x)))} />
                 <Button size="sm" variant="ghost" aria-label={t('Прибрати приз')} onClick={() => set('prizes', doc.prizes.filter((_, j) => j !== i))}><Trash2 size={14} /></Button>
               </div>
             ))}
             <div className="flex flex-wrap items-center gap-2">
-              <Button size="sm" variant="secondary" disabled={doc.prizes.length >= 10} onClick={() => set('prizes', [...doc.prizes, { label: t('{n} місце', { n: doc.prizes.length + 1 }), prize: '' }])}><Plus size={14} />{t('Додати приз')}</Button>
+              <Button size="sm" variant="secondary" disabled={doc.prizes.length >= 10} onClick={() => set('prizes', [...doc.prizes, { label: '', prize: '' }])}><Plus size={14} />{t('Додати приз')}</Button>
             </div>
             <Field label={t('Внесок за участь')} hint={t('Необов’язково: напр. «5 000 соларів з команди — у призовий фонд»')}>
               <SnInput size="lg" modelValue={doc.fee} maxLength={120} accessibilityLabel={t('Внесок за участь')} onInput={(e: Event) => set('fee', valueOf(e))} />
