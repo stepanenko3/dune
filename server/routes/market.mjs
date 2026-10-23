@@ -124,9 +124,9 @@ export function createMarketRoutes({ market, items, content, hub, mapData, db, g
     const deals = edit ? await market.dealsOfListing(l.id) : uid ? (await market.dealsOfListing(l.id)).filter((d) => d.maker === uid) : []
     return {
       ...view,
-      place: await placeView(req, l), ttl: l.ttl, note: l.note,
+      place: await placeView(req, l), ttl: l.ttl, note: l.note, modClosed: !!l.modClosed,
       contact: { site: l.contact.site, ...(uid && l.contact.nick ? { nick: l.contact.nick } : {}), hidden: !uid && !!l.contact.nick },
-      rights: { edit, manage, offer: !!uid && !edit && live(l) && !it.hidden },
+      rights: { edit, manage, offer: !!uid && !edit && live(l) && !it.hidden && l.contact.site },
       matches: edit ? await visibleCounters(req, l, it) : [],
       deals: await dealsView(req, deals),
       myOffer: uid && !edit ? (await market.activeOffer(l.id, uid))?.id ?? null : null,
@@ -142,7 +142,7 @@ export function createMarketRoutes({ market, items, content, hub, mapData, db, g
     if (d.taker === uid) return 'taker'
     const it = await items.get('listing', d.listingId)
     if (it && !d.taker && rightsOf(req.ctx, it).edit && can(req.ctx, it).view) return 'owner'
-    if (isMod(req) && (await market.hasReports([['deal', d.id], ['listing', d.listingId], ['user', d.maker], ['user', d.taker]]))) return 'mod'
+    if (isMod(req) && (await market.hasReports([['deal', d.id], ['listing', d.listingId]]))) return 'mod'
     return null
   }
   async function loadDeal(req) {
@@ -315,7 +315,12 @@ export function createMarketRoutes({ market, items, content, hub, mapData, db, g
     const out = await lock(d.listingId, async () => {
       const l = await market.get(d.listingId)
       if (!l || !live(l)) throw fail('оголошення вже не діє', 409)
-      if (d.qty > l.left - (await market.promised(l.id))) throw fail('залишку не вистачає — частину вже пообіцяно в інших угодах', 409)
+      // умови — свіжі (поки сторінка була відкрита, їх могли змінити); updated — версія, яку людина бачила
+      const cur = await market.getDeal(d.id)
+      const seen = req.body?.updated
+      if (seen != null && Number(seen) !== cur.updated) throw fail('пропозицію щойно змінили — перевір нові умови', 409)
+      if (await market.banOf(cur.maker)) throw fail('ця людина зараз не може торгувати на біржі', 409)
+      if (cur.qty > l.left - (await market.promised(l.id))) throw fail('залишку не вистачає — частину вже пообіцяно в інших угодах', 409)
       const next = await market.moveDeal(d.id, ['offered'], 'accepted', { taker: req.user.id, by: req.user.id })
       if (!next) throw fail('пропозицію вже розглянули', 409)
       return next
@@ -349,6 +354,9 @@ export function createMarketRoutes({ market, items, content, hub, mapData, db, g
     if (d.status !== 'accepted') throw fail('завершити можна лише прийняту угоду', 409)
     const { deal, finished } = await lock(d.listingId, () => market.confirmDone(d.id, role))
     if (finished) {
+      // в історію цін і медіану — лише якщо оголошення публічне на мить завершення
+      const it = await items.get('listing', deal.listingId)
+      await market.setPub(deal.id, !!it && it.visibility === 'public' && !it.hidden)
       for (const u of [deal.maker, deal.taker]) await notify(u, 'market.rate', { deal: deal.id, gid: deal.gid })
       await emit(d.listingId)
     } else for (const u of await otherSide(deal, role)) await notify(u, 'market.done', { deal: deal.id, gid: deal.gid })
@@ -463,7 +471,7 @@ export function createMarketRoutes({ market, items, content, hub, mapData, db, g
     const author = it ? authorOf(it) : null
     if (['hide', 'unhide', 'close'].includes(action)) {
       if (!it) throw fail('ця дія — для оголошення')
-      if (action === 'close') await market.setStatus(target, 'closed')
+      if (action === 'close') await market.setStatus(target, 'closed', { mod: true })
       else await items.moderate('listing', target, { hidden: action === 'hide' })
       if (author) await notify(author, 'market.moderated', { listing: target, action, note })
       await hub?.emit({ op: 'put', kind: 'listing', id: target }, it)
@@ -476,6 +484,8 @@ export function createMarketRoutes({ market, items, content, hub, mapData, db, g
         const days = Number(req.body?.days)
         if (!BAN_DAYS.includes(days)) throw fail('на скільки днів?')
         await market.ban(uid, days ? Date.now() + days * DAY : null, note, req.user.id)
+        // її пропозиції, яких ще не прийняли, — скасовано (прийняті друга сторона завершує чи скасовує сама)
+        for (const x of await market.cancelOffersOf(uid)) { const it = await items.get('listing', x.listingId); if (it && authorOf(it)) await notify(authorOf(it), 'market.cancelled', { deal: x.id, gid: x.gid }) }
         // її відкриті особисті оголошення — закрито
         for (const row of (await market.list({ scope: 'mine', uid, gids: [], state: 'open', limit: 100 })).rows) {
           if (row.owner_kind === 'user' && row.owner_id === uid) { await market.setStatus(row.id, 'closed'); await hub?.emit({ op: 'put', kind: 'listing', id: row.id }, row) }
@@ -487,7 +497,8 @@ export function createMarketRoutes({ market, items, content, hub, mapData, db, g
       await market.dropRatings(deal.id)
     } else if (action !== 'dismiss') throw fail('невідома дія')
     // розблокування — не закриває скарг (людину можуть розблокувати й пізніше)
-    const n = action === 'unban' || action === 'unhide' ? 0 : await market.resolve(kind, target, action, req.user.id)
+    // повернули сховане — скарги на нього розглянуто (інакше наступна ж RMT-скарга сховає знову)
+    const n = action === 'unban' ? 0 : await market.resolve(kind, target, action, req.user.id)
     res.json({ ok: true, resolved: n })
   }))
 
@@ -526,12 +537,15 @@ export function createMarketRoutes({ market, items, content, hub, mapData, db, g
       const { l: cur, it, edit, manage } = await load(req, 'edit')
       const { owner, visibility, rules, base, item, rights, matches, deals, rep, ...body } = req.body || {}
       const g = await goods()
-      const { id, left, status, expires, fresh, created, updated, ...curDoc } = cur
+      const { id, left, status, expires, fresh, created, updated, modClosed, ...curDoc } = cur
       const doc = cleanListing({ ...curDoc, ...body }, { goods: g, maps: mapData })
       if (doc.gid !== cur.gid || doc.side !== cur.side) {
         if (await market.hasDeals(cur.id)) throw fail('предмет і вид не змінюються, коли вже є угоди — закрий це й розмісти нове', 409)
       }
       await checkBase(req, doc)
+      const taken = (cur.qty - cur.left) + (await market.promised(cur.id))
+      if (doc.qty < taken) throw fail('кількість не може бути меншою, ніж уже продано й пообіцяно в угодах ({n})', 409, { n: taken })
+      if (cur.modClosed) doc.modClosed = true
       const next = await market.put(cur.id, doc, g.get(doc.gid), Number.isFinite(base) ? base : null)
       if (next.conflict) return { conflict: true, body: await full(req, next, it, edit, manage) }
       const now2 = (await items.touch('listing', cur.id, meta(doc, g.get(doc.gid)))) || it
@@ -553,7 +567,7 @@ export function createMarketRoutes({ market, items, content, hub, mapData, db, g
   r.post('/api/market/:id/renew', need(), wrap(async (req, res) => {
     await noBan(req)
     const { l, it, edit, manage } = await load(req, 'edit')
-    if (it.hidden && !isMod(req)) throw fail('оголошення сховане модератором', 409)
+    if ((it.hidden || l.modClosed) && !isMod(req)) throw l.modClosed ? fail('оголошення закрив модератор', 409) : fail('оголошення сховане модератором', 409)
     if (l.left <= 0) throw fail('усе вже продано — розмісти нове оголошення', 409)
     const o = { kind: it.owner_kind, id: it.owner_id }
     const next = await withLock(`limit:${o.kind}:${o.id}`, async () => {

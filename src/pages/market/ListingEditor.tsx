@@ -275,7 +275,7 @@ export default function ListingEditor({ id }: { id: string | null }) {
         <Section title={t('Де передати')} hint={t('Необов’язково: точка на мапі гри, твоя база чи словами.')}>
           <div className="grid gap-3">
             <div className={CHOICES}>
-              {([['none', X, t('Домовимось')], ['point', MapPin, t('Точка на мапі')], ['base', Handshake, t('База')], ['text', Type, t('Словами')]] as const).map(([k, I, label]) => (
+              {([['none', X, t('Домовимось пізніше')], ['point', MapPin, t('Точка на мапі')], ['base', Handshake, t('База')], ['text', Type, t('Словами')]] as const).map(([k, I, label]) => (
                 <Choice key={k} on={placeKind === k} onClick={() => setPlace(k)}><span className="flex items-center gap-1.5 text-[13.5px] font-semibold"><I size={14} className="text-spice" />{label}</span></Choice>
               ))}
             </div>

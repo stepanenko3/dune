@@ -103,7 +103,7 @@ function BanDialog({ target, onClose, onBan }: { target: { user: string; name: s
         <div className={CHOICES}>
           {DAYS.map((d) => <Choice key={d} on={days === d} onClick={() => setDays(d)}><span className="text-[13.5px] font-semibold">{d ? t('{n} дн.', { n: d }) : t('Назавжди')}</span></Choice>)}
         </div>
-        <SnTextarea size="lg" rows={2} maxLength={300} modelValue={note} placeholder={t('Причина — її побачить людина')} accessibilityLabel={t('Причина')} onInput={(e: Event) => setNote(valueOf(e))} />
+        <SnTextarea size="lg" rows={2} maxLength={300} modelValue={note} placeholder={t('Причину побачить заблокована людина')} accessibilityLabel={t('Причина')} onInput={(e: Event) => setNote(valueOf(e))} />
         {err && <ErrorAlert message={err} />}
       </div>
     </Modal>

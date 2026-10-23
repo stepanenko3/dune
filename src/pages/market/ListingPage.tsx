@@ -78,11 +78,12 @@ export default function ListingPage({ id }: { id: string }) {
             <>
               <Button variant="secondary" onClick={() => setView('market', { param: l.id, sub: 'edit' })}><Pencil size={14} />{t('Змінити')}</Button>
               {live ? <Button variant="secondary" onClick={() => act(() => closeListing(l.id), t('Оголошення закрито'))}><X size={14} />{t('Закрити')}</Button> : null}
-              {l.left > 0 && <Button onClick={() => setRenew(true)}><RefreshCw size={14} />{live ? t('Продовжити') : t('Відкрити знову')}</Button>}
+              {l.left > 0 && !l.modClosed && <Button onClick={() => setRenew(true)}><RefreshCw size={14} />{live ? t('Продовжити') : t('Відкрити знову')}</Button>}
               {l.rights.manage && !l.deals.length && <Button variant="ghost" className="text-bad hover:text-bad" onClick={remove}><Trash2 size={14} />{t('Стерти')}</Button>}
             </>
           ) : me ? <ReportButton target={{ kind: 'listing', id: l.id }} /> : undefined}
         />
+        {l.modClosed && <ErrorAlert title={t('Оголошення закрив модератор')} message={t('Відкрити його знову не можна. Якщо це помилка — напиши адміністрації.')} />}
         {l.item.hidden && <ErrorAlert title={t('Оголошення сховане модератором')} message={t('Його не видно в стрічці й книзі заявок. Якщо це помилка — напиши адміністрації.')} />}
         <div className="grid grid-cols-[minmax(0,1fr)] gap-2.5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
           <div className="grid content-start gap-2.5">
@@ -237,13 +238,13 @@ function OfferBox({ l, onDone }: { l: ListingFull; onDone: (dealId: string) => v
 /** пропозиції на моє оголошення: прийняти / відхилити; решта — до угоди */
 function Offers({ l, onChange }: { l: ListingFull; onChange: () => void }) {
   const me = useAuth((s) => s.user)
-  const act = async (id: string, a: 'accept' | 'decline') => {
+  const act = async (id: string, a: 'accept' | 'decline', updated: number) => {
     try {
-      await dealAction(id, a)
+      await dealAction(id, a, { updated })
       toast.success(a === 'accept' ? t('Угоду прийнято — домовтеся в листуванні') : t('Пропозицію відхилено'))
       if (a === 'accept') openPath(dealHref(id))
       else onChange()
-    } catch (e) { toast.error((e as Error).message) }
+    } catch (e) { toast.error((e as Error).message); onChange() }
   }
   const open = l.deals.filter((d) => d.status === 'offered' || d.status === 'accepted')
   const past = l.deals.filter((d) => !(d.status === 'offered' || d.status === 'accepted'))
@@ -253,8 +254,8 @@ function Offers({ l, onChange }: { l: ListingFull; onChange: () => void }) {
         {open.map((d) => (
           <DealCard key={d.id} d={d} me={me?.id} actions={d.status === 'offered' ? (
             <>
-              <Button size="sm" onClick={() => act(d.id, 'accept')}><Check size={13} />{t('Прийняти')}</Button>
-              <Button size="sm" variant="ghost" onClick={() => act(d.id, 'decline')}><X size={13} />{t('Відхилити')}</Button>
+              <Button size="sm" onClick={() => act(d.id, 'accept', d.updated)}><Check size={13} />{t('Прийняти')}</Button>
+              <Button size="sm" variant="ghost" onClick={() => act(d.id, 'decline', d.updated)}><X size={13} />{t('Відхилити')}</Button>
             </>
           ) : undefined} />
         ))}

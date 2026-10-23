@@ -47,7 +47,8 @@ export default function DealPage({ id }: { id: string }) {
   if (!d) return <Loading page />
   const act = async (a: 'accept' | 'decline' | 'cancel' | 'done') => {
     if (a === 'cancel' && !(await confirmAsk({ title: t('Скасувати угоду?'), description: t('Друга сторона отримає сповіщення.'), confirm: t('Скасувати угоду'), destructive: true }))) return
-    try { setD(await dealAction(d.id, a)) } catch (e) { toast.error((e as Error).message) }
+    // прийняти — ту версію умов, яку людина бачить (змінили — сервер скаже, і ми покажемо нові)
+    try { setD(await dealAction(d.id, a, a === 'accept' ? { updated: d.updated } : {})) } catch (e) { toast.error((e as Error).message); setAttempt((n) => n + 1) }
   }
   const party = d.role === 'maker' || d.role === 'taker'
   const mineDone = d.role === 'maker' ? d.makerDone : d.role === 'taker' ? d.takerDone : null
@@ -107,8 +108,8 @@ export default function DealPage({ id }: { id: string }) {
             </Section>
             <Section title={t('Сторони')}>
               <div className="grid gap-3">
-                <Side label={t('Продає')} p={seller} rep={sRep} pending={!seller && d.status === 'offered' ? d.owner.name : null} />
-                <Side label={t('Купує')} p={buyer} rep={bRep} pending={!buyer && d.status === 'offered' ? d.owner.name : null} />
+                <Side label={t('Продавець')} p={seller} rep={sRep} pending={!seller && d.status === 'offered' ? d.owner.name : null} />
+                <Side label={t('Покупець')} p={buyer} rep={bRep} pending={!buyer && d.status === 'offered' ? d.owner.name : null} />
                 {d.owner.kind === 'guild' && <p className="text-[12.5px] text-muted">{t('Оголошення гільдії [{tag}] {name}', { tag: d.owner.tag ?? '', name: d.owner.name })}</p>}
               </div>
             </Section>

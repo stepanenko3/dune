@@ -368,9 +368,9 @@ describe.each(ENGINES)('%s', (_name, pgCfg) => {
       const g = q.find((x) => x.target === l.id)
       expect(g).toMatchObject({ kind: 'listing', reasons: { rmt: 3 } })
       expect(g.subject).toMatchObject({ id: l.id })
-      expect((await mod.post(`/api/market/reports/${g.id}/resolve`, { action: 'unhide' })).status).toBe(200)
+      // повернули — і скарги розглянуто разом із цим
+      expect((await mod.post(`/api/market/reports/${g.id}/resolve`, { action: 'unhide' })).body.resolved).toBe(3)
       expect(ids((await anon.get('/api/market')).body.rows)).toContain(l.id)
-      expect((await mod.post(`/api/market/reports/${g.id}/resolve`, { action: 'dismiss' })).body.resolved).toBe(3)
       expect((await mod.get('/api/market/reports')).body.rows.find((x) => x.target === l.id)).toBeUndefined()
       L.carol = l
     })
@@ -387,6 +387,67 @@ describe.each(ENGINES)('%s', (_name, pgCfg) => {
       expect((await carol.get('/api/market/me')).body.ban).toMatchObject({ reason: 'шахрайство' })
       await mod.post(`/api/market/reports/${g.id}/resolve`, { action: 'unban' })
       expect((await carol.get('/api/market/me')).body.ban).toBeNull()
+    })
+  })
+
+  describe('після рев’ю', () => {
+    it('прийняти можна лише ту версію пропозиції, яку бачив: змінили — 409', async () => {
+      const l = (await bob.post('/api/market', sell({ gid: 'Water', qty: 10, price: 100 }))).body
+      const d = (await eve.post(`/api/market/${l.id}/deals`, { qty: 5 })).body
+      const seen = (await bob.get(`/api/market/deals/${d.id}`)).body.updated
+      await new Promise((r) => setTimeout(r, 5))
+      expect((await eve.patch(`/api/market/deals/${d.id}`, { qty: 5, price: 50 })).status).toBe(200)
+      expect((await bob.post(`/api/market/deals/${d.id}/accept`, { updated: seen })).status).toBe(409)
+      const fresh = (await bob.get(`/api/market/deals/${d.id}`)).body
+      expect(fresh.price).toBe(50)
+      expect((await bob.post(`/api/market/deals/${d.id}/accept`, { updated: fresh.updated })).body.status).toBe('accepted')
+      // кількість нижче вже обіцяного не ставиться
+      expect((await bob.put(`/api/market/${l.id}`, { qty: 3 })).status).toBe(409)
+      // модератор закрив — автор сам не відкриє
+      await frank.post('/api/market/reports', { target: { kind: 'listing', id: l.id }, reason: 'spam' })
+      const g = (await mod.get('/api/market/reports')).body.rows.find((x) => x.target === l.id)
+      await mod.post(`/api/market/reports/${g.id}/resolve`, { action: 'close' })
+      expect((await bob.post(`/api/market/${l.id}/renew`, { ttl: 7 })).status).toBe(409)
+    })
+
+    it('модератор повернув сховане — нова RMT-скарга не ховає знову', async () => {
+      const l = (await dave.post('/api/market', sell({ gid: 'Water', qty: 50, price: 3 }))).body
+      for (const a of [eve, frank, carol]) await a.post('/api/market/reports', { target: { kind: 'listing', id: l.id }, reason: 'rmt' })
+      expect(ids((await anon.get('/api/market')).body.rows)).not.toContain(l.id)
+      const g = (await mod.get('/api/market/reports')).body.rows.find((x) => x.target === l.id)
+      await mod.post(`/api/market/reports/${g.id}/resolve`, { action: 'unhide' })
+      await bob.post('/api/market/reports', { target: { kind: 'listing', id: l.id }, reason: 'rmt' })
+      expect(ids((await anon.get('/api/market')).body.rows)).toContain(l.id)
+    })
+
+    it('лише нік без листування — пропонувати на сайті не можна (і форма це знає)', async () => {
+      const l = (await bob.post('/api/market', sell({ gid: 'Water', qty: 5, price: 2, contact: { site: false, nick: 'Bob' } }))).body
+      expect((await eve.get(`/api/market/${l.id}`)).body.rights.offer).toBe(false)
+    })
+
+    it('заборона скасовує пропозиції забороненого; прийняти їх уже не вийде', async () => {
+      const l = (await bob.post('/api/market', sell({ gid: 'Water', qty: 5, price: 2 }))).body
+      const d = (await dave.post(`/api/market/${l.id}/deals`, { qty: 1 })).body
+      await eve.post('/api/market/reports', { target: { kind: 'user', id: dave.id }, reason: 'scam' })
+      const g = (await mod.get('/api/market/reports')).body.rows.find((x) => x.kind === 'user' && x.target === dave.id)
+      await mod.post(`/api/market/reports/${g.id}/resolve`, { action: 'ban', days: 1 })
+      expect((await bob.get(`/api/market/deals/${d.id}`)).body.status).toBe('cancelled')
+      expect((await bob.post(`/api/market/deals/${d.id}/accept`)).status).toBe(409)
+      await mod.post(`/api/market/reports/${g.id}/resolve`, { action: 'unban' })
+    })
+
+    it('угода оголошення, що стало гільдійським до завершення, — не в історії; у профілі — без предмета', async () => {
+      const l = (await bob.post('/api/market', sell({ gid: 'Rifle_T5', qty: 2, price: 999 }))).body
+      const d = (await frank.post(`/api/market/${l.id}/deals`, { qty: 1 })).body
+      await bob.post(`/api/market/deals/${d.id}/accept`)
+      expect((await bob.patch(`/api/items/listing/${l.id}/access`, { visibility: 'private' })).status).toBe(200)
+      await frank.post(`/api/market/deals/${d.id}/done`)
+      await bob.post(`/api/market/deals/${d.id}/done`)
+      await frank.post(`/api/market/deals/${d.id}/rate`, { score: 4 })
+      expect((await anon.get('/api/market/item/Rifle_T5')).body.history.map((h) => h.price)).not.toContain(999)
+      const login = (await bob.get('/api/me')).body.user?.login ?? (await bob.get('/api/me')).body.login
+      const r = (await anon.get(`/api/market/users/${login}`)).body.ratings.find((x) => x.score === 4)
+      expect(r.gid).toBeNull()
     })
   })
 

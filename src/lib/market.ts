@@ -88,6 +88,8 @@ export interface ListingFull extends ListingRow {
   place: Place
   ttl: number
   note: string
+  /** закрив модератор — автор сам не відкриє */
+  modClosed: boolean
   contact: { site: boolean; nick?: string; hidden: boolean }
   rights: { edit: boolean; manage: boolean; offer: boolean }
   matches: ListingRow[]
@@ -147,7 +149,8 @@ export const getDeal = (id: string) => get<DealFull>(`/api/market/deals/${encode
 export type Terms = { qty: number; pay?: 'solari' | 'barter'; price?: number | null; barter?: Barter[] }
 export const offerDeal = (listing: string, body: Terms & { text?: string }) => post<DealFull>(`/api/market/${listing}/deals`, body)
 export const amendDeal = (id: string, body: Terms) => patch<DealFull>(`/api/market/deals/${id}`, body)
-export const dealAction = (id: string, action: 'accept' | 'decline' | 'cancel' | 'done', reason?: string) => post<DealFull>(`/api/market/deals/${id}/${action}`, reason ? { reason } : {})
+/** updated — версія пропозиції, яку людина бачила (прийняти): змінили тим часом — сервер відповість 409 */
+export const dealAction = (id: string, action: 'accept' | 'decline' | 'cancel' | 'done', extra: { reason?: string; updated?: number } = {}) => post<DealFull>(`/api/market/deals/${id}/${action}`, extra)
 export const sendMessage = (id: string, text: string) => post<DealFull>(`/api/market/deals/${id}/messages`, { text })
 export const rateDeal = (id: string, score: number, text: string) => post<DealFull>(`/api/market/deals/${id}/rate`, { score, text })
 export const report = (target: { kind: 'listing' | 'deal' | 'user'; id: string }, reason: Reason, note: string) => post<{ ok: boolean }>('/api/market/reports', { target, reason, note })
@@ -181,7 +184,7 @@ export const REASON_HINT: Record<Reason, string> = {
   wrong: t('Неправдивий предмет, кількість чи ціна'), abuse: t('Грубощі, погрози'), other: t('Щось інше — опиши'),
 }
 export const FRESH = ['', '1', '3', '7'] as const
-export const FRESH_LABEL: Record<(typeof FRESH)[number], string> = { '': t('Будь-коли'), '1': t('За добу'), '3': t('За 3 дні'), '7': t('За тиждень') }
+export const FRESH_LABEL: Record<(typeof FRESH)[number], string> = { '': t('Будь-коли'), '1': t('Останні 24 год'), '3': t('Останні 3 дні'), '7': t('Останній тиждень') }
 export const SORTS = ['new', 'cheap', 'dear'] as const
 export const SORT_LABEL: Record<(typeof SORTS)[number], string> = { new: t('Нові'), cheap: t('Дешевші'), dear: t('Дорожчі') }
 

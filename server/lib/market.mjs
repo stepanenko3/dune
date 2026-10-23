@@ -245,7 +245,15 @@ export async function createMarket(db) {
       if (r.changes) return getListing(id)
       return { conflict: true, ...(await getListing(id)) }
     },
-    setStatus: async (id, status) => { await db.run('UPDATE market_listings SET status = ?, updated = ? WHERE id = ?', status, Date.now(), String(id)); return getListing(id) },
+    /** { mod } — закрив модератор: автор сам не відкриє (позначка в документі) */
+    async setStatus(id, status, { mod = false } = {}) {
+      if (mod) {
+        const r = await db.get('SELECT doc FROM market_listings WHERE id = ?', String(id))
+        if (r) await db.run('UPDATE market_listings SET doc = ? WHERE id = ?', JSON.stringify({ ...JSON.parse(r.doc), modClosed: true }), String(id))
+      }
+      await db.run('UPDATE market_listings SET status = ?, updated = ? WHERE id = ?', status, Date.now(), String(id))
+      return getListing(id)
+    },
     /** продовжити: знову відкрите на ttl днів, свіже від зараз */
     async renew(id, ttl, now = Date.now()) {
       const cur = await getListing(id)
@@ -279,7 +287,9 @@ export async function createMarket(db) {
         where.push(`(${own}${gids.length ? ` OR (i.owner_kind = 'guild' AND i.owner_id IN (${qs(gids)}))` : ''} OR i.created_by = ?)`); args.push(uid, ...gids, uid)
       } else if (scope === 'guild') {
         if (!guild) return { rows: [], total: 0 }
-        where.push(`i.owner_kind = 'guild' AND i.owner_id = ?${gids.includes(guild) ? '' : ` AND ${pub}`}`); args.push(guild)
+        // своїм — і гільдійське, але сховане модератором — лише автору
+        if (gids.includes(guild)) { where.push("i.owner_kind = 'guild' AND i.owner_id = ? AND (i.hidden IS NULL OR i.created_by = ?)"); args.push(guild, uid) }
+        else { where.push(`i.owner_kind = 'guild' AND i.owner_id = ? AND ${pub}`); args.push(guild) }
       } else if (scope === 'user') {
         if (!uidOf) return { rows: [], total: 0 }
         where.push(`${pub} AND ${own}`); args.push(uidOf)
@@ -375,8 +385,9 @@ export async function createMarket(db) {
     async history(gid, { region = '', world = '', limit = 100 } = {}) {
       const where = ["gid = ? AND status = 'done' AND pub = 1"], args = [gid]
       if (REGIONS.includes(region)) { where.push('region = ?'); args.push(region) }
-      const rows = await db.all(`SELECT closed, qty, price, barter, side, region, world FROM market_deals WHERE ${where.join(' AND ')} ORDER BY closed DESC LIMIT ?`, ...args, Math.min(300, limit))
-      return rows.filter((r) => !worldKey(world) || worldKey(r.world) === worldKey(world))
+      // світ фільтруємо після запиту (ключ світу — з назви), тож беремо з запасом, а обрізаємо вже відфільтроване
+      const rows = await db.all(`SELECT closed, qty, price, barter, side, region, world FROM market_deals WHERE ${where.join(' AND ')} ORDER BY closed DESC LIMIT ?`, ...args, worldKey(world) ? 3000 : Math.min(300, limit))
+      return rows.filter((r) => !worldKey(world) || worldKey(r.world) === worldKey(world)).slice(0, Math.min(300, limit))
         .map((r) => ({ at: Number(r.closed), qty: Number(r.qty), price: r.price == null ? null : Number(r.price), barter: JSON.parse(r.barter), side: r.side, region: r.region, world: r.world }))
     },
 
@@ -433,6 +444,13 @@ export async function createMarket(db) {
         return { deal, finished: !!fin.changes, listing }
       })
     },
+    setPub: (id, pub) => db.run('UPDATE market_deals SET pub = ? WHERE id = ?', pub ? 1 : 0, String(id)),
+    /** заборона: пропозиції людини, яких ще не прийняли, — скасовано; повертає їх */
+    async cancelOffersOf(uid) {
+      const rows = (await db.all("SELECT * FROM market_deals WHERE maker = ? AND status = 'offered'", uid)).map(dealRow)
+      if (rows.length) await db.run("UPDATE market_deals SET status = 'cancelled', reason = '', closed = ?, updated = ? WHERE maker = ? AND status = 'offered'", Date.now(), Date.now(), uid)
+      return rows
+    },
     /** відкриті угоди людини (заборона): скасувати можна іншій стороні — тут лише список */
     openDealsOf: async (uid) => (await db.all("SELECT * FROM market_deals WHERE (maker = ? OR taker = ?) AND status IN ('offered', 'accepted')", uid, uid)).map(dealRow),
 
@@ -475,10 +493,11 @@ export async function createMarket(db) {
     },
     /** останні оцінки людини: оцінка, текст, коли, у якій ролі вона була (продавець / покупець) */
     async ratingsOf(uid, limit = 20) {
-      const rows = await db.all(`SELECT r.score, r.text, r.at, r.from_user, d.side, d.maker, d.gid FROM market_ratings r JOIN market_deals d ON d.id = r.deal_id
+      const rows = await db.all(`SELECT r.score, r.text, r.at, r.from_user, d.side, d.maker, d.gid, d.pub FROM market_ratings r JOIN market_deals d ON d.id = r.deal_id
         WHERE r.to_user = ? ORDER BY r.at DESC LIMIT ?`, uid, Math.min(100, limit))
       // продавець — та сторона, що віддає предмет: у «Продам» — сторона оголошення, у «Куплю» — та, що запропонувала
-      return rows.map((r) => ({ score: Number(r.score), text: r.text, at: Number(r.at), from: r.from_user, gid: r.gid, role: (r.side === 'sell') === (r.maker !== uid) ? 'seller' : 'buyer' }))
+      // предмет угоди з непублічного оголошення не показуємо (це внутрішня торгівля гільдії чи людини)
+      return rows.map((r) => ({ score: Number(r.score), text: r.text, at: Number(r.at), from: r.from_user, gid: Number(r.pub) ? r.gid : null, role: (r.side === 'sell') === (r.maker !== uid) ? 'seller' : 'buyer' }))
     },
 
     // ---------- скарги й заборони ----------
@@ -500,7 +519,7 @@ export async function createMarket(db) {
     /** скарги для черги: open — відкриті, closed — розглянуті (останні 200) */
     reports: async (status = 'open') => db.all(`SELECT * FROM market_reports WHERE status ${status === 'open' ? "= 'open'" : "<> 'open'"} ORDER BY created DESC LIMIT ${status === 'open' ? 1000 : 200}`),
     /** розглянути всі відкриті скарги на ціль: action — що зробили (dismiss → dismissed, решта → done) */
-    resolve: async (kind, target, action, by) => (await db.run("UPDATE market_reports SET status = ?, action = ?, resolved_by = ?, resolved = ? WHERE kind = ? AND target = ? AND status = 'open'", action === 'dismiss' ? 'dismissed' : 'done', action, by, Date.now(), kind, target)).changes,
+    resolve: async (kind, target, action, by) => (await db.run("UPDATE market_reports SET status = ?, action = ?, resolved_by = ?, resolved = ? WHERE kind = ? AND target = ? AND status = 'open'", ['dismiss', 'unhide'].includes(action) ? 'dismissed' : 'done', action, by, Date.now(), kind, target)).changes,
     /** заборона: until — до коли (null — назавжди) */
     ban: (uid, until, reason, by) => db.run('INSERT INTO market_bans (user_id, until, reason, by_user, at) VALUES (?, ?, ?, ?, ?) ON CONFLICT (user_id) DO UPDATE SET until = excluded.until, reason = excluded.reason, by_user = excluded.by_user, at = excluded.at', uid, until, reason, by, Date.now()),
     unban: (uid) => db.run('DELETE FROM market_bans WHERE user_id = ?', uid),

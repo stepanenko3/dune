@@ -51,11 +51,11 @@
   "src/lib/basegen.ts:71"
  ],
  "«{name}» повернуто": [
-  "src/components/access/ItemCard.tsx:45",
+  "src/components/access/ItemCard.tsx:47",
   "src/components/base/Ask.tsx:87"
  ],
  "«{name}» стерто назавжди": [
-  "src/components/access/ItemCard.tsx:46",
+  "src/components/access/ItemCard.tsx:48",
   "src/components/base/Ask.tsx:96"
  ],
  "«{name}» стоїть надворі: з приміщення є вихід без стіни чи щита": [
@@ -83,7 +83,7 @@
   "src/pages/Roadmap.tsx:376"
  ],
  "«Для гільдії» — коли вступиш у гільдію.": [
-  "src/components/map/SpiceActive.tsx:123"
+  "src/components/map/SpiceActive.tsx:117"
  ],
  "«Ніхто» — роадмап лише копіюють собі, щоб відмічати": [
   "src/components/access/Rights.tsx:58"
@@ -113,7 +113,7 @@
  ],
  "{boxes}, до {best}%": [
   "src/components/map/PlaceParts.tsx:85",
-  "src/pages/MapPage.tsx:1212"
+  "src/pages/MapPage.tsx:1204"
  ],
  "{cost} за шт.": [
   "src/components/catalog/ProdCalc.tsx:680"
@@ -141,7 +141,7 @@
   "server/lib/bases.mjs:364"
  ],
  "{fields} поруч{sector}": [
-  "src/pages/MapPage.tsx:1198"
+  "src/pages/MapPage.tsx:1190"
  ],
  "{fps} FPS · кадр {ms} мс · CPU {cpu} мс · ×{dpr} · {tier}": [
   "src/pages/Orni3D.tsx:2662"
@@ -161,7 +161,7 @@
   "src/lib/catalog.ts:272",
   "src/lib/ddReset.ts:86",
   "src/lib/events.ts:155",
-  "src/lib/map/spice.ts:72",
+  "src/lib/map/spice.ts:69",
   "src/pages/EventEditor.tsx:220"
  ],
  "{k} {w} поспіль": [
@@ -198,6 +198,9 @@
   "src/lib/ddReset.ts:87",
   "src/pages/admin/fields.tsx:52"
  ],
+ "{n} дн.": [
+  "src/pages/market/Reports.tsx:104"
+ ],
  "{n} дн. тому": [
   "src/pages/Home.tsx:69"
  ],
@@ -221,6 +224,9 @@
  "{n} з {max} разів": [
   "src/pages/Guilds.tsx:662"
  ],
+ "{n} з 5": [
+  "src/components/market/bits.tsx:45"
+ ],
  "{n} каменю": [
   "src/components/base/builder/Cards.tsx:114"
  ],
@@ -242,8 +248,8 @@
  ],
  "{n} мл": [
   "src/components/catalog/ProdCalc.tsx:33",
-  "src/pages/Catalog.tsx:512",
-  "src/pages/Catalog.tsx:512"
+  "src/pages/Catalog.tsx:513",
+  "src/pages/Catalog.tsx:513"
  ],
  "{n} мс": [
   "src/pages/Orni3D.tsx:622",
@@ -265,7 +271,7 @@
   "src/pages/admin/fields.tsx:50"
  ],
  "{n} хв": [
-  "src/lib/map/spice.ts:72",
+  "src/lib/map/spice.ts:69",
   "src/pages/admin/GameDataAdmin.tsx:215"
  ],
  "{name} — відкрити в довіднику": [
@@ -286,6 +292,9 @@
  "{name} — у гільдії": [
   "src/pages/Guilds.tsx:416"
  ],
+ "{name} — ще не відповів": [
+  "src/pages/market/DealPage.tsx:132"
+ ],
  "{name} · нестабільна (0 %) — {action}": [
   "src/components/base/builder/View.tsx:271"
  ],
@@ -293,16 +302,16 @@
   "src/components/base/builder/View.tsx:271"
  ],
  "{name} (без руди)": [
-  "src/pages/MapPage.tsx:1524",
-  "src/pages/MapPage.tsx:1583"
+  "src/pages/MapPage.tsx:1500",
+  "src/pages/MapPage.tsx:1559"
  ],
  "{name} (копія {n})": [
-  "server/lib/content.mjs:131",
-  "server/lib/content.mjs:136"
+  "server/lib/content.mjs:142",
+  "server/lib/content.mjs:147"
  ],
  "{name} (копія)": [
-  "server/lib/content.mjs:131",
-  "server/lib/content.mjs:135"
+  "server/lib/content.mjs:142",
+  "server/lib/content.mjs:146"
  ],
  "{name} більше не в гільдії": [
   "src/pages/Guilds.tsx:599"
@@ -356,6 +365,9 @@
  ],
  "{place} — долетіти орнітоптером до кола посадки": [
   "src/components/world/LocationCard.tsx:71"
+ ],
+ "{price} Solari за штуку": [
+  "server/lib/og.mjs:85"
  ],
  "{records}, перевірено в грі {n}": [
   "src/pages/Home.tsx:538"
@@ -437,10 +449,10 @@
   "src/pages/BaseGenerator.tsx:69"
  ],
  "+ до запису…": [
-  "src/pages/MapPage.tsx:1789"
+  "src/pages/MapPage.tsx:1765"
  ],
  "+ до чернетки": [
-  "src/pages/MapPage.tsx:1780"
+  "src/pages/MapPage.tsx:1756"
  ],
  "−25% ресурсів і води": [
   "src/components/catalog/ProdCalc.tsx:59"
@@ -461,7 +473,7 @@
   "src/pages/BaseGenerator.tsx:56"
  ],
  "100 % — лише чисті острівці, де руда завжди одна; 50 % — і місця, де вона одна з двох; нижче — і змішані острівці. Що яскравіша точка — то певніша руда.": [
-  "src/pages/MapPage.tsx:1145"
+  "src/pages/MapPage.tsx:1137"
  ],
  "123456 чи xxxx-xxxx": [
   "src/components/account/Security.tsx:256"
@@ -504,6 +516,9 @@
   "src/pages/Auth.tsx:212",
   "src/pages/Auth.tsx:216"
  ],
+ "або бартер:": [
+  "src/components/market/bits.tsx:98"
+ ],
  "або встав текст файлу нижче": [
   "src/components/base/ImportBase.tsx:157"
  ],
@@ -519,9 +534,18 @@
  ],
  "Автор": [
   "server/admin/resources.mjs:615",
-  "server/admin/resources.mjs:827",
+  "server/admin/resources.mjs:845",
   "server/admin/resources.mjs#items",
   "server/admin/resources.mjs#announcements"
+ ],
+ "Автор отримає сповіщення. Прийме — домовитесь у листуванні угоди й передасте в грі.": [
+  "src/pages/market/ListingPage.tsx:215"
+ ],
+ "Автор просить писати йому в грі — нік ліворуч.": [
+  "src/pages/market/ListingPage.tsx:200"
+ ],
+ "автор просить писати йому в грі — нік на сторінці оголошення": [
+  "server/routes/market.mjs:279"
  ],
  "Автори сайту": [
   "src/components/access/Rights.tsx:27"
@@ -550,11 +574,11 @@
   "server/admin/resources.mjs#roadmaps"
  ],
  "Адреса браузера": [
-  "server/admin/resources.mjs:926",
+  "server/admin/resources.mjs:944",
   "server/admin/resources.mjs#push"
  ],
  "Адреса посилання": [
-  "server/admin/resources.mjs:820",
+  "server/admin/resources.mjs:838",
   "server/admin/resources.mjs#announcements"
  ],
  "Адреса профілю": [
@@ -576,25 +600,31 @@
   "src/pages/admin/fields.tsx:557"
  ],
  "Активне": [
-  "src/pages/MapPage.tsx:742"
+  "src/pages/MapPage.tsx:728"
  ],
  "Активне зараз (позначки гравців)": [
   "src/pages/Home.tsx:308"
  ],
  "активне поле": [
-  "src/pages/MapPage.tsx:1403"
+  "src/pages/MapPage.tsx:1384"
  ],
  "Активне поле": [
-  "src/components/map/SpiceActive.tsx:71"
+  "src/components/map/SpiceActive.tsx:65"
  ],
  "активних полів": [
-  "src/pages/MapPage.tsx:1403"
+  "src/pages/MapPage.tsx:1384"
  ],
  "Активних полів ніхто не позначив": [
-  "src/pages/MapPage.tsx:1403"
+  "src/pages/MapPage.tsx:1384"
+ ],
+ "Активних угод нема": [
+  "src/pages/Market.tsx:251"
+ ],
+ "Активні": [
+  "src/pages/Market.tsx:246"
  ],
  "активні поля": [
-  "src/pages/MapPage.tsx:1403"
+  "src/pages/MapPage.tsx:1384"
  ],
  "Активні поля меланжу зараз": [
   "src/pages/Home.tsx:471"
@@ -706,7 +736,7 @@
   "src/components/base/ImportBase.tsx:208",
   "src/components/base/Versions.tsx:135",
   "src/components/base/builder/DraftRescue.tsx:32",
-  "src/lib/items.ts:57",
+  "src/lib/items.ts:59",
   "src/lib/markers.ts:21"
  ],
  "База в 3D": [
@@ -723,7 +753,7 @@
   "server/routes/bases.mjs:49"
  ],
  "База в Dune: Awakening — план, 3D і кошторис на Sandwalkers.": [
-  "server/lib/og.mjs:45"
+  "server/lib/og.mjs:46"
  ],
  "База видалена назавжди": [
   "server/admin/resources.mjs#audit",
@@ -733,11 +763,11 @@
   "src/lib/gamedata.ts:76"
  ],
  "база даних недоступна": [
-  "server/app.mjs:365"
+  "server/app.mjs:387"
  ],
  "База з деталей гри за твоїми ділянками й потребами": [
   "src/pages/BasesList.tsx:167",
-  "server/lib/og.mjs:39"
+  "server/lib/og.mjs:40"
  ],
  "База з кошика": [
   "server/admin/resources.mjs#audit",
@@ -760,14 +790,14 @@
   "src/components/map/MarksPanel.tsx:209"
  ],
  "бази": [
-  "server/lib/content.mjs:103"
+  "server/lib/content.mjs:112"
  ],
  "Бази": [
   "src/App.tsx:31",
   "src/components/Crumbs.tsx:91",
-  "src/components/Header.tsx:19",
+  "src/components/Header.tsx:20",
   "src/lib/i18n.tsx:2",
-  "src/lib/items.ts:57"
+  "src/lib/items.ts:59"
  ],
  "Бази зараз не завантажились. Онови сторінку трохи згодом.": [
   "src/pages/BasesList.tsx:177"
@@ -776,7 +806,8 @@
   "server/admin/resources.mjs#bases"
  ],
  "Бази не завантажились": [
-  "src/pages/BasesList.tsx:177"
+  "src/pages/BasesList.tsx:177",
+  "src/pages/market/ListingEditor.tsx:343"
  ],
  "Бази, білди, роадмапи й розрахунки, які люди й гільдії виклали для всіх. Постав зірку тому, що сподобалось, або скопіюй собі — копія стане твоєю особистою, її можна змінювати як завгодно.": [
   "src/pages/Library.tsx:68"
@@ -818,6 +849,19 @@
  ],
  "Бандити": [
   "src/lib/map/data.ts:287"
+ ],
+ "Бартер": [
+  "src/lib/market.ts:173",
+  "src/pages/market/ItemPage.tsx:79",
+  "src/pages/market/ListingPage.tsx:220",
+  "server/lib/og.mjs:85"
+ ],
+ "Бартер, як в оголошенні:": [
+  "src/pages/market/ListingPage.tsx:226"
+ ],
+ "Бартер:": [
+  "src/components/market/bits.tsx:98",
+  "src/pages/market/DealPage.tsx:103"
  ],
  "Бачать усі; є в бібліотеці": [
   "src/components/access/Access.tsx:26"
@@ -926,10 +970,10 @@
   "src/components/catalog/ProdCalc.tsx:82"
  ],
  "Без указу — {time}": [
-  "src/pages/Catalog.tsx:511"
+  "src/pages/Catalog.tsx:512"
  ],
  "Без указу — {water}": [
-  "src/pages/Catalog.tsx:512"
+  "src/pages/Catalog.tsx:513"
  ],
  "Без указу тижня": [
   "src/components/catalog/bits.tsx:103"
@@ -951,7 +995,7 @@
   "src/lib/skills.ts:51"
  ],
  "Бере енергії": [
-  "src/pages/Catalog.tsx:671"
+  "src/pages/Catalog.tsx:672"
  ],
  "Бере участь": [
   "src/lib/events.ts:124",
@@ -979,7 +1023,7 @@
   "src/lib/map/data.ts:353"
  ],
  "Білд": [
-  "src/lib/items.ts:59",
+  "src/lib/items.ts:61",
   "server/admin/resources.mjs:670",
   "server/admin/resources.mjs#items",
   "server/admin/resources.mjs#builds",
@@ -1014,16 +1058,16 @@
   "server/lib/docs.mjs:42"
  ],
  "Білд умінь": [
-  "server/lib/og.mjs:74"
+  "server/lib/og.mjs:101"
  ],
  "Білд умінь для Dune: Awakening": [
-  "server/lib/og.mjs:74"
+  "server/lib/og.mjs:101"
  ],
  "білди": [
-  "server/lib/content.mjs:103"
+  "server/lib/content.mjs:112"
  ],
  "Білди": [
-  "src/lib/items.ts:59",
+  "src/lib/items.ts:61",
   "src/pages/Guilds.tsx:476",
   "src/pages/Guilds.tsx:503",
   "server/admin/resources.mjs:670",
@@ -1049,6 +1093,16 @@
  ],
  "Більше: {what}": [
   "src/pages/BaseGenerator.tsx:490"
+ ],
+ "Біржа": [
+  "src/App.tsx:34",
+  "src/App.tsx:121",
+  "src/components/Crumbs.tsx:111",
+  "src/components/Header.tsx:28",
+  "src/components/market/UserMarket.tsx:23"
+ ],
+ "Біржа: строки оголошень": [
+  "server/app.mjs:478"
  ],
  "Бічна стулка рампи": [
   "src/pages/Orni3D.tsx:121"
@@ -1079,7 +1133,7 @@
   "src/pages/admin/GameDataAdmin.tsx:355"
  ],
  "Браузер": [
-  "server/admin/resources.mjs:922",
+  "server/admin/resources.mjs:940",
   "server/admin/resources.mjs#push"
  ],
  "Браузер і пристрій": [
@@ -1091,7 +1145,7 @@
   "server/admin/resources.mjs#passkeys"
  ],
  "Браузери, яким сайт шле нагадування перед бурею Коріоліса: чия підписка, який браузер, регіон і мова.": [
-  "server/admin/resources.mjs:919",
+  "server/admin/resources.mjs:937",
   "server/admin/resources.mjs#push"
  ],
  "Брижа на піску": [
@@ -1145,9 +1199,12 @@
  "Будувати — з комп'ютера: на телефоні деталі задрібні для пальця. Подивитися базу можна на її сторінці.": [
   "src/components/base/builder/Builder.tsx:306"
  ],
+ "Будь-коли": [
+  "src/lib/market.ts:187"
+ ],
  "Було": [
   "src/pages/admin/history.tsx:40",
-  "server/admin/resources.mjs:989",
+  "server/admin/resources.mjs:1007",
   "server/admin/resources.mjs#revisions"
  ],
  "було {when}": [
@@ -1155,12 +1212,12 @@
  ],
  "Буря Коріоліса": [
   "src/components/DDTimer.tsx:111",
-  "src/pages/MapPage.tsx:1597"
+  "src/pages/MapPage.tsx:1573"
  ],
  "Буря Коріоліса через {left}": [
   "src/components/DDTimer.tsx:192",
   "src/components/DDTimer.tsx:237",
-  "src/pages/MapPage.tsx:1484"
+  "src/pages/MapPage.tsx:1460"
  ],
  "Буря Коріоліса через {n} год": [
   "src/components/DDTimer.tsx:93",
@@ -1204,14 +1261,14 @@
   "src/pages/BaseGenerator.tsx:131"
  ],
  "Вбудована": [
-  "server/admin/resources.mjs:942",
+  "server/admin/resources.mjs:960",
   "server/admin/resources.mjs#roles"
  ],
  "вбудовану роль видалити не можна": [
   "server/lib/roles.mjs:87"
  ],
  "Вбудовану роль не видалити": [
-  "server/admin/resources.mjs:942",
+  "server/admin/resources.mjs:960",
   "server/admin/resources.mjs#roles"
  ],
  "Введи його на сторінці входу. Код діє 10 хвилин.": [
@@ -1254,8 +1311,8 @@
  "Велике поле": [
   "src/lib/map/layer.ts:116"
  ],
- "Велике поле тут…": [
-  "src/pages/MapPage.tsx:1406"
+ "велике поле можна позначити лише на його місці з гри": [
+  "server/lib/spice.mjs:151"
  ],
  "великий": [
   "src/components/catalog/ProdCalc.tsx:237"
@@ -1292,11 +1349,11 @@
   "server/admin/resources.mjs#roadmaps"
  ],
  "Версії баз": [
-  "server/admin/resources.mjs:711",
+  "server/admin/resources.mjs:729",
   "server/admin/resources.mjs#base-history"
  ],
  "Версії роадмапів": [
-  "server/admin/resources.mjs:724",
+  "server/admin/resources.mjs:742",
   "server/admin/resources.mjs#roadmap-history"
  ],
  "Версію відновлено": [
@@ -1306,8 +1363,8 @@
   "src/pages/admin/history.tsx:22",
   "server/admin/resources.mjs:648",
   "server/admin/resources.mjs:664",
-  "server/admin/resources.mjs:716",
-  "server/admin/resources.mjs:729"
+  "server/admin/resources.mjs:734",
+  "server/admin/resources.mjs:747"
  ],
  "Версія {a} → {b} ({when})": [
   "src/pages/admin/history.tsx:73"
@@ -1319,7 +1376,7 @@
   "src/components/base/Versions.tsx:91"
  ],
  "Версія бази": [
-  "server/admin/resources.mjs:711",
+  "server/admin/resources.mjs:729",
   "server/admin/resources.mjs#base-history"
  ],
  "Версія гри": [
@@ -1335,7 +1392,7 @@
   "src/pages/Roadmap.tsx:535"
  ],
  "Версія роадмапу": [
-  "server/admin/resources.mjs:724",
+  "server/admin/resources.mjs:742",
   "server/admin/resources.mjs#roadmap-history"
  ],
  "Верстак": [
@@ -1360,16 +1417,29 @@
   "src/pages/EventPage.tsx:597"
  ],
  "Взяти нову версію": [
-  "src/pages/EventEditor.tsx:188"
+  "src/pages/EventEditor.tsx:188",
+  "src/pages/market/ListingEditor.tsx:170"
  ],
  "Вибери": [
   "src/pages/admin/fields.tsx:653"
+ ],
+ "вибери причину скарги": [
+  "server/routes/market.mjs:403"
+ ],
+ "Вибери причину скарги": [
+  "src/components/market/ReportDialog.tsx:26"
+ ],
+ "вибери регіон": [
+  "server/lib/market.mjs:123"
+ ],
+ "вибери: куплю чи продам": [
+  "server/lib/market.mjs:109"
  ],
  "Вибирати поставлене": [
   "src/components/base/builder/Palette.tsx:102"
  ],
  "Вибране": [
-  "src/components/access/ItemCard.tsx:118",
+  "src/components/access/ItemCard.tsx:120",
   "server/admin/resources.mjs:598",
   "server/admin/resources.mjs#items"
  ],
@@ -1437,11 +1507,12 @@
  "Вид": [
   "src/components/base/BaseViewer.tsx:80",
   "src/pages/EventEditor.tsx:200",
+  "src/pages/Market.tsx:118",
   "server/admin/resources.mjs:685",
-  "server/admin/resources.mjs#events"
+  "server/admin/resources.mjs:716"
  ],
  "Вид запису": [
-  "server/admin/resources.mjs:775",
+  "server/admin/resources.mjs:793",
   "server/admin/resources.mjs#game-texts"
  ],
  "Вид події": [
@@ -1475,6 +1546,10 @@
   "server/admin/describe.mjs"
  ],
  "Видалення облікового запису": [
+  "server/admin/resources.mjs#audit",
+  "server/admin/describe.mjs"
+ ],
+ "Видалення оголошення біржі": [
   "server/admin/resources.mjs#audit",
   "server/admin/describe.mjs"
  ],
@@ -1558,8 +1633,8 @@
   "src/pages/admin/actions.tsx:47"
  ],
  "Видалити назавжди": [
-  "src/components/access/ItemCard.tsx:51",
   "src/components/access/ItemCard.tsx:53",
+  "src/components/access/ItemCard.tsx:55",
   "src/pages/Account.tsx:322",
   "src/pages/Account.tsx:325",
   "src/pages/BasePage.tsx:139"
@@ -1605,6 +1680,12 @@
  "Видно лише за сюжетом": [
   "src/components/world/WorldMapView.tsx:278",
   "src/components/world/WorldMapView.tsx:330"
+ ],
+ "Видно лише сторонам угоди (і модераторам за скаргою). Реальні гроші — заборонено.": [
+  "src/pages/market/DealPage.tsx:157"
+ ],
+ "Видно лише тим, хто увійшов на сайт": [
+  "src/pages/market/ListingEditor.tsx:301"
  ],
  "Видобування таблиць": [
   "src/pages/admin/GameDataAdmin.tsx:213"
@@ -1673,7 +1754,7 @@
   "server/admin/resources.mjs#cron-runs"
  ],
  "Виконуються": [
-  "server/admin/resources.mjs:1032",
+  "server/admin/resources.mjs:1050",
   "server/admin/resources.mjs#cron-runs"
  ],
  "Використань": [
@@ -1704,7 +1785,7 @@
  "Вимкнути": [
   "src/components/account/Security.tsx:130",
   "src/components/account/Security.tsx:253",
-  "server/admin/resources.mjs:840",
+  "server/admin/resources.mjs:858",
   "server/admin/resources.mjs#announcements"
  ],
  "Вимкнути двофакторну перевірку": [
@@ -1763,7 +1844,7 @@
  ],
  "Виробництво": [
   "src/components/base/tr.ts:22",
-  "src/pages/Catalog.tsx:52"
+  "src/pages/Catalog.tsx:53"
  ],
  "висока": [
   "src/pages/Orni3D.tsx:72"
@@ -1862,7 +1943,7 @@
   "src/pages/admin/table.ts:155"
  ],
  "від {n} %": [
-  "src/pages/MapPage.tsx:1133"
+  "src/pages/MapPage.tsx:1125"
  ],
  "від +{from} до +{to}": [
   "src/components/base/SidePanel.tsx:134"
@@ -1871,7 +1952,10 @@
   "src/components/access/Rights.tsx:128"
  ],
  "Від гравців: позначки й записи ресурсів — свої, гільдії, публічні": [
-  "src/pages/MapPage.tsx:1052"
+  "src/pages/MapPage.tsx:1045"
+ ],
+ "Від кого й хто бачить": [
+  "src/pages/market/ListingEditor.tsx:311"
  ],
  "Від першої особи": [
   "src/components/base/camMode.tsx:28"
@@ -1879,20 +1963,26 @@
  "Від рангу:": [
   "src/components/access/Rights.tsx:134"
  ],
+ "Від сьогодні — на скільки днів?": [
+  "src/pages/market/ListingPage.tsx:163"
+ ],
+ "Відгук": [
+  "src/pages/market/DealPage.tsx:197"
+ ],
  "Віддавати речі будь-кому в панелі": [
   "server/routes/admin.mjs:54"
  ],
  "Віддалити": [
   "src/components/world/WorldMapView.tsx:314",
   "src/components/world/WorldMapView.tsx:314",
-  "src/pages/MapPage.tsx:1245"
+  "src/pages/MapPage.tsx:1229"
  ],
  "віддати гільдійську річ іншому власнику може лише лідер гільдії": [
   "server/routes/items.mjs:68"
  ],
  "віддати сайту може лише адміністрація": [
   "server/admin/resources.mjs:72",
-  "server/lib/content.mjs:93"
+  "server/lib/content.mjs:102"
  ],
  "Відкинути зміни": [
   "src/pages/CalcPage.tsx:310"
@@ -1911,13 +2001,20 @@
   "src/pages/CalcPage.tsx:258"
  ],
  "Відкрий базу, білд чи роадмап → «Доступ» → «Публічне» — і вони з’являться тут і в бібліотеці.": [
-  "src/pages/UserPage.tsx:79"
+  "src/pages/UserPage.tsx:80"
  ],
  "Відкрий застосунок-автентифікатор і введи 6-значний код для {site}.": [
   "src/pages/Auth.tsx:252"
  ],
  "відкрита до {when}": [
   "src/pages/EventPage.tsx:214"
+ ],
+ "Відкрите": [
+  "src/lib/market.ts:178",
+  "server/admin/resources.mjs#listings"
+ ],
+ "Відкрити знову": [
+  "src/pages/market/ListingPage.tsx:81"
  ],
  "Відкрити їхню версію": [
   "src/components/base/builder/Builder.tsx:320",
@@ -1927,11 +2024,17 @@
  "Відкрити їхню версію?": [
   "src/components/base/builder/Builder.tsx:418"
  ],
+ "Відкрити його знову не можна. Якщо це помилка — напиши адміністрації.": [
+  "src/pages/market/ListingPage.tsx:86"
+ ],
  "Відкрити калькулятор": [
   "src/pages/KindPage.tsx:35"
  ],
  "Відкрити мапу": [
   "src/pages/Home.tsx:135"
+ ],
+ "Відкрити на мапі": [
+  "src/pages/market/ListingPage.tsx:111"
  ],
  "Відкрити на сайті": [
   "src/pages/admin/ResourceList.tsx:83"
@@ -1945,11 +2048,23 @@
  "Відкрити рампу": [
   "src/pages/Orni3D.tsx:3246"
  ],
+ "Відкрити угоду": [
+  "src/pages/market/ListingPage.tsx:186"
+ ],
  "Відкрити чернетку": [
   "src/components/base/builder/Builder.tsx:312"
  ],
+ "Відкритих скарг нема": [
+  "src/pages/market/Reports.tsx:38"
+ ],
+ "Відкриті": [
+  "src/pages/market/Reports.tsx:35"
+ ],
  "Відкриті зверху поверхні — деталі даху": [
   "src/lib/basegen.ts:57"
+ ],
+ "відкриті оголошення біржі": [
+  "server/lib/content.mjs:112"
  ],
  "Відкрито збережену версію {n}": [
   "src/components/base/builder/Builder.tsx:244"
@@ -1999,14 +2114,14 @@
  ],
  "Відновити цю версію": [
   "src/components/base/Versions.tsx:96",
-  "server/admin/resources.mjs:721",
-  "server/admin/resources.mjs:733",
+  "server/admin/resources.mjs:739",
+  "server/admin/resources.mjs:751",
   "server/admin/resources.mjs#base-history",
   "server/admin/resources.mjs#roadmap-history"
  ],
  "Відновити? Поточна версія піде в історію.": [
-  "server/admin/resources.mjs:721",
-  "server/admin/resources.mjs:733",
+  "server/admin/resources.mjs:739",
+  "server/admin/resources.mjs:751",
   "server/admin/resources.mjs#base-history",
   "server/admin/resources.mjs#roadmap-history"
  ],
@@ -2030,12 +2145,22 @@
  ],
  "Відхилено": [
   "src/lib/events.ts:124",
+  "src/lib/market.ts:179",
   "src/pages/Guilds.tsx:417",
+  "src/pages/market/Reports.tsx:45",
   "server/admin/resources.mjs#event-teams"
  ],
  "Відхилити": [
   "src/pages/EventPage.tsx:347",
-  "src/pages/Guilds.tsx:417"
+  "src/pages/Guilds.tsx:417",
+  "src/pages/market/DealPage.tsx:71",
+  "src/pages/market/ListingPage.tsx:258"
+ ],
+ "відхилити може лише той, хто веде оголошення": [
+  "server/routes/market.mjs:334"
+ ],
+ "Відхилити скаргу": [
+  "src/pages/market/Reports.tsx:86"
  ],
  "Вікі спільноти: будівельні модулі з вартістю, частина предметів.": [
   "src/lib/gamedata.ts:75"
@@ -2104,6 +2229,9 @@
  "вкажи дім, що виграв Ландсраад": [
   "server/lib/decree.mjs:28"
  ],
+ "вкажи світ — щонайменше 2 знаки": [
+  "server/lib/market.mjs:125"
+ ],
  "Вказати в панелі керування": [
   "src/components/DecreeCard.tsx:96"
  ],
@@ -2147,7 +2275,7 @@
   "server/admin/resources.mjs:111",
   "server/admin/resources.mjs:593",
   "server/admin/resources.mjs:695",
-  "server/admin/resources.mjs:711"
+  "server/admin/resources.mjs:729"
  ],
  "Вміст від імені сайту": [
   "server/routes/admin.mjs:54"
@@ -2159,8 +2287,8 @@
  ],
  "Вміст як дані (JSON)": [
   "server/admin/resources.mjs:120",
-  "server/admin/resources.mjs:719",
-  "server/admin/resources.mjs:731",
+  "server/admin/resources.mjs:737",
+  "server/admin/resources.mjs:749",
   "server/admin/resources.mjs#bases",
   "server/admin/resources.mjs#roadmaps"
  ],
@@ -2173,7 +2301,7 @@
   "src/pages/EventEditor.tsx:303"
  ],
  "Внутрішні позначки сайту (коли зібрано довідник, що вже перенесено). Змінюй, лише якщо знаєш навіщо.": [
-  "server/admin/resources.mjs:1047",
+  "server/admin/resources.mjs:1065",
   "server/admin/resources.mjs#meta"
  ],
  "Вогнемети": [
@@ -2202,7 +2330,7 @@
   "src/components/catalog/ProdCalc.tsx:821"
  ],
  "Вода, ємність": [
-  "src/pages/Catalog.tsx:672"
+  "src/pages/Catalog.tsx:673"
  ],
  "Водовози": [
   "src/lib/basegen.ts:52"
@@ -2357,9 +2485,9 @@
   "src/pages/BaseGenerator.tsx:91"
  ],
  "Генератор баз": [
-  "src/App.tsx:151",
+  "src/App.tsx:157",
   "src/pages/BaseGenerator.tsx:108",
-  "server/lib/og.mjs:39"
+  "server/lib/og.mjs:40"
  ],
  "Генерую…": [
   "src/pages/BaseGenerator.tsx:142",
@@ -2393,8 +2521,11 @@
   "server/admin/resources.mjs#roadmaps",
   "server/admin/resources.mjs#builds"
  ],
+ "Гільдійське оголошення з видимістю «Гільдія» — внутрішній ринок гільдії.": [
+  "src/pages/market/ListingEditor.tsx:311"
+ ],
  "Гільдійський помічник для Dune: Awakening: бази в 3D, роадмапи, мапа з ресурсами, довідник, калькулятор і вміння.": [
-  "server/lib/og.mjs:91"
+  "server/lib/og.mjs:118"
  ],
  "Гільдійські бази, роадмапи, білди й позначки на мапі бачать усі учасники. Вступають за запрошенням офіцера чи заявкою.": [
   "src/pages/Guilds.tsx:233"
@@ -2417,7 +2548,7 @@
   "src/components/access/Rights.tsx:127"
  ],
  "Гільдія (для «Учасникам гільдії»)": [
-  "server/admin/resources.mjs:818",
+  "server/admin/resources.mjs:836",
   "server/admin/resources.mjs#announcements"
  ],
  "Гільдія {tag}": [
@@ -2458,7 +2589,7 @@
   "server/admin/resources.mjs#users"
  ],
  "Гільдія на Sandwalkers": [
-  "server/lib/og.mjs:70"
+  "server/lib/og.mjs:97"
  ],
  "гільдія не приймає заявок — потрібне запрошення": [
   "server/routes/guilds.mjs:161"
@@ -2492,7 +2623,7 @@
   "src/pages/Home.tsx:258"
  ],
  "Глибока пустеля: розкладка {n}": [
-  "src/pages/MapPage.tsx:1846"
+  "src/pages/MapPage.tsx:1822"
  ],
  "Глибоку пустелю зітре через": [
   "src/components/DDTimer.tsx:114"
@@ -2514,7 +2645,7 @@
   "src/pages/BaseGenerator.tsx:323"
  ],
  "Головна": [
-  "src/components/Crumbs.tsx:216",
+  "src/components/Crumbs.tsx:217",
   "src/pages/Guilds.tsx:332",
   "src/pages/admin/AdminApp.tsx:98",
   "src/pages/admin/AdminApp.tsx:98"
@@ -2558,9 +2689,9 @@
   "src/pages/admin/GameDataAdmin.tsx:271"
  ],
  "Гра": [
-  "src/pages/MapPage.tsx:1048",
+  "src/pages/MapPage.tsx:1041",
   "server/admin/resources.mjs:228",
-  "server/admin/resources.mjs:770",
+  "server/admin/resources.mjs:788",
   "server/admin/resources.mjs#game-items",
   "server/admin/resources.mjs#game-placeables"
  ],
@@ -2586,6 +2717,9 @@
  "Гравців у команді": [
   "src/pages/EventEditor.tsx:268"
  ],
+ "Грубощі, погрози": [
+  "src/lib/market.ts:184"
+ ],
  "Грузовий": [
   "src/components/base/tr.ts:48"
  ],
@@ -2602,19 +2736,19 @@
   "src/lib/basegen.ts:63"
  ],
  "Група": [
-  "src/pages/Catalog.tsx:375",
+  "src/pages/Catalog.tsx:376",
   "server/admin/resources.mjs#game-buildables"
  ],
  "Групи розділів": [
   "src/pages/admin/GameDataAdmin.tsx:431"
  ],
  "Групувати": [
-  "src/pages/Catalog.tsx:409",
-  "src/pages/Catalog.tsx:412",
+  "src/pages/Catalog.tsx:410",
+  "src/pages/Catalog.tsx:413",
   "src/pages/admin/table.ts:157"
  ],
  "Групувати однакові значки з лічильником": [
-  "src/pages/MapPage.tsx:1254"
+  "src/pages/MapPage.tsx:1238"
  ],
  "давні позначки переносяться лише у твій особистий прогрес": [
   "server/routes/roadmap.mjs:152"
@@ -2626,7 +2760,7 @@
   "server/admin/resources.mjs#game-placeables"
  ],
  "Дає енергії": [
-  "src/pages/Catalog.tsx:670"
+  "src/pages/Catalog.tsx:671"
  ],
  "Дає: {list}": [
   "src/components/skills/SkillTip.tsx:190"
@@ -2646,7 +2780,7 @@
   "src/components/world/LocationCard.tsx:141"
  ],
  "Дальність": [
-  "src/pages/Catalog.tsx:585"
+  "src/pages/Catalog.tsx:586"
  ],
  "Дальність піску": [
   "src/pages/Orni3D.tsx:475"
@@ -2674,7 +2808,7 @@
   "server/admin/describe.mjs"
  ],
  "Дані гри: перевірка змін": [
-  "server/app.mjs:420"
+  "server/app.mjs:442"
  ],
  "Дані гри: перевірка нової версії в Steam": [
   "server/admin/resources.mjs#audit",
@@ -2818,28 +2952,33 @@
   "server/admin/resources.mjs#game-recipes"
  ],
  "Де використовується — {n}": [
-  "src/pages/Catalog.tsx:741"
+  "src/pages/Catalog.tsx:748"
  ],
  "Де випадає — на мапі": [
-  "src/pages/Catalog.tsx:729"
+  "src/pages/Catalog.tsx:730"
  ],
  "Де люди увійшли. Видалити сеанс — вийти на тому пристрої.": [
   "server/admin/resources.mjs:451",
   "server/admin/resources.mjs#sessions"
  ],
  "Де на сайті": [
-  "server/admin/resources.mjs:864",
+  "server/admin/resources.mjs:882",
   "server/admin/resources.mjs#translations"
  ],
  "Де найбільше — за секторами. Натисни сектор, щоб відкрити шар на мапі.": [
   "src/pages/Home.tsx:406"
  ],
  "Де найкраще: {name}": [
-  "src/pages/MapPage.tsx:1195"
+  "src/pages/MapPage.tsx:1187"
  ],
  "Де найкраще: підсвітити на мапі": [
   "src/components/map/bits.tsx:169",
   "src/components/map/bits.tsx:170"
+ ],
+ "Де передати": [
+  "src/pages/market/ListingEditor.tsx:275",
+  "src/pages/market/ListingEditor.tsx:290",
+  "src/pages/market/ListingPage.tsx:107"
  ],
  "Де потрібен": [
   "server/admin/resources.mjs:213",
@@ -2852,16 +2991,24 @@
   "src/pages/admin/AdminApp.tsx:94"
  ],
  "Де ти на сайті": [
-  "src/components/Crumbs.tsx:258"
+  "src/components/Crumbs.tsx:259"
  ],
  "Де ти увійшов": [
   "src/pages/Account.tsx:294"
+ ],
+ "Де торгуємо": [
+  "src/pages/market/ListingEditor.tsx:242",
+  "src/pages/market/ListingPage.tsx:97"
  ],
  "Декор": [
   "src/lib/catalog.ts:258"
  ],
  "Декор і меблі": [
-  "src/pages/Catalog.tsx:52"
+  "src/pages/Catalog.tsx:53"
+ ],
+ "день": [
+  "src/pages/market/ListingEditor.tsx:45",
+  "src/pages/market/ListingPage.tsx:33"
  ],
  "Дерево навичок оновилось — твій білд змінився": [
   "src/pages/SkillsPage.tsx:277",
@@ -2927,6 +3074,12 @@
  "Детальніше": [
   "src/components/Announcements.tsx:41"
  ],
+ "Дешевші": [
+  "src/lib/market.ts:189"
+ ],
+ "Дешевші згори — у них можна купити": [
+  "src/pages/market/ItemPage.tsx:121"
+ ],
  "Джерела": [
   "src/pages/Roadmap.tsx:505"
  ],
@@ -2970,11 +3123,11 @@
   "server/lib/mail.mjs:50"
  ],
  "Діє до": [
+  "src/pages/market/ListingPage.tsx:99",
   "server/admin/resources.mjs:458",
   "server/admin/resources.mjs:467",
   "server/admin/resources.mjs:560",
-  "server/admin/resources.mjs#sessions",
-  "server/admin/resources.mjs#login-codes"
+  "server/admin/resources.mjs:721"
  ],
  "Діє до {when} (буря Коріоліса) — потім скинеться сам.": [
   "src/pages/admin/DecreeSettings.tsx:49"
@@ -3074,16 +3227,23 @@
   "src/pages/admin/DecreeSettings.tsx:43"
  ],
  "Дія": [
-  "server/admin/resources.mjs:910",
-  "server/admin/resources.mjs:986",
+  "server/admin/resources.mjs:928",
+  "server/admin/resources.mjs:1004",
   "server/admin/resources.mjs#audit",
   "server/admin/resources.mjs#revisions"
  ],
+ "Діяло до": [
+  "src/pages/market/ListingPage.tsx:99"
+ ],
+ "для бартеру вкажи хоча б один предмет": [
+  "server/lib/market.mjs:121",
+  "server/routes/market.mjs:260"
+ ],
  "для всіх": [
-  "src/lib/map/spice.ts:77"
+  "src/lib/map/spice.ts:74"
  ],
  "для гільдії": [
-  "src/lib/map/spice.ts:77"
+  "src/lib/map/spice.ts:74"
  ],
  "Для гравців Dune: Awakening — самих і гільдією. Бази з планом, 3D і кошторисом, роадмапи, білди умінь і мапа всього, що є на Арракісі, з твоїми й гільдійськими позначками поверх. Найкраще люди викладають у бібліотеку.": [
   "src/pages/Home.tsx:131"
@@ -3099,7 +3259,7 @@
   "server/routes/auth.mjs:198"
  ],
  "для себе": [
-  "src/lib/map/spice.ts:77"
+  "src/lib/map/spice.ts:74"
  ],
  "для серії потрібна дата початку": [
   "server/lib/announcements.mjs:76"
@@ -3110,14 +3270,29 @@
  "Для чого розрахунок, де брати сировину, хто що робить": [
   "src/components/calc/SavedCalcs.tsx:157"
  ],
+ "дні": [
+  "src/pages/market/ListingEditor.tsx:45",
+  "src/pages/market/ListingPage.tsx:33"
+ ],
+ "днів": [
+  "src/pages/market/ListingEditor.tsx:45",
+  "src/pages/market/ListingPage.tsx:33"
+ ],
  "До": [
   "src/pages/admin/table.ts:155"
  ],
  "до {date}": [
   "src/pages/Guilds.tsx:662"
  ],
+ "До {date}. Причина: {reason}": [
+  "src/pages/Market.tsx:91"
+ ],
  "До бібліотеки": [
-  "src/pages/UserPage.tsx:39"
+  "src/pages/UserPage.tsx:40"
+ ],
+ "До біржі": [
+  "src/pages/market/ListingEditor.tsx:141",
+  "src/pages/market/ListingPage.tsx:58"
  ],
  "До гільдії": [
   "src/pages/Account.tsx:136"
@@ -3130,7 +3305,7 @@
   "src/pages/Guilds.tsx:706"
  ],
  "До моїх баз": [
-  "src/pages/UserPage.tsx:80"
+  "src/pages/UserPage.tsx:81"
  ],
  "До подій": [
   "src/pages/EventEditor.tsx:164",
@@ -3148,6 +3323,9 @@
  "До сторінки бази (чернетка лишиться)": [
   "src/components/base/builder/Builder.tsx:341"
  ],
+ "До угод": [
+  "src/pages/market/DealPage.tsx:46"
+ ],
  "добу": [
   "src/pages/Guilds.tsx:652"
  ],
@@ -3156,20 +3334,20 @@
  ],
  "Довідник": [
   "src/App.tsx:31",
-  "src/App.tsx:99",
+  "src/App.tsx:101",
   "src/components/Crumbs.tsx:95",
-  "src/components/Header.tsx:22",
+  "src/components/Header.tsx:23",
   "src/lib/gamedata.ts:50"
  ],
  "Довідник зібрано: {c} · уміння: {s}": [
   "src/pages/admin/Dashboard.tsx:113"
  ],
  "Довідник не завантажився": [
-  "src/pages/Catalog.tsx:295"
+  "src/pages/Catalog.tsx:296"
  ],
  "Довідник оновлюється — це хвилина-дві, сторінка оновиться сама.": [
   "src/pages/CalcPage.tsx:257",
-  "src/pages/Catalog.tsx:296"
+  "src/pages/Catalog.tsx:297"
  ],
  "Довідник: кожен збирає своє": [
   "src/components/access/Rights.tsx:76"
@@ -3217,6 +3395,9 @@
  "Додати позначку чи ресурс": [
   "src/components/map/MarksPanel.tsx:204"
  ],
+ "Додати предмет": [
+  "src/pages/market/ListingEditor.tsx:232"
+ ],
  "Додати предмет чи будівлю": [
   "src/components/catalog/ProdCalc.tsx:186",
   "src/components/catalog/ProdCalc.tsx:187"
@@ -3234,7 +3415,7 @@
   "src/components/map/PlaceParts.tsx:269"
  ],
  "Додати точку до запису": [
-  "src/pages/MapPage.tsx:1801"
+  "src/pages/MapPage.tsx:1777"
  ],
  "Додати: {what}": [
   "src/pages/admin/fields.tsx:516",
@@ -3247,7 +3428,7 @@
   "src/pages/admin/fields.tsx:403",
   "src/pages/admin/fields.tsx:404",
   "src/pages/admin/fields.tsx:405",
-  "server/admin/resources.mjs:940",
+  "server/admin/resources.mjs:958",
   "server/admin/resources.mjs#roles"
  ],
  "Дозволи на сайті": [
@@ -3268,17 +3449,29 @@
  "документ бази не вдалося прочитати": [
   "server/lib/bases.mjs:267"
  ],
+ "Домовимось пізніше": [
+  "src/pages/market/ListingEditor.tsx:278"
+ ],
+ "Домовтесь у листуванні, де й коли, передайте в грі — і кожен натисне «Завершено».": [
+  "src/pages/market/DealPage.tsx:93"
+ ],
  "дому Атрідів": [
   "src/lib/decree.ts:16"
  ],
  "дому Харконненів": [
   "src/lib/decree.ts:17"
  ],
+ "Дорожчі": [
+  "src/lib/market.ts:189"
+ ],
+ "Дорожчі згори — їм можна продати": [
+  "src/pages/market/ItemPage.tsx:121"
+ ],
  "Досвіду до рівня": [
   "src/components/skills/SpecView.tsx:384"
  ],
  "Досить точок": [
-  "src/pages/MapPage.tsx:1221"
+  "src/pages/MapPage.tsx:1213"
  ],
  "Дослідження": [
   "src/lib/specs.ts:29"
@@ -3308,11 +3501,14 @@
  "Доступ: {title}": [
   "src/components/access/Access.tsx:223"
  ],
+ "Доступно: {n}": [
+  "src/pages/market/ListingPage.tsx:217"
+ ],
  "досягнуто ліміту — {what}: не більше {n} на гільдію. Видаліть зайве (і очистіть кошик) чи попросіть адміністрацію": [
-  "server/lib/content.mjs:113"
+  "server/lib/content.mjs:124"
  ],
  "досягнуто ліміту — {what}: не більше {n} на людину. Видали зайве (і очисти кошик) чи попроси адміністрацію": [
-  "server/lib/content.mjs:114"
+  "server/lib/content.mjs:125"
  ],
  "Драбина": [
   "src/components/base/tr.ts:69"
@@ -3338,6 +3534,15 @@
  "Дрон-розвідник": [
   "src/pages/Home.tsx:331"
  ],
+ "Друга сторона вже підтвердила. Отримав своє в грі — натисни «Завершено».": [
+  "src/pages/market/DealPage.tsx:93"
+ ],
+ "Друга сторона завершила угоду — підтверди й ти": [
+  "src/lib/notifications.ts:34"
+ ],
+ "Друга сторона отримає сповіщення.": [
+  "src/pages/market/DealPage.tsx:49"
+ ],
  "Другий марш парадних сходів починається впритул до галереї +5 біля переходу, проріз у підлозі ангара грузових — над його верхом.": [
   "src/engine/versions.js:23"
  ],
@@ -3348,8 +3553,8 @@
   "src/engine/versions.js:29"
  ],
  "Дублювати": [
-  "server/admin/resources.mjs:848",
-  "server/admin/resources.mjs:960",
+  "server/admin/resources.mjs:866",
+  "server/admin/resources.mjs:978",
   "server/admin/resources.mjs#announcements",
   "server/admin/resources.mjs#roles"
  ],
@@ -3361,6 +3566,9 @@
  ],
  "Дюни": [
   "src/pages/Orni3D.tsx:3400"
+ ],
+ "Дякуємо за оцінку": [
+  "src/pages/market/DealPage.tsx:191"
  ],
  "еко": [
   "src/pages/Orni3D.tsx:72"
@@ -3392,7 +3600,7 @@
   "src/components/base/BaseCalc.tsx:210"
  ],
  "Енергія й вода": [
-  "src/pages/Catalog.tsx:52"
+  "src/pages/Catalog.tsx:53"
  ],
  "енергощит — видно крізь": [
   "src/components/base/builder/labels.ts:36"
@@ -3437,6 +3645,12 @@
  "є зміни": [
   "src/components/calc/SavedCalcs.tsx:74"
  ],
+ "Є зустрічні заявки на твоє оголошення": [
+  "src/lib/notifications.ts:29"
+ ],
+ "Є зустрічні заявки: {n} — дивись «Збіги»": [
+  "src/pages/market/ListingEditor.tsx:121"
+ ],
  "Є незбережені зміни": [
   "src/components/UnsavedBar.tsx:97",
   "src/components/calc/SavedCalcs.tsx:97",
@@ -3469,14 +3683,14 @@
  ],
  "Журнал": [
   "src/pages/admin/ResourceForm.tsx:192",
-  "server/admin/resources.mjs:1042",
+  "server/admin/resources.mjs:1060",
   "server/admin/resources.mjs#cron-runs"
  ],
  "Журнал видобувача": [
   "src/pages/admin/GameDataAdmin.tsx:330"
  ],
  "Журнал дій": [
-  "server/admin/resources.mjs:902",
+  "server/admin/resources.mjs:920",
   "server/admin/resources.mjs#audit"
  ],
  "Журнал дій, днів": [
@@ -3502,8 +3716,11 @@
  "з {cap}": [
   "src/components/base/BuildCards.tsx:69"
  ],
+ "з {n}": [
+  "src/pages/market/ListingPage.tsx:95"
+ ],
  "з {time} ({ago} тому)": [
-  "src/pages/MapPage.tsx:742"
+  "src/pages/MapPage.tsx:728"
  ],
  "з {time} ({ago} тому) · {n} позн.": [
   "src/pages/Home.tsx:483"
@@ -3521,7 +3738,7 @@
   "src/components/world/LocationCard.tsx:142"
  ],
  "З них з помилкою": [
-  "server/admin/resources.mjs:1009",
+  "server/admin/resources.mjs:1027",
   "server/admin/resources.mjs#cron-jobs"
  ],
  "З новобранцями": [
@@ -3532,9 +3749,12 @@
   "src/pages/BaseGenerator.tsx:392",
   "src/pages/BaseGenerator.tsx:400"
  ],
+ "З оцінок складається репутація на біржі.": [
+  "src/pages/market/DealPage.tsx:194"
+ ],
  "З помилкою": [
-  "server/admin/resources.mjs:996",
-  "server/admin/resources.mjs:1032",
+  "server/admin/resources.mjs:1014",
+  "server/admin/resources.mjs:1050",
   "server/admin/resources.mjs#cron-jobs",
   "server/admin/resources.mjs#cron-runs"
  ],
@@ -3581,7 +3801,7 @@
   "server/admin/resources.mjs#cron-runs"
  ],
  "За скільки годин": [
-  "server/admin/resources.mjs:928",
+  "server/admin/resources.mjs:946",
   "server/admin/resources.mjs#push"
  ],
  "За спаданням": [
@@ -3594,13 +3814,13 @@
   "src/pages/EventEditor.tsx:214"
  ],
  "За технікою": [
-  "src/pages/Catalog.tsx:416"
+  "src/pages/Catalog.tsx:417"
  ],
  "За типом": [
-  "src/pages/Catalog.tsx:416"
+  "src/pages/Catalog.tsx:417"
  ],
  "За тіром": [
-  "src/pages/Catalog.tsx:416"
+  "src/pages/Catalog.tsx:417"
  ],
  "За файлами гри цього ще (чи вже) нема в грі — сайт не показує, доки не відкрити": [
   "server/admin/resources.mjs:242",
@@ -3609,11 +3829,19 @@
   "server/admin/resources.mjs#game-recipes",
   "server/admin/resources.mjs#game-buildables"
  ],
+ "за цим оголошенням уже були угоди — його можна лише закрити": [
+  "server/routes/market.mjs:584"
+ ],
  "За часом серверів: {region}": [
   "src/pages/EventPage.tsx:209"
  ],
  "За часом серверів: {time}": [
   "src/pages/EventEditor.tsx:226"
+ ],
+ "за штуку": [
+  "src/components/market/bits.tsx:91",
+  "src/components/market/bits.tsx:158",
+  "src/pages/market/DealPage.tsx:102"
  ],
  "За що приз": [
   "src/pages/EventEditor.tsx:294"
@@ -3625,13 +3853,13 @@
   "server/lib/bases.mjs:337"
  ],
  "забагато запитів — спробуй трохи згодом": [
-  "server/app.mjs:289"
+  "server/app.mjs:301"
  ],
  "забагато нових подій за годину — спробуй трохи згодом": [
-  "server/app.mjs:306"
+  "server/app.mjs:318"
  ],
  "забагато нових позначок за годину — спробуй трохи згодом": [
-  "server/app.mjs:299"
+  "server/app.mjs:311"
  ],
  "забагато паскеїв — видали непотрібні": [
   "server/lib/security.mjs:94"
@@ -3640,7 +3868,7 @@
   "server/lib/bases.mjs:95"
  ],
  "забагато позначок за годину — спробуй трохи згодом": [
-  "server/lib/spice.mjs:159"
+  "server/lib/spice.mjs:161"
  ],
  "забагато позначок поспіль — зачекай хвилинку": [
   "server/routes/roadmap.mjs:130"
@@ -3656,7 +3884,7 @@
   "server/lib/bases.mjs:114"
  ],
  "забагато реєстрацій за годину — спробуй трохи згодом": [
-  "server/app.mjs:307"
+  "server/app.mjs:319"
  ],
  "забагато спроб — надішли новий код": [
   "server/lib/auth.mjs:134"
@@ -3699,45 +3927,64 @@
   "server/admin/resources.mjs:404",
   "server/admin/resources.mjs#users"
  ],
+ "заборонено": [
+  "src/pages/market/Reports.tsx:70"
+ ],
+ "Заборонено": [
+  "src/pages/market/Reports.tsx:45"
+ ],
+ "Заборонити": [
+  "src/pages/market/Reports.tsx:101"
+ ],
+ "Заборонити біржу: {name}": [
+  "src/pages/market/Reports.tsx:100"
+ ],
+ "Заборонити: {name}": [
+  "src/pages/market/Reports.tsx:84"
+ ],
  "Завантаження баз…": [
   "src/pages/BasesList.tsx:178"
  ],
  "Завантаження бази…": [
-  "src/App.tsx:147",
+  "src/App.tsx:153",
   "src/pages/BasePage.tsx:54"
  ],
+ "Завантаження біржі…": [
+  "src/App.tsx:121"
+ ],
  "Завантаження вмінь…": [
-  "src/App.tsx:107"
+  "src/App.tsx:109"
  ],
  "Завантаження генератора…": [
-  "src/App.tsx:151"
+  "src/App.tsx:157"
  ],
  "Завантаження довідника…": [
-  "src/App.tsx:99",
+  "src/App.tsx:101",
   "src/components/base/BaseCalc.tsx:217",
-  "src/pages/Catalog.tsx:296"
+  "src/components/market/ItemPicker.tsx:42",
+  "src/pages/Catalog.tsx:297"
  ],
  "Завантаження калькулятора…": [
-  "src/App.tsx:103",
+  "src/App.tsx:105",
   "src/pages/CalcPage.tsx:257"
  ],
  "Завантаження карти світу…": [
   "src/components/world/WorldMapView.tsx:305"
  ],
  "Завантаження мапи…": [
-  "src/App.tsx:95",
-  "src/pages/MapPage.tsx:1020"
+  "src/App.tsx:97",
+  "src/pages/MapPage.tsx:1013"
  ],
  "Завантаження моделі…": [
   "src/pages/Home.tsx:381",
   "src/pages/Orni3D.tsx:3490"
  ],
  "Завантаження панелі…": [
-  "src/App.tsx:141",
+  "src/App.tsx:147",
   "src/pages/admin/AdminApp.tsx:165"
  ],
  "Завантаження подій…": [
-  "src/App.tsx:115"
+  "src/App.tsx:117"
  ],
  "Завантаження роадмапу…": [
   "src/pages/Roadmap.tsx:611"
@@ -3747,14 +3994,14 @@
   "src/pages/admin/GameDataAdmin.tsx:322"
  ],
  "завантаження…": [
-  "src/pages/MapPage.tsx:1291"
+  "src/pages/MapPage.tsx:1275"
  ],
  "Завантаження…": [
-  "src/App.tsx:111",
+  "src/App.tsx:113",
+  "src/components/Notifications.tsx:61",
   "src/components/TopLoader.tsx:46",
-  "src/components/access/ItemCard.tsx:154",
-  "src/components/access/Rights.tsx:311",
-  "src/components/states.tsx:25"
+  "src/components/access/ItemCard.tsx:156",
+  "src/components/access/Rights.tsx:311"
  ],
  "Завантажити": [
   "src/pages/admin/fields.tsx:552"
@@ -3773,7 +4020,7 @@
   "src/pages/admin/fields.tsx:546"
  ],
  "Завантажує картинки довідника, умінь і роадмапів у наше сховище й міняє адреси в документах на наші": [
-  "server/app.mjs:416"
+  "server/app.mjs:438"
  ],
  "Завантажую опис": [
   "src/components/skills/SkillTip.tsx:145"
@@ -3782,7 +4029,16 @@
   "src/components/base/builder/Cards.tsx:114"
  ],
  "завеликий запит": [
-  "server/app.mjs:397"
+  "server/app.mjs:419"
+ ],
+ "Завершених угод ще нема": [
+  "src/pages/Market.tsx:251"
+ ],
+ "Завершені й скасовані": [
+  "src/pages/Market.tsx:246"
+ ],
+ "Завершені угоди з публічних оголошень — без імен": [
+  "src/pages/market/ItemPage.tsx:83"
  ],
  "Завершення інших сеансів": [
   "server/admin/resources.mjs#audit",
@@ -3794,15 +4050,26 @@
  ],
  "Завершено": [
   "src/lib/events.ts:138",
-  "server/lib/og.mjs:59",
+  "src/lib/market.ts:179",
+  "src/pages/market/DealPage.tsx:83",
+  "server/lib/og.mjs:60",
   "server/admin/resources.mjs#announcements"
+ ],
+ "Завершено — я отримав": [
+  "src/pages/market/DealPage.tsx:72"
  ],
  "Завершити зараз": [
-  "server/admin/resources.mjs:841",
+  "server/admin/resources.mjs:859",
   "server/admin/resources.mjs#announcements"
  ],
+ "завершити може сторона угоди": [
+  "server/routes/market.mjs:353"
+ ],
+ "завершити можна лише прийняту угоду": [
+  "server/routes/market.mjs:354"
+ ],
  "Завершити ці оголошення зараз? Кінцем стане теперішній час.": [
-  "server/admin/resources.mjs:841",
+  "server/admin/resources.mjs:859",
   "server/admin/resources.mjs#announcements"
  ],
  "Завести двигун": [
@@ -3820,7 +4087,7 @@
  "Заголовок": [
   "src/pages/admin/AnnouncementsBulk.tsx:106",
   "src/pages/admin/AnnouncementsBulk.tsx:106",
-  "server/admin/resources.mjs:814",
+  "server/admin/resources.mjs:832",
   "server/admin/resources.mjs#announcements"
  ],
  "Заголовок стовпця {n}": [
@@ -3833,8 +4100,8 @@
   "src/pages/Roadmap.tsx:296",
   "src/pages/Roadmap.tsx:301",
   "src/pages/Roadmap.tsx:311",
-  "server/admin/resources.mjs:995",
-  "server/admin/resources.mjs:1000"
+  "server/admin/resources.mjs:1013",
+  "server/admin/resources.mjs:1018"
  ],
  "задача вже виконується": [
   "server/lib/cron.mjs:146"
@@ -3890,8 +4157,20 @@
  "Заїзди в гаражі на рівні підлоги, балкони навколо веж і місток.": [
   "src/engine/versions.js:95"
  ],
+ "Закінчилось": [
+  "src/lib/market.ts:178",
+  "server/admin/resources.mjs#listings"
+ ],
+ "Закриває оголошення, чий строк минув, і сповіщає авторів": [
+  "server/app.mjs:478"
+ ],
  "закрита": [
   "src/pages/EventPage.tsx:214"
+ ],
+ "Закрите": [
+  "src/lib/market.ts:178",
+  "server/lib/og.mjs:86",
+  "server/admin/resources.mjs#listings"
  ],
  "Закрити": [
   "src/components/base/Versions.tsx:95",
@@ -3908,6 +4187,9 @@
   "src/components/skills/SkillTip.tsx:122",
   "src/components/world/WorldMapView.tsx:251"
  ],
+ "Закрити оголошення": [
+  "src/pages/market/Reports.tsx:82"
+ ],
  "Закрити проріз рампи": [
   "src/pages/Orni3D.tsx:131"
  ],
@@ -3917,6 +4199,9 @@
  "Закрити реєстрацію раніше за початок": [
   "src/pages/EventEditor.tsx:278"
  ],
+ "Закрито": [
+  "src/pages/market/Reports.tsx:45"
+ ],
  "Закрито — увійти можуть лише ті, хто вже має обліковий запис.": [
   "src/pages/admin/SiteSettings.tsx:64"
  ],
@@ -3925,6 +4210,9 @@
  ],
  "Зал гільдії": [
   "src/pages/BaseGenerator.tsx:64"
+ ],
+ "залишку не вистачає — частину вже пообіцяно в інших угодах": [
+  "server/routes/market.mjs:323"
  ],
  "замінено на: {shape}": [
   "src/components/base/builder/Cards.tsx:90"
@@ -3967,14 +4255,14 @@
   "src/pages/admin/actions.tsx:47"
  ],
  "Запис": [
-  "server/admin/resources.mjs:985",
+  "server/admin/resources.mjs:1003",
   "server/admin/resources.mjs#revisions"
  ],
  "Запис не відкрився": [
   "src/pages/admin/ResourceForm.tsx:147"
  ],
  "Запис ресурсу": [
-  "src/lib/items.ts:62",
+  "src/lib/items.ts:64",
   "server/admin/resources.mjs:677",
   "server/admin/resources.mjs#places"
  ],
@@ -3995,7 +4283,7 @@
   "server/admin/resources.mjs#places"
  ],
  "записи ресурсів": [
-  "server/lib/content.mjs:103"
+  "server/lib/content.mjs:112"
  ],
  "Записи ресурсів": [
   "src/pages/Guilds.tsx:476",
@@ -4031,7 +4319,7 @@
   "server/admin/describe.mjs"
  ],
  "Заплановані": [
-  "server/admin/resources.mjs:806",
+  "server/admin/resources.mjs:824",
   "server/admin/resources.mjs#announcements"
  ],
  "Заплановано": [
@@ -4045,6 +4333,19 @@
  "Заповни це поле": [
   "src/pages/admin/ResourceForm.tsx:87",
   "src/pages/admin/actions.tsx:103"
+ ],
+ "Запропоновано": [
+  "src/lib/market.ts:179",
+  "src/pages/market/DealPage.tsx:83"
+ ],
+ "Запропоновано {date}": [
+  "src/pages/market/DealPage.tsx:105"
+ ],
+ "Запропонувати угоду": [
+  "src/pages/market/ListingPage.tsx:232"
+ ],
+ "Запропонуй угоду на чуже оголошення — чи чекай пропозицій на своє.": [
+  "src/pages/Market.tsx:251"
  ],
  "Запрошення": [
   "src/App.tsx:33",
@@ -4069,30 +4370,30 @@
  ],
  "Запуск": [
   "src/pages/admin/log.tsx:182",
-  "server/admin/resources.mjs:1029",
+  "server/admin/resources.mjs:1047",
   "server/admin/resources.mjs#cron-runs"
  ],
  "Запуски": [
-  "server/admin/resources.mjs:1012",
+  "server/admin/resources.mjs:1030",
   "server/admin/resources.mjs#cron-jobs"
  ],
  "Запуски задач": [
-  "server/admin/resources.mjs:1029",
+  "server/admin/resources.mjs:1047",
   "server/admin/resources.mjs#cron-runs"
  ],
  "Запусків": [
-  "server/admin/resources.mjs:1008",
+  "server/admin/resources.mjs:1026",
   "server/admin/resources.mjs#cron-jobs"
  ],
  "Запустити двигун": [
   "src/pages/Orni3D.tsx:3174"
  ],
  "Запустити зараз": [
-  "server/admin/resources.mjs:1021",
+  "server/admin/resources.mjs:1039",
   "server/admin/resources.mjs#cron-jobs"
  ],
  "Запустити зараз? Задача піде у фоні — її журнал видно на сторінці задачі, наживо.": [
-  "server/admin/resources.mjs:1021",
+  "server/admin/resources.mjs:1039",
   "server/admin/resources.mjs#cron-jobs"
  ],
  "Запущено вручну": [
@@ -4109,6 +4410,9 @@
  ],
  "Зараз жодна гільдія не приймає заявок — вступають за запрошенням.": [
   "src/pages/Guilds.tsx:268"
+ ],
+ "Зараз запропонувати угоду не можна.": [
+  "src/pages/market/ListingPage.tsx:200"
  ],
  "зараз недоступне": [
   "src/pages/admin/GameDataAdmin.tsx:107"
@@ -4227,7 +4531,8 @@
  ],
  "Зберегти мою поверх": [
   "src/components/base/builder/Builder.tsx:319",
-  "src/pages/EventEditor.tsx:189"
+  "src/pages/EventEditor.tsx:189",
+  "src/pages/market/ListingEditor.tsx:171"
  ],
  "Зберегти нову версію для всіх (Ctrl+S)": [
   "src/components/base/builder/Builder.tsx:367"
@@ -4269,7 +4574,7 @@
   "src/pages/Guilds.tsx:427",
   "src/pages/Roadmap.tsx:556",
   "src/pages/admin/ResourceForm.tsx:99",
-  "server/admin/resources.mjs:718"
+  "server/admin/resources.mjs:736"
  ],
  "Збережено як твою базу «{name}»": [
   "src/components/base/builder/DraftRescue.tsx:36"
@@ -4292,7 +4597,7 @@
  ],
  "Зберігання": [
   "src/lib/catalog.ts:257",
-  "src/pages/Catalog.tsx:52"
+  "src/pages/Catalog.tsx:53"
  ],
  "Зберігаю…": [
   "src/components/access/Access.tsx:228",
@@ -4309,6 +4614,12 @@
  ],
  "Збираю дерева навичок… перший раз це може тривати до пів хвилини.": [
   "src/pages/SkillsPage.tsx:471"
+ ],
+ "Збіги": [
+  "src/pages/market/ListingPage.tsx:139"
+ ],
+ "Збіги шукаються в тому самому регіоні й світі. Сервер (січ) — якщо передати можна лише на ньому.": [
+  "src/pages/market/ListingEditor.tsx:242"
  ],
  "Збільшення отриманого досвіду на 50%": [
   "src/lib/decree.ts:41"
@@ -4339,7 +4650,8 @@
   "src/lib/gamedata.ts:62"
  ],
  "Зброя": [
-  "src/lib/catalog.ts:148"
+  "src/lib/catalog.ts:148",
+  "src/lib/market.ts:177"
  ],
  "Зв’язки в дереві змінились — деякі вузли тепер без опори, перевір гілки.": [
   "src/pages/SkillsPage.tsx:103"
@@ -4365,6 +4677,9 @@
  "Звичайне": [
   "src/lib/catalog.ts:184"
  ],
+ "Звичайний розкид": [
+  "src/pages/market/ItemPage.tsx:70"
+ ],
  "Звідки (IP)": [
   "src/pages/admin/fields.tsx:238"
  ],
@@ -4375,7 +4690,7 @@
   "src/pages/admin/GameDataAdmin.tsx:419"
  ],
  "Звідки текст": [
-  "server/admin/resources.mjs:780",
+  "server/admin/resources.mjs:798",
   "server/admin/resources.mjs#game-texts"
  ],
  "Звільнити місце": [
@@ -4449,15 +4764,15 @@
   "server/lib/bases.mjs:84"
  ],
  "Зірка": [
-  "server/admin/resources.mjs:736",
+  "server/admin/resources.mjs:754",
   "server/admin/resources.mjs#stars",
   "server/admin/resources.mjs#audit",
   "server/admin/describe.mjs"
  ],
  "Зірки": [
-  "src/components/access/ItemCard.tsx:128",
+  "src/components/access/ItemCard.tsx:130",
   "server/admin/resources.mjs:356",
-  "server/admin/resources.mjs:736",
+  "server/admin/resources.mjs:754",
   "server/admin/resources.mjs#users",
   "server/admin/resources.mjs#stars"
  ],
@@ -4498,7 +4813,7 @@
  ],
  "Зміна": [
   "src/pages/admin/fields.tsx:407",
-  "server/admin/resources.mjs:972",
+  "server/admin/resources.mjs:990",
   "server/admin/resources.mjs#revisions"
  ],
  "Зміна гільдії": [
@@ -4521,11 +4836,19 @@
   "server/admin/resources.mjs#audit",
   "server/admin/describe.mjs"
  ],
+ "Зміна оголошення біржі": [
+  "server/admin/resources.mjs#audit",
+  "server/admin/describe.mjs"
+ ],
  "Зміна позначки на мапі": [
   "server/admin/resources.mjs#audit",
   "server/admin/describe.mjs"
  ],
  "Зміна прав роадмапу": [
+  "server/admin/resources.mjs#audit",
+  "server/admin/describe.mjs"
+ ],
+ "Зміна пропозиції угоди": [
   "server/admin/resources.mjs#audit",
   "server/admin/describe.mjs"
  ],
@@ -4539,7 +4862,7 @@
  ],
  "Змінені вручну": [
   "server/admin/resources.mjs:233",
-  "server/admin/resources.mjs:773",
+  "server/admin/resources.mjs:791",
   "server/admin/resources.mjs#game-items",
   "server/admin/resources.mjs#game-placeables",
   "server/admin/resources.mjs#game-recipes"
@@ -4570,7 +4893,7 @@
  ],
  "Змінено вручну": [
   "server/admin/resources.mjs:241",
-  "server/admin/resources.mjs:781",
+  "server/admin/resources.mjs:799",
   "server/admin/resources.mjs#game-items",
   "server/admin/resources.mjs#game-placeables",
   "server/admin/resources.mjs#game-recipes"
@@ -4590,11 +4913,14 @@
  "Змінено тут": [
   "server/admin/resources.mjs#translations"
  ],
+ "Зміни оголошення не збережено": [
+  "src/pages/market/ListingEditor.tsx:132"
+ ],
  "Зміни події не збережено": [
   "src/pages/EventEditor.tsx:155"
  ],
  "Зміни пошук або зніми фільтр.": [
-  "src/pages/Catalog.tsx:425"
+  "src/pages/Catalog.tsx:426"
  ],
  "Зміни слово в пошуку чи вид.": [
   "src/components/map/MarksPanel.tsx:373",
@@ -4606,13 +4932,18 @@
  "Змінити": [
   "src/components/map/MarkerParts.tsx:46",
   "src/components/map/PlaceParts.tsx:140",
-  "src/pages/EventPage.tsx:378"
+  "src/components/market/ItemPicker.tsx:38",
+  "src/pages/EventPage.tsx:378",
+  "src/pages/market/ListingPage.tsx:79"
  ],
  "Змінити в панелі керування": [
   "src/components/DecreeCard.tsx:96"
  ],
  "Змінити запис": [
   "src/components/map/PlaceParts.tsx:208"
+ ],
+ "Змінити оцінку": [
+  "src/pages/market/DealPage.tsx:198"
  ],
  "Змінити позначку": [
   "src/components/map/MarkerParts.tsx:100"
@@ -4639,11 +4970,18 @@
  "змінювати команду може її капітан чи організатор": [
   "server/routes/events.mjs:218"
  ],
+ "змінювати пропозицію може лише той, хто її зробив": [
+  "server/routes/market.mjs:297"
+ ],
  "Змінювати саму річ; відновлювати її версії": [
   "src/components/access/Rights.tsx:57"
  ],
  "Змінювати фото може той, кому можна змінювати бази.": [
   "src/pages/admin/ResourceForm.tsx:396"
+ ],
+ "змінювати це оголошення тобі не можна": [
+  "src/pages/market/ListingEditor.tsx:79",
+  "server/routes/market.mjs:48"
  ],
  "змінювати це тобі не можна": [
   "server/routes/docs.mjs:21"
@@ -4669,7 +5007,7 @@
   "src/pages/admin/Search.tsx:94"
  ],
  "Знайдено {n} у всіх розділах.": [
-  "src/pages/Catalog.tsx:370"
+  "src/pages/Catalog.tsx:371"
  ],
  "Знайдено: {n}": [
   "src/pages/admin/Translations.tsx:72"
@@ -4702,14 +5040,17 @@
  "Знамена": [
   "src/lib/catalog.ts:258"
  ],
+ "Знаряддя": [
+  "src/lib/market.ts:177"
+ ],
  "Значення": [
-  "server/admin/resources.mjs:898",
-  "server/admin/resources.mjs:1050",
+  "server/admin/resources.mjs:916",
+  "server/admin/resources.mjs:1068",
   "server/admin/resources.mjs#settings",
   "server/admin/resources.mjs#meta"
  ],
  "Значення, з якими працює сайт. Змінюються на сторінці «Налаштування сайту».": [
-  "server/admin/resources.mjs:894",
+  "server/admin/resources.mjs:912",
   "server/admin/resources.mjs#settings"
  ],
  "Знижка Глибокої пустелі −50%": [
@@ -4722,7 +5063,7 @@
   "src/pages/admin/ResourceForm.tsx:382"
  ],
  "Знімки баз": [
-  "server/app.mjs:418"
+  "server/app.mjs:440"
  ],
  "Знімок 3D": [
   "src/pages/admin/ResourceForm.tsx:374"
@@ -4748,6 +5089,9 @@
  "Зняти вибір": [
   "src/pages/admin/table.ts:151"
  ],
+ "Зняти заборону": [
+  "src/pages/market/Reports.tsx:85"
+ ],
  "Зняти зі слота": [
   "src/components/skills/SkillTip.tsx:134"
  ],
@@ -4758,13 +5102,13 @@
   "server/routes/events.mjs:259"
  ],
  "Зняти мою позначку": [
-  "src/components/map/SpiceActive.tsx:91"
+  "src/components/map/SpiceActive.tsx:85"
  ],
  "Зняти підсвітку": [
-  "src/pages/MapPage.tsx:1201"
+  "src/pages/MapPage.tsx:1193"
  ],
  "Зняти фільтр": [
-  "src/pages/MapPage.tsx:1185"
+  "src/pages/MapPage.tsx:1177"
  ],
  "Знятися": [
   "src/pages/EventPage.tsx:313",
@@ -4786,7 +5130,7 @@
   "src/pages/admin/fields.tsx:558"
  ],
  "Зона для глядачів": [
-  "src/components/events/EventMap.tsx:24"
+  "src/components/events/EventMap.tsx:25"
  ],
  "Зона для глядачів на мапі": [
   "src/pages/EventPage.tsx:459"
@@ -4807,7 +5151,7 @@
   "src/components/base/builder/View.tsx:231"
  ],
  "Зсунути дати": [
-  "server/admin/resources.mjs:842",
+  "server/admin/resources.mjs:860",
   "server/admin/resources.mjs#announcements"
  ],
  "Зубці": [
@@ -4824,11 +5168,17 @@
   "src/pages/Orni3D.tsx:531",
   "src/pages/Orni3D.tsx:553"
  ],
+ "Зустрічна заявка на твоє оголошення": [
+  "src/lib/notifications.ts:29"
+ ],
+ "Зустрічні заявки на той самий предмет у твоєму світі з сумісною ціною. Про нові ти отримаєш сповіщення.": [
+  "src/pages/market/ListingPage.tsx:139"
+ ],
  "Зчеплений транспорт — без пасажирів": [
   "src/lib/world.ts:99"
  ],
  "І годин": [
-  "server/admin/resources.mjs:842",
+  "server/admin/resources.mjs:860",
   "server/admin/resources.mjs#announcements"
  ],
  "і ще {n}": [
@@ -4945,7 +5295,7 @@
   "src/lib/catalog.ts:205"
  ],
  "Інше в наборі «{set}»": [
-  "src/pages/Catalog.tsx:646"
+  "src/pages/Catalog.tsx:647"
  ],
  "Інший": [
   "server/admin/resources.mjs:33",
@@ -4975,7 +5325,7 @@
  ],
  "Історія змін": [
   "src/pages/admin/ResourceForm.tsx:287",
-  "server/admin/resources.mjs:972",
+  "server/admin/resources.mjs:990",
   "server/admin/resources.mjs#revisions"
  ],
  "Історія змін, днів": [
@@ -4985,6 +5335,9 @@
  "Історія не завантажилась": [
   "src/pages/Roadmap.tsx:529"
  ],
+ "Історія угод": [
+  "src/pages/market/ItemPage.tsx:83"
+ ],
  "Її видалили, або вона не для тебе (особиста чи гільдійська). Попроси в організатора посилання.": [
   "src/pages/EventPage.tsx:74"
  ],
@@ -4992,20 +5345,26 @@
   "src/components/base/SidePanel.tsx:79"
  ],
  "Ймовірно зникне ≈ {time} (через {left})": [
-  "src/components/map/SpiceActive.tsx:77"
+  "src/components/map/SpiceActive.tsx:71"
  ],
  "Його видалили, або він не твій і не відкритий тобі.": [
   "src/pages/Roadmap.tsx:605"
  ],
  "Його могли прибрати з довідника після оновлення гри.": [
-  "src/pages/Catalog.tsx:481"
+  "src/pages/Catalog.tsx:482"
+ ],
+ "Його не буде ні в стрічці, ні в тебе. Повернути не вийде.": [
+  "src/pages/market/ListingPage.tsx:65"
+ ],
+ "Його не видно в стрічці й книзі заявок. Якщо це помилка — напиши адміністрації.": [
+  "src/pages/market/ListingPage.tsx:87"
  ],
  "Калькулятор": [
   "src/App.tsx:32",
-  "src/App.tsx:103",
+  "src/App.tsx:105",
   "src/components/Crumbs.tsx:98",
   "src/components/Crumbs.tsx:99",
-  "src/components/Header.tsx:24"
+  "src/components/Header.tsx:25"
  ],
  "Калькулятор бази": [
   "src/components/base/BaseCalc.tsx:206"
@@ -5038,12 +5397,12 @@
   "src/pages/EventPage.tsx:292"
  ],
  "Карта поверхні Арракіса: регіони, поселення, підземелля й переходи між ними": [
-  "src/pages/MapPage.tsx:1544"
+  "src/pages/MapPage.tsx:1520"
  ],
  "Карта світу": [
   "src/App.tsx:34",
   "src/components/world/WorldMapView.tsx:192",
-  "src/pages/MapPage.tsx:1500"
+  "src/pages/MapPage.tsx:1476"
  ],
  "Карта світу не завантажилась": [
   "src/components/world/WorldMapView.tsx:226"
@@ -5058,8 +5417,8 @@
   "src/lib/gamedata.ts:37"
  ],
  "Картка": [
-  "src/pages/Catalog.tsx:473",
-  "src/pages/Catalog.tsx:475"
+  "src/pages/Catalog.tsx:474",
+  "src/pages/Catalog.tsx:476"
  ],
  "Картка запуску": [
   "src/pages/admin/log.tsx:175"
@@ -5121,7 +5480,19 @@
   "src/pages/Guilds.tsx:143"
  ],
  "Кількість": [
-  "src/pages/admin/fields.tsx:483"
+  "src/pages/admin/fields.tsx:483",
+  "src/pages/market/ListingEditor.tsx:196",
+  "src/pages/market/ListingEditor.tsx:197",
+  "src/pages/market/ListingEditor.tsx:226",
+  "src/pages/market/ListingPage.tsx:95"
+ ],
+ "кількість — ціле число від 1": [
+  "server/lib/market.mjs:95",
+  "server/lib/market.mjs:113",
+  "server/routes/market.mjs:250"
+ ],
+ "кількість не може бути меншою, ніж уже продано й пообіцяно в угодах ({n})": [
+  "server/routes/market.mjs:547"
  ],
  "Кількість, за секунду": [
   "src/pages/Orni3D.tsx:487",
@@ -5155,13 +5526,10 @@
   "src/pages/EventPage.tsx:158"
  ],
  "Клацни на мапі — додати точку": [
-  "src/pages/MapPage.tsx:1220"
- ],
- "Клацни на мапі, де зараз велике поле": [
-  "src/pages/MapPage.tsx:1228"
+  "src/pages/MapPage.tsx:1212"
  ],
  "Клацни на мапі, де поставити позначку": [
-  "src/pages/MapPage.tsx:1236"
+  "src/pages/MapPage.tsx:1220"
  ],
  "Клацни на мапі, де поставити позначку (Esc — скасувати)": [
   "src/components/map/MarksPanel.tsx:204"
@@ -5173,11 +5541,11 @@
   "src/components/skills/SpecView.tsx:101"
  ],
  "клік — наблизити": [
-  "src/pages/MapPage.tsx:767",
-  "src/pages/MapPage.tsx:770"
+  "src/pages/MapPage.tsx:753",
+  "src/pages/MapPage.tsx:756"
  ],
  "клік — позначити активним": [
-  "src/pages/MapPage.tsx:740"
+  "src/pages/MapPage.tsx:726"
  ],
  "Клік — поставити, тягни — рядом, ПКМ — прибрати. R — поворот, F — дзеркально. Вибране: тягни чи стрілки — перемістити.": [
   "src/components/base/builder/Palette.tsx:143"
@@ -5212,6 +5580,9 @@
  "Клік: прибрати цю ділянку": [
   "src/components/base/builder/View.tsx:293"
  ],
+ "Клікни на мапі, де передаси предмет": [
+  "src/pages/market/ListingEditor.tsx:285"
+ ],
  "Кліп — на землі: спершу посади дрон": [
   "src/pages/Orni3D.tsx:3450"
  ],
@@ -5222,7 +5593,7 @@
   "src/pages/Orni3D.tsx:3454"
  ],
  "Ключ": [
-  "server/admin/resources.mjs:897",
+  "server/admin/resources.mjs:915",
   "server/admin/resources.mjs#settings"
  ],
  "Ключ входу": [
@@ -5258,8 +5629,17 @@
  "Ключові цифри (жирне — **ось так**)": [
   "src/pages/Roadmap.tsx:681"
  ],
+ "Книга заявок і ціни цього предмета →": [
+  "src/pages/market/ListingPage.tsx:103"
+ ],
+ "Книга заявок предмета": [
+  "src/pages/Market.tsx:206"
+ ],
  "Кобури": [
   "src/pages/admin/labels.ts:14"
+ ],
+ "кого саме? Вибери автора чи сторону угоди": [
+  "server/routes/market.mjs:481"
  ],
  "Код": [
   "src/components/account/Security.tsx:256"
@@ -5278,7 +5658,7 @@
   "server/admin/resources.mjs#game-buildables"
  ],
  "Код задачі": [
-  "server/admin/resources.mjs:999",
+  "server/admin/resources.mjs:1017",
   "server/admin/resources.mjs#cron-jobs"
  ],
  "Код запрошення": [
@@ -5309,11 +5689,11 @@
   "server/lib/auth.mjs:138"
  ],
  "Код ролі": [
-  "server/admin/resources.mjs:937",
+  "server/admin/resources.mjs:955",
   "server/admin/resources.mjs#roles"
  ],
  "Код у грі": [
-  "server/admin/resources.mjs:776",
+  "server/admin/resources.mjs:794",
   "server/admin/resources.mjs#game-items",
   "server/admin/resources.mjs#game-placeables",
   "server/admin/resources.mjs#game-recipes",
@@ -5330,7 +5710,7 @@
   "src/components/access/Rights.tsx:51"
  ],
  "Кожен запуск фонової задачі: коли, скільки тривав, чим скінчився, і журнал — що вона писала.": [
-  "server/admin/resources.mjs:1030",
+  "server/admin/resources.mjs:1048",
   "server/admin/resources.mjs#cron-runs"
  ],
  "Кожен розділ — сам по собі: джерело в нього своє.": [
@@ -5365,7 +5745,7 @@
   "src/components/access/Rights.tsx:51"
  ],
  "Кожна зміна будь-чого: що було й що стало. Відкрий зміну — побачиш різницю.": [
-  "server/admin/resources.mjs:979",
+  "server/admin/resources.mjs:997",
   "server/admin/resources.mjs#revisions"
  ],
  "Кожна зміна тут потрапляє в «Історію змін» — видно, хто й коли що змінив.": [
@@ -5375,7 +5755,7 @@
   "src/engine/versions.js:44"
  ],
  "Кожне місце, де руда може з’явитися; яскравість — шанс": [
-  "src/pages/MapPage.tsx:1126"
+  "src/pages/MapPage.tsx:1118"
  ],
  "Кожне право — окремо": [
   "src/components/access/Rights.tsx:202"
@@ -5387,9 +5767,9 @@
   "src/pages/admin/fields.tsx:65"
  ],
  "Коли": [
-  "server/admin/resources.mjs:742",
-  "server/admin/resources.mjs:908",
-  "server/admin/resources.mjs:982",
+  "server/admin/resources.mjs:760",
+  "server/admin/resources.mjs:926",
+  "server/admin/resources.mjs:1000",
   "server/admin/resources.mjs#stars",
   "server/admin/resources.mjs#audit"
  ],
@@ -5414,7 +5794,7 @@
   "server/admin/resources.mjs#guilds"
  ],
  "Колір смужки": [
-  "server/admin/resources.mjs:816",
+  "server/admin/resources.mjs:834",
   "server/admin/resources.mjs#announcements"
  ],
  "Коло — атрибут, восьмикутник — прийом, ромб — здібність; у рамці — завершальний вузол гілки.": [
@@ -5509,17 +5889,20 @@
   "src/components/events/Bracket.tsx:50",
   "src/pages/EventPage.tsx:225"
  ],
+ "Коментар до скарги": [
+  "src/components/market/ReportDialog.tsx:48"
+ ],
  "Комп'ютер": [
   "src/pages/Account.tsx:101"
  ],
  "Компас: північ угорі": [
-  "src/pages/MapPage.tsx:1457"
+  "src/pages/MapPage.tsx:1433"
  ],
  "Компоненти": [
   "src/lib/catalog.ts:170"
  ],
  "Кому показувати": [
-  "server/admin/resources.mjs:817",
+  "server/admin/resources.mjs:835",
   "server/admin/resources.mjs#announcements"
  ],
  "Конкурс баз": [
@@ -5678,6 +6061,12 @@
  "Коротко: про що цей роадмап": [
   "src/pages/Roadmap.tsx:678"
  ],
+ "Коротко: що сталося": [
+  "src/components/market/ReportDialog.tsx:48"
+ ],
+ "Коротко: як усе пройшло": [
+  "src/pages/market/DealPage.tsx:197"
+ ],
  "Корпус навпіл середньою стіною на обох поверхах, стіна над стіною.": [
   "src/engine/versions.js:128"
  ],
@@ -5720,6 +6109,9 @@
   "src/components/catalog/ProdCalc.tsx:236",
   "src/lib/calcs.ts:80"
  ],
+ "Креслення": [
+  "src/lib/market.ts:177"
+ ],
  "Крива": [
   "src/pages/Orni3D.tsx:740",
   "src/pages/Orni3D.tsx:3430"
@@ -5756,6 +6148,9 @@
  "Кроки оновлення": [
   "src/pages/admin/GameDataAdmin.tsx:306"
  ],
+ "Кроки угоди": [
+  "src/pages/market/DealPage.tsx:79"
+ ],
  "кроків": [
   "src/components/catalog/ProdCalc.tsx:239"
  ],
@@ -5769,7 +6164,7 @@
   "src/components/world/LocationCard.tsx:135"
  ],
  "куди копіювати — в особисте й/або в гільдію": [
-  "server/lib/roadmap-access.mjs:134"
+  "server/lib/roadmap-access.mjs:135"
  ],
  "Куди можна долетіти": [
   "src/components/world/LocationCard.tsx:141"
@@ -5784,7 +6179,11 @@
   "src/lib/map/data.ts:322"
  ],
  "Купити": [
-  "src/components/skills/SpecView.tsx:97"
+  "src/components/skills/SpecView.tsx:97",
+  "src/pages/market/ItemPage.tsx:55",
+  "src/pages/market/ListingPage.tsx:192",
+  "src/pages/market/ListingPage.tsx:199",
+  "src/pages/market/ListingPage.tsx:215"
  ],
  "Купити (рівень → {level})": [
   "src/components/skills/SpecView.tsx:97"
@@ -5792,11 +6191,26 @@
  "Купити всі доступні": [
   "src/components/skills/SpecView.tsx:408"
  ],
+ "Купівля й продаж предметів, соларів чи акаунтів за реальні гроші (RMT) заборонені правилами гри й біржі. Такі оголошення ховаються, а людям закривають доступ до біржі.": [
+  "src/pages/market/ListingEditor.tsx:318"
+ ],
  "Куплено рис": [
   "src/pages/SkillsPage.tsx:519"
  ],
  "Куплено рис (усього в треку); доступно — до поточного рівня": [
   "src/components/skills/SpecView.tsx:385"
+ ],
+ "Куплю": [
+  "src/lib/market.ts:170",
+  "server/lib/og.mjs:84",
+  "server/admin/resources.mjs#listings"
+ ],
+ "Куплю й продам — предмети з гри за солари чи бартером. Ціни від спільноти, книга заявок, угоди з репутацією. Передача — у грі; торгівля за реальні гроші заборонена.": [
+  "src/pages/Market.tsx:83"
+ ],
+ "Куплю й продам: предмети з гри, ціни від спільноти, угоди з репутацією": [
+  "src/components/Header.tsx:28",
+  "server/lib/og.mjs:89"
  ],
  "Купол": [
   "src/pages/BaseGenerator.tsx:286"
@@ -5806,6 +6220,9 @@
  ],
  "куполи, колонади й ганок, ступінчасті вежі, павільйон, парапети": [
   "src/lib/basegen.ts:52"
+ ],
+ "Купують": [
+  "src/pages/market/ItemPage.tsx:120"
  ],
  "кут": [
   "src/components/base/ImportBase.tsx:33",
@@ -5836,7 +6253,7 @@
   "src/pages/Guilds.tsx:685"
  ],
  "Латинські літери, цифри, «_» і «-»; після створення не змінюється": [
-  "server/admin/resources.mjs:937",
+  "server/admin/resources.mjs:955",
   "server/admin/resources.mjs#roles"
  ],
  "Легенда": [
@@ -5859,6 +6276,9 @@
  ],
  "Лист не прийшов? Зазирни в «Спам» і перевір, чи правильна пошта.": [
   "src/pages/Auth.tsx:292"
+ ],
+ "Листування": [
+  "src/pages/market/DealPage.tsx:157"
  ],
  "лишається {n}": [
   "src/components/base/BuildCards.tsx:72"
@@ -5899,7 +6319,11 @@
   "src/components/access/Rights.tsx:27"
  ],
  "Лише: {list}": [
-  "src/pages/MapPage.tsx:1184"
+  "src/pages/MapPage.tsx:1176"
+ ],
+ "Лишилось": [
+  "server/admin/resources.mjs:719",
+  "server/admin/resources.mjs#listings"
  ],
  "Лишити мою версію": [
   "src/lib/roadmap.ts:265"
@@ -5969,11 +6393,11 @@
   "src/lib/map/data.ts:273"
  ],
  "Лут · {boxes}": [
-  "src/pages/MapPage.tsx:641",
-  "src/pages/MapPage.tsx:1743"
+  "src/pages/MapPage.tsx:643",
+  "src/pages/MapPage.tsx:1719"
  ],
  "лут «{res}»": [
-  "src/pages/MapPage.tsx:1184"
+  "src/pages/MapPage.tsx:1176"
  ],
  "лут із довідника": [
   "src/pages/MapPage.tsx:283"
@@ -5985,7 +6409,7 @@
   "src/pages/admin/Dashboard.tsx:77"
  ],
  "Людей із роллю": [
-  "server/admin/resources.mjs:941",
+  "server/admin/resources.mjs:959",
   "server/admin/resources.mjs#roles"
  ],
  "Люди": [
@@ -5996,7 +6420,7 @@
   "server/admin/resources.mjs:462"
  ],
  "Люди з цією роллю": [
-  "server/admin/resources.mjs:944",
+  "server/admin/resources.mjs:962",
   "server/admin/resources.mjs#roles"
  ],
  "Люди-обчислювачі: точний розрахунок, тактика й тихе усунення цілей.": [
@@ -6008,17 +6432,17 @@
  ],
  "Людина": [
   "src/pages/admin/fields.tsx:363",
+  "src/pages/market/Reports.tsx:46",
   "server/admin/resources.mjs:320",
   "server/admin/resources.mjs:438",
-  "server/admin/resources.mjs:454",
-  "server/admin/resources.mjs:522"
+  "server/admin/resources.mjs:454"
  ],
  "людина з такою поштою вже є": [
   "server/admin/resources.mjs:361",
   "server/admin/resources.mjs:384"
  ],
  "Людина може закрити": [
-  "server/admin/resources.mjs:824",
+  "server/admin/resources.mjs:842",
   "server/admin/resources.mjs#announcements"
  ],
  "Людина чи гільдія; порожньо при створенні — ти": [
@@ -6029,7 +6453,11 @@
   "server/admin/resources.mjs#calcs"
  ],
  "Людину видалено": [
-  "server/lib/items.mjs:87"
+  "src/components/market/UserMarket.tsx:35",
+  "src/components/market/bits.tsx:162",
+  "src/pages/market/DealPage.tsx:132",
+  "src/pages/market/DealPage.tsx:164",
+  "src/pages/market/Reports.tsx:74"
  ],
  "Люк": [
   "src/components/base/tr.ts:88"
@@ -6041,7 +6469,10 @@
   "src/pages/Orni3D.tsx:432"
  ],
  "Магазин": [
-  "src/pages/Catalog.tsx:585"
+  "src/pages/Catalog.tsx:586"
+ ],
+ "Маєш зайве — покупці побачать, скільки й почім": [
+  "src/lib/market.ts:171"
  ],
  "Майст.": [
   "src/pages/BaseGenerator.tsx:65"
@@ -6053,7 +6484,7 @@
   "src/pages/BaseGenerator.tsx:65"
  ],
  "Макс. дальність": [
-  "src/pages/Catalog.tsx:585"
+  "src/pages/Catalog.tsx:586"
  ],
  "Мала надрідкісна скриня": [
   "src/lib/map/data.ts:300"
@@ -6100,7 +6531,7 @@
   "src/components/base/tr.ts:92"
  ],
  "Малює прев’ю 3D для баз, у яких його ще нема": [
-  "server/app.mjs:418"
+  "server/app.mjs:440"
  ],
  "Малюю знімок…": [
   "src/pages/admin/ResourceForm.tsx:383"
@@ -6108,30 +6539,30 @@
  "Мапа": [
   "src/App.tsx:31",
   "src/components/Crumbs.tsx:93",
-  "src/components/Header.tsx:21",
-  "src/components/events/EventMap.tsx:112",
-  "src/components/events/EventMap.tsx:114"
+  "src/components/Header.tsx:22",
+  "src/components/events/EventMap.tsx:115",
+  "src/components/events/EventMap.tsx:117"
  ],
  "Мапа вже свіжа": [
-  "src/pages/MapPage.tsx:1846"
+  "src/pages/MapPage.tsx:1822"
  ],
  "Мапа Глибокої пустелі": [
   "src/components/DDTimer.tsx:239"
  ],
  "Мапа зараз не завантажилась": [
-  "src/pages/MapPage.tsx:1019"
+  "src/pages/MapPage.tsx:1012"
  ],
  "Мапа не завантажилась": [
-  "src/components/events/EventMap.tsx:108"
+  "src/components/events/EventMap.tsx:111"
  ],
  "Мапа ще показує минулий тиждень — нова розкладка з'явиться найближчим часом.": [
   "src/components/DDTimer.tsx:126",
   "src/components/DDTimer.tsx:184",
   "src/components/DDTimer.tsx:201",
-  "src/pages/MapPage.tsx:1533"
+  "src/pages/MapPage.tsx:1509"
  ],
  "Мапа: свіжі дані": [
-  "server/app.mjs:414"
+  "server/app.mjs:436"
  ],
  "Мапи": [
   "src/lib/gamedata.ts:29",
@@ -6139,7 +6570,7 @@
  ],
  "Мапу оновлено": [
   "src/pages/MapPage.tsx:205",
-  "src/pages/MapPage.tsx:1846"
+  "src/pages/MapPage.tsx:1822"
  ],
  "матеріал": [
   "src/components/catalog/ProdCalc.tsx:234"
@@ -6165,8 +6596,17 @@
  "Медична скриня (полярна)": [
   "src/lib/map/data.ts:295"
  ],
+ "Медіана за оголошеннями": [
+  "src/pages/market/ItemPage.tsx:69"
+ ],
+ "Медіанна ціна (30 днів)": [
+  "src/pages/market/ItemPage.tsx:69"
+ ],
+ "Медіанна ціна від спільноти: {price} Solari за штуку ({n} угод)": [
+  "server/lib/og.mjs:78"
+ ],
  "Медіатека: картинки": [
-  "server/app.mjs:416"
+  "server/app.mjs:438"
  ],
  "меланж": [
   "src/pages/Home.tsx:197",
@@ -6228,6 +6668,23 @@
   "src/components/AccountMenu.tsx:49",
   "src/pages/Account.tsx:235"
  ],
+ "Мінімальна партія": [
+  "src/pages/market/ListingEditor.tsx:199",
+  "src/pages/market/ListingEditor.tsx:200",
+  "src/pages/market/ListingPage.tsx:96"
+ ],
+ "мінімальна партія — {n}": [
+  "server/routes/market.mjs:252"
+ ],
+ "мінімальна партія — ціле число від 1": [
+  "server/lib/market.mjs:115"
+ ],
+ "мінімальна партія не може бути більшою за кількість": [
+  "server/lib/market.mjs:116"
+ ],
+ "мінімум {n}": [
+  "src/pages/market/ListingPage.tsx:217"
+ ],
  "міняти доступ може власник (у гільдії — офіцер чи лідер)": [
   "server/routes/items.mjs:65"
  ],
@@ -6257,14 +6714,15 @@
  "Місце грузового 4×9": [
   "src/components/base/tr.ts:94"
  ],
- "місце з позначок гравців": [
-  "src/pages/MapPage.tsx:739"
- ],
  "Місце звільниться — його займе наступний із резерву.": [
   "src/pages/EventPage.tsx:312"
  ],
+ "Місце передачі": [
+  "src/pages/market/ListingEditor.tsx:284",
+  "src/pages/market/ListingPage.tsx:110"
+ ],
  "Місце події": [
-  "src/components/events/EventMap.tsx:24"
+  "src/components/events/EventMap.tsx:25"
  ],
  "Місце словами": [
   "src/pages/EventEditor.tsx:238",
@@ -6303,14 +6761,14 @@
   "src/pages/Guilds.tsx:652"
  ],
  "Міцність": [
-  "src/pages/Catalog.tsx:636",
+  "src/pages/Catalog.tsx:637",
   "server/admin/resources.mjs#game-buildables"
  ],
  "Мова": [
   "src/pages/admin/Translations.tsx:65",
-  "server/admin/resources.mjs:777",
-  "server/admin/resources.mjs:859",
-  "server/admin/resources.mjs:923",
+  "server/admin/resources.mjs:795",
+  "server/admin/resources.mjs:877",
+  "server/admin/resources.mjs:941",
   "server/admin/resources.mjs#game-texts"
  ],
  "Мова за замовчуванням": [
@@ -6341,6 +6799,18 @@
  "Модератор": [
   "src/lib/auth.ts:18"
  ],
+ "Модератор закрив твоє оголошення": [
+  "src/lib/notifications.ts:39"
+ ],
+ "Модератор повернув твоє оголошення в стрічку": [
+  "src/lib/notifications.ts:39"
+ ],
+ "Модератор сховав твоє оголошення": [
+  "src/lib/notifications.ts:39"
+ ],
+ "модератор читає листування, але не пише в нього": [
+  "server/routes/market.mjs:368"
+ ],
  "Модерація": [
   "server/admin/describe.mjs"
  ],
@@ -6351,9 +6821,6 @@
  "Модулі": [
   "src/lib/catalog.ts:167",
   "src/lib/catalog.ts:180"
- ],
- "можливе місце великого поля": [
-  "src/pages/MapPage.tsx:739"
  ],
  "Можливо, посилання застаріло чи в ньому помилка. Ось куди можна піти:": [
   "src/pages/NotFound.tsx:13"
@@ -6389,6 +6856,9 @@
  ],
  "На «{name}» тримаються інші вузли — спершу зніми їх": [
   "src/pages/SkillsPage.tsx:438"
+ ],
+ "На біржі": [
+  "src/pages/Catalog.tsx:736"
  ],
  "На весь екран": [
   "src/lib/fullscreen.tsx:86"
@@ -6441,7 +6911,7 @@
   "server/routes/places.mjs:42"
  ],
  "на основі «{title}»": [
-  "src/components/access/ItemCard.tsx:121"
+  "src/components/access/ItemCard.tsx:123"
  ],
  "на основі «{title}» ({owner})": [
   "src/components/access/Access.tsx:256"
@@ -6457,14 +6927,20 @@
   "src/pages/admin/ResourceForm.tsx:338"
  ],
  "на сайті з {date}": [
-  "src/pages/UserPage.tsx:56"
+  "src/pages/UserPage.tsx:57"
  ],
  "На сайті: версія гри {version} · збірка {build} · видобуто {date}": [
   "src/pages/admin/GameDataAdmin.tsx:279"
  ],
+ "на себе скаржитись не можна": [
+  "server/routes/market.mjs:412"
+ ],
  "На скільки днів (можна мінус)": [
-  "server/admin/resources.mjs:842",
+  "server/admin/resources.mjs:860",
   "server/admin/resources.mjs#announcements"
+ ],
+ "на скільки днів?": [
+  "server/routes/market.mjs:485"
  ],
  "на терасі, на найкращому куті": [
   "src/pages/BaseGenerator.tsx:315"
@@ -6479,6 +6955,9 @@
   "src/lib/decree.ts:42",
   "src/lib/decree.ts:43"
  ],
+ "на що скарга?": [
+  "server/routes/market.mjs:402"
+ ],
  "Набір будівельних елементів — сардаукарський, з гранітного каменю.": [
   "src/engine/versions.js:16"
  ],
@@ -6491,7 +6970,7 @@
  "Наблизити": [
   "src/components/world/WorldMapView.tsx:313",
   "src/components/world/WorldMapView.tsx:313",
-  "src/pages/MapPage.tsx:1244"
+  "src/pages/MapPage.tsx:1228"
  ],
  "Набої": [
   "src/lib/catalog.ts:172"
@@ -6591,11 +7070,17 @@
   "server/admin/resources.mjs:466",
   "server/admin/resources.mjs#login-codes"
  ],
+ "Надіслати": [
+  "src/pages/market/DealPage.tsx:176"
+ ],
  "Надіслати код": [
   "src/pages/Auth.tsx:209"
  ],
  "Надіслати пробне": [
   "src/components/DDTimer.tsx:154"
+ ],
+ "Надіслати скаргу": [
+  "src/components/market/ReportDialog.tsx:38"
  ],
  "Надіслати ще раз": [
   "src/pages/Auth.tsx:243"
@@ -6611,6 +7096,12 @@
  ],
  "Наживо — нові рядки з’являються самі": [
   "src/pages/admin/log.tsx:146"
+ ],
+ "Назавжди": [
+  "src/pages/market/Reports.tsx:104"
+ ],
+ "Назавжди. Причина: {reason}": [
+  "src/pages/Market.tsx:91"
  ],
  "Назад": [
   "src/pages/Auth.tsx:176",
@@ -6686,8 +7177,11 @@
   "server/lib/events.mjs:72"
  ],
  "Назва позначки": [
-  "server/admin/resources.mjs:1049",
+  "server/admin/resources.mjs:1067",
   "server/admin/resources.mjs#meta"
+ ],
+ "Назва предмета": [
+  "src/components/market/ItemPicker.tsx:46"
  ],
  "назва приміщення": [
   "src/components/base/builder/Cards.tsx:153"
@@ -6722,7 +7216,7 @@
   "src/pages/admin/ResourceForm.tsx:245"
  ],
  "Назви й описи предметів, пристроїв, рецептів, будівельних елементів і вмінь мовами гри — з файлів гри. Змінене вручну закріплюється: оновлення даних його не перепише.": [
-  "server/admin/resources.mjs:772",
+  "server/admin/resources.mjs:790",
   "server/admin/resources.mjs#game-texts"
  ],
  "Найбільше в стосі, шт.": [
@@ -6742,8 +7236,14 @@
   "src/components/events/bits.tsx:148",
   "src/pages/Events.tsx:119"
  ],
+ "Найдешевше продають": [
+  "src/pages/market/ItemPage.tsx:71"
+ ],
  "Найдовша черга — {station}; усього {stations}": [
   "src/components/catalog/ProdCalc.tsx:625"
+ ],
+ "Найдорожче купують": [
+  "src/pages/market/ItemPage.tsx:72"
  ],
  "Накривка даху, верх": [
   "src/components/base/tr.ts:96"
@@ -6761,8 +7261,8 @@
   "src/pages/Guilds.tsx:323",
   "src/pages/Guilds.tsx:337",
   "src/pages/Guilds.tsx:382",
-  "src/pages/MapPage.tsx:1114",
-  "src/pages/UserPage.tsx:61"
+  "src/pages/MapPage.tsx:1106",
+  "src/pages/UserPage.tsx:62"
  ],
  "Налаштування гільдії": [
   "src/pages/Guilds.tsx:426"
@@ -6822,14 +7322,26 @@
  "Напр.: 50 000 соларів": [
   "src/pages/EventEditor.tsx:295"
  ],
+ "Напр.: Арракін, біля обміну": [
+  "src/pages/market/ListingEditor.tsx:290"
+ ],
  "Напр.: Бій 2 на 2 біля Арракіна": [
   "src/pages/EventEditor.tsx:197"
+ ],
+ "Напр.: віддам частинами, онлайн увечері": [
+  "src/pages/market/ListingEditor.tsx:305"
+ ],
+ "Напр.: коли зручно передати?": [
+  "src/pages/market/ListingPage.tsx:229"
  ],
  "Напр.: перенесли на наступну суботу": [
   "src/pages/EventPage.tsx:622"
  ],
  "Напр.: скелі на схід від Арракіна, сектор E5": [
   "src/pages/EventEditor.tsx:239"
+ ],
+ "Напр.: Hagga EU 7": [
+  "src/pages/market/ListingEditor.tsx:252"
  ],
  "Напр.: PvE-зона на скелі на північ — звідти видно арену; у PvP-зону не заходьте": [
   "src/pages/EventEditor.tsx:253"
@@ -6874,11 +7386,11 @@
   "server/admin/resources.mjs#game-buildables"
  ],
  "Наступне оновлення даних гри перепише цей текст тим, що в грі.": [
-  "server/admin/resources.mjs:798",
+  "server/admin/resources.mjs:816",
   "server/admin/resources.mjs#game-texts"
  ],
  "Наступний запуск": [
-  "server/admin/resources.mjs:1004",
+  "server/admin/resources.mjs:1022",
   "server/admin/resources.mjs#cron-jobs"
  ],
  "Наступні": [
@@ -6900,7 +7412,7 @@
   "src/pages/Orni3D.tsx:3287"
  ],
  "Наш ресурс тут": [
-  "src/pages/MapPage.tsx:1785"
+  "src/pages/MapPage.tsx:1761"
  ],
  "не вдалося": [
   "src/lib/bases.ts:202",
@@ -6997,7 +7509,7 @@
   "src/components/map/PlaceParts.tsx:240"
  ],
  "Не вдалося перевірити мапу": [
-  "src/pages/MapPage.tsx:1848"
+  "src/pages/MapPage.tsx:1824"
  ],
  "Не вдалося показати 3D. Онови сторінку — план працює й без нього.": [
   "src/components/base/ThreeView.tsx:164"
@@ -7024,11 +7536,14 @@
   "src/pages/admin/GameDataAdmin.tsx:268"
  ],
  "Не випадає на жодній мапі": [
-  "src/pages/MapPage.tsx:1209"
+  "src/pages/MapPage.tsx:1201"
  ],
  "не вистачає версії, від якої ти редагував — онови сторінку й спробуй ще раз": [
   "server/routes/bases.mjs:182",
   "server/routes/roadmap.mjs:89"
+ ],
+ "Не віддав обіцяне, обман": [
+  "src/lib/market.ts:183"
  ],
  "не вказано": [
   "src/pages/Guilds.tsx:568"
@@ -7060,7 +7575,7 @@
   "src/pages/EventPage.tsx:519"
  ],
  "Не групувати однакові значки": [
-  "src/pages/MapPage.tsx:1254"
+  "src/pages/MapPage.tsx:1238"
  ],
  "Не для біржі": [
   "src/pages/admin/labels.ts:15"
@@ -7089,14 +7604,17 @@
  "Не скасовувати": [
   "src/pages/EventPage.tsx:621"
  ],
+ "Не той предмет чи ціна": [
+  "src/lib/market.ts:181"
+ ],
  "Небезпека": [
   "src/lib/markers.ts:24"
  ],
  "невідома величина поля": [
-  "server/lib/spice.mjs:142"
+  "server/lib/spice.mjs:143"
  ],
  "невідома видимість": [
-  "server/lib/spice.mjs:143"
+  "server/lib/spice.mjs:144"
  ],
  "Невідома деталь": [
   "src/components/base/builder/View.tsx:37",
@@ -7107,6 +7625,9 @@
  ],
  "Невідома деталь {shape}": [
   "src/lib/basegen.ts:72"
+ ],
+ "невідома дія": [
+  "server/routes/market.mjs:498"
  ],
  "невідома мапа": [
   "server/lib/docs.mjs:77"
@@ -7132,12 +7653,12 @@
   "server/routes/admin.mjs:309"
  ],
  "невідоме налаштування": [
-  "server/lib/roadmap-access.mjs:128",
   "server/lib/roadmap-access.mjs:129",
-  "server/lib/roadmap-access.mjs:139"
+  "server/lib/roadmap-access.mjs:130",
+  "server/lib/roadmap-access.mjs:140"
  ],
  "невідомий вид": [
-  "server/lib/items.mjs:156",
+  "server/lib/items.mjs:163",
   "server/routes/admin.mjs:277",
   "server/routes/admin.mjs:284",
   "server/routes/items.mjs:15"
@@ -7240,6 +7761,9 @@
   "server/admin/resources.mjs:150",
   "server/admin/resources.mjs:679"
  ],
+ "немає такого оголошення": [
+  "server/routes/market.mjs:46"
+ ],
  "немає такого паскея": [
   "server/lib/security.mjs:104",
   "server/lib/security.mjs:107"
@@ -7264,14 +7788,14 @@
   "server/routes/auth.mjs:187"
  ],
  "немає такого шляху": [
-  "server/app.mjs:368"
+  "server/app.mjs:390"
  ],
  "немає такої бази": [
+  "server/lib/market.mjs:132",
   "server/routes/admin.mjs:205",
   "server/routes/bases.mjs:48",
   "server/routes/bases.mjs:91",
-  "server/routes/bases.mjs:155",
-  "server/routes/bases.mjs:184"
+  "server/routes/bases.mjs:155"
  ],
  "Немає такої бази": [
   "src/pages/BasePage.tsx:58"
@@ -7290,7 +7814,7 @@
  ],
  "немає такої гільдії": [
   "server/admin/resources.mjs:60",
-  "server/lib/content.mjs:84",
+  "server/lib/content.mjs:93",
   "server/routes/guilds.mjs:22",
   "server/routes/guilds.mjs:82",
   "server/routes/guilds.mjs:157"
@@ -7314,8 +7838,10 @@
  ],
  "немає такої людини": [
   "server/admin/resources.mjs:59",
-  "server/lib/content.mjs:77",
-  "server/routes/auth.mjs:232"
+  "server/lib/content.mjs:86",
+  "server/routes/auth.mjs:232",
+  "server/routes/market.mjs:391",
+  "server/routes/market.mjs:409"
  ],
  "немає такої мапи або розкладки": [
   "server/routes/map.mjs:45",
@@ -7331,26 +7857,41 @@
   "server/routes/spice.mjs:40"
  ],
  "немає такої речі": [
-  "server/lib/content.mjs:143",
+  "server/lib/content.mjs:154",
   "server/routes/items.mjs:20"
  ],
  "немає такої ролі": [
   "server/lib/roles.mjs:75"
  ],
+ "немає такої скарги": [
+  "server/routes/market.mjs:464"
+ ],
  "немає такої точки на мапі": [
   "server/routes/map.mjs:89"
+ ],
+ "немає такої угоди": [
+  "server/routes/market.mjs:151"
  ],
  "Немає телефону? Резервний код": [
   "src/pages/Auth.tsx:275"
  ],
  "немає точок": [
-  "src/pages/MapPage.tsx:1199"
+  "src/pages/MapPage.tsx:1191"
  ],
  "Необов’язково": [
   "src/pages/EventPage.tsx:521"
  ],
  "Необов’язково: напр. «5 000 соларів з команди — у призовий фонд»": [
   "src/pages/EventEditor.tsx:302"
+ ],
+ "Необов’язково: точка на мапі гри, твоя база чи словами.": [
+  "src/pages/market/ListingEditor.tsx:275"
+ ],
+ "Неправдивий предмет, кількість чи ціна": [
+  "src/lib/market.ts:184"
+ ],
+ "Непрочитане": [
+  "src/components/Notifications.tsx:70"
  ],
  "нерухомі": [
   "src/pages/Orni3D.tsx:576"
@@ -7399,8 +7940,11 @@
   "src/pages/Account.tsx:252",
   "src/pages/Account.tsx:253",
   "src/pages/EventPage.tsx:557",
-  "server/admin/resources.mjs:336",
-  "server/admin/resources.mjs#users"
+  "src/pages/market/ListingEditor.tsx:301",
+  "src/pages/market/ListingEditor.tsx:302"
+ ],
+ "Нік у грі:": [
+  "src/pages/market/ListingPage.tsx:123"
  ],
  "Нікуди — тож копіювати не вийде": [
   "src/components/access/Rights.tsx:278"
@@ -7409,10 +7953,16 @@
   "src/components/access/Rights.tsx:26"
  ],
  "Ніхто не позначив це поле активним (з тих позначок, що тобі видно).": [
-  "src/components/map/SpiceActive.tsx:83"
+  "src/components/map/SpiceActive.tsx:77"
  ],
  "Ніхто не реєструвався.": [
   "src/pages/EventPage.tsx:337"
+ ],
+ "Ніхто поки не купує — розмісти «Куплю»": [
+  "src/pages/market/ItemPage.tsx:137"
+ ],
+ "Ніхто поки не продає — розмісти «Продам»": [
+  "src/pages/market/ItemPage.tsx:137"
  ],
  "Нічого": [
   "src/pages/BaseGenerator.tsx:424",
@@ -7422,17 +7972,20 @@
   "server/admin/engine.mjs:430"
  ],
  "Нічого не знайдено": [
-  "src/pages/Catalog.tsx:425"
+  "src/pages/Catalog.tsx:426"
  ],
  "Нічого не знайдено.": [
-  "src/pages/MapPage.tsx:1667"
+  "src/pages/MapPage.tsx:1643"
  ],
  "Нічого не знайшлося": [
   "src/components/map/MarksPanel.tsx:373",
   "src/components/map/MarksPanel.tsx:567",
   "src/pages/Events.tsx:111",
   "src/pages/Library.tsx:160",
-  "src/pages/admin/fields.tsx:348"
+  "src/pages/Market.tsx:192"
+ ],
+ "Нічого не знайшлося — спробуй іншу назву": [
+  "src/components/market/ItemPicker.tsx:63"
  ],
  "Нічого не знайшлося — спробуй іншу назву чи категорію.": [
   "src/components/world/WorldMapView.tsx:262"
@@ -7447,7 +8000,7 @@
   "src/pages/admin/table.ts:154"
  ],
  "Нічого публічного поки нема": [
-  "src/pages/UserPage.tsx:83"
+  "src/pages/UserPage.tsx:84"
  ],
  "Нова база": [
   "src/pages/BasesList.tsx:75",
@@ -7482,14 +8035,17 @@
  ],
  "Нова позначка": [
   "src/components/map/MarkerParts.tsx:100",
-  "src/pages/MapPage.tsx:755"
+  "src/pages/MapPage.tsx:741"
  ],
  "Нова позначка на мапі": [
   "server/admin/resources.mjs#audit",
   "server/admin/describe.mjs"
  ],
+ "Нова пропозиція угоди": [
+  "src/lib/notifications.ts:30"
+ ],
  "Нова розкладка Глибокої пустелі після бурі, точки й словники": [
-  "server/app.mjs:414"
+  "server/app.mjs:436"
  ],
  "нова точка": [
   "src/pages/MapPage.tsx:567"
@@ -7501,8 +8057,26 @@
   "server/admin/resources.mjs#audit",
   "server/admin/describe.mjs"
  ],
+ "Нове оголошення": [
+  "src/pages/market/ListingEditor.tsx:102",
+  "src/pages/market/ListingEditor.tsx:102",
+  "src/pages/market/ListingEditor.tsx:157"
+ ],
+ "Нове оголошення біржі": [
+  "server/admin/resources.mjs#audit",
+  "server/admin/describe.mjs"
+ ],
+ "Нове оголошення не збережено": [
+  "src/pages/market/ListingEditor.tsx:132"
+ ],
+ "Нове повідомлення в угоді": [
+  "src/lib/notifications.ts:35"
+ ],
  "нове приміщення": [
   "src/components/base/builder/View.tsx:331"
+ ],
+ "Нове сповіщення": [
+  "src/lib/notifications.ts:43"
  ],
  "Новенькі": [
   "src/pages/admin/Dashboard.tsx:89"
@@ -7525,7 +8099,7 @@
   "server/admin/describe.mjs"
  ],
  "Новий запис ресурсу з цією точкою": [
-  "src/pages/MapPage.tsx:1784"
+  "src/pages/MapPage.tsx:1760"
  ],
  "Новий запис: {what}": [
   "src/pages/admin/ResourceForm.tsx:122"
@@ -7562,6 +8136,7 @@
   "src/pages/admin/Dashboard.tsx:77"
  ],
  "Нові": [
+  "src/lib/market.ts:189",
   "src/pages/Library.tsx:173"
  ],
  "нові дані підозріло менші — чекають перевірки": [
@@ -7577,6 +8152,12 @@
  "Нові люди": [
   "src/pages/admin/SiteSettings.tsx:64",
   "server/admin/resources.mjs#settings"
+ ],
+ "Нові оголошення, пропозиції й листування стануть недоступні; відкриті оголошення закриються.": [
+  "src/pages/market/Reports.tsx:100"
+ ],
+ "Нові повідомлення в угоді: {n}": [
+  "src/lib/notifications.ts:35"
  ],
  "Нові резервні коди": [
   "src/components/account/Security.tsx:129",
@@ -7629,7 +8210,7 @@
   "src/components/skills/BuildsBar.tsx:156"
  ],
  "Об’єм": [
-  "src/pages/Catalog.tsx:708"
+  "src/pages/Catalog.tsx:709"
  ],
  "Об’єм в інвентарі": [
   "server/admin/resources.mjs#game-items"
@@ -7638,10 +8219,10 @@
   "src/components/catalog/Trips.tsx:209"
  ],
  "Обери запис": [
-  "src/pages/Catalog.tsx:485"
+  "src/pages/Catalog.tsx:486"
  ],
  "Обери предмет, щоб побачити, як його отримати і де він використовується.": [
-  "src/pages/Catalog.tsx:485"
+  "src/pages/Catalog.tsx:486"
  ],
  "Обери приміщення, щоб підсвітити його на плані.": [
   "src/components/base/SidePanel.tsx:115"
@@ -7689,6 +8270,9 @@
  "Обрав {house} — переможець Ландсрааду": [
   "src/components/DecreeCard.tsx:58"
  ],
+ "Образи": [
+  "src/lib/market.ts:181"
+ ],
  "Обробка даних": [
   "src/pages/admin/GameDataAdmin.tsx:213"
  ],
@@ -7698,10 +8282,93 @@
  ],
  "Оголошення": [
   "src/pages/admin/Dashboard.tsx:80",
-  "server/admin/resources.mjs:804",
-  "server/admin/resources.mjs:804",
-  "server/admin/resources.mjs#announcements",
-  "server/admin/resources.mjs#announcements"
+  "server/admin/resources.mjs:713",
+  "server/admin/resources.mjs:822",
+  "server/admin/resources.mjs:822",
+  "server/admin/resources.mjs#listings"
+ ],
+ "Оголошення →": [
+  "src/pages/market/DealPage.tsx:106"
+ ],
+ "Оголошення біржі": [
+  "src/lib/items.ts:66",
+  "src/lib/items.ts:66",
+  "src/pages/Guilds.tsx:476",
+  "src/pages/market/ListingEditor.tsx:102",
+  "src/pages/market/Reports.tsx:46"
+ ],
+ "Оголошення біржі «Куплю / Продам». Зміст змінює автор на сайті; скарги й заборони — у черзі «Скарги» на біржі.": [
+  "server/admin/resources.mjs:714",
+  "server/admin/resources.mjs#listings"
+ ],
+ "Оголошення біржі закрито": [
+  "server/admin/resources.mjs#audit",
+  "server/admin/describe.mjs"
+ ],
+ "Оголошення біржі продовжено": [
+  "server/admin/resources.mjs#audit",
+  "server/admin/describe.mjs"
+ ],
+ "оголошення вже не діє": [
+  "server/routes/market.mjs:278",
+  "server/routes/market.mjs:300",
+  "server/routes/market.mjs:317"
+ ],
+ "Оголошення вже не діє.": [
+  "src/pages/market/ListingPage.tsx:200"
+ ],
+ "Оголошення гільдії [{tag}] {name}": [
+  "src/pages/market/DealPage.tsx:113"
+ ],
+ "Оголошення закінчилось — продовж його одним кліком": [
+  "src/lib/notifications.ts:37"
+ ],
+ "оголошення закрив модератор": [
+  "server/routes/market.mjs:570"
+ ],
+ "Оголошення закрив модератор": [
+  "src/pages/market/ListingPage.tsx:86"
+ ],
+ "Оголошення закрито": [
+  "src/pages/market/ListingPage.tsx:80"
+ ],
+ "Оголошення збережено": [
+  "src/pages/market/ListingEditor.tsx:115"
+ ],
+ "оголошення змінює автор на сайті": [
+  "server/admin/resources.mjs:724"
+ ],
+ "Оголошення не завантажились": [
+  "src/pages/Market.tsx:219"
+ ],
+ "оголошення не копіюються — розмісти своє": [
+  "server/lib/content.mjs:74"
+ ],
+ "Оголошення продовжено": [
+  "src/pages/market/ListingPage.tsx:144"
+ ],
+ "Оголошення розміщено": [
+  "src/pages/market/ListingEditor.tsx:121"
+ ],
+ "Оголошення стерто": [
+  "src/pages/market/ListingPage.tsx:66"
+ ],
+ "оголошення сховане модератором": [
+  "server/routes/market.mjs:277",
+  "server/routes/market.mjs:570"
+ ],
+ "Оголошення сховане модератором": [
+  "src/pages/market/ListingPage.tsx:87"
+ ],
+ "Оголошення щойно змінили": [
+  "src/pages/market/ListingEditor.tsx:168"
+ ],
+ "Оголошень поки нема": [
+  "src/pages/Market.tsx:197"
+ ],
+ "оголошень: {n}": [
+  "src/pages/market/ItemPage.tsx:71",
+  "src/pages/market/ItemPage.tsx:72"
  ],
  "Один із кодів, які ти зберіг, коли вмикав перевірку. Кожен діє один раз.": [
   "src/pages/Auth.tsx:252"
@@ -7738,6 +8405,7 @@
   "src/components/roadmap/RoadmapRights.tsx:111"
  ],
  "Одяг": [
+  "src/lib/market.ts:177",
   "src/pages/admin/labels.ts:15"
  ],
  "Одяг і броня": [
@@ -7762,11 +8430,11 @@
   "src/components/world/LocationCard.tsx:117"
  ],
  "Онови сторінку за хвилину.": [
-  "src/pages/MapPage.tsx:1019"
+  "src/pages/MapPage.tsx:1012"
  ],
  "Онови сторінку трохи згодом.": [
   "src/components/states.tsx:51",
-  "src/pages/MapPage.tsx:1301"
+  "src/pages/MapPage.tsx:1285"
  ],
  "Онови сторінку, коли зручно: незбережене спершу збережи.": [
   "src/lib/pwa.ts:44"
@@ -7788,21 +8456,21 @@
   "src/pages/admin/GameDataAdmin.tsx:244"
  ],
  "Оновити дані мапи": [
-  "src/pages/MapPage.tsx:1835"
+  "src/pages/MapPage.tsx:1811"
  ],
  "оновлення вже йде": [
   "server/lib/gamedata/update.mjs:114"
  ],
  "Оновлення даних": [
   "src/App.tsx:33",
-  "src/App.tsx:111",
+  "src/App.tsx:113",
   "src/pages/DataUpdates.tsx:44"
  ],
  "оновлення даних гри з панелі вимкнено: на сервері не задано робочої теки видобувача": [
   "server/lib/gamedata/update.mjs:111"
  ],
  "Оновлення даних гри не перепише цей текст": [
-  "server/admin/resources.mjs:781",
+  "server/admin/resources.mjs:799",
   "server/admin/resources.mjs#game-texts"
  ],
  "Оновлення даних гри не чіпає записи, змінені вручну": [
@@ -7836,8 +8504,8 @@
   "src/pages/admin/ResourceForm.tsx:246",
   "src/pages/admin/history.tsx:23",
   "server/admin/resources.mjs:606",
-  "server/admin/resources.mjs:779",
-  "server/admin/resources.mjs:939"
+  "server/admin/resources.mjs:797",
+  "server/admin/resources.mjs:957"
  ],
  "Опис англійською": [
   "server/admin/resources.mjs:156",
@@ -7856,6 +8524,10 @@
  ],
  "Опитати всі джерела зараз, не чекаючи планової перевірки": [
   "src/pages/admin/GameDataAdmin.tsx:421"
+ ],
+ "Оплата": [
+  "src/pages/market/ListingEditor.tsx:204",
+  "src/pages/market/ListingPage.tsx:220"
  ],
  "Опори рампи": [
   "src/pages/Orni3D.tsx:120"
@@ -7944,21 +8616,30 @@
   "src/lib/catalog.ts:256"
  ],
  "Останнє нагадування": [
-  "server/admin/resources.mjs:929",
+  "server/admin/resources.mjs:947",
   "server/admin/resources.mjs#push"
+ ],
+ "Останні 24 год": [
+  "src/lib/market.ts:187"
+ ],
+ "Останні 3 дні": [
+  "src/lib/market.ts:187"
  ],
  "Останні дії": [
   "src/pages/admin/Dashboard.tsx:197"
  ],
  "Останній запуск": [
-  "server/admin/resources.mjs:1005",
+  "server/admin/resources.mjs:1023",
   "server/admin/resources.mjs#cron-jobs"
+ ],
+ "Останній тиждень": [
+  "src/lib/market.ts:187"
  ],
  "остання зміна {date}": [
   "src/pages/DataUpdates.tsx:49"
  ],
  "Остання помилка": [
-  "server/admin/resources.mjs:1010",
+  "server/admin/resources.mjs:1028",
   "server/admin/resources.mjs#cron-jobs"
  ],
  "Ось її нова версія — внеси свої правки ще раз.": [
@@ -7992,6 +8673,37 @@
  "Офіційне: не в чиємусь списку, а в бібліотеці": [
   "src/components/access/Access.tsx:138"
  ],
+ "Оціни другу сторону": [
+  "src/pages/market/DealPage.tsx:194"
+ ],
+ "Оцінити": [
+  "src/pages/market/DealPage.tsx:198"
+ ],
+ "оцінити можна завершену угоду": [
+  "server/routes/market.mjs:379"
+ ],
+ "Оцінка": [
+  "src/components/market/bits.tsx:43"
+ ],
+ "оцінка — від 1 до 5 зірок": [
+  "server/routes/market.mjs:381"
+ ],
+ "Оцінка угоди": [
+  "server/admin/resources.mjs#audit",
+  "server/admin/describe.mjs"
+ ],
+ "Оцінки прибрано": [
+  "src/pages/market/Reports.tsx:45"
+ ],
+ "оцінку вже не можна змінити — минуло {n} днів": [
+  "server/lib/market.mjs:473"
+ ],
+ "оцінок: {n}": [
+  "src/components/market/UserMarket.tsx:25"
+ ],
+ "оцінює сторона угоди": [
+  "server/routes/market.mjs:378"
+ ],
  "Очистити": [
   "src/pages/CalcPage.tsx:307",
   "src/pages/SkillsPage.tsx:562",
@@ -8013,10 +8725,10 @@
   "src/components/base/tr.ts:104"
  ],
  "Очікувана кількість": [
-  "src/pages/MapPage.tsx:1125"
+  "src/pages/MapPage.tsx:1117"
  ],
  "очки": [
-  "src/components/access/ItemCard.tsx:73",
+  "src/components/access/ItemCard.tsx:75",
   "src/lib/skills.ts:382",
   "src/pages/SkillsPage.tsx:52"
  ],
@@ -8036,12 +8748,12 @@
   "src/pages/SkillsPage.tsx:539"
  ],
  "очко": [
-  "src/components/access/ItemCard.tsx:73",
+  "src/components/access/ItemCard.tsx:75",
   "src/lib/skills.ts:382",
   "src/pages/SkillsPage.tsx:52"
  ],
  "очок": [
-  "src/components/access/ItemCard.tsx:73",
+  "src/components/access/ItemCard.tsx:75",
   "src/lib/skills.ts:382",
   "src/pages/SkillsPage.tsx:52"
  ],
@@ -8049,7 +8761,7 @@
   "src/pages/SkillsPage.tsx:104"
  ],
  "П’ять полів: хвилина, година, день місяця, місяць, день тижня. «*/5 * * * *» — кожні 5 хв; «0 4 * * 3» — щосереди о 04:00 (час сервера)": [
-  "server/admin/resources.mjs:1002",
+  "server/admin/resources.mjs:1020",
   "server/admin/resources.mjs#cron-jobs"
  ],
  "П'ять треків, як у грі. Рівень (0–100, досвід — із завдань Ландсрааду) сам дає пасивний бонус; риси відкриваються на своїх рівнях і купуються за меланж — кожна окремо. Бойові риси «Очки навичок» додають до 54 очок у дерево.": [
@@ -8354,7 +9066,7 @@
   "src/components/base/BuildCards.tsx:127"
  ],
  "Перевір адресу: можливо, людина змінила логін.": [
-  "src/pages/UserPage.tsx:38"
+  "src/pages/UserPage.tsx:39"
  ],
  "перевірено": [
   "src/components/map/PlaceParts.tsx:136"
@@ -8363,7 +9075,7 @@
   "src/pages/admin/GameDataAdmin.tsx:421"
  ],
  "перевірено {date}": [
-  "src/pages/MapPage.tsx:1828",
+  "src/pages/MapPage.tsx:1804",
   "src/pages/admin/GameDataAdmin.tsx:285"
  ],
  "Перевірено {pc}%": [
@@ -8379,7 +9091,7 @@
   "src/pages/admin/GameDataAdmin.tsx:299"
  ],
  "Перевірити, чи вийшла свіжа мапа (нова розкладка Глибокої пустелі)": [
-  "src/pages/MapPage.tsx:1834"
+  "src/pages/MapPage.tsx:1810"
  ],
  "Перевірка правил гри": [
   "src/pages/BaseGenerator.tsx:552"
@@ -8464,7 +9176,7 @@
   "src/pages/admin/GameDataAdmin.tsx:384"
  ],
  "Перезарядка, с": [
-  "src/pages/Catalog.tsx:585"
+  "src/pages/Catalog.tsx:586"
  ],
  "Перейменування паскея": [
   "server/admin/resources.mjs#audit",
@@ -8478,20 +9190,20 @@
   "src/components/base/builder/Palette.tsx:104"
  ],
  "Перейти до вмісту": [
-  "src/App.tsx:220"
+  "src/App.tsx:226"
  ],
  "Переклад": [
   "src/pages/admin/Translations.tsx:118",
   "src/pages/admin/Translations.tsx:118",
-  "server/admin/resources.mjs:856",
-  "server/admin/resources.mjs:861",
+  "server/admin/resources.mjs:874",
+  "server/admin/resources.mjs:879",
   "server/admin/resources.mjs#translations"
  ],
  "Переклад збережено": [
   "src/pages/admin/Translations.tsx:50"
  ],
  "Переклад із файлу": [
-  "server/admin/resources.mjs:862",
+  "server/admin/resources.mjs:880",
   "server/admin/resources.mjs#translations"
  ],
  "Переклади": [
@@ -8499,7 +9211,7 @@
  ],
  "Переклади сайту": [
   "src/pages/admin/Dashboard.tsx:123",
-  "server/admin/resources.mjs:856",
+  "server/admin/resources.mjs:874",
   "server/admin/resources.mjs#translations"
  ],
  "Перекладів збережено: {n}": [
@@ -8635,9 +9347,9 @@
   "src/pages/Home.tsx:400"
  ],
  "Печери й підземелля": [
-  "src/pages/MapPage.tsx:1528",
-  "src/pages/MapPage.tsx:1555",
-  "src/pages/MapPage.tsx:1556"
+  "src/pages/MapPage.tsx:1504",
+  "src/pages/MapPage.tsx:1531",
+  "src/pages/MapPage.tsx:1532"
  ],
  "Пил": [
   "src/pages/Orni3D.tsx:481"
@@ -8661,7 +9373,7 @@
   "src/components/base/tr.ts:149"
  ],
  "Північ угорі — як на мапі в грі": [
-  "src/pages/MapPage.tsx:1458"
+  "src/pages/MapPage.tsx:1434"
  ],
  "Півфінал": [
   "src/components/events/Bracket.tsx:19"
@@ -8715,8 +9427,8 @@
   "server/lib/bases.mjs:298"
  ],
  "Підписка": [
-  "server/admin/resources.mjs:918",
-  "server/admin/resources.mjs:924",
+  "server/admin/resources.mjs:936",
+  "server/admin/resources.mjs:942",
   "server/admin/resources.mjs#push",
   "server/admin/resources.mjs#push"
  ],
@@ -8725,7 +9437,7 @@
   "server/admin/describe.mjs"
  ],
  "Підсвітити на мапі скрині, у луті яких він є": [
-  "src/pages/Catalog.tsx:727"
+  "src/pages/Catalog.tsx:728"
  ],
  "Підсвічено для вибраного ресурсу": [
   "src/components/map/bits.tsx:157"
@@ -8740,11 +9452,17 @@
  "Підтверджую кожну заявку сам": [
   "src/pages/EventEditor.tsx:277"
  ],
+ "підтверди правило біржі: торгівля за реальні гроші заборонена": [
+  "server/routes/market.mjs:522"
+ ],
+ "Підтверди правило біржі: торгівля за реальні гроші заборонена": [
+  "src/pages/market/ListingEditor.tsx:108"
+ ],
  "Підтвердити": [
   "src/pages/EventPage.tsx:344"
  ],
  "Підтвердити: активне": [
-  "src/components/map/SpiceActive.tsx:96"
+  "src/components/map/SpiceActive.tsx:90"
  ],
  "Піду дивитись": [
   "src/pages/EventPage.tsx:141",
@@ -8831,7 +9549,7 @@
   "src/pages/SkillsPage.tsx:179"
  ],
  "Планувальник умінь: п’ять шкіл, очки, збірка — посиланням": [
-  "src/components/Header.tsx:25",
+  "src/components/Header.tsx:26",
   "src/pages/Library.tsx:37"
  ],
  "Планувальником можна користуватись без входу: білд зберігається в цьому браузері й в адресі сторінки, поділитися ним — посиланням. Увійди, щоб зберігати білди в акаунті й ділитися з гільдією.": [
@@ -8892,7 +9610,7 @@
  ],
  "Пн": [
   "src/components/world/WorldSvg.tsx:185",
-  "src/pages/MapPage.tsx:1463"
+  "src/pages/MapPage.tsx:1439"
  ],
  "Пн. Америка": [
   "src/lib/ddReset.ts:18"
@@ -8922,7 +9640,7 @@
   "server/admin/describe.mjs"
  ],
  "Повернути": [
-  "src/components/access/ItemCard.tsx:49",
+  "src/components/access/ItemCard.tsx:51",
   "src/components/base/Ask.tsx:78",
   "src/lib/roadmap.ts:377",
   "src/pages/BasePage.tsx:135",
@@ -8931,6 +9649,9 @@
  "Повернути в бібліотеку": [
   "server/admin/resources.mjs:636",
   "server/admin/resources.mjs#items"
+ ],
+ "Повернути в стрічку": [
+  "src/pages/market/Reports.tsx:80"
  ],
  "Повернути всі повзунки й криві до початкових": [
   "src/pages/Orni3D.tsx:3479"
@@ -8974,6 +9695,16 @@
  "Поверхів у вежі": [
   "src/pages/BaseGenerator.tsx:320"
  ],
+ "Повідомлення": [
+  "src/pages/market/DealPage.tsx:174",
+  "src/pages/market/DealPage.tsx:174",
+  "src/pages/market/ListingPage.tsx:228",
+  "src/pages/market/ListingPage.tsx:229"
+ ],
+ "Повідомлення в угоді": [
+  "server/admin/resources.mjs#audit",
+  "server/admin/describe.mjs"
+ ],
  "Повідомлення від людини": [
   "server/admin/resources.mjs:579",
   "server/admin/resources.mjs#requests"
@@ -9007,6 +9738,9 @@
   "src/components/base/builder/Builder.tsx:250",
   "src/components/base/builder/Builder.tsx:261",
   "src/components/base/builder/Builder.tsx:262"
+ ],
+ "Повтори, реклама, не про торгівлю": [
+  "src/lib/market.ts:183"
  ],
  "Повторити (Ctrl+Shift+Z)": [
   "src/components/base/builder/Builder.tsx:354"
@@ -9042,13 +9776,13 @@
   "src/pages/RoadmapList.tsx:151"
  ],
  "події": [
-  "server/lib/content.mjs:103"
+  "server/lib/content.mjs:112"
  ],
  "Події": [
   "src/App.tsx:34",
   "src/components/Crumbs.tsx:110",
-  "src/components/Header.tsx:26",
-  "src/lib/items.ts:63",
+  "src/components/Header.tsx:27",
+  "src/lib/items.ts:65",
   "src/pages/Guilds.tsx:323"
  ],
  "Події влаштовують ті, хто увійшов": [
@@ -9059,12 +9793,12 @@
   "src/pages/Events.tsx:148"
  ],
  "Події спільноти": [
-  "src/App.tsx:115",
+  "src/App.tsx:117",
   "src/components/events/bits.tsx:137",
   "src/pages/Events.tsx:133"
  ],
  "Події спільноти: бої, турніри, перегони й збори — з часом, призами й реєстрацією": [
-  "src/components/Header.tsx:26"
+  "src/components/Header.tsx:27"
  ],
  "Події спільноти: бої, турніри, перегони, збори. Вміст — як із редактора події; команди — у вкладці «Команди».": [
   "server/admin/resources.mjs:683",
@@ -9105,7 +9839,7 @@
  ],
  "Подія": [
   "src/lib/events.ts:111",
-  "src/lib/items.ts:63",
+  "src/lib/items.ts:65",
   "src/pages/EventEditor.tsx:127",
   "server/admin/resources.mjs:682",
   "server/admin/resources.mjs:699"
@@ -9125,11 +9859,11 @@
  ],
  "Подробиці": [
   "src/lib/events.ts:187",
-  "server/admin/resources.mjs:987",
+  "server/admin/resources.mjs:1005",
   "server/admin/resources.mjs#revisions"
  ],
  "Подробиці запиту": [
-  "server/admin/resources.mjs:913",
+  "server/admin/resources.mjs:931",
   "server/admin/resources.mjs#audit"
  ],
  "Поза школами": [
@@ -9160,24 +9894,27 @@
   "src/components/world/WorldMapView.tsx:326"
  ],
  "Позначено о {time} · {ago} тому": [
-  "src/components/map/SpiceActive.tsx:75"
+  "src/components/map/SpiceActive.tsx:69"
  ],
  "Позначили {n}: {names}": [
-  "src/components/map/SpiceActive.tsx:79",
-  "src/pages/MapPage.tsx:743"
+  "src/components/map/SpiceActive.tsx:73",
+  "src/pages/MapPage.tsx:729"
  ],
  "Позначити активним": [
-  "src/components/map/SpiceActive.tsx:96"
+  "src/components/map/SpiceActive.tsx:90"
+ ],
+ "Позначити все прочитаним": [
+  "src/components/Notifications.tsx:58"
  ],
  "Позначити на мапі": [
   "src/pages/Home.tsx:474"
  ],
  "Позначка": [
   "src/components/map/MarksPanel.tsx:209",
-  "src/lib/items.ts:61",
+  "src/lib/items.ts:63",
   "src/pages/Roadmap.tsx:261",
   "server/admin/resources.mjs:673",
-  "server/admin/resources.mjs:1046"
+  "server/admin/resources.mjs:1064"
  ],
  "позначка — так чи ні": [
   "server/lib/roadmap-progress.mjs:28"
@@ -9194,10 +9931,10 @@
  ],
  "Позначки": [
   "src/components/map/MarksPanel.tsx:223",
-  "src/lib/items.ts:61",
-  "src/pages/MapPage.tsx:767",
-  "src/pages/MapPage.tsx:1051",
-  "src/pages/MapPage.tsx:1176"
+  "src/lib/items.ts:63",
+  "src/pages/MapPage.tsx:753",
+  "src/pages/MapPage.tsx:1044",
+  "src/pages/MapPage.tsx:1168"
  ],
  "Позначки зараз не завантажились. Онови сторінку трохи згодом.": [
   "src/lib/markers.ts:88"
@@ -9209,7 +9946,7 @@
   "server/admin/resources.mjs#markers"
  ],
  "позначки на мапі": [
-  "server/lib/content.mjs:103"
+  "server/lib/content.mjs:112"
  ],
  "Позначки на мапі": [
   "src/pages/Guilds.tsx:476",
@@ -9254,7 +9991,7 @@
   "src/components/map/MarksPanel.tsx:386"
  ],
  "Показати всі ({n})": [
-  "src/pages/Catalog.tsx:553"
+  "src/pages/Catalog.tsx:554"
  ],
  "Показати на карті:": [
   "src/components/DecreeCard.tsx:66"
@@ -9273,14 +10010,15 @@
  "Показати ще ({n})": [
   "src/components/base/Versions.tsx:228",
   "src/pages/Events.tsx:159",
-  "src/pages/Library.tsx:184"
+  "src/pages/Library.tsx:184",
+  "src/pages/Market.tsx:227"
  ],
  "Показувати до": [
-  "server/admin/resources.mjs:823",
+  "server/admin/resources.mjs:841",
   "server/admin/resources.mjs#announcements"
  ],
  "Показувати з": [
-  "server/admin/resources.mjs:822",
+  "server/admin/resources.mjs:840",
   "server/admin/resources.mjs#announcements"
  ],
  "Показувати ігрові маркери": [
@@ -9320,7 +10058,7 @@
   "src/lib/roadmap.ts:263"
  ],
  "Показуються": [
-  "server/admin/resources.mjs:806",
+  "server/admin/resources.mjs:824",
   "server/admin/resources.mjs#announcements"
  ],
  "показуються зараз · заплановано: {n}": [
@@ -9329,20 +10067,29 @@
  "Поки двигун працює, крила махають — спершу заглуши": [
   "src/pages/Orni3D.tsx:3219"
  ],
+ "Поки нема — щойно з’явиться, сповістимо.": [
+  "src/pages/market/ListingPage.tsx:140"
+ ],
  "Поки нікого.": [
   "src/pages/Guilds.tsx:572"
  ],
  "Поки ніхто не зареєструвався — будь першим.": [
   "src/pages/EventPage.tsx:337"
  ],
+ "Поки нічого. Тут з’являться зустрічні заявки, пропозиції угод і повідомлення.": [
+  "src/components/Notifications.tsx:62"
+ ],
  "Поки порожньо.": [
-  "src/components/access/ItemCard.tsx:146"
+  "src/components/access/ItemCard.tsx:148"
  ],
  "Поки ти будував, хтось зберіг версію {n} («{note}»). Твоя чернетка ціла.": [
   "src/components/base/builder/Builder.tsx:318"
  ],
  "Поки ти будував, хтось зберіг версію {n}. Твоя чернетка ціла.": [
   "src/components/base/builder/Builder.tsx:318"
+ ],
+ "Поки тихо. Напиши, де й коли зручно передати.": [
+  "src/pages/market/DealPage.tsx:169"
  ],
  "Покращений очищувач крові": [
   "src/components/base/tr.ts:153"
@@ -9353,12 +10100,15 @@
  "Покрути мишею. «Злетіти» — крила розкриваються й розганяються, орні відривається від піску, опори й рампа ховаються. У повітрі вмикається сканер: він покаже, де цього тижня найбільше титану, стравідію і меланжу. Крила, опори й рампу можна рухати окремо кнопками під моделлю.": [
   "src/pages/Home.tsx:348"
  ],
+ "Покупець": [
+  "src/pages/market/DealPage.tsx:112"
+ ],
  "поле": [
   "src/pages/Home.tsx:227",
   "src/pages/Home.tsx:395",
   "src/pages/Home.tsx:473",
   "src/pages/MapPage.tsx:599",
-  "src/pages/MapPage.tsx:1198"
+  "src/pages/MapPage.tsx:1190"
  ],
  "Поле": [
   "src/pages/admin/history.tsx:40"
@@ -9396,15 +10146,15 @@
   "server/admin/engine.mjs:63"
  ],
  "Поле меланжу: {name}": [
-  "src/pages/MapPage.tsx:1421",
-  "src/pages/MapPage.tsx:1427"
+  "src/pages/MapPage.tsx:1397",
+  "src/pages/MapPage.tsx:1403"
  ],
  "полів": [
   "src/pages/Home.tsx:227",
   "src/pages/Home.tsx:395",
   "src/pages/Home.tsx:473",
   "src/pages/MapPage.tsx:599",
-  "src/pages/MapPage.tsx:1198"
+  "src/pages/MapPage.tsx:1190"
  ],
  "Політ": [
   "src/pages/Orni3D.tsx:517"
@@ -9418,12 +10168,11 @@
   "src/pages/Home.tsx:395",
   "src/pages/Home.tsx:473",
   "src/pages/MapPage.tsx:599",
-  "src/pages/MapPage.tsx:1198"
+  "src/pages/MapPage.tsx:1190"
  ],
  "Поля меланжу": [
   "src/lib/gamedata.ts:33",
-  "src/pages/MapPage.tsx:1195",
-  "src/pages/MapPage.tsx:1387"
+  "src/pages/MapPage.tsx:1368"
  ],
  "помилка": [
   "src/pages/admin/Dashboard.tsx:148",
@@ -9441,7 +10190,7 @@
  ],
  "помилка сервера": [
   "src/pages/admin/fields.tsx:236",
-  "server/app.mjs:399"
+  "server/app.mjs:421"
  ],
  "понад терасою, по 4 блоки": [
   "src/pages/BaseGenerator.tsx:320"
@@ -9457,14 +10206,14 @@
   "src/pages/Roadmap.tsx:524"
  ],
  "Попередні версії баз. Відкрий версію — побачиш, що змінилось у наступній; її можна відновити.": [
-  "server/admin/resources.mjs:712",
+  "server/admin/resources.mjs:730",
   "server/admin/resources.mjs#base-history"
  ],
  "Попередні версії змісту": [
   "src/components/access/Rights.tsx:62"
  ],
  "Попередні версії роадмапів. Відкрий версію — побачиш, що змінилось; її можна відновити.": [
-  "server/admin/resources.mjs:725",
+  "server/admin/resources.mjs:743",
   "server/admin/resources.mjs#roadmap-history"
  ],
  "Попередніх версій ще нема": [
@@ -9477,16 +10226,22 @@
   "src/pages/Library.tsx:173"
  ],
  "Порахувати в калькуляторі": [
-  "src/pages/Catalog.tsx:532"
+  "src/pages/Catalog.tsx:533"
  ],
  "Порівнює кожен розділ даних із попереднім і пише журнал, лише коли щось справді змінилось": [
-  "server/app.mjs:420"
+  "server/app.mjs:442"
  ],
  "Порівняти з:": [
   "src/pages/admin/GameDataAdmin.tsx:374"
  ],
+ "порожнє оголошення": [
+  "server/lib/market.mjs:107"
+ ],
+ "порожнє повідомлення": [
+  "server/routes/market.mjs:370"
+ ],
  "порожні налаштування": [
-  "server/lib/roadmap-access.mjs:122"
+  "server/lib/roadmap-access.mjs:123"
  ],
  "Порожні рядки пропускаємо. Текст, аудиторію й посилання можна дописати потім у кожному.": [
   "src/pages/admin/AnnouncementsBulk.tsx:114"
@@ -9528,9 +10283,15 @@
   "server/admin/resources.mjs:560",
   "server/admin/resources.mjs#invites"
  ],
+ "Порожньо — будь-яка кількість": [
+  "src/pages/market/ListingEditor.tsx:199"
+ ],
  "Порожньо — підписався гість, без входу": [
-  "server/admin/resources.mjs:921",
+  "server/admin/resources.mjs:939",
   "server/admin/resources.mjs#push"
+ ],
+ "Порожньо — увесь світ": [
+  "src/pages/market/ListingEditor.tsx:259"
  ],
  "Порожньо.": [
   "src/pages/admin/fields.tsx:487",
@@ -9568,8 +10329,8 @@
   "src/pages/BaseGenerator.tsx:395"
  ],
  "Поруч": [
-  "src/pages/MapPage.tsx:641",
-  "src/pages/MapPage.tsx:1757"
+  "src/pages/MapPage.tsx:643",
+  "src/pages/MapPage.tsx:1733"
  ],
  "Поручень": [
   "src/components/base/tr.ts:154"
@@ -9611,7 +10372,8 @@
   "src/pages/BaseGenerator.tsx:537"
  ],
  "Порядок": [
-  "src/pages/Library.tsx:173"
+  "src/pages/Library.tsx:173",
+  "src/pages/Market.tsx:124"
  ],
  "Порядок у сітці": [
   "src/components/events/Bracket.tsx:91"
@@ -9673,11 +10435,17 @@
   "server/admin/resources.mjs:554",
   "server/admin/resources.mjs#invites"
  ],
+ "Поскаржитись": [
+  "src/components/market/ReportDialog.tsx:18"
+ ],
  "Постав на мапі місце події й зону для глядачів — напр. PvE-зону, звідки видно бій. Вибери, що ставиш, і клацни по мапі.": [
   "src/pages/EventEditor.tsx:236"
  ],
  "Поставити зірку": [
   "src/components/access/Access.tsx:322"
+ ],
+ "Потім оголошення закінчиться — продовжиш одним кліком.": [
+  "src/pages/market/ListingEditor.tsx:265"
  ],
  "поточна": [
   "src/components/base/Versions.tsx:176"
@@ -9698,7 +10466,7 @@
   "src/pages/admin/Dashboard.tsx:175"
  ],
  "потрібен власник": [
-  "server/lib/items.mjs:157"
+  "server/lib/items.mjs:164"
  ],
  "потрібен заголовок оголошення": [
   "server/lib/announcements.mjs:26"
@@ -9747,9 +10515,9 @@
   "src/components/catalog/ProdCalc.tsx:600"
  ],
  "потрібно увійти": [
-  "server/lib/content.mjs:73",
-  "server/lib/spice.mjs:141",
-  "server/lib/spice.mjs:167",
+  "server/lib/content.mjs:82",
+  "server/lib/spice.mjs:142",
+  "server/lib/spice.mjs:169",
   "server/routes/admin.mjs:39",
   "server/routes/auth.mjs:80"
  ],
@@ -9799,7 +10567,7 @@
   "src/components/base/BuildCards.tsx:126"
  ],
  "Почався": [
-  "server/admin/resources.mjs:1036",
+  "server/admin/resources.mjs:1054",
   "server/admin/resources.mjs#cron-runs"
  ],
  "Початкова версія": [
@@ -9833,7 +10601,7 @@
   "server/admin/resources.mjs:383"
  ],
  "Пошук": [
-  "src/pages/Catalog.tsx:262",
+  "src/pages/Catalog.tsx:263",
   "src/pages/admin/Translations.tsx:71",
   "src/pages/admin/table.ts:148"
  ],
@@ -9856,11 +10624,11 @@
   "src/components/world/WorldMapView.tsx:244"
  ],
  "Пошук на мапі": [
-  "src/pages/MapPage.tsx:1663",
-  "src/pages/MapPage.tsx:1666"
+  "src/pages/MapPage.tsx:1639",
+  "src/pages/MapPage.tsx:1642"
  ],
  "Пошук по всьому довіднику": [
-  "src/pages/Catalog.tsx:321"
+  "src/pages/Catalog.tsx:322"
  ],
  "Пошук подій": [
   "src/pages/Events.tsx:143"
@@ -9868,11 +10636,14 @@
  "Пошук позначок": [
   "src/components/map/MarksPanel.tsx:197"
  ],
+ "Пошук предмета": [
+  "src/pages/Market.tsx:117"
+ ],
  "Пошук у бібліотеці": [
   "src/pages/Library.tsx:172"
  ],
  "Пошук у довіднику": [
-  "src/pages/Catalog.tsx:322"
+  "src/pages/Catalog.tsx:323"
  ],
  "Пошук у панелі": [
   "src/pages/admin/Search.tsx:34",
@@ -9880,7 +10651,7 @@
   "src/pages/admin/Search.tsx:88"
  ],
  "Пошук: місце, печера, тип…": [
-  "src/pages/MapPage.tsx:1662"
+  "src/pages/MapPage.tsx:1638"
  ],
  "Права": [
   "src/components/access/Rights.tsx:168",
@@ -9943,11 +10714,30 @@
   "src/lib/push.ts:64"
  ],
  "предмет": [
-  "src/pages/Catalog.tsx:309"
+  "src/pages/Catalog.tsx:310"
  ],
  "Предмет": [
+  "src/pages/market/ItemPage.tsx:41",
+  "src/pages/market/ListingEditor.tsx:187",
+  "src/pages/market/ListingEditor.tsx:188",
   "server/admin/resources.mjs#game-items",
   "server/admin/resources.mjs#game-texts"
+ ],
+ "Предмет (код у грі)": [
+  "server/admin/resources.mjs:717",
+  "server/admin/resources.mjs#listings"
+ ],
+ "Предмет для бартеру": [
+  "src/pages/market/ListingEditor.tsx:224"
+ ],
+ "Предмет за предмет": [
+  "src/lib/market.ts:174"
+ ],
+ "Предмет за предмет, без ціни в соларах": [
+  "src/pages/market/ItemPage.tsx:79"
+ ],
+ "предмет і вид не змінюються, коли вже є угоди — закрий це й розмісти нове": [
+  "server/routes/market.mjs:543"
  ],
  "Предмет у луті": [
   "src/components/map/PlaceParts.tsx:242"
@@ -9955,8 +10745,11 @@
  "Предмет у луті (твоєю мовою або англійською)": [
   "src/components/map/PlaceParts.tsx:239"
  ],
+ "Предмет: меланж, гвинтівка…": [
+  "src/pages/Market.tsx:117"
+ ],
  "предмети": [
-  "src/pages/Catalog.tsx:309"
+  "src/pages/Catalog.tsx:310"
  ],
  "Предмети": [
   "src/components/catalog/ProdCalc.tsx:441",
@@ -9964,13 +10757,13 @@
   "server/admin/resources.mjs#game-items"
  ],
  "предметів": [
-  "src/pages/Catalog.tsx:309"
+  "src/pages/Catalog.tsx:310"
  ],
  "Представник Дому {name}": [
   "src/lib/map/data.ts:375"
  ],
  "Прибирання": [
-  "server/app.mjs:429"
+  "server/app.mjs:451"
  ],
  "Прибрано": [
   "src/pages/EventPage.tsx:315"
@@ -10030,6 +10823,9 @@
  "Прибрати опори": [
   "src/pages/Orni3D.tsx:3238"
  ],
+ "Прибрати оцінки угоди": [
+  "src/pages/market/Reports.tsx:83"
+ ],
  "Прибрати приз": [
   "src/pages/EventEditor.tsx:296"
  ],
@@ -10082,7 +10878,7 @@
   "src/pages/EventEditor.tsx:295"
  ],
  "Призи": [
-  "server/lib/og.mjs:62"
+  "server/lib/og.mjs:63"
  ],
  "призначення": [
   "src/components/base/builder/Cards.tsx:156"
@@ -10116,7 +10912,12 @@
   "server/admin/resources.mjs#guilds"
  ],
  "Прийняти": [
-  "src/pages/Guilds.tsx:416"
+  "src/pages/Guilds.tsx:416",
+  "src/pages/market/DealPage.tsx:71",
+  "src/pages/market/ListingPage.tsx:257"
+ ],
+ "прийняти може лише той, хто веде оголошення": [
+  "server/routes/market.mjs:314"
  ],
  "Прийняти нові дані": [
   "src/pages/admin/GameDataAdmin.tsx:388"
@@ -10129,7 +10930,9 @@
   "src/pages/Guilds.tsx:405"
  ],
  "Прийнято": [
-  "src/pages/admin/GameDataAdmin.tsx:388"
+  "src/lib/market.ts:179",
+  "src/pages/admin/GameDataAdmin.tsx:388",
+  "src/pages/market/DealPage.tsx:83"
  ],
  "Прийом": [
   "src/lib/skills.ts:58"
@@ -10146,6 +10949,8 @@
  ],
  "Примітка": [
   "src/pages/Roadmap.tsx:317",
+  "src/pages/market/ListingEditor.tsx:304",
+  "src/pages/market/ListingEditor.tsx:305",
   "server/admin/resources.mjs:704",
   "server/admin/resources.mjs#event-teams"
  ],
@@ -10158,7 +10963,7 @@
  "Примітка до версії": [
   "src/components/base/builder/Builder.tsx:374",
   "server/admin/resources.mjs:649",
-  "server/admin/resources.mjs:717",
+  "server/admin/resources.mjs:735",
   "server/admin/resources.mjs#bases",
   "server/admin/resources.mjs#base-history"
  ],
@@ -10212,7 +11017,7 @@
  "пристрій": [
   "src/components/base/ImportBase.tsx:190",
   "src/pages/BasesList.tsx:214",
-  "src/pages/Catalog.tsx:309"
+  "src/pages/Catalog.tsx:310"
  ],
  "Пристрій": [
   "server/admin/resources.mjs#game-placeables",
@@ -10221,7 +11026,7 @@
  "пристрої": [
   "src/components/base/ImportBase.tsx:190",
   "src/pages/BasesList.tsx:214",
-  "src/pages/Catalog.tsx:309"
+  "src/pages/Catalog.tsx:310"
  ],
  "Пристрої": [
   "src/components/catalog/ProdCalc.tsx:441",
@@ -10238,7 +11043,7 @@
  "пристроїв": [
   "src/components/base/ImportBase.tsx:190",
   "src/pages/BasesList.tsx:214",
-  "src/pages/Catalog.tsx:309"
+  "src/pages/Catalog.tsx:310"
  ],
  "Присяде, прокинеться, злетить, зависне — і знову стане на ноги": [
   "src/pages/Orni3D.tsx:3450"
@@ -10252,12 +11057,19 @@
  "Причина": [
   "src/pages/EventPage.tsx:622",
   "src/pages/EventPage.tsx:622",
+  "src/pages/market/Reports.tsx:106",
   "server/admin/resources.mjs:405",
   "server/admin/resources.mjs#users"
  ],
  "Причина блокування": [
   "server/admin/resources.mjs:342",
   "server/admin/resources.mjs#users"
+ ],
+ "Причина: {reason}": [
+  "src/pages/market/DealPage.tsx:88"
+ ],
+ "Причину побачить заблокована людина": [
+  "src/pages/market/Reports.tsx:106"
  ],
  "Про гільдію": [
   "src/pages/Guilds.tsx:91",
@@ -10321,11 +11133,36 @@
   "server/routes/roadmap.mjs:159",
   "server/routes/roadmap.mjs:201"
  ],
+ "Продавець": [
+  "src/pages/market/DealPage.tsx:111"
+ ],
+ "Продай зайве чи знайди потрібне: предмет із гри, кількість, ціна — і тобі напишуть.": [
+  "src/pages/Market.tsx:197"
+ ],
+ "Продам": [
+  "src/lib/market.ts:170",
+  "server/lib/og.mjs:84",
+  "server/admin/resources.mjs#listings"
+ ],
  "Продати": [
-  "src/components/skills/SpecView.tsx:97"
+  "src/components/skills/SpecView.tsx:97",
+  "src/pages/market/ItemPage.tsx:56",
+  "src/pages/market/ListingPage.tsx:192",
+  "src/pages/market/ListingPage.tsx:199",
+  "src/pages/market/ListingPage.tsx:215"
  ],
  "Продати всі": [
   "src/components/skills/SpecView.tsx:411"
+ ],
+ "Продають": [
+  "src/pages/market/ItemPage.tsx:120"
+ ],
+ "Продовжити": [
+  "src/pages/market/ListingPage.tsx:81",
+  "src/pages/market/ListingPage.tsx:164"
+ ],
+ "Продовжити оголошення": [
+  "src/pages/market/ListingPage.tsx:163"
  ],
  "Продовжити редагування · {n}": [
   "src/pages/BasePage.tsx:126"
@@ -10342,6 +11179,38 @@
  "промисловий: верх на колонах-ногах, галереї, вежа-келих з оглядовою кімнатою": [
   "src/lib/basegen.ts:52"
  ],
+ "Пропозиції": [
+  "src/pages/market/ListingPage.tsx:252"
+ ],
+ "Пропозиції й листування — тут, на сайті": [
+  "src/pages/market/ListingPage.tsx:122"
+ ],
+ "Пропозиції й листування на сайті": [
+  "src/pages/market/ListingEditor.tsx:298",
+  "src/pages/market/ListingEditor.tsx:299"
+ ],
+ "пропозицію вже розглянули": [
+  "server/routes/market.mjs:325",
+  "server/routes/market.mjs:336"
+ ],
+ "пропозицію вже розглянули — зміни не можна": [
+  "server/routes/market.mjs:303"
+ ],
+ "Пропозицію відхилено": [
+  "src/pages/market/ListingPage.tsx:244",
+  "server/admin/resources.mjs#audit",
+  "server/admin/describe.mjs"
+ ],
+ "Пропозицію надіслано": [
+  "src/pages/market/ListingPage.tsx:210"
+ ],
+ "пропозицію щойно змінили — перевір нові умови": [
+  "server/routes/market.mjs:321"
+ ],
+ "Пропозиція угоди на біржі": [
+  "server/admin/resources.mjs#audit",
+  "server/admin/describe.mjs"
+ ],
  "пропуск": [
   "src/components/events/Bracket.tsx:27"
  ],
@@ -10354,6 +11223,9 @@
  "Проріз сходів": [
   "src/components/base/tr.ts:177"
  ],
+ "Просить чи пропонує гроші поза грою": [
+  "src/lib/market.ts:183"
+ ],
  "Простий": [
   "src/lib/basegen.ts:52"
  ],
@@ -10364,7 +11236,7 @@
   "src/components/base/tr.ts:289"
  ],
  "Прострочені сеанси, коди входу й запрошення, давні заявки до гільдій, старий журнал дій та історія змін (скільки днів зберігати — у налаштуваннях сайту)": [
-  "server/app.mjs:429"
+  "server/app.mjs:451"
  ],
  "Профіль": [
   "src/pages/Account.tsx:246"
@@ -10403,7 +11275,7 @@
   "src/pages/Guilds.tsx:323",
   "src/pages/Guilds.tsx:334",
   "src/pages/Guilds.tsx:528",
-  "src/pages/UserPage.tsx:75"
+  "src/pages/UserPage.tsx:76"
  ],
  "Публічне на цій мапі": [
   "src/components/map/MarksPanel.tsx:559"
@@ -10439,9 +11311,17 @@
  "разів": [
   "src/pages/Guilds.tsx:662"
  ],
+ "разом {sum}": [
+  "src/components/market/bits.tsx:92",
+  "src/components/market/bits.tsx:158",
+  "src/pages/market/DealPage.tsx:102"
+ ],
  "Разом з усіма версіями. Повернути вже не вийде.": [
   "src/pages/BasePage.tsx:162",
   "src/pages/BasesList.tsx:280"
+ ],
+ "Разом за все: {sum}": [
+  "src/pages/market/ListingEditor.tsx:215"
  ],
  "Разом із гільдією зникнуть її речі, учасники, запрошення й заявки.": [
   "server/admin/resources.mjs:477",
@@ -10464,6 +11344,9 @@
  "Разом із річчю зникнуть її вміст, версії й зірки.": [
   "server/admin/resources.mjs:595",
   "server/admin/resources.mjs#items"
+ ],
+ "Разом: {sum}": [
+  "src/pages/market/ListingPage.tsx:222"
  ],
  "Район": [
   "src/components/map/PlaceParts.tsx:230",
@@ -10513,12 +11396,18 @@
  "Рахувати з указом": [
   "src/components/catalog/ProdCalc.tsx:70"
  ],
+ "Реальні гроші — заборонено": [
+  "src/pages/market/ListingEditor.tsx:317"
+ ],
+ "Реальні гроші (RMT)": [
+  "src/lib/market.ts:181"
+ ],
  "Регіон": [
   "src/components/map/PlaceParts.tsx:218",
   "src/components/map/PlaceParts.tsx:221",
   "src/pages/EventEditor.tsx:227",
   "src/pages/Events.tsx:145",
-  "server/admin/resources.mjs:927"
+  "src/pages/Market.tsx:122"
  ],
  "Регіон сервера": [
   "src/components/DDTimer.tsx:48",
@@ -10528,11 +11417,15 @@
   "src/pages/EventEditor.tsx:226"
  ],
  "Регіони, поселення й переходи між ними": [
-  "src/pages/MapPage.tsx:1528"
+  "src/pages/MapPage.tsx:1504"
  ],
  "Редагування": [
   "src/pages/BasePage.tsx:51",
-  "src/pages/EventEditor.tsx:127"
+  "src/pages/EventEditor.tsx:127",
+  "src/pages/market/ListingEditor.tsx:102"
+ ],
+ "Редагування оголошення": [
+  "src/pages/market/ListingEditor.tsx:157"
  ],
  "Редагування події": [
   "src/pages/EventEditor.tsx:176"
@@ -10622,7 +11515,7 @@
   "src/pages/Auth.tsx:76"
  ],
  "Результат": [
-  "server/admin/resources.mjs:912",
+  "server/admin/resources.mjs:930",
   "server/admin/resources.mjs#audit"
  ],
  "Результати": [
@@ -10677,7 +11570,7 @@
   "src/components/map/MarksPanel.tsx:224",
   "src/lib/catalog.ts:163",
   "src/lib/gamedata.ts:32",
-  "src/lib/items.ts:62",
+  "src/lib/items.ts:64",
   "src/lib/map/data.ts:270"
  ],
  "Ресурси Глибокої пустелі": [
@@ -10691,21 +11584,21 @@
   "src/lib/utils.ts:11"
  ],
  "рецепт": [
-  "src/pages/Catalog.tsx:309"
+  "src/pages/Catalog.tsx:310"
  ],
  "Рецепт": [
   "server/admin/resources.mjs#game-recipes",
   "server/admin/resources.mjs#game-texts"
  ],
  "рецепти": [
-  "src/pages/Catalog.tsx:309"
+  "src/pages/Catalog.tsx:310"
  ],
  "Рецепти": [
   "src/lib/gamedata.ts:25",
   "server/admin/resources.mjs#game-recipes"
  ],
  "рецептів": [
-  "src/pages/Catalog.tsx:309"
+  "src/pages/Catalog.tsx:310"
  ],
  "Речей": [
   "server/admin/resources.mjs:345",
@@ -10795,7 +11688,7 @@
   "src/lib/catalog.ts:184"
  ],
  "Рідкість": [
-  "src/pages/Catalog.tsx:706",
+  "src/pages/Catalog.tsx:707",
   "server/admin/resources.mjs#game-items"
  ],
  "Різне": [
@@ -10806,19 +11699,23 @@
  ],
  "Річ": [
   "server/admin/resources.mjs:593",
-  "server/admin/resources.mjs:740",
+  "server/admin/resources.mjs:758",
   "server/admin/resources.mjs#items",
   "server/admin/resources.mjs#stars"
+ ],
+ "Рішення за скаргою біржі": [
+  "server/admin/resources.mjs#audit",
+  "server/admin/describe.mjs"
  ],
  "рішення про команду — за організатором": [
   "server/routes/events.mjs:223"
  ],
  "Роадмап": [
-  "src/lib/items.ts:58",
+  "src/lib/items.ts:60",
   "src/pages/Roadmap.tsx:734",
   "server/admin/resources.mjs:662",
-  "server/admin/resources.mjs:728",
-  "server/lib/og.mjs:49"
+  "server/admin/resources.mjs:746",
+  "server/lib/og.mjs:50"
  ],
  "Роадмап видалено": [
   "src/pages/Roadmap.tsx:615"
@@ -10836,13 +11733,13 @@
   "src/lib/roadmap.ts:262"
  ],
  "роадмапи": [
-  "server/lib/content.mjs:103"
+  "server/lib/content.mjs:112"
  ],
  "Роадмапи": [
   "src/App.tsx:31",
   "src/components/Crumbs.tsx:92",
-  "src/components/Header.tsx:20",
-  "src/lib/items.ts:58",
+  "src/components/Header.tsx:21",
+  "src/lib/items.ts:60",
   "src/pages/Guilds.tsx:476"
  ],
  "Роадмапи зараз не завантажились. Онови сторінку трохи згодом.": [
@@ -10884,6 +11781,12 @@
   "server/admin/resources.mjs#audit",
   "server/admin/describe.mjs"
  ],
+ "Розглянутих скарг ще нема": [
+  "src/pages/market/Reports.tsx:38"
+ ],
+ "Розглянуті": [
+  "src/pages/market/Reports.tsx:35"
+ ],
  "розгорнути й змінити": [
   "src/pages/BaseGenerator.tsx:434"
  ],
@@ -10891,10 +11794,11 @@
   "src/lib/catalog.ts:164"
  ],
  "Розділ": [
+  "src/components/market/ItemPicker.tsx:49",
+  "src/pages/Market.tsx:120",
   "src/pages/Roadmap.tsx:771",
   "src/pages/admin/fields.tsx:429",
-  "server/admin/resources.mjs:984",
-  "server/admin/resources.mjs#revisions"
+  "server/admin/resources.mjs:1002"
  ],
  "Розділ «{title}» видалено": [
   "src/pages/Roadmap.tsx:407"
@@ -10902,13 +11806,16 @@
  "Розділ береться звідси": [
   "src/pages/admin/GameDataAdmin.tsx:97"
  ],
+ "Розділ біржі": [
+  "src/pages/Market.tsx:88"
+ ],
  "Розділ гільдії": [
   "src/pages/Guilds.tsx:391"
  ],
  "Розділи": [
-  "src/components/Header.tsx:110",
-  "src/pages/Catalog.tsx:280",
-  "src/pages/Catalog.tsx:337",
+  "src/components/Header.tsx:112",
+  "src/pages/Catalog.tsx:281",
+  "src/pages/Catalog.tsx:338",
   "src/pages/admin/Search.tsx:72"
  ],
  "Розділи групи посилаються одне на одного, тож джерело в них одне на всіх і перемикається разом. Наведи чи торкнись джерела, щоб побачити, що це.": [
@@ -10932,7 +11839,7 @@
   "src/pages/Orni3D.tsx:595"
  ],
  "Розклад": [
-  "server/admin/resources.mjs:1002",
+  "server/admin/resources.mjs:1020",
   "server/admin/resources.mjs#cron-jobs"
  ],
  "розклад — п’ять полів: хвилина година день місяць день-тижня": [
@@ -10942,8 +11849,8 @@
   "src/pages/Orni3D.tsx:507"
  ],
  "Розкладка": [
-  "src/pages/MapPage.tsx:1573",
-  "src/pages/MapPage.tsx:1574"
+  "src/pages/MapPage.tsx:1549",
+  "src/pages/MapPage.tsx:1550"
  ],
  "розкладка {n}": [
   "src/components/map/MarkerParts.tsx:40",
@@ -10953,15 +11860,15 @@
   "src/components/map/PlaceParts.tsx:306"
  ],
  "Розкладка {n}": [
-  "src/pages/MapPage.tsx:1513",
-  "src/pages/MapPage.tsx:1583",
-  "src/pages/MapPage.tsx:1583"
+  "src/pages/MapPage.tsx:1489",
+  "src/pages/MapPage.tsx:1559",
+  "src/pages/MapPage.tsx:1559"
  ],
  "Розкладка {n} — зараз": [
-  "src/pages/MapPage.tsx:1583"
+  "src/pages/MapPage.tsx:1559"
  ],
  "Розкладка {n} — зараз, з {date}": [
-  "src/pages/MapPage.tsx:1573"
+  "src/pages/MapPage.tsx:1549"
  ],
  "Розкладки Глибокої пустелі": [
   "src/lib/gamedata.ts:34"
@@ -11009,11 +11916,23 @@
  "розмір станції ({field}) має бути числом, більшим за нуль": [
   "server/lib/bases.mjs:362"
  ],
+ "Розмістити": [
+  "src/pages/market/ListingEditor.tsx:162",
+  "src/pages/market/ListingEditor.tsx:331"
+ ],
+ "Розмістити оголошення": [
+  "src/pages/Market.tsx:85",
+  "src/pages/Market.tsx:194",
+  "src/pages/Market.tsx:198"
+ ],
  "Розмітка в текстах: {hint}.": [
   "src/pages/Roadmap.tsx:691"
  ],
  "Розмітка як у роадмапах: **жирний**, [посилання](адреса), рядки «- » — список.": [
   "src/pages/EventEditor.tsx:308"
+ ],
+ "Розміщено": [
+  "src/pages/market/ListingPage.tsx:98"
  ],
  "Розпакування": [
   "src/pages/admin/GameDataAdmin.tsx:212"
@@ -11025,10 +11944,10 @@
   "src/components/base/BuildCards.tsx:75"
  ],
  "розрахунки": [
-  "server/lib/content.mjs:103"
+  "server/lib/content.mjs:112"
  ],
  "Розрахунки": [
-  "src/lib/items.ts:60",
+  "src/lib/items.ts:62",
   "src/pages/Guilds.tsx:476",
   "src/pages/Guilds.tsx:504",
   "server/admin/resources.mjs:671",
@@ -11039,10 +11958,10 @@
  ],
  "Розрахунок": [
   "src/App.tsx:31",
-  "src/lib/items.ts:60",
+  "src/lib/items.ts:62",
   "src/pages/CalcPage.tsx:75",
   "server/admin/resources.mjs:671",
-  "server/lib/og.mjs:78"
+  "server/lib/og.mjs:105"
  ],
  "Розрахунок «{name}» змінено": [
   "src/pages/CalcPage.tsx:146"
@@ -11071,6 +11990,10 @@
  "розрахунок порожній — додай хоч одну ціль": [
   "server/lib/docs.mjs:57"
  ],
+ "Розумію: торгівля за реальні гроші заборонена": [
+  "src/pages/market/ListingEditor.tsx:321",
+  "src/pages/market/ListingEditor.tsx:322"
+ ],
  "Розширена консоль суб-фіфу": [
   "src/components/base/tr.ts:184"
  ],
@@ -11078,12 +12001,12 @@
   "src/components/catalog/ProdCalc.tsx:248"
  ],
  "Ролі й права": [
-  "server/admin/resources.mjs:934",
+  "server/admin/resources.mjs:952",
   "server/admin/resources.mjs#roles"
  ],
  "Роль": [
   "server/admin/resources.mjs:337",
-  "server/admin/resources.mjs:934",
+  "server/admin/resources.mjs:952",
   "server/admin/resources.mjs#users",
   "server/admin/resources.mjs#roles"
  ],
@@ -11103,11 +12026,11 @@
   "src/lib/map/data.ts:272"
  ],
  "Руда в місці вибирається з кількох можливих; частка — у картці точки": [
-  "src/pages/MapPage.tsx:1131"
+  "src/pages/MapPage.tsx:1123"
  ],
  "Руда й рослини на мапі": [
-  "src/pages/MapPage.tsx:1117",
-  "src/pages/MapPage.tsx:1121"
+  "src/pages/MapPage.tsx:1109",
+  "src/pages/MapPage.tsx:1113"
  ],
  "Русский": [
   "server/admin/resources.mjs#game-texts",
@@ -11193,20 +12116,36 @@
  "Сардаукарський набір, кошторис у гранітному камені зі знижкою Глибокої пустелі (×0,5).": [
   "src/engine/versions.js:124"
  ],
+ "Свіжість": [
+  "src/pages/Market.tsx:123"
+ ],
  "Свій набір": [
   "src/pages/BaseGenerator.tsx:432"
  ],
  "свій стиль": [
   "src/pages/BaseGenerator.tsx:296"
  ],
+ "Світ": [
+  "src/pages/Market.tsx:128",
+  "src/pages/market/ItemPage.tsx:62",
+  "src/pages/market/ListingEditor.tsx:251",
+  "src/pages/market/ListingEditor.tsx:252"
+ ],
  "Світ чи сієтч, де збираєтесь": [
   "src/pages/EventEditor.tsx:229"
+ ],
+ "Світ, напр. Hagga EU 7": [
+  "src/pages/Market.tsx:128",
+  "src/pages/market/ItemPage.tsx:62"
+ ],
+ "Світи, де вже торгують": [
+  "src/pages/market/ListingEditor.tsx:255"
  ],
  "Світіння ока й вогнів": [
   "src/pages/Orni3D.tsx:594"
  ],
  "Світла тема": [
-  "src/components/Header.tsx:83"
+  "src/components/Header.tsx:85"
  ],
  "Світло": [
   "src/lib/catalog.ts:258"
@@ -11267,10 +12206,10 @@
   "server/admin/resources.mjs:279"
  ],
  "сектор {sec} · клік — наблизити": [
-  "src/pages/MapPage.tsx:770"
+  "src/pages/MapPage.tsx:756"
  ],
  "Сектор {sec} · X {x} · Y {y}": [
-  "src/pages/MapPage.tsx:648"
+  "src/pages/MapPage.tsx:650"
  ],
  "Селище Харко": [
   "src/components/DecreeCard.tsx:70"
@@ -11278,6 +12217,10 @@
  "Сервер": [
   "src/components/DDTimer.tsx:128",
   "src/pages/EventPage.tsx:425"
+ ],
+ "Сервер (січ)": [
+  "src/pages/market/ListingEditor.tsx:259",
+  "src/pages/market/ListingEditor.tsx:260"
  ],
  "Сервер відповів помилкою ({code})": [
   "src/lib/push.ts:29"
@@ -11287,7 +12230,7 @@
  ],
  "Сервер зараз не відповідає. Спробуй ще раз трохи згодом.": [
   "src/lib/roadmap.ts:409",
-  "src/pages/MapPage.tsx:1842",
+  "src/pages/MapPage.tsx:1818",
   "src/pages/Roadmap.tsx:518"
  ],
  "Сервер не відповідає.": [
@@ -11320,6 +12263,9 @@
  ],
  "Середнє поле": [
   "src/lib/map/layer.ts:115"
+ ],
+ "середні 50 % цін": [
+  "src/pages/market/ItemPage.tsx:70"
  ],
  "середні поля": [
   "src/pages/Home.tsx:74"
@@ -11354,6 +12300,9 @@
  "Середня ізольована цистерна": [
   "src/lib/map/data.ts:306"
  ],
+ "Середня оцінка й завершені угоди": [
+  "src/components/market/bits.tsx:33"
+ ],
  "Середня переробна установка прянощів": [
   "src/lib/map/data.ts:318"
  ],
@@ -11365,7 +12314,7 @@
   "src/lib/map/data.ts:305"
  ],
  "Серія (створено разом)": [
-  "server/admin/resources.mjs:826",
+  "server/admin/resources.mjs:844",
   "server/admin/resources.mjs#announcements"
  ],
  "Серія: те саме кілька разів": [
@@ -11441,12 +12390,28 @@
   "src/pages/Orni3D.tsx:3208",
   "src/pages/Orni3D.tsx:3306"
  ],
+ "Скарга": [
+  "src/components/market/ReportDialog.tsx:37"
+ ],
+ "Скарга на біржі": [
+  "server/admin/resources.mjs#audit",
+  "server/admin/describe.mjs"
+ ],
+ "Скарги": [
+  "src/pages/Market.tsx:66"
+ ],
+ "Скарги не завантажились": [
+  "src/pages/market/Reports.tsx:36"
+ ],
+ "Скаргу надіслано — модератори розглянуть": [
+  "src/components/market/ReportDialog.tsx:30"
+ ],
  "Скасовано": [
   "src/components/base/builder/Builder.tsx:249",
   "src/components/base/builder/Builder.tsx:261",
   "src/lib/events.ts:138",
   "src/lib/events.ts:186",
-  "server/lib/og.mjs:59"
+  "src/lib/market.ts:179"
  ],
  "Скасування запрошення": [
   "server/admin/resources.mjs#audit",
@@ -11470,6 +12435,9 @@
   "src/pages/Guilds.tsx:182",
   "src/pages/Guilds.tsx:367"
  ],
+ "скасувати може сторона угоди": [
+  "server/routes/market.mjs:343"
+ ],
  "Скасувати нову позначку": [
   "src/components/map/MarksPanel.tsx:209"
  ],
@@ -11486,10 +12454,16 @@
  ],
  "Скасувати ручні зміни при оновленні": [
   "server/admin/resources.mjs:264",
-  "server/admin/resources.mjs:798",
+  "server/admin/resources.mjs:816",
   "server/admin/resources.mjs#game-items",
   "server/admin/resources.mjs#game-placeables",
   "server/admin/resources.mjs#game-recipes"
+ ],
+ "Скасувати угоду": [
+  "src/pages/market/DealPage.tsx:49"
+ ],
+ "Скасувати угоду?": [
+  "src/pages/market/DealPage.tsx:49"
  ],
  "Скасувати: {label} (Ctrl+Z)": [
   "src/components/base/builder/Builder.tsx:353"
@@ -11572,7 +12546,7 @@
   "src/pages/Library.tsx:161"
  ],
  "Скинути пошук і фільтри": [
-  "src/pages/Catalog.tsx:426"
+  "src/pages/Catalog.tsx:427"
  ],
  "Скинути спільний": [
   "src/components/roadmap/RoadmapRights.tsx:105"
@@ -11587,7 +12561,8 @@
   "src/components/roadmap/RoadmapRights.tsx:110"
  ],
  "Скинути фільтри": [
-  "src/pages/Events.tsx:112"
+  "src/pages/Events.tsx:112",
+  "src/pages/Market.tsx:193"
  ],
  "Скинути фільтри ({count})": [
   "src/pages/admin/table.ts:150"
@@ -11612,6 +12587,9 @@
  ],
  "Скільки днів пам’ятати, хто що робив і що змінювалось. Старіше щогодини прибирає фонова задача «Прибирання». 0 — зберігати завжди.": [
   "src/pages/admin/SiteSettings.tsx:88"
+ ],
+ "Скільки й почім": [
+  "src/pages/market/ListingEditor.tsx:193"
  ],
  "Скільки команд": [
   "src/pages/EventEditor.tsx:273"
@@ -11652,23 +12630,23 @@
   "src/pages/admin/SiteSettings.tsx:83"
  ],
  "Скільки руди в середньому з’являється в грі: у кожному місці — одна руда за її шансом. Окрема точка умовна — гра обирає руду при кожній появі вузла.": [
-  "src/pages/MapPage.tsx:1125"
+  "src/pages/MapPage.tsx:1117"
  ],
  "Скільки секунд пристрій виготовляє одну партію": [
   "server/admin/resources.mjs#game-recipes"
  ],
  "Скільки сировини, крафтів, води й часу — з указом тижня": [
-  "src/pages/Catalog.tsx:530"
+  "src/pages/Catalog.tsx:531"
  ],
  "Скільки сировини, крафтів, води й часу на будь-який набір предметів і будівель": [
-  "src/components/Header.tsx:24",
+  "src/components/Header.tsx:25",
   "src/pages/Library.tsx:38"
  ],
  "Скільки сировини, крафтів, води й часу на будь-який набір предметів і будівель. Тут — збережені розрахунки: твої, гільдійські й публічні; новий — у калькуляторі.": [
   "src/pages/KindPage.tsx:34"
  ],
  "Скільки сировини, крафтів, води й часу на набір предметів і будівель": [
-  "server/lib/og.mjs:78"
+  "server/lib/og.mjs:105"
  ],
  "Скільки сировини, крафтів, води й часу треба на все разом: предмети й будівлі з довідника, з указом тижня з головної.": [
   "src/pages/CalcPage.tsx:242"
@@ -11677,7 +12655,7 @@
   "src/pages/EventEditor.tsx:273"
  ],
  "Скінчився": [
-  "server/admin/resources.mjs:1037",
+  "server/admin/resources.mjs:1055",
   "server/admin/resources.mjs#cron-runs"
  ],
  "Скісна висока стіна, верх, ліва": [
@@ -11782,7 +12760,7 @@
   "src/pages/EventPage.tsx:108"
  ],
  "Скопіювали собі": [
-  "src/components/access/ItemCard.tsx:129"
+  "src/components/access/ItemCard.tsx:131"
  ],
  "Скопіювати": [
   "src/components/account/Security.tsx:163"
@@ -11820,6 +12798,9 @@
  "Скриня контракту": [
   "src/lib/map/data.ts:293"
  ],
+ "Словами": [
+  "src/pages/market/ListingEditor.tsx:278"
+ ],
  "слот": [
   "src/components/catalog/Trips.tsx:71"
  ],
@@ -11833,18 +12814,18 @@
   "src/components/catalog/Trips.tsx:71"
  ],
  "Службова адреса, за якою браузер отримує сповіщення": [
-  "server/admin/resources.mjs:926",
+  "server/admin/resources.mjs:944",
   "server/admin/resources.mjs#push"
  ],
  "Службові позначки": [
-  "server/admin/resources.mjs:1046",
+  "server/admin/resources.mjs:1064",
   "server/admin/resources.mjs#meta"
  ],
  "Смуги": [
   "src/pages/Orni3D.tsx:628"
  ],
  "Смужка вгорі сайту. Показується від «Показувати з» до «Показувати до» (порожньо — без меж). Кілька одразу — серією (щодня, щотижня) чи списком.": [
-  "server/admin/resources.mjs:807",
+  "server/admin/resources.mjs:825",
   "server/admin/resources.mjs#announcements"
  ],
  "собі роль тут не змінюють": [
@@ -11852,6 +12833,13 @@
  ],
  "Согравці з сайту приєднаються за ним і побачать подію в «Моїх»": [
   "src/pages/EventPage.tsx:376"
+ ],
+ "Солари": [
+  "src/lib/market.ts:173",
+  "src/pages/market/ListingPage.tsx:220"
+ ],
+ "Солари чи бартер": [
+  "src/lib/market.ts:173"
  ],
  "Солідо-реплікатор (з собою)": [
   "src/components/base/tr.ts:222"
@@ -11874,6 +12862,9 @@
  ],
  "Спайсовий генератор": [
   "src/components/base/tr.ts:223"
+ ],
+ "Спам": [
+  "src/lib/market.ts:181"
  ],
  "Спереду майстерня з генераторами і гараж багі, над ними ангар асаулта з пентащитом 5×3 у даху і склад.": [
   "src/engine/versions.js:113"
@@ -11932,6 +12923,7 @@
   "src/pages/Events.tsx:149",
   "src/pages/KindPage.tsx:81",
   "src/pages/Library.tsx:176",
+  "src/pages/Market.tsx:220",
   "src/pages/RoadmapList.tsx:145"
  ],
  "Список: різні одним махом": [
@@ -11966,6 +12958,8 @@
   "src/pages/Orni3D.tsx:3287"
  ],
  "Сповіщення": [
+  "src/components/Notifications.tsx:50",
+  "src/components/Notifications.tsx:57",
   "server/admin/resources.mjs:355",
   "server/admin/resources.mjs#users"
  ],
@@ -11973,8 +12967,15 @@
   "src/lib/push.ts:59"
  ],
  "Сповіщення про бурю": [
-  "server/admin/resources.mjs:918",
+  "server/admin/resources.mjs:936",
   "server/admin/resources.mjs#push"
+ ],
+ "Сповіщення прочитано": [
+  "server/admin/resources.mjs#audit",
+  "server/admin/describe.mjs"
+ ],
+ "Сповіщення: непрочитаних {n}": [
+  "src/components/Notifications.tsx:50"
  ],
  "Сповіщу за {n} год до бурі Коріоліса.": [
   "server/lib/push.mjs:105"
@@ -12002,6 +13003,9 @@
  "Спробуй інший пошук чи фільтри.": [
   "src/pages/admin/ResourceList.tsx:171",
   "src/pages/admin/table.ts:154"
+ ],
+ "Спробуй інший предмет, регіон чи ціну — або розмісти своє оголошення: хтось його побачить.": [
+  "src/pages/Market.tsx:192"
  ],
  "Спробуй іншу назву чи тег.": [
   "src/pages/Guilds.tsx:268"
@@ -12037,15 +13041,15 @@
  ],
  "Стало": [
   "src/pages/admin/history.tsx:40",
-  "server/admin/resources.mjs:990",
+  "server/admin/resources.mjs:1008",
   "server/admin/resources.mjs#revisions"
  ],
  "Стан": [
-  "server/admin/resources.mjs:810",
-  "server/admin/resources.mjs:863",
-  "server/admin/resources.mjs:1039",
-  "server/admin/resources.mjs#announcements",
-  "server/admin/resources.mjs#translations"
+  "server/admin/resources.mjs:720",
+  "server/admin/resources.mjs:828",
+  "server/admin/resources.mjs:881",
+  "server/admin/resources.mjs:1057",
+  "server/admin/resources.mjs#listings"
  ],
  "станції": [
   "src/components/base/ImportBase.tsx:27",
@@ -12231,8 +13235,12 @@
  "Стеля-пентащит": [
   "src/components/base/builder/labels.ts:16"
  ],
+ "Стерти": [
+  "src/pages/market/ListingPage.tsx:65",
+  "src/pages/market/ListingPage.tsx:82"
+ ],
  "Стерти «{name}» назавжди — разом з усіма версіями? Повернути вже не вийде.": [
-  "src/components/access/ItemCard.tsx:53"
+  "src/components/access/ItemCard.tsx:55"
  ],
  "Стерти «{name}» назавжди?": [
   "src/pages/BasePage.tsx:162",
@@ -12241,11 +13249,17 @@
  "стерти базу назавжди може лише власник (у гільдії — лідер)": [
   "server/routes/bases.mjs:36"
  ],
+ "Стерти оголошення?": [
+  "src/pages/market/ListingPage.tsx:65"
+ ],
  "Стиль": [
   "src/pages/BaseGenerator.tsx:296"
  ],
  "Стиль бази": [
   "src/pages/BaseGenerator.tsx:297"
+ ],
+ "стільки нема — лишилось {n}": [
+  "server/routes/market.mjs:251"
  ],
  "Стіна": [
   "src/components/base/SidePanel.tsx:25",
@@ -12309,7 +13323,7 @@
   "src/pages/admin/table.ts:153"
  ],
  "Сторінка гравця на Sandwalkers": [
-  "server/lib/og.mjs:66"
+  "server/lib/og.mjs:93"
  ],
  "Сторінка не відкрилась": [
   "src/components/ErrorBoundary.tsx:34"
@@ -12318,16 +13332,19 @@
   "src/main.tsx:36"
  ],
  "Сторінка не завантажилась": [
-  "src/pages/UserPage.tsx:44"
+  "src/pages/UserPage.tsx:45"
  ],
  "Сторінка панелі": [
-  "src/pages/MapPage.tsx:1043"
+  "src/pages/MapPage.tsx:1036"
  ],
  "Сторінку не знайдено": [
-  "src/components/Crumbs.tsx:111"
+  "src/components/Crumbs.tsx:112"
+ ],
+ "Сторони": [
+  "src/pages/market/DealPage.tsx:109"
  ],
  "Стос": [
-  "src/pages/Catalog.tsx:707"
+  "src/pages/Catalog.tsx:708"
  ],
  "стравідій": [
   "src/pages/Home.tsx:196",
@@ -12343,8 +13360,11 @@
  "Стрільба": [
   "src/lib/skills.ts:87"
  ],
+ "Строк дії": [
+  "src/pages/market/ListingEditor.tsx:265"
+ ],
  "Строк минув": [
-  "src/components/map/SpiceActive.tsx:77"
+  "src/components/map/SpiceActive.tsx:71"
  ],
  "Ступінчаста гора над порталом ангара грузових.": [
   "src/engine/versions.js:90"
@@ -12391,8 +13411,14 @@
  "Сховані стовпці": [
   "src/pages/admin/table.ts:148"
  ],
+ "Сховано": [
+  "src/pages/market/Reports.tsx:45"
+ ],
  "Сховано все, що вище": [
   "src/components/base/builder/Builder.tsx:59"
+ ],
+ "Сховано модератором": [
+  "src/components/market/bits.tsx:119"
  ],
  "Сховано модерацією": [
   "server/admin/resources.mjs:611",
@@ -12410,7 +13436,8 @@
  ],
  "Сховати": [
   "src/pages/EventPage.tsx:297",
-  "src/pages/admin/GameDataAdmin.tsx:153"
+  "src/pages/admin/GameDataAdmin.tsx:153",
+  "src/pages/market/Reports.tsx:81"
  ],
  "Сховати {label}": [
   "src/pages/admin/table.ts:149"
@@ -12512,6 +13539,10 @@
  "Сходинка без попередньої — марш має йти прямо": [
   "src/lib/basegen.ts:69"
  ],
+ "схоже на торгівлю за реальні гроші («{word}») — на біржі це заборонено": [
+  "server/lib/market.mjs:143",
+  "server/routes/market.mjs:267"
+ ],
  "Сцена": [
   "src/pages/Orni3D.tsx:467"
  ],
@@ -12563,25 +13594,25 @@
   "server/lib/roles.mjs:74"
  ],
  "такий запис уже є": [
-  "server/app.mjs:399"
+  "server/app.mjs:421"
  ],
  "такий тег уже має інша гільдія": [
   "server/lib/guilds.mjs:63"
  ],
  "Такого запису нема": [
-  "src/pages/Catalog.tsx:481"
+  "src/pages/Catalog.tsx:482"
  ],
  "такого режиму прогресу для цієї видимості нема": [
-  "server/lib/roadmap-access.mjs:131"
+  "server/lib/roadmap-access.mjs:132"
  ],
  "такого рівня для цього права нема": [
-  "server/lib/roadmap-access.mjs:137"
+  "server/lib/roadmap-access.mjs:138"
  ],
  "Такого роадмапу нема": [
   "src/pages/Roadmap.tsx:605"
  ],
  "Такої людини нема": [
-  "src/pages/UserPage.tsx:38"
+  "src/pages/UserPage.tsx:39"
  ],
  "Такої події нема": [
   "src/pages/EventPage.tsx:74"
@@ -12641,6 +13672,9 @@
  "Твій: відмічаєш ти; інші, кому відкрито, бачать": [
   "src/components/access/Rights.tsx:50"
  ],
+ "Твоє оголошення сховано через скарги на реальні гроші — модератор перевірить": [
+  "src/lib/notifications.ts:39"
+ ],
  "Твоє особисте": [
   "src/components/access/Access.tsx:127",
   "src/components/roadmap/RoadmapRights.tsx:284"
@@ -12649,7 +13683,7 @@
   "src/pages/Account.tsx:315"
  ],
  "Твої бази й бази гільдії: план, 3D, кошторис": [
-  "src/components/Header.tsx:19",
+  "src/components/Header.tsx:20",
   "src/pages/Library.tsx:35"
  ],
  "Твої незбережені зміни пропадуть.": [
@@ -12661,8 +13695,17 @@
  "Твої позначки й записи ресурсів": [
   "src/components/map/MarksPanel.tsx:183"
  ],
+ "Твої угоди за цим оголошенням": [
+  "src/pages/market/ListingPage.tsx:132"
+ ],
  "Твої, гільдійські й публічні. План по рівнях, 3D, ліміти, етапи будівництва і кошторис для кожної — і редактор, у якому їх можна змінити чи зібрати нову.": [
   "src/pages/BasesList.tsx:163"
+ ],
+ "Твою пропозицію відхилили": [
+  "src/lib/notifications.ts:32"
+ ],
+ "Твою пропозицію прийняли — домовтеся в листуванні": [
+  "src/lib/notifications.ts:31"
  ],
  "Твоя гільдія": [
   "src/pages/Guilds.tsx:179"
@@ -12670,9 +13713,15 @@
  "твоя команда": [
   "src/pages/EventPage.tsx:358"
  ],
+ "Твоя оцінка": [
+  "src/pages/market/DealPage.tsx:194"
+ ],
  "Твоя пошта для підтвердження": [
   "src/pages/Account.tsx:318",
   "src/pages/Account.tsx:319"
+ ],
+ "Твоя пропозиція": [
+  "src/pages/market/ListingPage.tsx:185"
  ],
  "Тебе запрошують до гільдії": [
   "src/pages/Guilds.tsx:697"
@@ -12682,6 +13731,9 @@
  ],
  "Тебе кличуть у команду цієї події.": [
   "src/pages/EventPage.tsx:291"
+ ],
+ "Тебе оцінили:": [
+  "src/pages/market/DealPage.tsx:199"
  ],
  "Тег": [
   "src/pages/Guilds.tsx:87",
@@ -12698,15 +13750,15 @@
  ],
  "Текст": [
   "src/pages/Roadmap.tsx:345",
-  "server/admin/resources.mjs:815",
+  "server/admin/resources.mjs:833",
   "server/admin/resources.mjs#announcements"
  ],
  "Текст (українською)": [
-  "server/admin/resources.mjs:860",
+  "server/admin/resources.mjs:878",
   "server/admin/resources.mjs#translations"
  ],
  "Текст гри": [
-  "server/admin/resources.mjs:770",
+  "server/admin/resources.mjs:788",
   "server/admin/resources.mjs#game-texts"
  ],
  "Текст для Discord": [
@@ -12719,21 +13771,21 @@
   "src/components/base/ImportBase.tsx:93"
  ],
  "Текст посилання": [
-  "server/admin/resources.mjs:821",
+  "server/admin/resources.mjs:839",
   "server/admin/resources.mjs#announcements"
  ],
  "Текст файлу бази": [
   "src/components/base/ImportBase.tsx:159"
  ],
  "Тексти гри мовами": [
-  "server/admin/resources.mjs:770",
+  "server/admin/resources.mjs:788",
   "server/admin/resources.mjs#game-texts"
  ],
  "Тексти збережено": [
   "src/pages/admin/ResourceForm.tsx:226"
  ],
  "Тексти інтерфейсу мовами. Ключ — український текст із коду. Правка тут важливіша за файл перекладу; видалити — повернути переклад із файлу.": [
-  "server/admin/resources.mjs:857",
+  "server/admin/resources.mjs:875",
   "server/admin/resources.mjs#translations"
  ],
  "Тексти мовами гри": [
@@ -12747,22 +13799,22 @@
   "src/pages/Account.tsx:101"
  ],
  "Тема": [
-  "src/components/Header.tsx:170"
+  "src/components/Header.tsx:172"
  ],
  "Тема й мова": [
-  "src/components/Header.tsx:164"
+  "src/components/Header.tsx:166"
  ],
  "Тема як у системі": [
-  "src/components/Header.tsx:82"
- ],
- "Тема: {theme}": [
-  "src/components/Header.tsx:170"
- ],
- "Темна тема": [
   "src/components/Header.tsx:84"
  ],
+ "Тема: {theme}": [
+  "src/components/Header.tsx:172"
+ ],
+ "Темна тема": [
+  "src/components/Header.tsx:86"
+ ],
  "Темп": [
-  "src/pages/Catalog.tsx:585"
+  "src/pages/Catalog.tsx:586"
  ],
  "Темп погойдування": [
   "src/pages/Orni3D.tsx:575"
@@ -12774,7 +13826,8 @@
   "src/components/base/builder/labels.ts:55",
   "src/components/catalog/Trips.tsx:229",
   "src/components/catalog/Trips.tsx:233",
-  "src/lib/catalog.ts:151"
+  "src/lib/catalog.ts:151",
+  "src/lib/market.ts:177"
  ],
  "Техніка (місце стоянки)": [
   "src/components/base/tr.ts:248"
@@ -12832,6 +13885,12 @@
  "ти вже в цій гільдії": [
   "server/routes/guilds.mjs:159"
  ],
+ "ти вже маєш пропозицію на це оголошення": [
+  "server/routes/market.mjs:280"
+ ],
+ "ти вже поскаржився — модератори розглянуть": [
+  "server/lib/market.mjs:506"
+ ],
  "Ти вже тут — до гільдії": [
   "src/pages/Guilds.tsx:702"
  ],
@@ -12857,20 +13916,29 @@
  "ти капітан": [
   "src/pages/EventPage.tsx:358"
  ],
+ "ти купуєш": [
+  "src/components/market/bits.tsx:154"
+ ],
  "Ти не в гільдії": [
-  "src/components/map/SpiceActive.tsx:113"
+  "src/components/map/SpiceActive.tsx:107"
  ],
  "ти не в гільдії — познач для себе чи для всіх": [
-  "server/lib/spice.mjs:147"
+  "server/lib/spice.mjs:148"
  ],
  "ти не в цій гільдії": [
   "server/routes/guilds.mjs:84"
  ],
  "ти не в цій гільдії — створювати й передавати їй не можна": [
-  "server/lib/content.mjs:87"
+  "server/lib/content.mjs:96"
  ],
  "ти не в цій команді": [
   "server/routes/events.mjs:311"
+ ],
+ "Ти підтвердив передачу. Угода завершиться, щойно підтвердить і друга сторона.": [
+  "src/pages/market/DealPage.tsx:93"
+ ],
+ "ти продаєш": [
+  "src/components/market/bits.tsx:154"
  ],
  "Ти серед глядачів": [
   "src/pages/EventPage.tsx:141"
@@ -12883,7 +13951,7 @@
   "src/pages/Account.tsx:118"
  ],
  "Ти ще нічого не виклав": [
-  "src/pages/UserPage.tsx:79"
+  "src/pages/UserPage.tsx:80"
  ],
  "ти@приклад.com": [
   "src/pages/Auth.tsx:202"
@@ -12993,9 +14061,9 @@
   "src/components/base/ThreeView.tsx:157"
  ],
  "Тір": [
-  "src/pages/Catalog.tsx:391",
-  "src/pages/Catalog.tsx:394",
-  "src/pages/Catalog.tsx:705",
+  "src/pages/Catalog.tsx:392",
+  "src/pages/Catalog.tsx:395",
+  "src/pages/Catalog.tsx:706",
   "server/admin/resources.mjs#game-items",
   "server/admin/resources.mjs#game-placeables"
  ],
@@ -13005,6 +14073,20 @@
  ],
  "Тір пристрою": [
   "server/admin/resources.mjs#game-placeables"
+ ],
+ "Тобі заборонено торгувати на біржі": [
+  "src/lib/notifications.ts:42",
+  "src/pages/Market.tsx:91",
+  "src/pages/market/ListingEditor.tsx:166"
+ ],
+ "тобі заборонено торгувати на біржі до {until}. Причина: {reason}": [
+  "server/routes/market.mjs:38"
+ ],
+ "тобі заборонено торгувати на біржі. Причина: {reason}": [
+  "server/routes/market.mjs:37"
+ ],
+ "Тобі пропонують угоду тут, ти приймаєш — і далі листуєтесь в угоді": [
+  "src/pages/market/ListingEditor.tsx:299"
  ],
  "Тобто: {when}": [
   "src/pages/admin/fields.tsx:674"
@@ -13021,24 +14103,37 @@
  "Тон": [
   "src/pages/admin/AnnouncementsBulk.tsx:107"
  ],
+ "торг доречний": [
+  "src/components/market/bits.tsx:102"
+ ],
+ "Торг доречний": [
+  "src/pages/market/ListingEditor.tsx:236",
+  "src/pages/market/ListingEditor.tsx:237"
+ ],
  "Торгівля й обмін на місці зустрічі": [
   "src/lib/events.ts:120"
  ],
+ "Торгують ті, хто увійшов": [
+  "src/pages/market/ListingEditor.tsx:136"
+ ],
  "точка": [
-  "src/pages/MapPage.tsx:1291"
+  "src/pages/MapPage.tsx:1275"
  ],
  "Точка": [
   "src/components/map/PlaceParts.tsx:123",
-  "src/pages/MapPage.tsx:751"
+  "src/pages/MapPage.tsx:737"
  ],
  "точка з іншої розкладки": [
-  "src/pages/MapPage.tsx:751"
+  "src/pages/MapPage.tsx:737"
  ],
  "Точка з іншої розкладки Глибокої пустелі": [
   "src/components/map/PlaceParts.tsx:124"
  ],
+ "Точка на мапі": [
+  "src/pages/market/ListingEditor.tsx:278"
+ ],
  "точки": [
-  "src/pages/MapPage.tsx:1291"
+  "src/pages/MapPage.tsx:1275"
  ],
  "Точки": [
   "src/components/map/PlaceParts.tsx:291"
@@ -13047,31 +14142,34 @@
   "src/components/map/PlaceParts.tsx:291"
  ],
  "Точки мапи не завантажились": [
-  "src/pages/MapPage.tsx:1301"
+  "src/pages/MapPage.tsx:1285"
  ],
  "Точки на мапі": [
   "src/lib/gamedata.ts:30"
  ],
  "точки не завантажились": [
-  "src/pages/MapPage.tsx:1291"
+  "src/pages/MapPage.tsx:1275"
  ],
  "Точку додано до «{name}»": [
-  "src/pages/MapPage.tsx:972"
+  "src/pages/MapPage.tsx:957"
  ],
  "Точку додано до чернетки": [
-  "src/pages/MapPage.tsx:961"
+  "src/pages/MapPage.tsx:946"
+ ],
+ "Точку поставлено — клікни деінде, щоб перенести": [
+  "src/pages/market/ListingEditor.tsx:285"
  ],
  "Точні значення рангів зараз не завантажились — показано запасні дані (англійською).": [
   "src/components/skills/SkillTip.tsx:204"
  ],
  "Точність": [
-  "src/pages/Catalog.tsx:585"
+  "src/pages/Catalog.tsx:586"
  ],
  "Точно видалити обліковий запис назавжди?": [
   "src/pages/Account.tsx:325"
  ],
  "точок": [
-  "src/pages/MapPage.tsx:1291"
+  "src/pages/MapPage.tsx:1275"
  ],
  "Точок прибуття: {n} — по краях мапи.": [
   "src/components/world/LocationCard.tsx:74"
@@ -13107,8 +14205,8 @@
   "src/pages/BaseGenerator.tsx:285"
  ],
  "Тривав": [
-  "server/admin/resources.mjs:1007",
-  "server/admin/resources.mjs:1038",
+  "server/admin/resources.mjs:1025",
+  "server/admin/resources.mjs:1056",
   "server/admin/resources.mjs#cron-jobs",
   "server/admin/resources.mjs#cron-runs"
  ],
@@ -13169,7 +14267,10 @@
   "src/pages/admin/history.tsx:93"
  ],
  "Тут з’являться бази, білди, роадмапи й розрахунки, які ця людина виставить для всіх.": [
-  "src/pages/UserPage.tsx:83"
+  "src/pages/UserPage.tsx:84"
+ ],
+ "Тут з’являться пропозиції угод — ти отримаєш сповіщення.": [
+  "src/pages/market/ListingPage.tsx:252"
  ],
  "Тут лишаються події з результатами й переможцями.": [
   "src/pages/Events.tsx:115"
@@ -13184,7 +14285,7 @@
   "src/components/map/PlaceParts.tsx:85"
  ],
  "Тут не випадає. Випадає:": [
-  "src/pages/MapPage.tsx:1209"
+  "src/pages/MapPage.tsx:1201"
  ],
  "Тут не відмічають — копіюють собі": [
   "src/components/access/Rights.tsx:75",
@@ -13232,6 +14333,9 @@
   "server/lib/bases.mjs:391",
   "server/lib/bases.mjs:76"
  ],
+ "у бартері — різні предмети, не той самий, що в оголошенні": [
+  "server/lib/market.mjs:93"
+ ],
  "у бібліотеці — бази, білди, роадмапи й розрахунки": [
   "server/routes/items.mjs:98"
  ],
@@ -13243,7 +14347,7 @@
   "server/admin/resources.mjs#game-items"
  ],
  "У будівництві — {n}": [
-  "src/pages/Catalog.tsx:750"
+  "src/pages/Catalog.tsx:757"
  ],
  "У вибране": [
   "server/admin/resources.mjs:637",
@@ -13264,6 +14368,9 @@
  ],
  "у гільдії має бути лідер — признач лідером когось іншого": [
   "server/admin/resources.mjs:542"
+ ],
+ "У гільдії поки нема оголошень": [
+  "src/pages/Market.tsx:197"
  ],
  "У гільдії поки нема подій": [
   "src/pages/Events.tsx:122"
@@ -13290,10 +14397,13 @@
  ],
  "у грі {nick}": [
   "src/pages/Guilds.tsx:613",
-  "src/pages/UserPage.tsx:56"
+  "src/pages/UserPage.tsx:57"
  ],
  "у ділянки мають бути місце й розмір — числа, ширина й глибина більші за нуль": [
   "server/lib/bases.mjs:305"
+ ],
+ "У довіднику": [
+  "src/pages/market/ItemPage.tsx:63"
  ],
  "У здібності": [
   "src/pages/SkillsPage.tsx:477",
@@ -13327,7 +14437,7 @@
   "server/admin/resources.mjs#bases"
  ],
  "У кошику з {date}": [
-  "src/components/access/ItemCard.tsx:135"
+  "src/components/access/ItemCard.tsx:137"
  ],
  "У листах із кодом входу.": [
   "src/pages/admin/SiteSettings.tsx:76"
@@ -13365,8 +14475,14 @@
  "у станції немає місця: координати мають бути числами": [
   "server/lib/bases.mjs:361"
  ],
+ "У тебе поки нема оголошень": [
+  "src/pages/Market.tsx:197"
+ ],
  "У тебе поки нема подій": [
   "src/pages/Events.tsx:117"
+ ],
+ "У тебе ще нема баз на сайті — вибери точку на мапі чи напиши словами.": [
+  "src/pages/market/ListingEditor.tsx:346"
  ],
  "у файлі бази є помилки — нічого не створено": [
   "server/routes/bases.mjs:119"
@@ -13387,7 +14503,7 @@
   "server/admin/resources.mjs:302"
  ],
  "у цій гільдії ти ще новобранець — створювати й передавати їй не можна": [
-  "server/lib/content.mjs:88"
+  "server/lib/content.mjs:97"
  ],
  "У цьому браузері є незбережена чернетка від версії {version} ({count}, {date}), а база вже версії {current}.": [
   "src/components/base/builder/Builder.tsx:311"
@@ -13418,8 +14534,12 @@
   "server/admin/resources.mjs#calcs"
  ],
  "Увійди": [
-  "src/components/map/SpiceActive.tsx:127",
-  "src/pages/MapPage.tsx:1797"
+  "src/components/map/SpiceActive.tsx:121",
+  "src/pages/MapPage.tsx:1773",
+  "src/pages/market/ListingPage.tsx:124"
+ ],
+ "Увійди — і розмістиш оголошення за хвилину: предмет, кількість, ціна.": [
+  "src/pages/market/ListingEditor.tsx:136"
  ],
  "Увійди — і створиш подію за хвилину: час, формат, призи й місце на мапі.": [
   "src/pages/EventEditor.tsx:159"
@@ -13435,6 +14555,9 @@
  ],
  "Увійди, щоб влаштувати подію": [
   "src/pages/Events.tsx:137"
+ ],
+ "Увійди, щоб запропонувати угоду": [
+  "src/pages/market/ListingPage.tsx:193"
  ],
  "Увійди, щоб зареєструватися": [
   "src/pages/EventPage.tsx:127",
@@ -13454,6 +14577,9 @@
  ],
  "Увійди, щоб тебе порахували серед глядачів": [
   "src/pages/EventPage.tsx:141"
+ ],
+ "Увійди, щоб торгувати": [
+  "src/pages/Market.tsx:86"
  ],
  "Увійти": [
   "src/components/AccountMenu.tsx:27",
@@ -13503,8 +14629,8 @@
   "src/components/account/Security.tsx:119"
  ],
  "Увімкнено": [
-  "server/admin/resources.mjs:825",
-  "server/admin/resources.mjs:1003",
+  "server/admin/resources.mjs:843",
+  "server/admin/resources.mjs:1021",
   "server/admin/resources.mjs#announcements",
   "server/admin/resources.mjs#cron-jobs"
  ],
@@ -13517,11 +14643,57 @@
  "Увімкнути": [
   "src/components/account/Security.tsx:133",
   "src/components/account/Security.tsx:194",
-  "server/admin/resources.mjs:839",
+  "server/admin/resources.mjs:857",
   "server/admin/resources.mjs#announcements"
  ],
  "Увімкнути двофакторну перевірку": [
   "src/components/account/Security.tsx:192"
+ ],
+ "Угод цим предметом ще не було — стань першим.": [
+  "src/pages/market/ItemPage.tsx:99"
+ ],
+ "угод ще не було": [
+  "src/pages/market/ItemPage.tsx:69"
+ ],
+ "угод: {n}": [
+  "src/components/market/UserMarket.tsx:26",
+  "src/components/market/bits.tsx:35",
+  "src/pages/market/ItemPage.tsx:69"
+ ],
+ "Угода": [
+  "src/pages/market/DealPage.tsx:44",
+  "src/pages/market/DealPage.tsx:67",
+  "src/pages/market/Reports.tsx:46"
+ ],
+ "Угоди": [
+  "src/pages/Market.tsx:66",
+  "src/pages/market/DealPage.tsx:44",
+  "src/pages/market/ItemPage.tsx:88"
+ ],
+ "Угоди не завантажились": [
+  "src/pages/Market.tsx:247"
+ ],
+ "угоду вже завершено чи скасовано": [
+  "server/routes/market.mjs:345"
+ ],
+ "Угоду завершено": [
+  "server/admin/resources.mjs#audit",
+  "server/admin/describe.mjs"
+ ],
+ "Угоду завершено — оціни другу сторону": [
+  "src/lib/notifications.ts:36"
+ ],
+ "Угоду прийнято": [
+  "server/admin/resources.mjs#audit",
+  "server/admin/describe.mjs"
+ ],
+ "Угоду прийнято — домовтеся в листуванні": [
+  "src/pages/market/ListingPage.tsx:244"
+ ],
+ "Угоду скасовано": [
+  "src/lib/notifications.ts:33",
+  "server/admin/resources.mjs#audit",
+  "server/admin/describe.mjs"
  ],
  "Удосконалене": [
   "src/pages/BaseGenerator.tsx:424"
@@ -13644,11 +14816,15 @@
   "src/App.tsx:32",
   "src/components/Crumbs.tsx:100",
   "src/components/Crumbs.tsx:101",
-  "src/components/Header.tsx:25",
+  "src/components/Header.tsx:26",
   "src/lib/gamedata.ts:27"
  ],
  "Уміння не завантажились": [
   "src/pages/SkillsPage.tsx:470"
+ ],
+ "Умови": [
+  "src/pages/market/DealPage.tsx:98",
+  "src/pages/market/ListingPage.tsx:90"
  ],
  "Унизу ліворуч гараж багі з пентащитом на 3 плити і генератори, праворуч склад, вода і консоль.": [
   "src/engine/versions.js:129"
@@ -13670,11 +14846,14 @@
   "src/pages/Guilds.tsx:544",
   "src/pages/admin/fields.tsx:430"
  ],
+ "усе вже продано — розмісти нове оголошення": [
+  "server/routes/market.mjs:571"
+ ],
  "Усе від {name}": [
   "src/components/map/MarksPanel.tsx:510"
  ],
  "Усе з гри на мапі + твої й гільдійські позначки": [
-  "src/components/Header.tsx:21"
+  "src/components/Header.tsx:22"
  ],
  "Усе інше": [
   "src/lib/events.ts:122"
@@ -13705,8 +14884,8 @@
   "src/components/Crumbs.tsx:108",
   "src/components/Crumbs.tsx:109",
   "src/components/world/WorldMapView.tsx:246",
-  "src/pages/Catalog.tsx:381",
-  "src/pages/Catalog.tsx:399"
+  "src/pages/Catalog.tsx:382",
+  "src/pages/Catalog.tsx:400"
  ],
  "Усі варіанти": [
   "src/components/base/builder/Cards.tsx:130"
@@ -13728,17 +14907,21 @@
   "src/pages/admin/SiteSettings.tsx:55"
  ],
  "усі місця": [
-  "src/pages/MapPage.tsx:1133"
+  "src/pages/MapPage.tsx:1125"
  ],
  "усі місця зайняті — спершу звільни місце або постав команду в резерв": [
   "server/routes/events.mjs:225"
  ],
  "Усі мови": [
-  "server/admin/resources.mjs:819",
+  "server/admin/resources.mjs:837",
   "server/admin/resources.mjs#announcements"
  ],
  "Усі можливі місця": [
-  "src/pages/MapPage.tsx:1126"
+  "src/pages/MapPage.tsx:1118"
+ ],
+ "Усі оголошення": [
+  "src/pages/Market.tsx:66",
+  "src/pages/market/ListingPage.tsx:56"
  ],
  "Усі орні разом": [
   "src/pages/BaseGenerator.tsx:355"
@@ -13759,16 +14942,22 @@
   "src/lib/decree.ts:44"
  ],
  "Усі предмети, пристрої, рецепти й будівельні набори гри": [
-  "src/components/Header.tsx:22"
+  "src/components/Header.tsx:23"
  ],
  "усі ранги — {n} оч.": [
   "src/components/skills/SkillTip.tsx:137"
  ],
  "Усі регіони": [
-  "src/pages/Events.tsx:145"
+  "src/pages/Events.tsx:145",
+  "src/pages/Market.tsx:122",
+  "src/pages/market/ItemPage.tsx:61"
  ],
  "Усі результати матчів зникнуть. Скласти нову можна будь-коли.": [
   "src/pages/EventPage.tsx:164"
+ ],
+ "Усі розділи": [
+  "src/components/market/ItemPicker.tsx:49",
+  "src/pages/Market.tsx:120"
  ],
  "Усі такі точки обведено на мапі": [
   "src/components/map/PlaceParts.tsx:109"
@@ -13822,7 +15011,7 @@
   "src/components/world/WorldMapView.tsx:315"
  ],
  "Уся мапа": [
-  "src/pages/MapPage.tsx:1247"
+  "src/pages/MapPage.tsx:1231"
  ],
  "Уся техніка — у закритих ангарах і гаражах": [
   "src/lib/basegen.ts:54"
@@ -13980,7 +15169,7 @@
  ],
  "Фонові задачі": [
   "src/pages/admin/Dashboard.tsx:142",
-  "server/admin/resources.mjs:995",
+  "server/admin/resources.mjs:1013",
   "server/admin/resources.mjs#cron-jobs"
  ],
  "форма": [
@@ -14082,7 +15271,7 @@
   "src/components/base/tr.ts:270"
  ],
  "хибна адреса": [
-  "server/app.mjs:322"
+  "server/app.mjs:342"
  ],
  "хибна відповідь паскея": [
   "server/lib/webauthn.mjs:19",
@@ -14115,7 +15304,7 @@
  ],
  "хибний власник": [
   "server/admin/resources.mjs:61",
-  "server/lib/content.mjs:96"
+  "server/lib/content.mjs:105"
  ],
  "хибний запит": [
   "server/routes/admin.mjs:173",
@@ -14157,7 +15346,7 @@
   "src/pages/admin/fields.tsx:605"
  ],
  "хибні дані в запиті": [
-  "server/app.mjs:397"
+  "server/app.mjs:419"
  ],
  "хибні фільтри": [
   "server/routes/admin.mjs:128",
@@ -14179,8 +15368,9 @@
   "src/pages/BaseGenerator.tsx:52"
  ],
  "Хто": [
-  "server/admin/resources.mjs:909",
-  "server/admin/resources.mjs:983",
+  "src/pages/market/ListingPage.tsx:100",
+  "server/admin/resources.mjs:927",
+  "server/admin/resources.mjs:1001",
   "server/admin/resources.mjs#audit",
   "server/admin/resources.mjs#revisions"
  ],
@@ -14198,8 +15388,8 @@
   "src/components/access/Rights.tsx:62"
  ],
  "Хто бачить мою позначку": [
-  "src/components/map/SpiceActive.tsx:100",
-  "src/components/map/SpiceActive.tsx:101"
+  "src/components/map/SpiceActive.tsx:94",
+  "src/components/map/SpiceActive.tsx:95"
  ],
  "Хто бачить прогрес": [
   "src/components/access/Rights.tsx:59"
@@ -14235,6 +15425,9 @@
  "Хто збудує найкращу базу": [
   "src/lib/events.ts:119"
  ],
+ "Хто купує й продає — книга заявок і історія угод на біржі Sandwalkers": [
+  "server/lib/og.mjs:78"
+ ],
  "Хто міняє права": [
   "src/components/access/Rights.tsx:63"
  ],
@@ -14252,7 +15445,7 @@
   "src/pages/EventPage.tsx:594"
  ],
  "Хто поставив": [
-  "server/admin/resources.mjs:741",
+  "server/admin/resources.mjs:759",
   "server/admin/resources.mjs#stars"
  ],
  "Хто редагує зміст": [
@@ -14265,15 +15458,18 @@
   "src/components/access/Rights.tsx:60"
  ],
  "Хто що робив на сайті й у панелі: входи, збереження, доступ, гільдії. Відкрий подію — побачиш подробиці запиту.": [
-  "server/admin/resources.mjs:905",
+  "server/admin/resources.mjs:923",
   "server/admin/resources.mjs#audit"
  ],
  "Хто яку річ відзначив зіркою.": [
-  "server/admin/resources.mjs:737",
+  "server/admin/resources.mjs:755",
   "server/admin/resources.mjs#stars"
  ],
  "Хтось зберіг її, поки ти редагував. Можна взяти нову версію (твої правки зникнуть) або зберегти свою поверх.": [
   "src/pages/EventEditor.tsx:186"
+ ],
+ "Хтось зберіг його, поки ти редагував. Можна взяти нову версію (твої правки зникнуть) або зберегти свою поверх.": [
+  "src/pages/market/ListingEditor.tsx:168"
  ],
  "хтось уже змінив роадмап": [
   "server/routes/roadmap.mjs:92"
@@ -14294,6 +15490,9 @@
  "Це бачать інші на твоїй сторінці, у гільдії й під тим, що ти виклав.": [
   "src/pages/Account.tsx:246"
  ],
+ "це для модераторів біржі": [
+  "server/routes/market.mjs:426"
+ ],
  "це єдиний адміністратор": [
   "server/admin/resources.mjs:392",
   "server/admin/resources.mjs:399"
@@ -14308,6 +15507,7 @@
   "server/routes/bases.mjs:35",
   "server/routes/docs.mjs:21",
   "server/routes/events.mjs:30",
+  "server/routes/market.mjs:49",
   "server/routes/roadmap.mjs:101"
  ],
  "це можна скопіювати лише в гільдію": [
@@ -14341,6 +15541,9 @@
  "Це нова пошта — після входу з’явиться твій обліковий запис.": [
   "server/lib/mail.mjs:47"
  ],
+ "це оголошення щойно змінили — ось його нова версія": [
+  "server/routes/market.mjs:554"
+ ],
  "Це окремий розрахунок за посиланням — твій список ({count}) не змінено.": [
   "src/pages/CalcPage.tsx:274"
  ],
@@ -14349,6 +15552,9 @@
  ],
  "це твій особистий прогрес": [
   "server/routes/roadmap.mjs:162"
+ ],
+ "це твоє оголошення — пропонують інші": [
+  "server/routes/market.mjs:276"
  ],
  "Це теж нова версія — її можна так само відкотити.": [
   "src/lib/roadmap.ts:416"
@@ -14389,6 +15595,11 @@
  ],
  "Цей паскей уже додано на цьому пристрої.": [
   "src/lib/webauthn.ts:44"
+ ],
+ "цей предмет не продається на біржі": [
+  "server/lib/market.mjs:92",
+  "server/lib/market.mjs:111",
+  "server/routes/market.mjs:222"
  ],
  "Цей пристрій не вміє такі паскеї.": [
   "src/lib/webauthn.ts:46"
@@ -14433,6 +15644,9 @@
  "Ці числа змінено лише в цьому браузері — інші бачать спільні.": [
   "src/components/base/BaseCalc.tsx:213"
  ],
+ "цієї людини вже нема на сайті": [
+  "server/routes/market.mjs:383"
+ ],
  "Цікаві місця": [
   "src/lib/map/data.ts:365"
  ],
@@ -14448,15 +15662,53 @@
  "Ціль": [
   "src/components/catalog/ProdCalc.tsx:589"
  ],
+ "Ціль уже стерто": [
+  "src/pages/market/Reports.tsx:71"
+ ],
  "Ціна": [
-  "src/pages/Catalog.tsx:637"
+  "src/pages/Catalog.tsx:638"
  ],
  "Ціна будівництва": [
-  "src/pages/Catalog.tsx:677",
+  "src/pages/Catalog.tsx:678",
   "server/admin/resources.mjs#game-buildables"
  ],
  "Ціна в торговця": [
-  "src/pages/Catalog.tsx:709"
+  "src/pages/Catalog.tsx:710"
+ ],
+ "Ціна від": [
+  "src/pages/Market.tsx:129"
+ ],
+ "Ціна до": [
+  "src/pages/Market.tsx:130"
+ ],
+ "Ціна за штуку": [
+  "server/admin/resources.mjs:718",
+  "server/admin/resources.mjs#listings"
+ ],
+ "ціна за штуку — ціле число соларів від 1": [
+  "server/lib/market.mjs:119",
+  "server/routes/market.mjs:257"
+ ],
+ "Ціна за штуку в соларах": [
+  "src/lib/market.ts:174"
+ ],
+ "Ціна за штуку від": [
+  "src/pages/Market.tsx:129"
+ ],
+ "Ціна за штуку до": [
+  "src/pages/Market.tsx:130"
+ ],
+ "Ціна за штуку, Solari": [
+  "src/pages/market/ListingEditor.tsx:215",
+  "src/pages/market/ListingEditor.tsx:216",
+  "src/pages/market/ListingPage.tsx:222",
+  "src/pages/market/ListingPage.tsx:223"
+ ],
+ "Ціна за штуку; пунктир — медіана, смуга — звичайний розкид": [
+  "src/pages/market/ItemPage.tsx:86"
+ ],
+ "Ціни угод у часі": [
+  "src/components/market/PriceChart.tsx:43"
  ],
  "Цього вже нема в довіднику, тож не рахується: {list}.": [
   "src/pages/CalcPage.tsx:267"
@@ -14491,9 +15743,18 @@
  "цю роль може дати лише той, хто має всі її права": [
   "server/admin/resources.mjs:290"
  ],
+ "ця дія — для оголошення": [
+  "server/routes/market.mjs:473"
+ ],
+ "ця дія — для угоди": [
+  "server/routes/market.mjs:496"
+ ],
  "ця людина вже в гільдії": [
   "server/admin/resources.mjs:529",
   "server/routes/guilds.mjs:177"
+ ],
+ "ця людина зараз не може торгувати на біржі": [
+  "server/routes/market.mjs:322"
  ],
  "ця людина не в гільдії": [
   "server/routes/guilds.mjs:96",
@@ -14540,14 +15801,20 @@
   "src/lib/basegen.ts:48"
  ],
  "Частини техніки": [
-  "src/pages/Catalog.tsx:52"
+  "src/pages/Catalog.tsx:53"
  ],
  "Чвертьфінал": [
   "src/components/events/Bracket.tsx:20"
  ],
+ "чекає відповіді": [
+  "src/components/market/bits.tsx:162"
+ ],
  "Чекає рішення": [
   "src/lib/events.ts:124",
   "server/admin/resources.mjs#event-teams"
+ ],
+ "Чекаємо на іншу сторону": [
+  "src/pages/market/DealPage.tsx:92"
  ],
  "Чекаємо на тебе серед глядачів": [
   "src/pages/EventPage.tsx:98"
@@ -14588,7 +15855,7 @@
   "src/components/access/Rights.tsx:227"
  ],
  "Чим скінчився": [
-  "server/admin/resources.mjs:1006",
+  "server/admin/resources.mjs:1024",
   "server/admin/resources.mjs#cron-jobs"
  ],
  "Число": [
@@ -14617,7 +15884,7 @@
   "src/lib/basegen.ts:52"
  ],
  "чуже не можна віддати іншій людині": [
-  "server/lib/content.mjs:76"
+  "server/lib/content.mjs:85"
  ],
  "Чуже публічне не малюється на мапі само: постав галочку окремій речі чи увімкни все від автора.": [
   "src/components/map/MarksPanel.tsx:553"
@@ -14632,23 +15899,26 @@
   "src/pages/BasesList.tsx:83"
  ],
  "Шанс появи руди й рослин у місці": [
-  "src/pages/MapPage.tsx:1132",
-  "src/pages/MapPage.tsx:1142"
+  "src/pages/MapPage.tsx:1124",
+  "src/pages/MapPage.tsx:1134"
  ],
  "Шар «{name}»": [
-  "src/pages/MapPage.tsx:1670"
+  "src/pages/MapPage.tsx:1646"
  ],
  "Шари": [
-  "src/pages/MapPage.tsx:1169"
+  "src/pages/MapPage.tsx:1161"
  ],
  "шари з «Гри»": [
   "src/components/map/MarksPanel.tsx:232"
  ],
  "Шари мапи": [
-  "src/pages/MapPage.tsx:1033"
+  "src/pages/MapPage.tsx:1026"
  ],
  "Шафа": [
   "src/lib/map/data.ts:290"
+ ],
+ "Шахрайство": [
+  "src/lib/market.ts:181"
  ],
  "Швидкість": [
   "src/pages/Orni3D.tsx:604"
@@ -14686,7 +15956,7 @@
   "src/components/base/builder/Cards.tsx:184"
  ],
  "Шкода": [
-  "src/pages/Catalog.tsx:585"
+  "src/pages/Catalog.tsx:586"
  ],
  "Шкода від далекобійної зброї збільшена на 33%": [
   "src/lib/decree.ts:42"
@@ -14695,7 +15965,7 @@
   "src/lib/decree.ts:43"
  ],
  "Шкода щиту": [
-  "src/pages/Catalog.tsx:585"
+  "src/pages/Catalog.tsx:586"
  ],
  "Школа": [
   "server/admin/resources.mjs#game-skills"
@@ -14706,25 +15976,37 @@
  "Шлях": [
   "src/lib/skills.ts:91"
  ],
+ "шт.": [
+  "src/pages/market/ListingEditor.tsx:227"
+ ],
  "Штурмовий орнітоптер": [
   "src/components/base/tr.ts:275",
   "src/lib/catalog.ts:196"
+ ],
+ "Шукаєш предмет — продавці побачать твою ціну": [
+  "src/lib/market.ts:171"
  ],
  "Шукати: {label}…": [
   "src/pages/admin/table.ts:155"
  ],
  "шукаю…": [
   "src/components/map/PlaceParts.tsx:85",
-  "src/pages/MapPage.tsx:1209"
+  "src/pages/MapPage.tsx:1201"
  ],
  "ще {n}": [
   "src/pages/admin/AnnouncementsBulk.tsx:97"
+ ],
+ "Ще {n} — уточни назву": [
+  "src/components/market/ItemPicker.tsx:64"
  ],
  "ще {n} вільно": [
   "src/pages/EventPage.tsx:369"
  ],
  "Ще {n} людей поза гільдією ведуть свій прогрес — його бачать лише вони самі.": [
   "src/components/roadmap/RoadmapRights.tsx:195"
+ ],
+ "ще без угод": [
+  "src/components/market/bits.tsx:35"
  ],
  "Ще в пустелі: {wrecks}, {labs}, {caves}, {spice}.": [
   "src/pages/Home.tsx:450"
@@ -14757,6 +16039,9 @@
  "Ще не перевірялось": [
   "src/pages/admin/GameDataAdmin.tsx:42"
  ],
+ "ще нема ні угод, ні цін": [
+  "src/pages/market/ItemPage.tsx:69"
+ ],
  "Ще немає жодної перевірки даних": [
   "src/pages/DataUpdates.tsx:59"
  ],
@@ -14776,10 +16061,10 @@
   "src/pages/admin/GameDataAdmin.tsx:383"
  ],
  "Ще розділи": [
-  "src/components/Header.tsx:153"
+  "src/components/Header.tsx:155"
  ],
  "Ще розділи (зараз: {name})": [
-  "src/components/Header.tsx:153"
+  "src/components/Header.tsx:155"
  ],
  "Щит у даху": [
   "src/pages/BaseGenerator.tsx:393"
@@ -14789,20 +16074,20 @@
  ],
  "Що": [
   "src/pages/admin/SiteSettings.tsx:109",
-  "server/admin/resources.mjs:896",
-  "server/admin/resources.mjs:911",
-  "server/admin/resources.mjs#settings",
-  "server/admin/resources.mjs#audit"
+  "src/pages/market/ListingEditor.tsx:176",
+  "server/admin/resources.mjs:914",
+  "server/admin/resources.mjs:929",
+  "server/admin/resources.mjs#settings"
  ],
  "Що будувати далі, скільки коштує і що вже зроблено": [
-  "src/components/Header.tsx:20",
+  "src/components/Header.tsx:21",
   "src/pages/Library.tsx:36"
  ],
  "Що будувати далі, скільки коштує і що вже зроблено: твої, гільдійські й публічні роадмапи всіх.": [
   "src/pages/RoadmapList.tsx:137"
  ],
  "Що будувати далі, скільки коштує і що вже зроблено.": [
-  "server/lib/og.mjs:49"
+  "server/lib/og.mjs:50"
  ],
  "Що будуємо і скільки": [
   "src/components/catalog/ProdCalc.tsx:589"
@@ -14833,11 +16118,17 @@
   "server/admin/resources.mjs:219",
   "server/admin/resources.mjs#game-skills"
  ],
+ "Що далі": [
+  "src/pages/market/DealPage.tsx:92"
+ ],
+ "Що даю натомість": [
+  "src/pages/market/ListingEditor.tsx:221"
+ ],
  "Що додати": [
   "src/components/catalog/ProdCalc.tsx:199"
  ],
  "Що є в грі: локації, ресурси, лут, NPC": [
-  "src/pages/MapPage.tsx:1048"
+  "src/pages/MapPage.tsx:1041"
  ],
  "Що змінилось — видно в історії версій": [
   "server/admin/resources.mjs:649",
@@ -14859,7 +16150,7 @@
   "src/pages/EventEditor.tsx:194"
  ],
  "Що може кожна роль: які розділи панелі бачить, створює, змінює, видаляє й які дії виконує. «Адміністратор» має все.": [
-  "server/admin/resources.mjs:935",
+  "server/admin/resources.mjs:953",
   "server/admin/resources.mjs#roles"
  ],
  "Що на цьому рівні": [
@@ -14868,21 +16159,27 @@
  "Що надіслали": [
   "src/pages/admin/fields.tsx:240"
  ],
+ "Що не так? Модератори побачать скаргу й твій коментар.": [
+  "src/components/market/ReportDialog.tsx:37"
+ ],
  "Що отримають переможці: солари, предмети, техніку. Порядок — за місцями.": [
   "src/pages/EventEditor.tsx:289"
  ],
  "Що потрібно": [
   "server/admin/resources.mjs#game-recipes"
  ],
+ "Що продаєш чи шукаєш, скільки й почім, де передати. Покупці й продавці побачать його в стрічці й на сторінці предмета.": [
+  "src/pages/market/ListingEditor.tsx:158"
+ ],
  "Що робить": [
-  "server/admin/resources.mjs:1001",
+  "server/admin/resources.mjs:1019",
   "server/admin/resources.mjs#cron-jobs"
  ],
  "Що роль може поза розділами панелі.": [
   "src/pages/admin/fields.tsx:412"
  ],
  "Що сайт робить сам за розкладом: оновлення мапи, перевірка даних гри, знімки баз, прибирання. Відкрий задачу — побачиш журнал її запуску, а поки вона йде — наживо.": [
-  "server/admin/resources.mjs:997",
+  "server/admin/resources.mjs:1015",
   "server/admin/resources.mjs#cron-jobs"
  ],
  "Що ставиш на мапі": [
@@ -14896,11 +16193,14 @@
   "server/admin/resources.mjs#game-placeables"
  ],
  "Що тут крафтиться — {n}": [
-  "src/pages/Catalog.tsx:688"
+  "src/pages/Catalog.tsx:689"
+ ],
+ "Що хочу натомість": [
+  "src/pages/market/ListingEditor.tsx:221"
  ],
  "Що це": [
   "server/admin/resources.mjs:603",
-  "server/admin/resources.mjs:739",
+  "server/admin/resources.mjs:757",
   "server/admin/resources.mjs#items",
   "server/admin/resources.mjs#stars"
  ],
@@ -14911,7 +16211,7 @@
   "src/pages/Account.tsx:142"
  ],
  "щоб записати цю точку як свій ресурс чи додати її до запису.": [
-  "src/pages/MapPage.tsx:1797"
+  "src/pages/MapPage.tsx:1773"
  ],
  "Щоб зберегти базу собі й доробити її в 3D-будівельнику, увійди.": [
   "src/pages/BaseGenerator.tsx:119"
@@ -14919,8 +16219,11 @@
  "Щоб копіювати й ставити зірки — увійди.": [
   "src/pages/Library.tsx:69"
  ],
+ "щоб побачити нік у грі": [
+  "src/pages/market/ListingPage.tsx:124"
+ ],
  "щоб позначати активні поля.": [
-  "src/components/map/SpiceActive.tsx:127"
+  "src/components/map/SpiceActive.tsx:121"
  ],
  "Щоб показати час серверів і знайти подію фільтром": [
   "src/pages/EventEditor.tsx:226"
@@ -14942,6 +16245,9 @@
  ],
  "щомісяця {d}-го о {time}": [
   "src/pages/admin/fields.tsx:75"
+ ],
+ "Щось інше — опиши": [
+  "src/lib/market.ts:184"
  ],
  "щотижня": [
   "src/pages/admin/AnnouncementsBulk.tsx:87"
@@ -14971,8 +16277,11 @@
  "Як дістатися": [
   "src/components/world/LocationCard.tsx:129"
  ],
+ "як з тобою зв’язатися: через сайт чи нік у грі": [
+  "server/lib/market.mjs:140"
+ ],
  "Як запущено": [
-  "server/admin/resources.mjs:1040",
+  "server/admin/resources.mjs:1058",
   "server/admin/resources.mjs#cron-runs"
  ],
  "Як зареєструвались": [
@@ -14983,16 +16292,27 @@
  ],
  "Як зв’язатися": [
   "src/pages/EventEditor.tsx:321",
-  "src/pages/EventEditor.tsx:322"
+  "src/pages/EventEditor.tsx:322",
+  "src/pages/market/ListingEditor.tsx:295",
+  "src/pages/market/ListingPage.tsx:120"
+ ],
+ "Як зручніше покупцю": [
+  "src/lib/market.ts:174"
  ],
  "Як ключ підключається": [
   "server/admin/resources.mjs:441",
   "server/admin/resources.mjs#passkeys"
  ],
  "Як отримати": [
-  "src/pages/Catalog.tsx:734",
+  "src/pages/Catalog.tsx:741",
   "server/admin/resources.mjs:212",
   "server/admin/resources.mjs#game-items"
+ ],
+ "як покупець": [
+  "src/components/market/UserMarket.tsx:33"
+ ],
+ "як продавець": [
+  "src/components/market/UserMarket.tsx:33"
  ],
  "Як пройшло, найкращі моменти, подяки": [
   "src/pages/EventPage.tsx:608"
@@ -15019,6 +16339,12 @@
  "Які показати": [
   "src/pages/Guilds.tsx:246"
  ],
+ "Які скарги": [
+  "src/pages/market/Reports.tsx:35"
+ ],
+ "Які угоди": [
+  "src/pages/Market.tsx:246"
+ ],
  "Якість": [
   "src/pages/Orni3D.tsx:3366"
  ],
@@ -15026,7 +16352,7 @@
   "src/pages/Orni3D.tsx:3367"
  ],
  "Якою мовою сайту показувати": [
-  "server/admin/resources.mjs:819",
+  "server/admin/resources.mjs:837",
   "server/admin/resources.mjs#announcements"
  ],
  "Якщо відновити — відносно поточної версії {n}:": [
@@ -15056,7 +16382,7 @@
   "src/pages/EventPage.tsx:476"
  ],
  "https://… чи /шлях на сайті": [
-  "server/admin/resources.mjs:820",
+  "server/admin/resources.mjs:838",
   "server/admin/resources.mjs#announcements"
  ],
  "ID ключа": [
@@ -15083,7 +16409,7 @@
   "src/components/account/Security.tsx:202"
  ],
  "Sandwalkers — на головну": [
-  "src/components/Header.tsx:104"
+  "src/components/Header.tsx:106"
  ],
  "v{n} · збережено": [
   "src/components/base/builder/Builder.tsx:364"
