@@ -37,8 +37,10 @@ export function cleanSlots(v) {
   for (const s of v.slice(0, MAX_SLOTS)) {
     if (!s || typeof s !== 'object') continue
     const days = [...new Set((Array.isArray(s.days) ? s.days : []).map(Number).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort()
-    if (!days.length || !HHMM.test(s.from) || !HHMM.test(s.to) || s.from === s.to) continue
-    out.push({ days, from: s.from, to: s.to })
+    // поле часу в браузері буває з секундами (18:00:00) — беремо години й хвилини
+    const from = String(s.from ?? '').slice(0, 5), to = String(s.to ?? '').slice(0, 5)
+    if (!days.length || !HHMM.test(from) || !HHMM.test(to) || from === to) continue
+    out.push({ days, from, to })
   }
   return out
 }

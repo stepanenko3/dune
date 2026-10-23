@@ -20,7 +20,7 @@ export type View =
 
 /** вкладки списків (сегмент після розділу); «мої» — без сегмента */
 export const SCOPES = ['mine', 'guild', 'public'] as const
-export const GUILD_TABS = ['home', 'members', 'items', 'events', 'requests', 'invites', 'settings'] as const
+export const GUILD_TABS = ['home', 'members', 'items', 'events', 'requests', 'invites', 'settings', 'apply'] as const
 /** вкладки подій (сегмент після /events); «найближчі» — без сегмента */
 export const EVENT_TABS = ['mine', 'guild', 'past'] as const
 

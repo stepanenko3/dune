@@ -62,6 +62,8 @@ describe('картка гільдії (бібліотека)', () => {
     expect(p).not.toHaveProperty('extra')
     expect(p.show).toMatchObject({ about: 'public', officers: 'public', members: 'guild', rules: 'public' })
     expect(cleanProfile({ tz: 'Mars/Olympus' }).tz).toBeNull()
+    // поле часу браузера — з секундами
+    expect(cleanProfile({ schedule: [{ days: [6, 0], from: '18:00:00', to: '02:00:00' }] }).schedule).toEqual([{ days: [0, 6], from: '18:00', to: '02:00' }])
     expect(() => cleanProfile({ links: { discord: 'https://evil.example/discord.gg/x' } })).toThrow(/Discord/)
     expect(cleanProfile({ links: { discord: 'https://discord.gg/sandwalk', telegram: 'https://t.me/+AbCdEf' } }).links).toEqual({ discord: 'https://discord.gg/sandwalk', telegram: 'https://t.me/+AbCdEf' })
     // герб — лише адреса зі свого сховища

@@ -222,7 +222,14 @@ export async function createGuilds(db) {
       const like = `%${String(text).trim().toLowerCase()}%`
       const rows = await db.all(`SELECT g.*, (SELECT COUNT(*) FROM members m WHERE m.guild_id = g.id) AS n FROM guilds g
         WHERE (lower(g.name) LIKE ? OR lower(g.tag) LIKE ? OR lower(g.about) LIKE ?) ${open ? 'AND g.open = 1' : ''} ORDER BY g.name`, like, like, like)
-      return Promise.all(rows.map(async (g) => ({ ...(await view(g, g.n)), profile: cardProfile(readProfile(g.profile)) })))
+      // у каталозі — лише відкрите всім (опис, розклад — якщо гільдія їх не сховала)
+      const word = String(text).trim().toLowerCase()
+      return Promise.all(rows.map(async (g) => {
+        const p = readProfile(g.profile), v = await view(g, g.n)
+        // знайшлась лише за схованим описом — для каталогу її тут нема
+        if (word && p.show.about === 'guild' && !g.name.toLowerCase().includes(word) && !g.tag.toLowerCase().includes(word)) return null
+        return { ...v, about: p.show.about === 'guild' ? '' : v.about, profile: cardProfile(p) }
+      })).then((l) => l.filter(Boolean))
     },
 
     // ---------- картка гільдії ----------

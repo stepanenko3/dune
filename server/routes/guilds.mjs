@@ -73,8 +73,10 @@ export function createGuildRoutes({ auth, guilds, items, deleteGuild, decrees, d
     const mine = req.user ? await guilds.requestOf(g.id, req.user.id) : null
     const pending = may.review ? await guilds.requests(g.id) : []
     const notes = may.review ? await guilds.comments(g.id, pending.map((x) => x.user_id)) : new Map()
+    const view = await guilds.view(g)
     res.json({
-      guild: await guilds.view(g),
+      // опис гільдії — теж блок картки: сховали від чужих — порожньо
+      guild: profile.show.about === 'hidden' ? { ...view, about: '' } : view,
       role: rank ? (req.user?.role === 'admin' && !own ? 'admin' : own) : null,
       rank,
       profile,
