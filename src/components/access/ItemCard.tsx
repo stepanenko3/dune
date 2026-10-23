@@ -5,7 +5,7 @@
  */
 import { useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { Calculator, CalendarDays, Castle, Copy, Inbox, MapPin, RotateCcw, Sparkles, Star, Trash2, TrendingUp } from 'lucide-react'
+import { Calculator, CalendarDays, Castle, Copy, Handshake, Inbox, MapPin, RotateCcw, Sparkles, Star, Trash2, TrendingUp } from 'lucide-react'
 import { toast } from 'sonner'
 import { hrefOf, KIND_LABEL, type Item } from '@/lib/items'
 import { purgeBase, removeBase } from '@/lib/bases'
@@ -22,9 +22,10 @@ import { SCHOOL_ICON } from '@/components/skills/icons'
 import { RoadmapProgress } from '@/pages/RoadmapList'
 import { ConfirmDialog } from '@/pages/Account'
 import { AccessBadge, OwnerLink } from './Access'
+import { TradeTitle } from '@/components/market/names'
 import { Img } from '@/components/ui/img'
 
-const ICON = { base: Castle, roadmap: TrendingUp, build: Sparkles, calc: Calculator, marker: MapPin, place: MapPin, event: CalendarDays }
+const ICON = { base: Castle, roadmap: TrendingUp, build: Sparkles, calc: Calculator, marker: MapPin, place: MapPin, event: CalendarDays, listing: Handshake }
 
 /** відкрити річ: бази й роадмапи — розділом застосунку, решта — адресою */
 export function openItem(it: Pick<Item, 'kind' | 'id'>) {
@@ -32,6 +33,7 @@ export function openItem(it: Pick<Item, 'kind' | 'id'>) {
   if (it.kind === 'base') setView('bases', { base: it.id })
   else if (it.kind === 'roadmap') setView('roadmap', { param: it.id })
   else if (it.kind === 'event') setView('events', { param: it.id })
+  else if (it.kind === 'listing') setView('market', { param: it.id })
   else {
     const href = hrefOf(it)
     const [path, search] = href.split('?')
@@ -114,7 +116,7 @@ export function ItemCard({ it, onChange }: { it: Item; onChange?: () => void }) 
         {it.kind === 'base' ? <Thumb it={it} gone={gone} /> : <KindHead it={it} />}
         <div className="flex flex-1 flex-col gap-2 p-3.5">
           <div className="flex items-start gap-2">
-            <h3 className={cn('min-w-0 flex-1 font-display text-[15.5px] font-bold leading-snug', gone && 'text-muted line-through decoration-1')}>{it.title}</h3>
+            <h3 className={cn('min-w-0 flex-1 font-display text-[15.5px] font-bold leading-snug', gone && 'text-muted line-through decoration-1')}>{it.kind === 'listing' && it.trade ? <TradeTitle trade={it.trade} /> : it.title}</h3>
             {it.featured && <span className="shrink-0 rounded-full bg-spice px-2 py-0.5 text-[10.5px] font-bold text-on-spice">{t('Вибране')}</span>}
           </div>
           {summary && <p className="line-clamp-2 text-[13px] leading-snug text-muted">{summary}</p>}

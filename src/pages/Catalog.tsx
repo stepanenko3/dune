@@ -9,13 +9,14 @@
  * однаковим усіма мовами (RawResources, sandbike, production…), підпис — мовою сайту.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { BookOpen, Calculator, Droplet, Hammer, MapPin, SearchX, Timer } from 'lucide-react'
+import { BookOpen, Calculator, Droplet, Hammer, Handshake, MapPin, SearchX, Timer } from 'lucide-react'
+import { itemHref, tradeable } from '@/lib/market'
 import {
   buildName, fmtTime, groupLabel, iconUrl, isDevEntry, kindLabel, kindOf, loadCatalog, nameOf, rarityLabel, SECTIONS, sectionOfItem, setLabel, subLabel,
   tierLabel, VEHICLE_KEYS, vehicleKey, vehicleLabel, wikiImg,
   type CatalogIndex, type CBuild, type CItem, type CPlace, type CRecipe, type SectionId,
 } from '@/lib/catalog'
-import { useStore } from '@/store'
+import { openPath, useStore } from '@/store'
 import { cn, fmtN, fmtP, plural } from '@/lib/utils'
 import { plainClick } from '@/lib/urlState'
 import { locale, t } from '@/lib/i18n'
@@ -729,6 +730,12 @@ function Detail({ e, extra, ix, open, navBuild }: { e: Entry; extra: Extra | nul
           <MapPin size={14} /> {t('Де випадає — на мапі')}
         </button>
         {makes.length > 0 && <CalcButton target={{ kind: 'item', id: it.id, qty: 1 }} />}
+        {/* біржа: хто купує й продає, ціни від спільноти (лише те, що гра пускає на біржу) */}
+        {tradeable(it) && (
+          <a href={itemHref(it.id)} onClick={(e) => { if (!plainClick(e)) return; e.preventDefault(); openPath(itemHref(it.id)) }} className="inline-flex h-8 items-center gap-1.5 rounded-md border border-spice/50 px-3 text-[12.5px] font-medium text-spice hover:bg-spice/10">
+            <Handshake size={14} /> {t('На біржі')}
+          </a>
+        )}
       </div>
       {makes.length > 0 && (
         <Section title={t('Як отримати')}>

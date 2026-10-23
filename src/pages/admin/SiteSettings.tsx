@@ -101,7 +101,7 @@ export function SiteSettings() {
 }
 
 /** ліміти: вид речі рядком, людина й гільдія — стовпцями */
-const LIMIT_KINDS: [string, string][] = [['base', 'Бази'], ['roadmap', 'Роадмапи'], ['build', 'Білди'], ['calc', 'Розрахунки'], ['marker', 'Позначки на мапі'], ['place', 'Записи ресурсів'], ['event', 'Події']]
+const LIMIT_KINDS: [string, string][] = [['base', 'Бази'], ['roadmap', 'Роадмапи'], ['build', 'Білди'], ['calc', 'Розрахунки'], ['marker', 'Позначки на мапі'], ['place', 'Записи ресурсів'], ['event', 'Події'], ['listing', 'Відкриті оголошення біржі']]
 function LimitsTable({ value, onChange }: { value: Limits; onChange: (v: Limits) => void }) {
   const set = (who: 'user' | 'guild', kind: string, n: number) => onChange({ ...value, [who]: { ...value[who], [kind]: Math.max(0, Math.round(n) || 0) } })
   return (

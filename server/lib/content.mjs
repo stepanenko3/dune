@@ -14,11 +14,11 @@ import { fail, fill, newId } from './util.mjs'
  */
 /** ліміти за замовчуванням: на людину й на гільдію (змінюються в «Налаштуваннях сайту») */
 export const DEFAULT_LIMITS = {
-  user: { base: 10, roadmap: 10, build: 30, calc: 30, marker: 100, place: 50, event: 20 },
-  guild: { base: 30, roadmap: 30, build: 100, calc: 100, marker: 300, place: 200, event: 60 },
+  user: { base: 10, roadmap: 10, build: 30, calc: 30, marker: 100, place: 50, event: 20, listing: 30 },
+  guild: { base: 30, roadmap: 30, build: 100, calc: 100, marker: 300, place: 200, event: 60, listing: 100 },
 }
 
-export function createContent({ items, guilds, auth, bases, roadmaps, builds, calcs, markers, places, events }) {
+export function createContent({ items, guilds, auth, bases, roadmaps, builds, calcs, markers, places, events, market }) {
   const H = {
     base: {
       meta: (doc, t = fill) => ({ title: doc.ui?.name || t('База'), summary: baseSummary(doc, t).lead || '' }),
@@ -66,6 +66,15 @@ export function createContent({ items, guilds, auth, bases, roadmaps, builds, ca
       // разом із командами, гравцями й глядачами
       purge: (id) => events.remove(id),
     },
+    // оголошення біржі: назва — предмет і кількість (g — запис предмета з довідника; без нього — id гри)
+    listing: {
+      meta: (doc, g) => ({ title: `${g && typeof g === 'object' ? g.name : doc.gid} ×${doc.qty}`, summary: doc.note?.replace(/\s+/g, ' ').slice(0, 160) || '' }),
+      read: async (id) => { const l = await market?.get(id); if (!l) return null; const { id: _, left, status, expires, fresh, created, updated, ...doc } = l; return doc },
+      // оголошення не копіюються (у кожного — свої кількість, ціна й строк)
+      create: async () => { throw fail('оголошення не копіюються — розмісти своє') },
+      // угоди за ним лишаються: у них знімок умов
+      purge: (id) => market?.remove(id),
+    },
   }
 
   /** власник нової речі чи передачі; o — { kind, id } із запиту (порожньо — сам) */
@@ -100,13 +109,15 @@ export function createContent({ items, guilds, auth, bases, roadmaps, builds, ca
    * Ліміт кількості речей одного виду на людину чи гільдію (налаштування сайту «limits»; 0 — без обмежень). Рахується
    * все, що має власник, разом із базами в кошику. Адміністрація й сам сайт — без лімітів.
    */
-  const LIMIT_WHAT = (t) => ({ base: t('бази'), roadmap: t('роадмапи'), build: t('білди'), calc: t('розрахунки'), marker: t('позначки на мапі'), place: t('записи ресурсів'), event: t('події') })
+  const LIMIT_WHAT = (t) => ({ base: t('бази'), roadmap: t('роадмапи'), build: t('білди'), calc: t('розрахунки'), marker: t('позначки на мапі'), place: t('записи ресурсів'), event: t('події'), listing: t('відкриті оголошення біржі') })
+  /** свій лічильник для ліміту виду (оголошення біржі — лише відкриті); без нього — усе, чим власник володіє */
+  const counters = {}
   async function checkLimit(req, kind, o) {
     if (!o || o.kind === 'site' || req.ctx?.superuser || req.user?.role === 'admin') return
     const limits = await auth.settings.get('limits', null)
     const n = Number(limits?.[o.kind]?.[kind] ?? DEFAULT_LIMITS[o.kind]?.[kind] ?? 0)
     if (!(n > 0)) return
-    const have = (await items.ownedBy(o)).filter((it) => it.kind === kind).length
+    const have = counters[kind] ? await counters[kind](o) : (await items.ownedBy(o)).filter((it) => it.kind === kind).length
     if (have < n) return
     const what = LIMIT_WHAT(req.t)[kind] || kind
     throw o.kind === 'guild'
@@ -169,6 +180,7 @@ export function createContent({ items, guilds, auth, bases, roadmaps, builds, ca
     copyName,
     purge,
     afterPurge: (fn) => afterPurge.push(fn),
+    countWith: (kind, fn) => { counters[kind] = fn },
     /** людину видалено: її особисте — стерти */
     async purgeOwned(o) { for (const it of await items.ownedBy(o)) await purge(it.kind, it.id) },
     /** гільдію видалено: її річ — лідеру особисто (видимість «Особисте», якщо була гільдійською) */

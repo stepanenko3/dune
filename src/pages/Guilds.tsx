@@ -472,8 +472,8 @@ function DeleteGuild({ g }: { g: Guild }) {
 
 /** гільдійське, поділене за видами */
 function OwnContent({ items, onChange }: { items: Item[]; onChange: () => void }) {
-  const groups = useMemo(() => (['base', 'roadmap', 'build', 'calc', 'event', 'marker', 'place'] as const).map((k) => [k, items.filter((i) => i.kind === k)] as const).filter(([, l]) => l.length), [items])
-  const NAME = { base: t('Бази'), roadmap: t('Роадмапи'), build: t('Білди'), calc: t('Розрахунки'), event: t('Події'), marker: t('Позначки на мапі'), place: t('Записи ресурсів') }
+  const groups = useMemo(() => (['base', 'roadmap', 'build', 'calc', 'event', 'listing', 'marker', 'place'] as const).map((k) => [k, items.filter((i) => i.kind === k)] as const).filter(([, l]) => l.length), [items])
+  const NAME = { base: t('Бази'), roadmap: t('Роадмапи'), build: t('Білди'), calc: t('Розрахунки'), event: t('Події'), listing: t('Оголошення біржі'), marker: t('Позначки на мапі'), place: t('Записи ресурсів') }
   if (!groups.length) return <ItemGrid items={[]} empty={t('У гільдії поки нічого нема. Створюючи базу, роадмап чи білд, вибери власником гільдію.')} />
   return (
     <div className="grid gap-3">

@@ -9,20 +9,24 @@
  *   /calcs/public (mine — без сегмента), вкладка гільдії /g/<адреса>/items (головна гільдії — без сегмента); давні ?show=,
  *   ?kind=, ?tab= — переписуються на них; /guilds/open — гільдії, що приймають заявки. У параметрах лишаються фільтри й дані (пошук, порядок, код білду, цілі), /login — вхід поштою (давні /register і /reset — туди ж), /me — налаштування профілю,
  *   /u/<логін> — людина, /u/<логін>/settings — налаштування свого профілю (давнє /me — туди ж), /guilds — гільдії, /g/<адреса> — гільдія, /invite/<код> — запрошення, /admin/<розділ> — панель,
- *   /events — події спільноти (вкладки /events/mine, /events/guild, /events/past), /events/new — нова, /events/<id> — подія, /events/<id>/edit — редагування.
+ *   /events — події спільноти (вкладки /events/mine, /events/guild, /events/past), /events/new — нова, /events/<id> — подія, /events/<id>/edit — редагування,
+ *   /market — біржа (вкладки /market/mine, /market/deals, /market/guild, /market/reports), /market/new — нове оголошення,
+ *   /market/<id> — оголошення, /market/<id>/edit — редагування, /market/item/<id гри> — предмет, /market/deal/<id> — угода.
  */
 import { createContext, useContext } from 'react'
 import { create } from 'zustand'
 
 export type View =
   | 'home' | 'bases' | 'roadmap' | 'map' | 'catalog' | 'calculator' | 'skills' | 'builds' | 'calcs'
-  | 'library' | 'login' | 'account' | 'user' | 'guilds' | 'guild' | 'invite' | 'admin' | 'data' | 'events' | 'world' | 'notfound'
+  | 'library' | 'login' | 'account' | 'user' | 'guilds' | 'guild' | 'invite' | 'admin' | 'data' | 'events' | 'world' | 'market' | 'notfound'
 
 /** вкладки списків (сегмент після розділу); «мої» — без сегмента */
 export const SCOPES = ['mine', 'guild', 'public'] as const
 export const GUILD_TABS = ['home', 'members', 'items', 'events', 'requests', 'invites', 'settings'] as const
 /** вкладки подій (сегмент після /events); «найближчі» — без сегмента */
 export const EVENT_TABS = ['mine', 'guild', 'past'] as const
+/** вкладки біржі (сегмент після /market); «оголошення» — без сегмента */
+export const MARKET_TABS = ['mine', 'deals', 'guild', 'reports'] as const
 
 export function pathOf(v: View, base?: string | null, edit?: boolean, param?: string | null, sub?: string | null): string {
   const p = param ? encodeURIComponent(param) : ''
@@ -45,6 +49,11 @@ export function pathOf(v: View, base?: string | null, edit?: boolean, param?: st
     case 'invite': return `/invite/${p}`
     // подія — param (id чи «new»), редагування — sub «edit»; список — вкладка сегментом
     case 'events': return p ? `/events/${p}${sub === 'edit' && param !== 'new' ? '/edit' : ''}` : `/events${sub && (EVENT_TABS as readonly string[]).includes(sub) ? `/${sub}` : ''}`
+    // біржа: вкладка — sub; предмет (sub «item») і угода (sub «deal») — param; оголошення — param, редагування — sub «edit»
+    case 'market':
+      if (sub === 'item' || sub === 'deal') return `/market/${sub}/${p}`
+      if (p) return `/market/${p}${sub === 'edit' && param !== 'new' ? '/edit' : ''}`
+      return `/market${sub && (MARKET_TABS as readonly string[]).includes(sub) ? `/${sub}` : ''}`
     // карта світу: вибране місце — сегментом (id мапи гри), як вкладка тієї самої сторінки
     case 'world': return sub ? `/world/${encodeURIComponent(sub)}` : '/world'
     // у панелі param — увесь шлях після /admin/ («users», «users/u12…», «game-items/new»), уже закодований
@@ -95,6 +104,16 @@ export function fromLocation(): Loc {
     if ((EVENT_TABS as readonly string[]).includes(word)) return at('events', null, word)
     return at('events', word, act === 'edit' && word !== 'new' ? 'edit' : null)
   }
+  if (seg === 'market') {
+    if (!word) return at('market')
+    if ((MARKET_TABS as readonly string[]).includes(word)) return at('market', null, word)
+    if (word === 'item' || word === 'deal') {
+      let id = ''
+      try { id = act ? decodeURIComponent(act) : '' } catch { /* зіпсована адреса */ }
+      return /^[\w.-]{1,120}$/.test(id) ? at('market', id, word) : at('market')
+    }
+    return at('market', word, act === 'edit' && word !== 'new' ? 'edit' : null)
+  }
   if (seg === 'admin') return at('admin', location.pathname.split('/').slice(2).filter(Boolean).join('/') || null)
   if (seg === 'plan') return at('roadmap') // стара адреса «Плану розвитку»
   if (seg === 'bases') {
@@ -142,7 +161,7 @@ export const setLeaveGuard = (fn: typeof leaveGuard) => { leaveGuard = fn }
 export function leaveFreely(go: () => void) { free = true; try { go() } finally { free = false } }
 const blocked = () => !free && !!leaveGuard && !leaveGuard()
 /** редагування події — окрема сторінка (вкладка sub «edit»): піти з неї — як піти зі сторінки */
-const editsEvent = (v: View, sub: string | null) => v === 'events' && sub === 'edit'
+const editsEvent = (v: View, sub: string | null) => (v === 'events' || v === 'market') && sub === 'edit'
 
 const store = create<S>((set, get) => ({
   ...fromLocation(),

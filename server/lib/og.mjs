@@ -8,12 +8,13 @@ import fs from 'node:fs'
 import { can } from './items.mjs'
 import { STORM_REGIONS } from './storm.mjs'
 import { endsOf, EVENT_TYPE_L, formatOf } from './events.mjs'
+import { goodsOf } from './market.mjs'
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 const cut = (s, n) => { const x = String(s || '').replace(/\s+/g, ' ').trim(); return x.length > n ? x.slice(0, n - 1).trimEnd() + '…' : x }
 const SITE = 'Sandwalkers'
 
-export function createOg({ file, db, items, auth, guilds, thumbs, access, events }) {
+export function createOg({ file, db, items, auth, guilds, thumbs, access, events, market, game, catalog }) {
   // index.html збірки — перечитуємо, лише коли файл змінився (нова збірка)
   let html = '', at = 0
   const page = () => {
@@ -60,6 +61,32 @@ export function createOg({ file, db, items, auth, guilds, thumbs, access, events
       const prizes = ev.prizes.slice(0, 3).map((p) => (p.label ? `${p.label}: ${p.prize}` : p.prize)).join('; ')
       const head = [state, when, `${t(EVENT_TYPE_L[ev.type] || 'Подія')} · ${formatOf(ev, t)}`, ev.server].filter(Boolean).join(' · ')
       return { title: it.title, description: [head, prizes && `${t('Призи')}: ${prizes}`, cut(ev.about, 120)].filter(Boolean).join('. ') }
+    }
+    // біржа: оголошення (вид, предмет мовою запиту, кількість, ціна, де) і предмет (медіана від спільноти)
+    if (a === 'market' && market && game) {
+      const goods = goodsOf(await game.catalog('en'))
+      // назви — мовою запиту; іконка — з нашої медіатеки (вже завантажена — /media/…)
+      const cat = catalog ? await catalog.get(req.lang) : await game.catalog(req.lang)
+      const byId = new Map((cat?.items || []).map((i) => [i.id, i]))
+      const nameOf = (gid) => byId.get(gid)?.loc || goods.get(gid)?.name || gid
+      const icon = (gid) => { const s = byId.get(gid)?.icon; return s && s.startsWith('/') ? s : null }
+      const num = (n) => Number(n).toLocaleString(req.lang || 'uk')
+      if (id === 'item' && c) {
+        const gid = decodeURIComponent(c)
+        if (!goods.has(gid)) return null
+        const st = await market.stats(gid)
+        return { title: `${nameOf(gid)} · ${t('Біржа')}`, description: st.median != null ? t('Медіанна ціна від спільноти: {price} Solari за штуку ({n} угод)', { price: num(st.median), n: st.n }) : t('Хто купує й продає — книга заявок і історія угод на біржі Sandwalkers'), image: icon(gid) }
+      }
+      if (id && !['new', 'mine', 'deals', 'guild', 'reports', 'deal'].includes(id)) {
+        const it = await open('listing', id)
+        const l = it && !it.hidden && (await market.get(id))
+        if (!l) return null
+        const head = `${l.side === 'buy' ? t('Куплю') : t('Продам')}: ${nameOf(l.gid)} ×${num(l.left)}`
+        const price = l.price != null ? t('{price} Solari за штуку', { price: num(l.price) }) : l.barter.length ? `${t('Бартер')}: ${l.barter.map((b) => `${nameOf(b.gid)} ×${num(b.qty)}`).join(', ')}` : ''
+        const state = l.status !== 'open' || l.expires <= Date.now() ? t('Закрите') : ''
+        return { title: head, description: [state, price, [l.region.toUpperCase(), l.world, l.server].filter(Boolean).join(' · '), cut(l.note, 120)].filter(Boolean).join('. '), image: icon(l.gid) }
+      }
+      return { title: t('Біржа'), description: t('Куплю й продам: предмети з гри, ціни від спільноти, угоди з репутацією') }
     }
     if (a === 'u' && id) {
       const u = await auth.byLogin(id)

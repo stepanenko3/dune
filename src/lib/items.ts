@@ -5,7 +5,7 @@
 import { get, patch, post } from './api'
 import { t } from './i18n'
 
-export type Kind = 'base' | 'roadmap' | 'build' | 'calc' | 'marker' | 'place' | 'event'
+export type Kind = 'base' | 'roadmap' | 'build' | 'calc' | 'marker' | 'place' | 'event' | 'listing'
 export type Visibility = 'private' | 'guild' | 'link' | 'public'
 export interface Owner {
   /** site — сам сайт (офіційний вміст від адміністрації) */
@@ -51,6 +51,8 @@ export interface Item {
   deleted?: number | null
   /** подія: коли починається й закінчується */
   when?: { starts: number; ends: number } | null
+  /** оголошення біржі: вид, предмет гри, кількість, залишок, стан */
+  trade?: { side: 'buy' | 'sell'; gid: string; qty: number; left: number; status: 'open' | 'closed' | 'expired' } | null
 }
 
 export const KIND_LABEL: Record<Kind, [string, string]> = {
@@ -61,6 +63,7 @@ export const KIND_LABEL: Record<Kind, [string, string]> = {
   marker: [t('Позначка'), t('Позначки')],
   place: [t('Запис ресурсу'), t('Ресурси')],
   event: [t('Подія'), t('Події')],
+  listing: [t('Оголошення біржі'), t('Оголошення біржі')],
 }
 
 /** адреса речі на сайті */
@@ -71,6 +74,7 @@ export function hrefOf(it: Pick<Item, 'kind' | 'id'>): string {
   if (it.kind === 'calc') return `/calculator?calc=${it.id}`
   if (it.kind === 'marker') return `/map?marker=${it.id}`
   if (it.kind === 'event') return `/events/${it.id}`
+  if (it.kind === 'listing') return `/market/${it.id}`
   return `/map?r=${it.id}`
 }
 

@@ -3,7 +3,7 @@
  * z-[900]: вище за панелі Leaflet (до 800).
  */
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react'
-import { BookOpen, Calculator, CalendarDays, Castle, Map as MapIcon, Monitor, Moon, MoreHorizontal, Sparkles, Sun, TrendingUp } from 'lucide-react'
+import { BookOpen, Calculator, CalendarDays, Castle, Handshake, Map as MapIcon, Monitor, Moon, MoreHorizontal, Sparkles, Sun, TrendingUp } from 'lucide-react'
 import { pathOf, useStore, type View } from '@/store'
 import { useBusyStore } from '@/lib/busy'
 import { DuneLoader } from '@/components/ui/dune-loader'
@@ -11,6 +11,7 @@ import { useTheme, type ThemePref } from '@/lib/theme'
 import { cn } from '@/lib/utils'
 import { Menu } from '@/components/ui/menu'
 import { AccountMenu } from '@/components/AccountMenu'
+import { Notifications } from '@/components/Notifications'
 import { LangMenu } from '@/components/LangMenu'
 import { t } from '@/lib/i18n'
 import { plainClick } from '@/lib/urlState'
@@ -24,6 +25,7 @@ const NAV: { id: View; label: string; icon: typeof Castle; tip: string }[] = [
   { id: 'calcs', label: t('Калькулятор'), icon: Calculator, tip: t('Скільки сировини, крафтів, води й часу на будь-який набір предметів і будівель') },
   { id: 'builds', label: t('Уміння'), icon: Sparkles, tip: t('Планувальник умінь: п’ять шкіл, очки, збірка — посиланням') },
   { id: 'events', label: t('Події'), icon: CalendarDays, tip: t('Події спільноти: бої, турніри, перегони й збори — з часом, призами й реєстрацією') },
+  { id: 'market', label: t('Біржа'), icon: Handshake, tip: t('Куплю й продам: предмети з гри, ціни від спільноти, угоди з репутацією') },
 ]
 
 /** сторінки, що належать розділу меню: планувальник — розділу «Уміння», калькулятор — «Калькулятор» (бібліотеки в меню нема —
@@ -177,6 +179,7 @@ export function Header() {
         <span className="mx-1 h-5 w-px bg-line" aria-hidden />
         <LangMenu />
       </div>
+      <Notifications pill={pill} />
       <AccountMenu pill={pill} />
     </header>
   )

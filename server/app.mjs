@@ -45,6 +45,10 @@ import { createAdminRoutes } from './routes/admin.mjs'
 import { createDocRoutes } from './routes/docs.mjs'
 import { createEvents } from './lib/events.mjs'
 import { createEventRoutes } from './routes/events.mjs'
+import { createMarket } from './lib/market.mjs'
+import { createMarketRoutes } from './routes/market.mjs'
+import { createNotifications } from './lib/notifications.mjs'
+import { createNotificationRoutes } from './routes/notifications.mjs'
 import { createGameData } from './lib/gamedata.mjs'
 import { createI18n, langMiddleware, pickLang } from './lib/i18n.mjs'
 import { createAnnouncements } from './lib/announcements.mjs'
@@ -86,6 +90,8 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   const markers = await createDocs(db, 'markers', 'm')
   // події спільноти: документ, команди й глядачі
   const events = await createEvents(db)
+  // біржа гравців: оголошення, угоди, оцінки, скарги
+  const market = await createMarket(db)
   const auth = await createAuth(db, codeGap !== undefined ? { codeGap } : {})
   // паскеї, двофакторна перевірка й одноразові виклики входу
   const security = await createSecurity(db)
@@ -124,7 +130,9 @@ export async function createApp({ dataDir, serveDist = false, background = true,
     track(items, 'items', revisions, { setAccess: { action: 'access', pre: true, id: (a) => [a[0], String(a[1])], read: item }, moderate: { action: 'moderate', pre: true, id: (a) => [a[0], String(a[1])], read: item }, remove: { action: 'delete', pre: true, id: (a) => [a[0], String(a[1])], read: item } })
   }
   const decrees = createDecrees({ db, auth, guilds })
-  const content = createContent({ items, guilds, auth, bases, roadmaps, builds, calcs, markers, places, events })
+  const content = createContent({ items, guilds, auth, bases, roadmaps, builds, calcs, markers, places, events, market })
+  // ліміт оголошень біржі — лише відкриті (закриті й минулі лишаються в історії, але місця не займають)
+  content.countWith('listing', (o) => market.openCount(o))
   // роадмапи: права й прогрес (у списках — прогрес глядача); річ перейшла до іншого власника будь-яким шляхом
   // («Доступ», видалення гільдії, панель) — права підлаштовуються під нового власника, запис прогресу роадмапу — за ним
   const roadmapService = createRoadmapService({ roadmaps, items, progress })
@@ -142,7 +150,7 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   const thumbs = createThumbs({ dataDir, bases, log, storage })
   await thumbs.ready
   // річ стерто назавжди — разом із нею її знімки й історія змін (там лежали повні документи)
-  const KIND_ENTITY = { base: 'bases', roadmap: 'roadmaps', build: 'builds', calc: 'calcs', marker: 'markers', place: 'places', event: 'events' }
+  const KIND_ENTITY = { base: 'bases', roadmap: 'roadmaps', build: 'builds', calc: 'calcs', marker: 'markers', place: 'places', event: 'events', listing: 'listings' }
   content.afterPurge(async (kind, id) => {
     if (kind === 'base') { try { thumbs.drop(id) } catch { /* знімків могло й не бути */ } }
     if (kind === 'roadmap') await progress.purge(id)
@@ -157,7 +165,9 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   const catalog = createCatalog({ dataDir, game, media })
   const skills = createSkills({ game, media })
   const announcements = await createAnnouncements(db)
-  const hubs = { base: createHub(access), roadmap: createHub(access), place: createHub(access), marker: createHub(access), spice: createHub(access), event: createHub(access) }
+  const hubs = { base: createHub(access), roadmap: createHub(access), place: createHub(access), marker: createHub(access), spice: createHub(access), event: createHub(access), listing: createHub(access), note: createHub(access) }
+  // сповіщення сайту (дзвоник у шапці): живий потік — лише вкладкам цієї людини
+  const notifications = await createNotifications(db, { push: (uid, ev) => hubs.note.emitWhere(ev, (ctx) => ctx.user?.id === uid) })
   // активні поля меланжу — позначки гравців
   const spice = await createSpice({ db, guilds })
   // джерела ігрових даних і журнал змін (індикатор оновлень); без GAMEDATA=1 — null, у базу нічого не пише
@@ -241,6 +251,8 @@ export async function createApp({ dataDir, serveDist = false, background = true,
     await push.forgetUser(uid)
     await spice.forgetUser(uid)
     await events.forgetUser(uid)
+    await market.forgetUser(uid)
+    await notifications.forgetUser(uid)
     await guilds.leaveAll(uid)
     await security.removeUser(uid)
     await auth.remove(uid)
@@ -307,7 +319,15 @@ export async function createApp({ dataDir, serveDist = false, background = true,
     if (/^\/[^/]+\/teams$/.test(req.path)) return next(spamTeams.hit(req.user.id) ? undefined : fail('забагато реєстрацій за годину — спробуй трохи згодом', 429))
     next()
   })
-  const CREATES = [[/^\/api\/bases(\/import|\/generate)?$/, 'base'], [/^\/api\/roadmaps$/, 'roadmap'], [/^\/api\/builds$/, 'build'], [/^\/api\/calcs$/, 'calc'], [/^\/api\/markers$/, 'marker'], [/^\/api\/places$/, 'place'], [/^\/api\/events$/, 'event']]
+  // біржа: нових оголошень — 30 на годину, пропозицій — 60, повідомлень — 120, скарг — 30 (на людину)
+  const spamMarket = { listing: createLimiter({ max: 30, ms: 60 * 60_000 }), deal: createLimiter({ max: 60, ms: 60 * 60_000 }), message: createLimiter({ max: 120, ms: 60 * 60_000 }), report: createLimiter({ max: 30, ms: 60 * 60_000 }) }
+  app.use('/api/market', (req, res, next) => {
+    if (req.method !== 'POST' || !req.user) return next()
+    const k = req.path === '/' ? 'listing' : /^\/[^/]+\/deals$/.test(req.path) ? 'deal' : /^\/deals\/[^/]+\/messages$/.test(req.path) ? 'message' : req.path === '/reports' ? 'report' : null
+    if (!k) return next()
+    next(spamMarket[k].hit(req.user.id) ? undefined : fail(k === 'message' ? 'забагато повідомлень за годину — спробуй трохи згодом' : 'забагато за годину — спробуй трохи згодом', 429))
+  })
+  const CREATES = [[/^\/api\/bases(\/import|\/generate)?$/, 'base'], [/^\/api\/roadmaps$/, 'roadmap'], [/^\/api\/builds$/, 'build'], [/^\/api\/calcs$/, 'calc'], [/^\/api\/markers$/, 'marker'], [/^\/api\/places$/, 'place'], [/^\/api\/events$/, 'event'], [/^\/api\/market$/, 'listing']]
   app.use('/api', (req, res, next) => Promise.resolve().then(async () => {
     if (!req.user) return next()
     const path = '/api' + req.path
@@ -335,7 +355,7 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   app.use(createGuildRoutes({ auth, guilds, items, deleteGuild, decrees }))
   app.use(createItemRoutes({ items, content, hubs, auth, roadmapService, progress, revisions }))
   app.use(createSiteRoutes({ i18n, announcements, auth }))
-  app.use(createAdminRoutes({ db, auth, guilds, items, content, bases, roadmaps, builds, calcs, markers, places, events, game, i18n, announcements, catalog, skills, removeUser, deleteGuild, mapData, roles, revisions, cron, thumbs, storage }))
+  app.use(createAdminRoutes({ db, auth, guilds, items, content, bases, roadmaps, builds, calcs, markers, places, events, market, game, i18n, announcements, catalog, skills, removeUser, deleteGuild, mapData, roles, revisions, cron, thumbs, storage }))
   app.use(createPlacesRoutes({ places, mapData, items, content, hub: hubs.place }))
   app.use(createSpiceRoutes({ spice, mapData, hub: hubs.spice }))
   app.use(createMapRoutes({ mapData, game, gamemap }))
@@ -352,6 +372,8 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   app.use(createDocRoutes({ kind: 'calc', path: 'calcs', store: calcs, clean: cleanCalc, items, content, label: 'розрахунку' }))
   app.use(createDocRoutes({ kind: 'marker', path: 'markers', store: markers, clean: (d) => cleanMarker(d, mapData), items, content, hub: hubs.marker, label: 'позначки' }))
   app.use(createEventRoutes({ events, items, content, hub: hubs.event, mapData, db }))
+  app.use(createMarketRoutes({ market, items, content, hub: hubs.listing, mapData, db, game, notifications, access, auth }))
+  app.use(createNotificationRoutes({ notifications, hub: hubs.note }))
   app.use(createDecreeRoutes({ decrees, roles }))
   app.use(createPushRoutes({ push }))
   app.use('/versions', express.static(path.join(root, 'versions'), { maxAge: '1d' }))
@@ -374,9 +396,9 @@ export async function createApp({ dataDir, serveDist = false, background = true,
     app.use('/assets', express.static(path.join(dist, 'assets'), { maxAge: '1y', immutable: true, index: false }), (req, res) => res.status(404).end())
     app.use(express.static(dist, { maxAge: '1d', index: false }))
     // сторінка сайту: відомі розділи — 200; невідома адреса — та сама сторінка (вона скаже «не знайдено»), але з кодом 404
-    const KNOWN = new Set(['', 'bases', 'roadmap', 'map', 'catalog', 'calculator', 'skills', 'builds', 'calcs', 'library', 'login', 'register', 'reset', 'me', 'account', 'u', 'g', 'guilds', 'invite', 'admin', 'plan', 'dd', 'data', 'events', 'world'])
+    const KNOWN = new Set(['', 'bases', 'roadmap', 'map', 'catalog', 'calculator', 'skills', 'builds', 'calcs', 'library', 'login', 'register', 'reset', 'me', 'account', 'u', 'g', 'guilds', 'invite', 'admin', 'plan', 'dd', 'data', 'events', 'world', 'market'])
     // у сторінку — заголовок, опис і картинка того, на що веде адреса (прев'ю посилань у Discord, Telegram)
-    const og = createOg({ file: path.join(dist, 'index.html'), db, items, auth, guilds, thumbs, access, events })
+    const og = createOg({ file: path.join(dist, 'index.html'), db, items, auth, guilds, thumbs, access, events, market, game, catalog })
     app.get('*', (req, res, next) => Promise.resolve().then(async () => {
       const seg = req.path.split('/')[1] || ''
       res.status(KNOWN.has(seg) ? 200 : 404).set({ 'cache-control': 'no-cache', 'content-type': 'text/html; charset=utf-8' }).send(await og.render(req))
@@ -438,8 +460,23 @@ export async function createApp({ dataDir, serveDist = false, background = true,
       const auditDays = Number(await auth.settings.get('auditDays', 180)) || 0, revDays = Number(await auth.settings.get('revisionDays', 365)) || 0
       const s3 = auditDays ? await db.run('DELETE FROM audit WHERE at < ?', now - auditDays * 86400_000) : { changes: 0 }
       const s4 = revDays ? await db.run('DELETE FROM revisions WHERE at < ?', now - revDays * 86400_000) : { changes: 0 }
-      say(`сеансів: ${s1.changes}, кодів: ${s2.changes}, запрошень: ${s5.changes}, заявок: ${s6.changes}, подій журналу: ${s3.changes}, змін в історії: ${s4.changes}`)
+      const s7 = await notifications.purgeOld(now)
+      say(`сеансів: ${s1.changes}, кодів: ${s2.changes}, запрошень: ${s5.changes}, заявок: ${s6.changes}, подій журналу: ${s3.changes}, змін в історії: ${s4.changes}, сповіщень: ${s7}`)
     } })
+  // біржа: оголошення, чий строк минув, — «Закінчилось», автору — сповіщення з «Продовжити»
+  /** оголошення, чий строк минув, — «Закінчилось», автору — сповіщення з «Продовжити» (фонова задача; тести кличуть напряму) */
+  const marketExpire = async () => {
+    const gone = await market.expire()
+    for (const l of gone) {
+      const it = await items.get('listing', l.id)
+      const who = it && (it.owner_kind === 'user' ? it.owner_id : it.created_by)
+      if (who) await notifications.notify(who, 'market.expired', { listing: l.id, gid: l.gid, side: l.side })
+      if (it) await hubs.listing.emit({ op: 'put', kind: 'listing', id: l.id }, it)
+    }
+    return gone
+  }
+  await cron.register('market-expire', { name: 'Біржа: строки оголошень', description: 'Закриває оголошення, чий строк минув, і сповіщає авторів', schedule: '*/5 * * * *',
+    run: async (say) => say(`закінчилось оголошень: ${(await marketExpire()).length}`) })
   // (background: false — без мережі й фонових задач, для тестів)
   if (background) {
     cron.start()
@@ -451,6 +488,9 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   }
 
   app.locals.spice = spice
+  app.locals.market = market
+  app.locals.marketExpire = marketExpire
+  app.locals.notifications = notifications
   app.locals.storage = storage
   app.locals.close = async () => { cron.stop(); push.close(); if (!given) await db.close() }
   return app

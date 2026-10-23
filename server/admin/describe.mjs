@@ -64,6 +64,22 @@ const AUDIT = [
   ['DELETE /api/events/:id/teams/:tid', 'Команда знялась з події'],
   ['POST /api/events/:id/teams/:tid/join', 'Приєднання до команди події'],
   ['POST /api/events/:id/teams/:tid/leave', 'Вихід із команди події'],
+  ['POST /api/market', 'Нове оголошення біржі'],
+  ['PUT /api/market/:id', 'Зміна оголошення біржі'],
+  ['DELETE /api/market/:id', 'Видалення оголошення біржі'],
+  ['POST /api/market/:id/close', 'Оголошення біржі закрито'],
+  ['POST /api/market/:id/renew', 'Оголошення біржі продовжено'],
+  ['POST /api/market/:id/deals', 'Пропозиція угоди на біржі'],
+  ['PATCH /api/market/deals/:did', 'Зміна пропозиції угоди'],
+  ['POST /api/market/deals/:did/accept', 'Угоду прийнято'],
+  ['POST /api/market/deals/:did/decline', 'Пропозицію відхилено'],
+  ['POST /api/market/deals/:did/cancel', 'Угоду скасовано'],
+  ['POST /api/market/deals/:did/done', 'Угоду завершено'],
+  ['POST /api/market/deals/:did/messages', 'Повідомлення в угоді'],
+  ['POST /api/market/deals/:did/rate', 'Оцінка угоди'],
+  ['POST /api/market/reports', 'Скарга на біржі'],
+  ['POST /api/market/reports/:rid/resolve', 'Рішення за скаргою біржі'],
+  ['POST /api/notifications/read', 'Сповіщення прочитано'],
   ['PATCH /api/items/:kind/:id/access', 'Зміна доступу', ['item.access']],
   ['POST /api/items/:kind/:id/copy', 'Копія собі'],
   ['POST /api/items/:kind/:id/star', 'Зірка'],
@@ -111,7 +127,7 @@ export const REVISION_ACTIONS = {
 export const REVISION_TONES = { create: 'success', update: 'info', access: 'info', 'access-settings': 'info', 'progress-reset': 'warning', delete: 'critical', trash: 'warning', ban: 'critical', restore: 'info', unban: 'info' }
 
 /** вид речі → розділ панелі */
-const KIND_RES = { base: 'bases', build: 'builds', roadmap: 'roadmaps', calc: 'calcs', marker: 'markers', place: 'places', event: 'events' }
+const KIND_RES = { base: 'bases', build: 'builds', roadmap: 'roadmaps', calc: 'calcs', marker: 'markers', place: 'places', event: 'events', listing: 'listings' }
 const DOC_RES = new Set(['bases', 'builds', 'roadmaps', 'calcs', 'markers', 'places', 'events'])
 
 const parse = (s) => { try { return JSON.parse(s) } catch { return null } }
@@ -143,6 +159,7 @@ export function subjectOf(row) {
     case 'me': return row.actor ? ['users', row.actor] : null
     case 'auth': return p[2] === 'verify' && (row.actor || created) ? ['users', row.actor || created] : null
     case 'decree': return ['settings']
+    case 'market': return p[2] && !['deals', 'reports'].includes(p[2]) ? ['listings', p[2]] : created ? ['listings', created] : null
     default:
       if (!DOC_RES.has(p[1])) return null
       if (p[2] && p[2] !== 'import') return [p[1], p[2]]

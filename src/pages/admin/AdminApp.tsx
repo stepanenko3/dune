@@ -10,7 +10,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Bell, BrickWall, Calculator, CalendarDays, Castle, Database, Factory, FlaskConical, Gem, GitCompare, History, Inbox, KeyRound, Languages, LayoutDashboard, Library, ListChecks,
   MapPin, Megaphone, Menu, MonitorSmartphone, Package, Route, ScrollText, Settings, Shield, ShieldCheck, SlidersHorizontal, Sparkles, Star, Swords,
-  Ticket, Timer, UserRoundCheck, Users, ArrowLeft, Home, type LucideIcon, Fingerprint } from 'lucide-react'
+  Ticket, Timer, UserRoundCheck, Users, ArrowLeft, ArrowLeftRight, Home, type LucideIcon, Fingerprint } from 'lucide-react'
 import { SnBreadcrumb, SnBreadcrumbItem, SnBreadcrumbLink, SnBreadcrumbList, SnBreadcrumbPage, SnBreadcrumbSeparator, SnSheet } from '@/components/sn'
 import '@/components/sn/admin'
 import { Loading, PageError } from '@/components/states'
@@ -34,7 +34,7 @@ const ICONS: Record<string, LucideIcon> = {
   users: Users, fingerprint: Fingerprint, 'monitor-smartphone': MonitorSmartphone, 'key-round': KeyRound, shield: Shield, 'shield-check': ShieldCheck, 'user-round-check': UserRoundCheck,
   ticket: Ticket, inbox: Inbox, library: Library, castle: Castle, route: Route, swords: Swords, 'map-pin': MapPin, gem: Gem, history: History, star: Star,
   package: Package, factory: Factory, 'flask-conical': FlaskConical, 'brick-wall': BrickWall, sparkles: Sparkles, languages: Languages, megaphone: Megaphone,
-  calculator: Calculator, 'calendar-days': CalendarDays, settings: Settings, 'scroll-text': ScrollText, bell: Bell, database: Database, 'git-compare': GitCompare, timer: Timer, 'list-checks': ListChecks,
+  calculator: Calculator, 'calendar-days': CalendarDays, 'arrow-left-right': ArrowLeftRight, settings: Settings, 'scroll-text': ScrollText, bell: Bell, database: Database, 'git-compare': GitCompare, timer: Timer, 'list-checks': ListChecks,
 }
 const GROUPS = ['Люди', 'Гільдії', 'Вміст', 'Гра', 'Сайт']
 /** група в адресі (/admin/group/people) — словом, однаковим усіма мовами */

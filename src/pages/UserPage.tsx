@@ -9,6 +9,7 @@ import { locale, t, T } from '@/lib/i18n'
 import { Button } from '@/components/ui/button'
 import { Avatar, GuildTag } from '@/components/access/Access'
 import { ItemGrid } from '@/components/access/ItemCard'
+import { UserMarket } from '@/components/market/UserMarket'
 import { PageHeader } from '@/components/PageHeader'
 import { Empty, Loading, PageError } from '@/components/states'
 import { plainClick } from '@/lib/urlState'
@@ -83,6 +84,7 @@ export function UserPage() {
             <Empty icon={Inbox} title={t('Нічого публічного поки нема')} description={t('Тут з’являться бази, білди, роадмапи й розрахунки, які ця людина виставить для всіх.')} />
           )}
         />
+        <UserMarket login={u.login} />
       </div>
     </div>
   )

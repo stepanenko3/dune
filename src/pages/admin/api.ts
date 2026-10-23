@@ -229,7 +229,7 @@ export function siteHref(r: Resource, row: Record<string, unknown>): string | nu
   if (l.invite) return `/invite/${row[l.invite]}`
   const kind = l.kind === 'kind' ? String(row.kind) : l.kind
   const id = String(row.id)
-  return ({ base: `/bases/${id}`, roadmap: `/roadmap/${id}`, build: `/skills?build=${id}`, marker: `/map?marker=${id}`, place: `/map`, event: `/events/${id}` } as Record<string, string>)[kind] ?? null
+  return ({ base: `/bases/${id}`, roadmap: `/roadmap/${id}`, build: `/skills?build=${id}`, marker: `/map?marker=${id}`, place: `/map`, event: `/events/${id}`, listing: `/market/${id}` } as Record<string, string>)[kind] ?? null
 }
 
 export { put }

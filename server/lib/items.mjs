@@ -13,7 +13,7 @@ import { localSummary, summaryText } from './roadmap.mjs'
 import { rightsOf } from './roadmap-access.mjs'
 import { fail, fill } from './util.mjs'
 
-export const KINDS = ['base', 'roadmap', 'build', 'calc', 'marker', 'place', 'event']
+export const KINDS = ['base', 'roadmap', 'build', 'calc', 'marker', 'place', 'event', 'listing']
 export const LIBRARY_KINDS = ['base', 'build', 'roadmap', 'calc']
 export const VIS = ['private', 'guild', 'link', 'public']
 
@@ -106,6 +106,11 @@ export async function createItems(db) {
       const e = pre ? pre.events.get(it.id) : await db.get('SELECT starts, ends FROM events WHERE id = ?', it.id).catch(() => null)
       out.when = e ? { starts: e.starts, ends: e.ends } : null
     }
+    // оголошення біржі: що (вид, предмет гри, кількість) — картки пишуть це мовою людини
+    if (it.kind === 'listing') {
+      const l = pre ? pre.listings.get(it.id) : await db.get('SELECT side, gid, qty, left_qty, status FROM market_listings WHERE id = ?', it.id).catch(() => null)
+      out.trade = l ? { side: l.side, gid: l.gid, qty: Number(l.qty), left: Number(l.left_qty), status: l.status } : null
+    }
     // «змінювати», «копіювати (куди)» й «бачити історію» — за правами самої речі (вікно «Доступ»), решта — за власником
     if (ctx) { const rt = rightsOf(ctx, it); out.can = { ...can(ctx, it), edit: rt.edit, copy: rt.copy, copyTo: rt.copyTo, history: rt.history } }
     if (starred) out.starred = starred.has(`${it.kind}:${it.id}`)
@@ -127,15 +132,17 @@ export async function createItems(db) {
     const gids = [...new Set(rows.filter((r) => r.owner_kind === 'guild').map((r) => r.owner_id))]
     const bids = rows.filter((r) => r.kind === 'base').map((r) => r.id)
     const eids = rows.filter((r) => r.kind === 'event').map((r) => r.id)
-    const [us, gs, bs, es, site, progress] = await Promise.all([
+    const lids = rows.filter((r) => r.kind === 'listing').map((r) => r.id)
+    const [us, gs, bs, es, ls, site, progress] = await Promise.all([
       byIds('SELECT id, login, name, color FROM users WHERE id IN (?)', uids),
       byIds('SELECT id, slug, name, tag, color FROM guilds WHERE id IN (?)', gids),
       byIds('SELECT id, deleted FROM bases WHERE id IN (?)', bids).catch(() => []),
       byIds('SELECT id, starts, ends FROM events WHERE id IN (?)', eids).catch(() => []),
+      byIds('SELECT id, side, gid, qty, left_qty, status FROM market_listings WHERE id IN (?)', lids).catch(() => []),
       rows.some((r) => r.owner_kind === 'site') ? siteName() : 'Sandwalkers',
       roadmapProgress && rows.some((r) => r.kind === 'roadmap') ? roadmapProgress(rows.filter((r) => r.kind === 'roadmap'), ctx) : null,
     ])
-    const pre = { users: new Map(us.map((u) => [u.id, u])), guilds: new Map(gs.map((g) => [g.id, g])), deleted: new Map(bs.map((b) => [b.id, b.deleted])), events: new Map(es.map((e) => [e.id, e])), site, progress }
+    const pre = { users: new Map(us.map((u) => [u.id, u])), guilds: new Map(gs.map((g) => [g.id, g])), deleted: new Map(bs.map((b) => [b.id, b.deleted])), events: new Map(es.map((e) => [e.id, e])), listings: new Map(ls.map((l) => [l.id, l])), site, progress }
     return Promise.all(rows.map((it) => view(it, ctx, starred, pre)))
   }
   /** прогрес роадмапів для списків: (рядки, ctx) → Map(id → { n, done }); ставить app.mjs (lib/roadmap-progress) */

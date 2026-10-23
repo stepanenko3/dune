@@ -28,13 +28,15 @@ const pinIcon = (k: PinKind) => L.divIcon({ className: `event-pin event-pin--${k
 /** адреса мапи сайту з цією точкою (мапа підлітає й ставить мітку) */
 export const mapHref = (p: Point) => `/map?m=${p.map}${p.layout != null ? `&w=${p.layout}` : ''}&at=${p.x},${p.y}`
 
-export default function EventMap({ arena, watch, picking = null, onPick, className }: {
+export default function EventMap({ arena, watch, picking = null, onPick, className, labels }: {
   arena: Point | null
   watch: Point | null
   /** яку точку ставить клік (редактор); null — лише перегляд */
   picking?: PinKind | null
   onPick?: (k: PinKind, p: Point) => void
   className?: string
+  /** свої підписи міток (біржа: «Місце передачі») */
+  labels?: Partial<Record<PinKind, string>>
 }) {
   const [resp, setResp] = useState<SourceResp | null>(null)
   const [failed, setFailed] = useState(false)
@@ -96,7 +98,7 @@ export default function EventMap({ arena, watch, picking = null, onPick, classNa
     const map = mapRef.current, g = pins.current
     if (!map || !g || !def) return
     g.clearLayers()
-    for (const [k, p] of here) L.marker([p.x, p.y], { icon: pinIcon(k), keyboard: false, title: PIN_LABEL[k] }).addTo(g)
+    for (const [k, p] of here) L.marker([p.x, p.y], { icon: pinIcon(k), keyboard: false, title: labels?.[k] ?? PIN_LABEL[k] }).addTo(g)
     // у редакторі мапа не стрибає за кожним кліком — лише вперше, до точок, що вже були (точок нема — лишається вся мапа)
     if (edit && !here.length) flown.current = def.id
     if (!here.length || (edit && flown.current === def.id)) return
@@ -112,7 +114,7 @@ export default function EventMap({ arena, watch, picking = null, onPick, classNa
       {maps.length > 1 && resp && (
         <Seg size="sm" label={t('Мапа')} value={def?.id ?? ''} onChange={(v) => { flown.current = ''; setMapId(v) }} items={maps.map((m) => ({ id: m.id, label: mapName(resp.labels, m.id) }))} />
       )}
-      <div ref={box} className={cn('map-box overflow-hidden rounded-lg border border-line', edit && picking && 'picking', className)} role="img" aria-label={here.map(([k]) => PIN_LABEL[k]).join(', ') || t('Мапа')} />
+      <div ref={box} className={cn('map-box overflow-hidden rounded-lg border border-line', edit && picking && 'picking', className)} role="img" aria-label={here.map(([k]) => labels?.[k] ?? PIN_LABEL[k]).join(', ') || t('Мапа')} />
     </div>
   )
 }

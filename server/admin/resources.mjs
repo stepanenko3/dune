@@ -16,7 +16,7 @@ import { AUDIT_OPTIONS, REVISION_ACTIONS, REVISION_TONES, STATUS_OPTIONS, STATUS
 
 const opts = (list, labels = {}) => list.map((v) => ({ value: v, label: labels[v] ?? v }))
 const GROLE_L = { leader: 'Лідер', officer: 'Офіцер', member: 'Учасник', recruit: 'Новобранець' }
-const KIND_L = { base: 'База', roadmap: 'Роадмап', build: 'Білд', calc: 'Розрахунок', marker: 'Позначка', place: 'Ресурс', event: 'Подія' }
+const KIND_L = { base: 'База', roadmap: 'Роадмап', build: 'Білд', calc: 'Розрахунок', marker: 'Позначка', place: 'Ресурс', event: 'Подія', listing: 'Оголошення біржі' }
 const TEAM_STATUS_L = { pending: 'Чекає рішення', confirmed: 'Бере участь', reserve: 'У резерві', rejected: 'Відхилено' }
 const VIS_L = { private: 'Особисте', guild: 'Гільдійське', link: 'За посиланням', public: 'Публічне' }
 const OWNER_L = { user: 'Людина', guild: 'Гільдія', site: 'Сайт' }
@@ -707,6 +707,24 @@ export function buildResources(d) {
       // гравців із сайту — разом із командою (інакше вони «вже в команді» події, якої нема)
       hooks: { remove: (id) => events.removeTeam(id) },
     },
+    // оголошення біржі: змінює автор на сайті; тут — перегляд, власник і видимість, видалення (без угод)
+    {
+      ...docResource({
+        name: 'listings', kind: 'listing', table: 'market_listings', label: 'Оголошення біржі', one: 'Оголошення', icon: 'arrow-left-right',
+        about: 'Оголошення біржі «Куплю / Продам». Зміст змінює автор на сайті; скарги й заборони — у черзі «Скарги» на біржі.',
+        extra: [
+          { key: 'side', label: 'Вид', type: 'select', options: opts(['buy', 'sell'], { buy: 'Куплю', sell: 'Продам' }), sql: 't.side', readonly: true, filter: true },
+          { key: 'gid', label: 'Предмет (код у грі)', type: 'text', sql: 't.gid', readonly: true, search: true, mono: true },
+          { key: 'price', label: 'Ціна за штуку', type: 'int', sql: 't.price', readonly: true, sort: true },
+          { key: 'left_qty', label: 'Лишилось', type: 'int', sql: 't.left_qty', readonly: true, sort: true },
+          { key: 'status', label: 'Стан', type: 'select', options: opts(['open', 'closed', 'expired'], { open: 'Відкрите', closed: 'Закрите', expired: 'Закінчилось' }), sql: 't.status', readonly: true, filter: true, tones: { open: 'success', closed: 'neutral', expired: 'warning' } },
+          { key: 'expires', label: 'Діє до', type: 'datetime', sql: 't.expires', readonly: true, sort: true },
+        ],
+        clean: (doc) => doc,
+        write: async () => { throw fail('оголошення змінює автор на сайті') },
+      }),
+      create: false,
+    },
     {
       name: 'base-history', label: 'Версії баз', one: 'Версія бази', group: 'Вміст', icon: 'history', table: 'base_history', key: 'hid', create: false, sort: 'hid DESC',
       about: 'Попередні версії баз. Відкрий версію — побачиш, що змінилось у наступній; її можна відновити.',
@@ -747,7 +765,7 @@ export function buildResources(d) {
           const keys = rows.map((r) => [r.kind, r.id])
           const got = keys.length ? await db.all(`SELECT kind, id, title FROM items WHERE ${keys.map(() => '(kind = ? AND id = ?)').join(' OR ')}`, ...keys.flat()) : []
           const m = new Map(got.map((x) => [`${x.kind}\n${x.id}`, x.title]))
-          const RES = { base: 'bases', roadmap: 'roadmaps', build: 'builds', calc: 'calcs', marker: 'markers', place: 'places', event: 'events' }
+          const RES = { base: 'bases', roadmap: 'roadmaps', build: 'builds', calc: 'calcs', marker: 'markers', place: 'places', event: 'events', listing: 'listings' }
           for (const r of rows) {
             const k = `${r.kind}\n${r.id}`
             r.id__label = m.has(k) ? m.get(k) || r.id : r.id
