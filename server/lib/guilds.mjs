@@ -10,9 +10,23 @@
 import crypto from 'node:crypto'
 import { color, fail, newId, paletteFor, plain, slugify, withLock } from './util.mjs'
 import { HOUSES } from './decree.mjs'
+import { cardProfile, cleanAnswers, cleanProfile, cleanTz, readProfile } from './guild-profile.mjs'
 
 export const RANK = { recruit: 1, member: 2, officer: 3, leader: 4 }
 export const GUILD_ROLES = Object.keys(RANK)
+/** стани заявки: чекає; прийнята; відхилена (з причиною); відкликана кандидатом; закрита (вступив деінде чи задовго чекала) */
+export const REQUEST_STATUS = ['pending', 'accepted', 'rejected', 'withdrawn', 'closed']
+
+/**
+ * що людина (контекст запиту: ctx.user, ctx.ranks) може з гільдією: member — бачить гільдійське; review — розглядає
+ * заявки й запрошує; profile — міняє картку гільдії, набір і анкету; identity — назву, тег, колір, дім; remove — видаляє.
+ * Адміністратор сайту — як лідер.
+ */
+export function guildCan(ctx, g) {
+  const admin = ctx?.user?.role === 'admin' || !!ctx?.superuser
+  const rank = admin ? RANK.leader : (g && ctx?.ranks?.get(g.id)) || 0
+  return { rank, member: rank >= RANK.recruit, review: rank >= RANK.officer, profile: rank >= RANK.officer, identity: rank >= RANK.leader, remove: rank >= RANK.leader }
+}
 const TAG_RE = /^[\p{L}\p{N}]{2,5}$/u
 
 function cleanGuild(p, partial) {
@@ -57,6 +71,21 @@ export async function createGuilds(db) {
   await db.addColumn('invites', 'role', 'TEXT')
   // дім гільдії в Ландсрааді (lib/decree.mjs)
   await db.addColumn('guilds', 'house', 'TEXT')
+  // картка гільдії для каталогу й набору (lib/guild-profile.mjs): JSON, порожньо — усе за замовчуванням
+  await db.addColumn('guilds', 'profile', 'TEXT')
+  // заявки — з анкетою й рішенням (давні рядки — чекають); коментарі офіцерів до заявки — окремо
+  await db.addColumn('requests', 'status', "TEXT NOT NULL DEFAULT 'pending'")
+  await db.addColumn('requests', 'answers', 'TEXT')
+  await db.addColumn('requests', 'tz', 'TEXT')
+  await db.addColumn('requests', 'reason', 'TEXT')
+  await db.addColumn('requests', 'decided', 'BIGINT')
+  await db.addColumn('requests', 'decided_by', 'TEXT')
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS request_comments (
+      id TEXT PRIMARY KEY, guild_id TEXT NOT NULL, user_id TEXT NOT NULL, by_user TEXT, text TEXT NOT NULL, created BIGINT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS request_comments_by_guild ON request_comments (guild_id, user_id);
+  `)
   /** назва й тег — неповторні (без різниці великих і малих літер): «[SW] Sandwalkers» не підробити другою гільдією */
   async function assertUnique(c, self = '') {
     if (c.name && (await db.get('SELECT id FROM guilds WHERE lower(name) = ? AND id <> ?', c.name.toLowerCase(), self))) throw fail('гільдія з такою назвою вже є', 409)
@@ -100,13 +129,30 @@ export async function createGuilds(db) {
   }
   await keepOne()
   await db.exec('CREATE UNIQUE INDEX IF NOT EXISTS members_one_guild ON members (user_id); DROP INDEX IF EXISTS members_by_user;')
-  // заявки тих, хто вже в гільдії, — зайві
-  await db.run('DELETE FROM requests WHERE user_id IN (SELECT user_id FROM members)')
+  // чекаючі заявки тих, хто вже в гільдії, — зайві (розглянуті лишаються історією)
+  await db.run("DELETE FROM requests WHERE status = 'pending' AND user_id IN (SELECT user_id FROM members)")
   // основна гільдія = гільдія людини
   await db.run(`UPDATE users SET main_guild = (SELECT m.guild_id FROM members m WHERE m.user_id = users.id)
     WHERE COALESCE(main_guild, '') <> COALESCE((SELECT m.guild_id FROM members m WHERE m.user_id = users.id), '')`)
   /** users.main_guild — за членством (гільдія людини чи порожньо) */
   const syncMain = (uid) => db.run('UPDATE users SET main_guild = (SELECT m.guild_id FROM members m WHERE m.user_id = users.id) WHERE id = ?', uid)
+  /** людина вступила в гільдію gid (null — створила свою): заявка туди — прийнята, решта чекаючих — закриті */
+  async function closeRequests(uid, gid, by = null) {
+    const now = Date.now()
+    if (gid) await db.run("UPDATE requests SET status = 'accepted', decided = ?, decided_by = ?, reason = NULL WHERE guild_id = ? AND user_id = ? AND status = 'pending'", now, by, gid, uid)
+    await db.run("UPDATE requests SET status = 'closed', decided = ? WHERE user_id = ? AND status = 'pending'", now, uid)
+  }
+  /** заявка для клієнта (рядок БД → об'єкт) */
+  const reqRow = (r) => {
+    if (!r) return null
+    let answers = {}
+    try { answers = r.answers ? JSON.parse(r.answers) : {} } catch { answers = {} }
+    return {
+      guild_id: r.guild_id, user_id: r.user_id, note: r.note || '', created: Number(r.created), status: r.status || 'pending', answers, tz: r.tz || null,
+      reason: r.reason || '', decided: r.decided == null ? null : Number(r.decided), decided_by: r.decided_by || null, decided_name: r.decided_name || null,
+      login: r.login, name: r.name, nick: r.nick, color: r.color,
+    }
+  }
 
   // спершу за id, потім за адресою: адреса, що збіглася з чужим id, не підмінить ту гільдію
   const get = async (idOrSlug) => (idOrSlug ? (await db.get('SELECT * FROM guilds WHERE id = ?', idOrSlug)) || (await db.get('SELECT * FROM guilds WHERE slug = ?', idOrSlug)) || null : null)
@@ -150,7 +196,7 @@ export async function createGuilds(db) {
           if (await current(userId)) throw fail('Спершу вийди з поточної гільдії', 409)
           throw e
         }
-        await db.run('DELETE FROM requests WHERE user_id = ?', userId)
+        await closeRequests(userId, null)
         await syncMain(userId)
       }
       return get(gid)
@@ -167,6 +213,7 @@ export async function createGuilds(db) {
     async remove(id) {
       await db.run('DELETE FROM invites WHERE guild_id = ?', id)
       await db.run('DELETE FROM requests WHERE guild_id = ?', id)
+      await db.run('DELETE FROM request_comments WHERE guild_id = ?', id)
       await db.run('DELETE FROM members WHERE guild_id = ?', id)
       await db.run('DELETE FROM guilds WHERE id = ?', id)
       await db.run('UPDATE users SET main_guild = NULL WHERE main_guild = ?', id)
@@ -175,7 +222,28 @@ export async function createGuilds(db) {
       const like = `%${String(text).trim().toLowerCase()}%`
       const rows = await db.all(`SELECT g.*, (SELECT COUNT(*) FROM members m WHERE m.guild_id = g.id) AS n FROM guilds g
         WHERE (lower(g.name) LIKE ? OR lower(g.tag) LIKE ? OR lower(g.about) LIKE ?) ${open ? 'AND g.open = 1' : ''} ORDER BY g.name`, like, like, like)
-      return Promise.all(rows.map((g) => view(g, g.n)))
+      return Promise.all(rows.map(async (g) => ({ ...(await view(g, g.n)), profile: cardProfile(readProfile(g.profile)) })))
+    },
+
+    // ---------- картка гільдії ----------
+    /** повна картка (з видимістю блоків і анкетою); що з неї бачить глядач — profileFor */
+    profile: async (gid) => readProfile((await db.get('SELECT profile FROM guilds WHERE id = ?', gid))?.profile),
+    /** змінити картку: patch — частина, решта лишається; герб — лише через setEmblem */
+    async setProfile(gid, patch) {
+      const cur = await api.profile(gid)
+      const { emblem, ...rest } = patch && typeof patch === 'object' ? patch : {}
+      // видимість і посилання — частинами (змінили один блок — решта лишається)
+      if (rest.show && typeof rest.show === 'object') rest.show = { ...cur.show, ...rest.show }
+      if (rest.links && typeof rest.links === 'object') rest.links = { ...cur.links, ...rest.links }
+      const next = cleanProfile({ ...rest, emblem: cur.emblem }, cur)
+      await db.run('UPDATE guilds SET profile = ? WHERE id = ?', JSON.stringify(next), gid)
+      return next
+    },
+    async setEmblem(gid, url) {
+      const cur = await api.profile(gid)
+      const next = cleanProfile({ emblem: url }, cur)
+      await db.run('UPDATE guilds SET profile = ? WHERE id = ?', JSON.stringify(next), gid)
+      return next
     },
 
     // ---------- учасники ----------
@@ -195,7 +263,7 @@ export async function createGuilds(db) {
     ranks: async (uid) => new Map((uid ? await db.all('SELECT guild_id, role FROM members WHERE user_id = ?', uid) : []).map((m) => [m.guild_id, RANK[m.role] || 0])),
     /** вступ: лише в одну гільдію і лише якщо є місце (cap — ліміт сайту); уже учаснику — міняє роль */
     addMember: (gid, uid, role = 'member', opts = {}) => withLock(`guild:${gid}`, () => addMemberNow(gid, uid, role, opts)),
-    async _addMember(gid, uid, role = 'member', { cap } = {}) {
+    async _addMember(gid, uid, role = 'member', { cap, by = null } = {}) {
       if (!RANK[role]) throw fail('невідома роль')
       const cur = await current(uid)
       if (cur && cur.guild_id !== gid) throw fail('Спершу вийди з поточної гільдії', 409)
@@ -207,8 +275,8 @@ export async function createGuilds(db) {
         if (await current(uid)) throw fail('Спершу вийди з поточної гільдії', 409)
         throw e
       }
-      // тепер він у гільдії — заявки в інші зайві
-      await db.run('DELETE FROM requests WHERE user_id = ?', uid)
+      // тепер він у гільдії: заявка сюди — прийнята (за заявкою чи запрошенням), в інші — закриті
+      await closeRequests(uid, gid, by)
       await syncMain(uid)
     },
     async setRole(gid, uid, role) {
@@ -222,6 +290,7 @@ export async function createGuilds(db) {
     async leaveAll(uid) {
       await db.run('DELETE FROM members WHERE user_id = ?', uid)
       await db.run('DELETE FROM requests WHERE user_id = ?', uid)
+      await db.run('DELETE FROM request_comments WHERE user_id = ?', uid)
       await syncMain(uid)
     },
 
@@ -253,11 +322,60 @@ export async function createGuilds(db) {
     useInvite: (code) => db.run('UPDATE invites SET uses = uses + 1 WHERE code = ?', code),
 
     // ---------- заявки ----------
-    request: (gid, uid, note) => db.run('INSERT INTO requests (guild_id, user_id, note, created) VALUES (?, ?, ?, ?) ON CONFLICT (guild_id, user_id) DO UPDATE SET note = excluded.note', gid, uid, plain(note, 300, true), Date.now()),
-    requests: (gid) => db.all('SELECT r.*, u.login, u.name, u.nick, u.color FROM requests r JOIN users u ON u.id = r.user_id WHERE r.guild_id = ? ORDER BY r.created', gid),
-    requestOf: async (gid, uid) => (await db.get('SELECT * FROM requests WHERE guild_id = ? AND user_id = ?', gid, uid)) || null,
-    requestsOfUser: async (uid) => (await db.all('SELECT guild_id FROM requests WHERE user_id = ?', uid)).map((r) => r.guild_id),
-    dropRequest: async (gid, uid) => (await db.run('DELETE FROM requests WHERE guild_id = ? AND user_id = ?', gid, uid)).changes > 0,
+    /**
+     * подати (чи подати знову — після рішення): note — кілька слів, answers — відповіді за анкетою гільдії (перевіряє
+     * cleanAnswers), tz — пояс кандидата (для годин онлайну). Давні клієнти шлють лише рядок note.
+     */
+    async request(gid, uid, p) {
+      const o = typeof p === 'string' || p == null ? { note: p } : p
+      const answers = cleanAnswers((await api.profile(gid)).form, o.answers)
+      await db.run(`INSERT INTO requests (guild_id, user_id, note, created, status, answers, tz, reason, decided, decided_by) VALUES (?, ?, ?, ?, 'pending', ?, ?, NULL, NULL, NULL)
+        ON CONFLICT (guild_id, user_id) DO UPDATE SET note = excluded.note, created = excluded.created, status = 'pending', answers = excluded.answers, tz = excluded.tz, reason = NULL, decided = NULL, decided_by = NULL`,
+      gid, uid, plain(o.note, 1000, true), Date.now(), JSON.stringify(answers), cleanTz(o.tz))
+    },
+    /** заявки гільдії: status — 'pending' (черга) чи 'done' (розглянуті); з людиною й тим, хто вирішив */
+    requests: async (gid, status = 'pending') => (await db.all(`SELECT r.*, u.login, u.name, u.nick, u.color, d.name AS decided_name FROM requests r JOIN users u ON u.id = r.user_id LEFT JOIN users d ON d.id = r.decided_by
+      WHERE r.guild_id = ? AND ${status === 'done' ? "r.status <> 'pending'" : "r.status = 'pending'"} ORDER BY ${status === 'done' ? 'r.decided DESC, r.created DESC' : 'r.created'} LIMIT 200`, gid)).map(reqRow),
+    pendingCount: async (gid) => Number((await db.get("SELECT COUNT(*) AS n FROM requests WHERE guild_id = ? AND status = 'pending'", gid)).n),
+    requestOf: async (gid, uid) => reqRow(await db.get('SELECT * FROM requests WHERE guild_id = ? AND user_id = ?', gid, uid)),
+    /** гільдії, куди в людини чекають заявки (для кнопок «Скасувати заявку») */
+    requestsOfUser: async (uid) => (await db.all("SELECT guild_id FROM requests WHERE user_id = ? AND status = 'pending'", uid)).map((r) => r.guild_id),
+    /** усі заявки людини з гільдіями — «Мої заявки» */
+    myRequests: async (uid) => (await db.all('SELECT r.guild_id, r.status, r.reason, r.created, r.decided, g.slug, g.name, g.tag, g.color FROM requests r JOIN guilds g ON g.id = r.guild_id WHERE r.user_id = ? ORDER BY COALESCE(r.decided, r.created) DESC LIMIT 50', uid))
+      .map((r) => ({ guild: { id: r.guild_id, slug: r.slug, name: r.name, tag: r.tag, color: r.color }, status: r.status, reason: r.reason || '', created: Number(r.created), decided: r.decided == null ? null : Number(r.decided) })),
+    /** кандидат відкликав: чекаюча — 'withdrawn' (true), інакше нічого */
+    dropRequest: async (gid, uid) => (await db.run("UPDATE requests SET status = 'withdrawn', decided = ?, decided_by = ? WHERE guild_id = ? AND user_id = ? AND status = 'pending'", Date.now(), uid, gid, uid)).changes > 0,
+    /** рішення офіцера: відхилити (з причиною) чи закрити; прийняття — через addMember (він ставить 'accepted') */
+    async decide(gid, uid, { status, reason = '', by = null }) {
+      if (!REQUEST_STATUS.includes(status) || status === 'pending') throw fail('невідомий стан заявки')
+      return (await db.run("UPDATE requests SET status = ?, reason = ?, decided = ?, decided_by = ? WHERE guild_id = ? AND user_id = ? AND status = 'pending'", status, plain(reason, 500, true) || null, Date.now(), by, gid, uid)).changes > 0
+    },
+    /** коментар офіцера до заявки (кандидат не бачить) */
+    async comment(gid, uid, by, text) {
+      const s = plain(text, 1000, true)
+      if (!s) throw fail('порожній коментар')
+      const id = newId('rc')
+      await db.run('INSERT INTO request_comments (id, guild_id, user_id, by_user, text, created) VALUES (?, ?, ?, ?, ?, ?)', id, gid, uid, by, s, Date.now())
+      return id
+    },
+    /** коментарі до заявок гільдії: Map(людина → [{ id, by, text, created }]) */
+    async comments(gid, uids) {
+      const m = new Map()
+      if (!uids?.length) return m
+      const rows = await db.all(`SELECT c.*, u.name AS by_name, u.color AS by_color FROM request_comments c LEFT JOIN users u ON u.id = c.by_user WHERE c.guild_id = ? AND c.user_id IN (${uids.map(() => '?').join(',')}) ORDER BY c.created`, gid, ...uids)
+      for (const r of rows) {
+        if (!m.has(r.user_id)) m.set(r.user_id, [])
+        m.get(r.user_id).push({ id: r.id, by: r.by_name || null, color: r.by_color || null, text: r.text, created: Number(r.created) })
+      }
+      return m
+    },
+    /** щоденне прибирання: розглянуті — старші за keep геть; чекаючі задовго — закриті */
+    async tidyRequests(now = Date.now(), keep = 180 * 86400_000) {
+      const gone = (await db.run("DELETE FROM requests WHERE status <> 'pending' AND COALESCE(decided, created) < ?", now - keep)).changes
+      const closed = (await db.run("UPDATE requests SET status = 'closed', decided = ? WHERE status = 'pending' AND created < ?", now, now - keep)).changes
+      await db.run('DELETE FROM request_comments WHERE NOT EXISTS (SELECT 1 FROM requests r WHERE r.guild_id = request_comments.guild_id AND r.user_id = request_comments.user_id)')
+      return gone + closed
+    },
 
     // ---------- указ тижня гільдії ----------
     decree: async (gid) => { const g = await db.get('SELECT decree FROM guilds WHERE id = ?', gid); return g?.decree ? JSON.parse(g.decree) : null },

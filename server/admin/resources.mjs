@@ -577,13 +577,15 @@ export function buildResources(d) {
         { key: 'guild_id', label: 'Гільдія', type: 'relation', resource: 'guilds', filter: true, readonly: true },
         { key: 'user_id', label: 'Людина', type: 'relation', resource: 'users', filter: true, readonly: true },
         { key: 'note', label: 'Повідомлення від людини', type: 'textarea', search: true },
+        { key: 'status', label: 'Стан', type: 'select', options: opts(['pending', 'accepted', 'rejected', 'withdrawn', 'closed'], { pending: 'Чекає', accepted: 'Прийнята', rejected: 'Відхилена', withdrawn: 'Відкликана', closed: 'Закрита' }), filter: true, readonly: true, tones: { pending: 'warning', accepted: 'success', rejected: 'critical', withdrawn: 'neutral', closed: 'neutral' } },
+        { key: 'reason', label: 'Причина відмови', type: 'textarea', readonly: true, list: false },
         { ...created },
       ],
       actions: [
         { key: 'accept', label: 'Прийняти новобранцем', bulk: true, row: true, run: async (rows) => {
-          // як на сайті: з лімітом учасників гільдії
+          // як на сайті: з лімітом учасників гільдії (заявка стає прийнятою сама — addMember)
           const cap = await auth.guildCap()
-          for (const r of rows) { await guilds.addMember(r.guild_id, r.user_id, 'recruit', { cap }); await guilds.dropRequest(r.guild_id, r.user_id) }
+          for (const r of rows) if ((r.status || 'pending') === 'pending') await guilds.addMember(r.guild_id, r.user_id, 'recruit', { cap })
         } },
       ],
     },

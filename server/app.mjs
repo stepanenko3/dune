@@ -40,6 +40,9 @@ import { cleanBuild, cleanCalc, cleanMarker, createDocs } from './lib/docs.mjs'
 import { createContent } from './lib/content.mjs'
 import { COOKIE, cookieOf, createAuthRoutes, sameSite, sessionMiddleware } from './routes/auth.mjs'
 import { createGuildRoutes } from './routes/guilds.mjs'
+import { createGuildBus } from './lib/guild-bus.mjs'
+import { createNotifications } from './lib/notifications.mjs'
+import { createNotificationRoutes } from './routes/notifications.mjs'
 import { createItemRoutes } from './routes/items.mjs'
 import { createAdminRoutes } from './routes/admin.mjs'
 import { createDocRoutes } from './routes/docs.mjs'
@@ -117,7 +120,7 @@ export async function createApp({ dataDir, serveDist = false, background = true,
     const user = async (id) => { const u = await auth.get(id); if (!u) return null; const { email, ...rest } = u; return rest }
     track(auth, 'users', revisions, { updateProfile: { action: 'update', pre: true, id: (a) => a[0], read: user }, setRole: { action: 'role', pre: true, id: (a) => a[0], read: user }, ban: { action: 'ban', pre: true, id: (a) => a[0], read: user }, unban: { action: 'unban', pre: true, id: (a) => a[0], read: user }, remove: { action: 'delete', pre: true, id: (a) => a[0], read: user } })
     const guild = async (id) => guilds.get(id)
-    track(guilds, 'guilds', revisions, { create: { action: 'create', id: (a, r) => r?.id, read: guild }, update: { action: 'update', pre: true, id: (a) => a[0], read: guild }, remove: { action: 'delete', pre: true, id: (a) => a[0], read: guild } })
+    track(guilds, 'guilds', revisions, { create: { action: 'create', id: (a, r) => r?.id, read: guild }, update: { action: 'update', pre: true, id: (a) => a[0], read: guild }, setProfile: { action: 'update', pre: true, id: (a) => a[0], read: guild }, setEmblem: { action: 'update', pre: true, id: (a) => a[0], read: guild }, remove: { action: 'delete', pre: true, id: (a) => a[0], read: guild } })
     const member = async ([g, u]) => (await guilds.members(g)).find((m) => m.id === u) ?? null
     track(guilds, 'members', revisions, { addMember: { action: 'create', id: (a) => [a[0], a[1]], read: member }, setRole: { action: 'update', pre: true, id: (a) => [a[0], a[1]], read: member }, removeMember: { action: 'delete', pre: true, id: (a) => [a[0], a[1]], read: member } })
     const item = async ([k, i]) => items.get(k, i)
@@ -157,7 +160,20 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   const catalog = createCatalog({ dataDir, game, media })
   const skills = createSkills({ game, media })
   const announcements = await createAnnouncements(db)
-  const hubs = { base: createHub(access), roadmap: createHub(access), place: createHub(access), marker: createHub(access), spice: createHub(access), event: createHub(access) }
+  const hubs = { base: createHub(access), roadmap: createHub(access), place: createHub(access), marker: createHub(access), spice: createHub(access), event: createHub(access), note: createHub(access) }
+  // сповіщення сайту (дзвоник у шапці): живий потік — лише вкладкам цієї людини
+  const notifications = await createNotifications(db, { push: (uid, ev) => hubs.note.emitWhere(ev, (ctx) => ctx.user?.id === uid) })
+  // набір у гільдії: що сталося з заявками — в одному місці (сповіщення нижче, згодом — бот)
+  const guildBus = createGuildBus({ log })
+  guildBus.on(async (e) => {
+    const data = { guild: e.guild.id, slug: e.guild.slug, name: e.guild.name, tag: e.guild.tag }
+    if (e.type === 'submitted') {
+      // офіцерам і лідеру — одне сповіщення на гільдію, доки не прочитали (лічильник росте)
+      for (const m of await guilds.members(e.guild.id)) if (m.role === 'officer' || m.role === 'leader') await notifications.notify(m.id, 'guild.app.new', data, { ref: e.guild.id })
+      await notifications.notify(e.user, 'guild.app.sent', data, { ref: e.guild.id })
+    } else if (e.type === 'accepted') await notifications.notify(e.user, 'guild.app.accepted', data, { ref: e.guild.id })
+    else if (e.type === 'rejected') await notifications.notify(e.user, 'guild.app.rejected', { ...data, reason: String(e.reason || '').slice(0, 500) }, { ref: e.guild.id })
+  })
   // активні поля меланжу — позначки гравців
   const spice = await createSpice({ db, guilds })
   // джерела ігрових даних і журнал змін (індикатор оновлень); без GAMEDATA=1 — null, у базу нічого не пише
@@ -241,6 +257,7 @@ export async function createApp({ dataDir, serveDist = false, background = true,
     await push.forgetUser(uid)
     await spice.forgetUser(uid)
     await events.forgetUser(uid)
+    await notifications.forgetUser(uid)
     await guilds.leaveAll(uid)
     await security.removeUser(uid)
     await auth.remove(uid)
@@ -332,7 +349,8 @@ export async function createApp({ dataDir, serveDist = false, background = true,
     })
   }).catch(next))
   app.use(createAuthRoutes({ auth, security, guilds, items, roles, content, mailer, onFirst, removeUser, site: site || (process.env.APP_URL || 'https://dune.test').replace(/^https?:\/\//, '') }))
-  app.use(createGuildRoutes({ auth, guilds, items, deleteGuild, decrees }))
+  app.use(createGuildRoutes({ auth, guilds, items, deleteGuild, decrees, db, markers, storage, bus: guildBus }))
+  app.use(createNotificationRoutes({ notifications, hub: hubs.note }))
   app.use(createItemRoutes({ items, content, hubs, auth, roadmapService, progress, revisions }))
   app.use(createSiteRoutes({ i18n, announcements, auth }))
   app.use(createAdminRoutes({ db, auth, guilds, items, content, bases, roadmaps, builds, calcs, markers, places, events, game, i18n, announcements, catalog, skills, removeUser, deleteGuild, mapData, roles, revisions, cron, thumbs, storage }))
@@ -433,7 +451,8 @@ export async function createApp({ dataDir, serveDist = false, background = true,
       const s2 = await db.run('DELETE FROM login_codes WHERE expires < ?', now - 3600_000)
       // запрошення, що вже не відкриють (минув строк чи вичерпано), і заявки, на які пів року ніхто не відповів
       const s5 = await db.run('DELETE FROM invites WHERE (expires IS NOT NULL AND expires < ?) OR (max_uses IS NOT NULL AND uses >= max_uses)', now)
-      const s6 = await db.run('DELETE FROM requests WHERE created < ?', now - 180 * 86400_000)
+      // заявки: розглянуті пів року тому — геть, чекаючі пів року — закриті
+      const s6 = { changes: await guilds.tidyRequests(now) }
       // 0 днів — зберігати завжди
       const auditDays = Number(await auth.settings.get('auditDays', 180)) || 0, revDays = Number(await auth.settings.get('revisionDays', 365)) || 0
       const s3 = auditDays ? await db.run('DELETE FROM audit WHERE at < ?', now - auditDays * 86400_000) : { changes: 0 }
@@ -452,6 +471,9 @@ export async function createApp({ dataDir, serveDist = false, background = true,
 
   app.locals.spice = spice
   app.locals.storage = storage
+  // набір у гільдіях: на шину підписується бот (і тести); сповіщення сайту
+  app.locals.guildBus = guildBus
+  app.locals.notifications = notifications
   app.locals.close = async () => { cron.stop(); push.close(); if (!given) await db.close() }
   return app
 }

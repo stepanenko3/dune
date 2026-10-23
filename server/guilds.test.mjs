@@ -166,12 +166,12 @@ describe.each(ENGINES)('%s', (_name, pgCfg) => {
         expect((await carol.post(`/api/guilds/${at.slug}/requests`, { note: 'привіт' })).status).toBe(201)
         expect((await carol.get('/api/guilds')).body.requests).toEqual([at.id])
         expect((await bob.get(`/api/guilds/${at.slug}`)).body.requests.map((r) => r.id)).toEqual([(await carol.me()).user.id])
-        // за цей час Керол вступила в Sandwalkers за запрошенням — заявка до Атрейдесів зникла
+        // за цей час Керол вступила в Sandwalkers за запрошенням — заявка до Атрейдесів закрита (з черги зникла)
         expect((await carol.post(`/api/invites/${inviteSW}/accept`)).status).toBe(200)
         expect((await carol.get('/api/guilds')).body.requests).toEqual([])
         const carolId = (await carol.me()).user.id
         expect((await bob.get(`/api/guilds/${at.slug}`)).body.requests).toEqual([])
-        expect((await bob.post(`/api/guilds/${at.slug}/requests/${carolId}`, { accept: true })).status).toBe(404)
+        expect((await bob.post(`/api/guilds/${at.slug}/requests/${carolId}`, { accept: true })).status).toBe(409)
         expect((await carol.me()).guild.slug).toBe('sandwalkers')
       })
 

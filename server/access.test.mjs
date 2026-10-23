@@ -243,7 +243,9 @@ describe('доступи', () => {
     expect((await member.patch(`/api/guilds/${slug}/members/${recruit.id}`, { role: 'member' })).status).toBe(403)
     expect((await member.del(`/api/guilds/${slug}/members/${recruit.id}`)).status).toBe(403)
     expect((await officer.del(`/api/guilds/${slug}/members/${leader.id}`)).status).not.toBe(200)
-    expect((await officer.patch(`/api/guilds/${slug}`, { about: 'офіцер' })).status).toBe(403)
+    // опис і картку гільдії міняє й офіцер (набір — його справа); назву й тег — лише лідер
+    expect((await officer.patch(`/api/guilds/${slug}`, { about: 'офіцер' })).status).toBe(200)
+    expect((await officer.patch(`/api/guilds/${slug}`, { name: 'Офіцерська' })).status).toBe(403)
     expect((await officer.del(`/api/guilds/${slug}`)).status).toBe(403)
     expect((await stranger.patch(`/api/guilds/${slug}`, { about: 'чужий' })).status).toBe(403)
     expect((await leader.patch(`/api/guilds/${slug}`, { about: 'лідер' })).status).toBe(200)
@@ -251,7 +253,9 @@ describe('доступи', () => {
     await leader.patch(`/api/guilds/${slug}`, { open: true })
     expect((await stranger.post(`/api/guilds/${slug}/requests`, { note: 'візьміть' })).status).toBe(201)
     expect((await member.post(`/api/guilds/${slug}/requests/${stranger.id}`, { accept: true })).status).toBe(403)
-    expect((await officer.post(`/api/guilds/${slug}/requests/${stranger.id}`, { accept: false })).status).toBe(200)
+    // відхилити — лише з причиною (її побачить кандидат)
+    expect((await officer.post(`/api/guilds/${slug}/requests/${stranger.id}`, { accept: false })).status).toBe(400)
+    expect((await officer.post(`/api/guilds/${slug}/requests/${stranger.id}`, { accept: false, reason: 'набрали людей' })).status).toBe(200)
     // новобранець не створює від імені гільдії
     expect((await recruit.post('/api/bases', { doc: tiny('x'), owner: { kind: 'guild', id: gid } })).status).toBe(403)
     const notIn = await stranger.post('/api/roadmaps', { title: 'x', owner: { kind: 'guild', id: gid } })
