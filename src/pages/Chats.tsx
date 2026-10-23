@@ -130,7 +130,7 @@ function ChatHead({ c, onChange }: { c: Chat; onChange: (c: Chat) => void }) {
   const block = async () => {
     if (!c.other) return
     const on = !c.blocked?.byMe
-    if (on && !(await confirmAsk({ title: t('Заблокувати {name}?', { name: c.other.name }), description: t('Ви не зможете писати одне одному, доки не розблокуєш.'), confirm: t('Заблокувати'), destructive: true }))) return
+    if (on && !(await confirmAsk({ title: t('Заблокувати {name}?', { name: c.other.name }), description: t('Ви не зможете писати одне одному, доки не розблокуєш.'), confirm: t('Заблокувати людину'), destructive: true }))) return
     try { await blockUser(c.other.id, on); onChange({ ...c, canWrite: !on && !c.blocked?.byThem, blocked: { byMe: on, byThem: !!c.blocked?.byThem } }) } catch (e) { toast.error((e as Error).message) }
   }
   const sub = c.kind === 'direct' ? (c.other ? `@${c.other.login}` : '') : c.kind === 'guild' ? t('Гільдія · учасників: {n}', { n: fmtN(c.members ?? 0) }) : (c.others ?? []).map((p) => p.name).join(', ')
@@ -147,7 +147,7 @@ function ChatHead({ c, onChange }: { c: Chat; onChange: (c: Chat) => void }) {
       <span className="flex shrink-0 items-center gap-0.5">
         {link && <a href={link} onClick={go(link)} className="grid h-10 w-10 place-items-center rounded-lg text-muted hover:bg-panel2 hover:text-ink" aria-label={c.kind === 'direct' ? t('Сторінка людини') : c.kind === 'deal' ? t('До угоди') : t('До гільдії')} title={c.kind === 'direct' ? t('Сторінка людини') : c.kind === 'deal' ? t('До угоди') : t('До гільдії')}><LinkIcon size={17} /></a>}
         <button type="button" onClick={mute} aria-pressed={c.muted} className="grid h-10 w-10 place-items-center rounded-lg text-muted hover:bg-panel2 hover:text-ink" aria-label={c.muted ? t('Увімкнути сповіщення') : t('Без звуку')} title={c.muted ? t('Увімкнути сповіщення') : t('Без звуку')}>{c.muted ? <BellOff size={17} /> : <Bell size={17} />}</button>
-        {c.kind === 'direct' && c.other && <button type="button" onClick={block} aria-pressed={!!c.blocked?.byMe} className={cn('grid h-10 w-10 place-items-center rounded-lg hover:bg-panel2', c.blocked?.byMe ? 'text-bad' : 'text-muted hover:text-bad')} aria-label={c.blocked?.byMe ? t('Розблокувати') : t('Заблокувати')} title={c.blocked?.byMe ? t('Розблокувати') : t('Заблокувати')}><Ban size={17} /></button>}
+        {c.kind === 'direct' && c.other && <button type="button" onClick={block} aria-pressed={!!c.blocked?.byMe} className={cn('grid h-10 w-10 place-items-center rounded-lg hover:bg-panel2', c.blocked?.byMe ? 'text-bad' : 'text-muted hover:text-bad')} aria-label={c.blocked?.byMe ? t('Розблокувати людину') : t('Заблокувати людину')} title={c.blocked?.byMe ? t('Розблокувати людину') : t('Заблокувати людину')}><Ban size={17} /></button>}
       </span>
     </header>
   )
