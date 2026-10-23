@@ -46,8 +46,14 @@ export default function ListingPage({ id }: { id: string }) {
     getListing(id).then((x) => live && setL(x), (e) => live && setErr((e as Error).message))
     return () => { live = false }
   }, [id, ready, me?.id, attempt])
-  useEffect(() => subscribe('/api/market/stream', (ev) => { if ((ev as { id?: string }).id === id) setAttempt((n) => n + 1) }), [id])
-  useCrumb(err ? [] : l ? [{ label: `${SIDE_LABEL[l.side]}` }] : null, l ? { sub: l.rights.edit ? 'mine' : null, value: l.rights.edit ? t('Мої') : t('Оголошення') } : undefined)
+  // змінилось це оголошення чи будь-яке інше (нові зустрічні — у «Збігах») — перечитати, не частіше разу на секунду
+  useEffect(() => {
+    let h: ReturnType<typeof setTimeout> | null = null
+    const again = () => { if (h) return; h = setTimeout(() => { h = null; setAttempt((n) => n + 1) }, 1000) }
+    const off = subscribe('/api/market/stream', again, again)
+    return () => { off(); if (h) clearTimeout(h) }
+  }, [id])
+  useCrumb(err ? [] : l ? [{ label: `${SIDE_LABEL[l.side]}` }] : null, l ? { sub: l.rights.edit ? 'mine' : null, value: l.rights.edit ? t('Мої') : t('Усі оголошення') } : undefined)
 
   if (err) return <PageError page message={err}><Button variant="secondary" onClick={() => setView('market')}>{t('До біржі')}</Button></PageError>
   if (!l) return <Loading page />
@@ -208,12 +214,12 @@ function OfferBox({ l, onDone }: { l: ListingFull; onDone: (dealId: string) => v
     <Section title={l.side === 'sell' ? t('Купити') : t('Продати')} hint={t('Автор отримає сповіщення. Прийме — домовитесь у листуванні угоди й передасте в грі.')}>
       <div className="grid gap-3">
         <Field label={t('Кількість')} hint={t('Доступно: {n}', { n: fmtN(l.left) }) + (l.minQty ? ` · ${t('мінімум {n}', { n: fmtN(minQ) })}` : '')}>
-          <SnInput size="lg" type="number" inputmode="numeric" min={minQ} max={l.left} modelValue={qty} accessibilityLabel={t('Кількість')} onInput={(e: Event) => setQty(valueOf(e).replace(/\D/g, ''))} />
+          <SnInput size="lg" type="number" inputmode="numeric" min={minQ} max={l.left} modelValue={qty} accessibilityLabel={t('Кількість')} onInput={(e: Event) => setQty(String(valueOf(e) ?? '').replace(/\D/g, ''))} />
         </Field>
         {l.pay === 'both' && <Seg label={t('Оплата')} value={pay} onChange={setPay} items={[{ id: 'solari', label: t('Солари') }, { id: 'barter', label: t('Бартер') }]} />}
         {pay === 'solari' ? (
           <Field label={t('Ціна за штуку, Solari')} hint={n && p ? t('Разом: {sum}', { sum: fmtSolari(n * p) }) : undefined}>
-            <SnInput size="lg" type="number" inputmode="numeric" min={1} modelValue={price} accessibilityLabel={t('Ціна за штуку, Solari')} onInput={(e: Event) => setPrice(valueOf(e).replace(/\D/g, ''))} />
+            <SnInput size="lg" type="number" inputmode="numeric" min={1} modelValue={price} accessibilityLabel={t('Ціна за штуку, Solari')} onInput={(e: Event) => setPrice(String(valueOf(e) ?? '').replace(/\D/g, ''))} />
           </Field>
         ) : (
           <div className="grid gap-1 text-[13px]"><span className="text-muted">{t('Бартер, як в оголошенні:')}</span><BarterList barter={l.barter} /></div>

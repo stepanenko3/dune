@@ -4,7 +4,7 @@
  */
 import { useEffect, useState } from 'react'
 import { userMarket, type UserMarket as UM } from '@/lib/market'
-import { t } from '@/lib/i18n'
+import { locale, t } from '@/lib/i18n'
 import { fmtN, fmtP } from '@/lib/utils'
 import { go, LISTING_GRID, ListingCard, Stars } from './bits'
 import { GoodName } from './names'
@@ -32,7 +32,7 @@ export function UserMarket({ login }: { login: string }) {
             <li key={i} className="grid gap-1 rounded-xl border border-line bg-panel p-3 text-[13px] shadow-sm">
               <span className="flex flex-wrap items-center gap-2"><Stars value={r.score} size={14} /><span className="text-muted">{r.role === 'seller' ? t('як продавець') : t('як покупець')} · <GoodName gid={r.gid} /></span></span>
               {r.text && <span className="break-words">{r.text}</span>}
-              <span className="text-[12px] text-muted">{r.from ? <a href={`/u/${r.from.login}`} onClick={go(`/u/${r.from.login}`)} className="hover:text-spice">{r.from.name}</a> : t('Людину видалено')} · {new Date(r.at).toLocaleDateString()}</span>
+              <span className="text-[12px] text-muted">{r.from ? <a href={`/u/${r.from.login}`} onClick={go(`/u/${r.from.login}`)} className="hover:text-spice">{r.from.name}</a> : t('Людину видалено')} · {new Date(r.at).toLocaleDateString(locale())}</span>
             </li>
           ))}
         </ul>

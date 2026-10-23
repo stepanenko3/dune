@@ -43,7 +43,7 @@ export default function Reports() {
 
 /** що вирішив модератор */
 const ACTION_L: Record<string, () => string> = { dismiss: () => t('Відхилено'), hide: () => t('Сховано'), close: () => t('Закрито'), ban: () => t('Заборонено'), unrate: () => t('Оцінки прибрано') }
-const KIND_L = { listing: () => t('Оголошення'), deal: () => t('Угода'), user: () => t('Людина') }
+const KIND_L = { listing: () => t('Оголошення біржі'), deal: () => t('Угода'), user: () => t('Людина') }
 
 function Group({ g, open, onDone }: { g: ReportGroup; open: boolean; onDone: () => void }) {
   const [ban, setBan] = useState<{ user: string; name: string } | null>(null)

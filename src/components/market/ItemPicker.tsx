@@ -4,7 +4,7 @@
  */
 import { useMemo, useState } from 'react'
 import { X } from 'lucide-react'
-import { nameOf } from '@/lib/catalog'
+import { nameOf, rarityLabel, tierLabel } from '@/lib/catalog'
 import { goodsOf, SECTION_LABEL, SECTIONS, sectionOf, type Section } from '@/lib/market'
 import { t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
@@ -28,7 +28,8 @@ export function ItemPicker({ value, onChange, exclude = [], label, compact }: { 
     const s = q.trim().toLowerCase()
     return goodsOf(ix)
       .filter((i) => !exclude.includes(i.id) && (!cat || sectionOf(i) === cat) && (!s || (i.loc || i.name).toLowerCase().includes(s) || i.name.toLowerCase().includes(s)))
-      .sort((a, b) => nameOf(a).localeCompare(nameOf(b)))
+      // без пошуку — розділи по черзі (ресурси першими: їх продають найчастіше), усередині — за назвою й тиром
+      .sort((a, b) => (s ? 0 : SECTIONS.indexOf(sectionOf(a)) - SECTIONS.indexOf(sectionOf(b))) || nameOf(a).localeCompare(nameOf(b)) || a.grade - b.grade)
   }, [ix, q, cat, exclude.join(',')]) // eslint-disable-line react-hooks/exhaustive-deps
   if (value && !open) {
     return (
@@ -51,7 +52,11 @@ export function ItemPicker({ value, onChange, exclude = [], label, compact }: { 
           <li key={i.id}>
             <button type="button" onClick={() => { onChange(i.id); setOpen(false) }} className={cn('flex w-full min-w-0 items-center gap-2 rounded-md border px-2 py-1.5 text-left', i.id === value ? 'border-spice/60 bg-spice/10' : 'border-transparent hover:border-spice/40 hover:bg-panel2/60')}>
               <Icon src={iconOf(ix, i.id)} size={30} grade={i.grade} />
-              <span className="min-w-0 break-words text-[13px] font-semibold leading-snug">{nameOf(i)}</span>
+              <span className="min-w-0">
+                <span className="block break-words text-[13px] font-semibold leading-snug">{nameOf(i)}</span>
+                {/* однакові назви різних тирів і рідкостей — розрізняємо підписом */}
+                {(i.grade > 0 || i.rarity) && <span className="block text-[11.5px] text-muted">{[i.grade > 0 ? tierLabel(i.grade) : '', i.rarity ? rarityLabel(i.rarity) : ''].filter(Boolean).join(' · ')}</span>}
+              </span>
             </button>
           </li>
         ))}

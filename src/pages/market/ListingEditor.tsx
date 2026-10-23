@@ -40,7 +40,8 @@ const docOf = (l: ListingFull): ListingDoc => {
   return { ...d, contact: { site: l.contact.site, nick: l.contact.nick ?? '' } }
 }
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
-const num = (s: string) => (s.trim() === '' ? null : Math.max(0, Math.floor(Number(s.replace(/\s/g, ''))) || 0))
+/** число з поля (числове поле віддає число, текстове — рядок); порожньо — null */
+const num = (v: unknown) => { const s = String(v ?? '').replace(/\s/g, ''); return s === '' ? null : Math.max(0, Math.floor(Number(s)) || 0) }
 const dayWord = (n: number) => word(n, [t('день'), t('дні'), t('днів')])
 
 type PlaceKind = 'none' | 'point' | 'base' | 'text'
@@ -98,7 +99,7 @@ export default function ListingEditor({ id }: { id: string | null }) {
     setSaved((x) => (x ? fill(x) : x))
   }, [mine, id])
 
-  useCrumb(loadError ? [] : ready && !me ? [{ label: t('Нове оголошення') }] : doc ? [...(id ? [{ label: t('Оголошення'), view: 'market' as const, param: id }] : []), { label: id ? t('Редагування') : t('Нове оголошення') }] : null)
+  useCrumb(loadError ? [] : ready && !me ? [{ label: t('Нове оголошення') }] : doc ? [...(id ? [{ label: t('Оголошення біржі'), view: 'market' as const, param: id }] : []), { label: id ? t('Редагування') : t('Нове оголошення') }] : null)
   const dirty = !!doc && !!saved && !same(doc, saved)
   const set = <K extends keyof ListingDoc>(k: K, v: ListingDoc[K]) => setDoc((d) => (d ? { ...d, [k]: v } : d))
 

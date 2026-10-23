@@ -11,7 +11,7 @@ import { FRESH, FRESH_LABEL, goodsOf, itemHref, listMarket, myDeals, SECTION_LAB
 import { nameOf } from '@/lib/catalog'
 import { REGIONS, type Region } from '@/lib/ddReset'
 import { loginHref, useAuth } from '@/lib/auth'
-import { t } from '@/lib/i18n'
+import { locale, t } from '@/lib/i18n'
 import { subscribe } from '@/lib/stream'
 import { useUrlParam } from '@/lib/urlState'
 import { MARKET_TABS, openPath, pathOf, useStore } from '@/store'
@@ -63,7 +63,7 @@ function MarketHome() {
   const raw: Tab = (MARKET_TABS as readonly string[]).includes(sub ?? '') ? (sub as Tab) : 'all'
   // без входу «моїх» і «угод» нема, без гільдії — «гільдії», без прав модератора — «скарг»
   const tab: Tab = ((raw === 'mine' || raw === 'deals') && !user) || (raw === 'guild' && !guild) || (raw === 'reports' && !me?.moderator) ? 'all' : raw
-  const TAB_L: Record<Tab, string> = { all: t('Оголошення'), mine: t('Мої'), deals: t('Угоди'), guild: t('Гільдія'), reports: t('Скарги') }
+  const TAB_L: Record<Tab, string> = { all: t('Усі оголошення'), mine: t('Мої'), deals: t('Угоди'), guild: t('Гільдія'), reports: t('Скарги') }
   useCrumb([], { sub: tab === 'all' ? null : tab, value: TAB_L[tab] })
   const setTab = (v: Tab) => setView('market', { sub: v === 'all' ? null : v, search: v === 'all' || v === 'guild' || v === 'mine' ? location.search : '' })
   const tabHref = (v: Tab) => pathOf('market', null, false, null, v === 'all' ? null : v)
@@ -88,7 +88,7 @@ function MarketHome() {
           {tabs.length > 1 && <div className="flex flex-wrap items-center gap-2"><Seg label={t('Розділ біржі')} value={tab} onChange={setTab} href={tabHref} items={tabs} /></div>}
           {(tab === 'all' || tab === 'guild' || tab === 'mine') && <Filters />}
         </PageHeader>
-        {me?.ban && <ErrorAlert title={t('Тобі заборонено торгувати на біржі')} message={me.ban.until ? t('До {date}. Причина: {reason}', { date: new Date(me.ban.until).toLocaleDateString(), reason: me.ban.reason || '—' }) : t('Назавжди. Причина: {reason}', { reason: me.ban.reason || '—' })} />}
+        {me?.ban && <ErrorAlert title={t('Тобі заборонено торгувати на біржі')} message={me.ban.until ? t('До {date}. Причина: {reason}', { date: new Date(me.ban.until).toLocaleDateString(locale()), reason: me.ban.reason || '—' }) : t('Назавжди. Причина: {reason}', { reason: me.ban.reason || '—' })} />}
         {tab === 'deals' ? <DealsTab /> : tab === 'reports' ? <Suspense fallback={<Loading />}><Reports /></Suspense> : <Feed tab={tab} onPost={post} />}
       </div>
     </div>
@@ -114,7 +114,7 @@ function Filters() {
   return (
     <div className="grid gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <SnInput type="search" size="lg" className="min-w-[min(240px,100%)] flex-1" modelValue={f.q} placeholder={t('Предмет: смола, пласталь, гвинтівка…')} accessibilityLabel={t('Пошук предмета')} onInput={(e: Event) => f.setQ(valueOf(e), { replace: true })} />
+        <SnInput type="search" size="lg" className="min-w-[min(240px,100%)] flex-1" modelValue={f.q} placeholder={t('Предмет: меланж, гвинтівка…')} accessibilityLabel={t('Пошук предмета')} onInput={(e: Event) => f.setQ(valueOf(e), { replace: true })} />
         <Seg label={t('Вид')} value={f.side} onChange={f.setSide} href={f.sideHref} items={[{ id: '', label: t('Усі') }, { id: 'sell', label: SIDE_LABEL.sell }, { id: 'buy', label: SIDE_LABEL.buy }]} />
       </div>
       <Seg size="sm" label={t('Розділ')} value={f.cat} onChange={f.setCat} href={f.catHref} items={[{ id: '', label: t('Усі розділи') }, ...SECTIONS.map((s) => ({ id: s, label: SECTION_LABEL[s] }))]} />
@@ -123,10 +123,11 @@ function Filters() {
         <Seg size="sm" label={t('Свіжість')} value={f.fresh} onChange={f.setFresh} href={f.freshHref} items={FRESH.map((x) => ({ id: x, label: FRESH_LABEL[x] }))} />
         <Seg size="sm" label={t('Порядок')} value={f.sort} onChange={f.setSort} href={f.sortHref} items={SORTS.map((x) => ({ id: x, label: SORT_LABEL[x] }))} />
       </div>
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
-        <SnInput size="lg" modelValue={f.world} placeholder={t('Світ, напр. Hagga EU 7')} accessibilityLabel={t('Світ')} onInput={(e: Event) => f.setWorld(valueOf(e), { replace: true })} />
-        <SnInput size="lg" type="number" inputmode="numeric" min={0} modelValue={f.min} placeholder={t('Ціна від')} accessibilityLabel={t('Ціна за штуку від')} onInput={(e: Event) => f.setMin(valueOf(e).replace(/\D/g, ''), { replace: true })} />
-        <SnInput size="lg" type="number" inputmode="numeric" min={0} modelValue={f.max} placeholder={t('Ціна до')} accessibilityLabel={t('Ціна за штуку до')} onInput={(e: Event) => f.setMax(valueOf(e).replace(/\D/g, ''), { replace: true })} />
+      {/* на телефоні: світ — рядком, ціна від–до — поруч */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+        <SnInput size="lg" className="col-span-2 sm:col-span-1" modelValue={f.world} placeholder={t('Світ, напр. Hagga EU 7')} accessibilityLabel={t('Світ')} onInput={(e: Event) => f.setWorld(valueOf(e), { replace: true })} />
+        <SnInput size="lg" type="number" inputmode="numeric" min={0} modelValue={f.min} placeholder={t('Ціна від')} accessibilityLabel={t('Ціна за штуку від')} onInput={(e: Event) => f.setMin(String(valueOf(e) ?? '').replace(/\D/g, ''), { replace: true })} />
+        <SnInput size="lg" type="number" inputmode="numeric" min={0} modelValue={f.max} placeholder={t('Ціна до')} accessibilityLabel={t('Ціна за штуку до')} onInput={(e: Event) => f.setMax(String(valueOf(e) ?? '').replace(/\D/g, ''), { replace: true })} />
       </div>
     </div>
   )

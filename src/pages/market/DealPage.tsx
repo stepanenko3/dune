@@ -107,8 +107,8 @@ export default function DealPage({ id }: { id: string }) {
             </Section>
             <Section title={t('Сторони')}>
               <div className="grid gap-3">
-                <Side label={t('Продає')} p={seller} rep={sRep} pending={!seller && d.status === 'offered'} />
-                <Side label={t('Купує')} p={buyer} rep={bRep} pending={!buyer && d.status === 'offered'} />
+                <Side label={t('Продає')} p={seller} rep={sRep} pending={!seller && d.status === 'offered' ? d.owner.name : null} />
+                <Side label={t('Купує')} p={buyer} rep={bRep} pending={!buyer && d.status === 'offered' ? d.owner.name : null} />
                 {d.owner.kind === 'guild' && <p className="text-[12.5px] text-muted">{t('Оголошення гільдії [{tag}] {name}', { tag: d.owner.tag ?? '', name: d.owner.name })}</p>}
               </div>
             </Section>
@@ -121,13 +121,14 @@ export default function DealPage({ id }: { id: string }) {
   )
 }
 
-function Side({ label, p, rep, pending }: { label: string; p: DealFull['maker']; rep: DealFull['reps']['maker']; pending: boolean }) {
+/** pending — пропозицію ще не прийняли: хто веде оголошення (людина чи гільдія) */
+function Side({ label, p, rep, pending }: { label: string; p: DealFull['maker']; rep: DealFull['reps']['maker']; pending: string | null }) {
   return (
     <div className="flex flex-wrap items-center gap-2.5">
       <span className="w-16 text-[12px] font-semibold uppercase tracking-wide text-muted">{label}</span>
       {p ? (
         <a href={`/u/${p.login}`} onClick={go(`/u/${p.login}`)} className="flex items-center gap-2 font-semibold hover:text-spice"><Avatar name={p.name} color={p.color} size={24} />{p.name}</a>
-      ) : <span className="text-muted">{pending ? t('хто прийме оголошення') : t('Людину видалено')}</span>}
+      ) : <span className="text-muted">{pending ? t('{name} — ще не відповів', { name: pending }) : t('Людину видалено')}</span>}
       <RepBadge rep={rep} />
     </div>
   )
@@ -140,7 +141,12 @@ function Chat({ d, onSent }: { d: DealFull; onSent: (d: DealFull) => void }) {
   const [busy, setBusy] = useState(false)
   const end = useRef<HTMLLIElement>(null)
   const canWrite = d.role !== 'mod'
-  useEffect(() => { end.current?.scrollIntoView({ block: 'nearest' }) }, [d.messages.length])
+  // нове повідомлення — показати його (але не гортати сторінку, щойно її відкрили)
+  const seen = useRef(d.messages.length)
+  useEffect(() => {
+    if (d.messages.length > seen.current) end.current?.scrollIntoView({ block: 'nearest' })
+    seen.current = d.messages.length
+  }, [d.messages.length])
   const send = async () => {
     if (!text.trim()) return
     setBusy(true)

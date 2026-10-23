@@ -6,7 +6,8 @@
 import { useEffect, useState } from 'react'
 import { BookOpen, Plus, TrendingUp } from 'lucide-react'
 import { fmtDate, fmtSolari, itemMarket, listingHref, type ItemMarket, type ListingRow } from '@/lib/market'
-import { sectionOfItem } from '@/lib/catalog'
+import { rarityLabel, sectionOfItem, tierLabel } from '@/lib/catalog'
+import { Icon } from '@/components/catalog/bits'
 import { REGIONS, type Region } from '@/lib/ddReset'
 import { t } from '@/lib/i18n'
 import { subscribe } from '@/lib/stream'
@@ -19,9 +20,9 @@ import { Loading, PageError } from '@/components/states'
 import { useCrumb } from '@/components/Crumbs'
 import { SnInput, valueOf } from '@/components/sn'
 import { Section } from '../Account'
-import { BarterList, go, Good, ListingCard, LISTING_GRID, RepBadge, whereText } from '@/components/market/bits'
+import { BarterList, go, ListingCard, LISTING_GRID, RepBadge, whereText } from '@/components/market/bits'
 import { PriceChart } from '@/components/market/PriceChart'
-import { GoodName, itemOf, useGoods } from '@/components/market/names'
+import { GoodName, iconOf, itemOf, useGoods } from '@/components/market/names'
 import { newListing } from '../Market'
 
 export default function ItemPage({ gid }: { gid: string }) {
@@ -48,7 +49,7 @@ export default function ItemPage({ gid }: { gid: string }) {
       <div className="mx-auto grid w-full max-w-[1280px] grid-cols-[minmax(0,1fr)] gap-2.5 pb-10">
         <PageHeader
           title={<GoodName gid={gid} />}
-          meta={<Good gid={gid} size={48} link={false} />}
+          meta={<span className="flex items-center gap-2.5"><Icon src={iconOf(ix, gid)} size={48} grade={it?.grade ?? 0} /><span className="text-[12.5px] text-muted">{[it && it.grade > 0 ? tierLabel(it.grade) : '', it?.rarity ? rarityLabel(it.rarity) : ''].filter(Boolean).join(' · ')}</span></span>}
           actions={
             <>
               <Button variant="secondary" onClick={() => newListing(`${q}&side=buy`)}><Plus size={15} />{t('Купити')}</Button>

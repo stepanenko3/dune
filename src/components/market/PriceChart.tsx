@@ -3,17 +3,26 @@
  * Одна вісь (солари), один ряд — без легенди: підпис над графіком. Наведення — підказка з датою, ціною й кількістю;
  * та сама історія — таблицею під графіком.
  */
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { fmtDate, fmtSolari } from '@/lib/market'
-import { t } from '@/lib/i18n'
+import { locale, t } from '@/lib/i18n'
 import { fmtN } from '@/lib/utils'
 
 type P = { at: number; price: number; qty: number }
-const W = 640, H = 220, L = 64, R = 14, T = 12, B = 28
+/** висота стала, ширина — як у контейнера (текст не розтягується) */
+const H = 220, L = 64, R = 14, T = 12, B = 28
 
 export function PriceChart({ points, median, p25, p75 }: { points: P[]; median: number | null; p25: number | null; p75: number | null }) {
   const box = useRef<HTMLDivElement>(null)
   const [hover, setHover] = useState<{ p: P; x: number; y: number } | null>(null)
+  const [W, setW] = useState(640)
+  useEffect(() => {
+    const el = box.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setW(Math.max(260, el.clientWidth)))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
   const g = useMemo(() => {
     if (!points.length) return null
     const xs = points.map((p) => p.at), ys = points.map((p) => p.price)
@@ -27,18 +36,18 @@ export function PriceChart({ points, median, p25, p75 }: { points: P[]; median: 
     const ticks = [0, 0.5, 1].map((k) => y0 + (y1 - y0) * k)
     const dates = [x0, (x0 + x1) / 2, x1]
     return { sx, sy, ticks, dates }
-  }, [points, p25, p75])
+  }, [points, p25, p75, W])
   if (!g) return null
   return (
     <div ref={box} className="relative" onMouseLeave={() => setHover(null)}>
-      <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={t('Ціни угод у часі')}>
+      <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="block max-w-full" role="img" aria-label={t('Ціни угод у часі')}>
         {g.ticks.map((v, i) => (
           <g key={i}>
             <line x1={L} x2={W - R} y1={g.sy(v)} y2={g.sy(v)} stroke="rgb(var(--c-line))" strokeWidth={1} />
             <text x={L - 6} y={g.sy(v) + 4} textAnchor="end" className="fill-muted text-[11px] tabular-nums">{fmtN(v)}</text>
           </g>
         ))}
-        {g.dates.map((v, i) => <text key={i} x={g.sx(v)} y={H - 8} textAnchor={i === 0 ? 'start' : i === 2 ? 'end' : 'middle'} className="fill-muted text-[11px]">{new Date(v).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</text>)}
+        {g.dates.map((v, i) => <text key={i} x={g.sx(v)} y={H - 8} textAnchor={i === 0 ? 'start' : i === 2 ? 'end' : 'middle'} className="fill-muted text-[11px]">{new Date(v).toLocaleDateString(locale(), { day: 'numeric', month: 'short' })}</text>)}
         {p25 != null && p75 != null && <rect x={L} width={W - L - R} y={g.sy(p75)} height={Math.max(1, g.sy(p25) - g.sy(p75))} fill="rgb(var(--c-spice) / 0.10)" />}
         {median != null && <line x1={L} x2={W - R} y1={g.sy(median)} y2={g.sy(median)} stroke="rgb(var(--c-spice))" strokeWidth={2} strokeDasharray="6 4" />}
         {points.map((p, i) => (
