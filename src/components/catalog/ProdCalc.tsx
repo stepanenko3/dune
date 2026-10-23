@@ -19,7 +19,7 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 're
 import { Calculator, Droplet, Hammer, Landmark, Lock, PackageSearch, Pickaxe, Plus, Timer, Trash2 } from 'lucide-react'
 import { buildName, buildWords, fmtTime, groupLabel, iconUrl, isDevice, nameOf, setLabel, wikiImg, type CatalogIndex, type CItem } from '@/lib/catalog'
 import { buildKey, calc, decreeFx, familyOf, findBuild, kinOf, pickStations, stationTier, type CalcResult, type Step, type Target } from '@/lib/calc'
-import { decreeOf, useDecree, type DecreeId } from '@/lib/decree'
+import { decreeOf, houseOf, useDecree, type DecreeId } from '@/lib/decree'
 import { prefGet, prefSet } from '@/lib/prefs'
 import { useUrlParam } from '@/lib/urlState'
 import { useStore } from '@/store'
@@ -48,7 +48,8 @@ function Knob({ on }: { on: boolean }) {
  * fixed — указ збереженого розрахунку: з ним і рахуємо, без вмикача
  */
 function DecreeLine({ on, onChange, fixed }: { on: boolean; onChange: (v: boolean) => void; fixed?: DecreeId | null }) {
-  const { id: week, loaded, load } = useDecree()
+  // указ тижня діє лише на людей дому-переможця: рахуємо з ним, лише коли він мій (forMe)
+  const { forMe: week, id: site, house, reach, loaded, load } = useDecree()
   useEffect(() => { if (!loaded) load() }, [loaded, load])
   const id = fixed !== undefined ? fixed : week
   const d = decreeOf(id)
@@ -74,7 +75,11 @@ function DecreeLine({ on, onChange, fixed }: { on: boolean; onChange: (v: boolea
       ) : (
         <span className="flex min-w-0 items-center gap-1.5">
           <Landmark size={13} className="shrink-0 text-spice" />
-          {d ? t('Указ «{name}» — без впливу', { name: d.name }) : t('Без указу')}
+          {!d && site && houseOf(house) && (reach === 'off' || reach === 'unknown')
+            ? reach === 'off'
+              ? t('Указ «{name}» діє лише для {house} — на тебе не поширюється', { name: decreeOf(site)!.name, house: houseOf(house)!.of })
+              : t('Указ «{name}» діє для {house} — вкажи свій дім, щоб його врахувати', { name: decreeOf(site)!.name, house: houseOf(house)!.of })
+            : d ? t('Указ «{name}» — без впливу', { name: d.name }) : t('Без указу')}
         </span>
       )}
       <a href="/" onClick={goHome} className="ml-auto whitespace-nowrap underline underline-offset-2 hover:text-spice">{t('змінити')}</a>
@@ -109,7 +114,7 @@ function searchable(ix: CatalogIndex): Hit[] {
   const out: Hit[] = []
   for (const i of ix.cat.items)
     if (ix.makes.has(i.id))
-      out.push({ key: 'item:' + i.id, target: { kind: 'item', id: i.id, qty: 1 }, name: nameOf(i), sub: i.loc ? i.name : '', icon: iconUrl(i.icon), grade: i.grade, text: `${i.name} ${i.loc ?? ''}`.toLowerCase() })
+      out.push({ key: 'item:' + i.id, target: { kind: 'item', id: i.id, qty: 1 }, name: nameOf(i), sub: '', icon: iconUrl(i.icon), grade: i.grade, text: `${i.name} ${i.loc ?? ''}`.toLowerCase() })
   for (const b of ix.cat.buildables) {
     const loc = locOfPlace.get(b.id)
     const words = uk ? buildWords(b.id).split(' ').map((w) => UK_WORDS[w] ?? '').join(' ') : ''
@@ -468,7 +473,8 @@ export function ProdCalc({
   open: Open
 }) {
   const uid = useId()
-  const week = useDecree((s) => s.id)
+  // указ тижня — лише якщо діє на мене (мій дім виграв Ландсраад)
+  const week = useDecree((s) => s.forMe)
   // станції за родинами (переробник руди — великий, хімічний — середній…): пам'ятається для всіх розрахунків —
   // які станції в тебе є; рецепти виходять з них (pickStations)
   const [choiceOwn, setChoiceOwn] = useState<Record<string, number>>(() => prefGet('calc:stations', {}))
@@ -673,7 +679,7 @@ export function ProdCalc({
           ? tg.cost?.length
             ? t('{cost} за шт.', { cost: tg.cost.map(([id, q]) => `${q.toLocaleString(locale(), { maximumFractionDigits: 2 })} ${nameOf(ix.item.get(id), id)}`).join(' + ') })
             : t('без ціни — лише ліміти')
-          : it?.loc ? it.name : '',
+          : '',
       icon: it ? iconUrl(it.icon) : b ? wikiImg(b.img) : tg.icon ?? null,
       grade: it?.grade,
     }

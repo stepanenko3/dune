@@ -5,7 +5,7 @@
  */
 import { stableStringify } from './hash.mjs'
 
-const IGNORE = { _: ['id', 'released'], buildables: ['id', 'released', 'key', 'img'], markers: ['id', 'x', 'y', 'z', 'kind', 'name'], resources: ['id', 'x', 'y', 'z', 'kind'] }
+const IGNORE = { _: ['id', 'released'], buildables: ['id', 'released', 'key', 'img'], markers: ['id', 'x', 'y', 'z', 'kind', 'name'], resources: ['id', 'x', 'y', 'z', 'kind', 'group', 'weight'] }
 /**
  * точки мапи: те саме місце — та сама мапа й розкладка, ближче за PLACE_TOL (см): джерела округлюють координати
  * по-різному, тож ключ «мапа@x:y» з обох боків збігається не завжди. Тип точки в джерел свій (без зіставлення) —

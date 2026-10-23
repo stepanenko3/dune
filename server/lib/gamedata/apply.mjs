@@ -41,7 +41,7 @@ async function applyTexts(game, records) {
 }
 
 /** розділи, які дані файлів гри застосовують у таблиці сайту */
-export const APPLIED = ['texts', 'buildables', 'items', 'placeables', 'recipes', 'skills', 'spice', 'markers', 'markerTypes', 'resources', 'ddLayouts']
+export const APPLIED = ['texts', 'buildables', 'items', 'placeables', 'recipes', 'skills', 'spice', 'markers', 'markerTypes', 'resources', 'ddLayouts', 'ddResources']
 
 export function createAppliers({ game, spice, gamemap }) {
   return {
@@ -61,5 +61,7 @@ export function createAppliers({ game, spice, gamemap }) {
     resources: (data) => gamemap.setPoints(data.records, 'resources'),
     markerTypes: (data) => gamemap.setTypes(data.records),
     ddLayouts: (data) => gamemap.setSchedule(data.blob),
+    // ресурси ГП: перелік розкладок і читач файлу розкладки (драйвер «файли гри») — файли в теку мапи сайту
+    ddResources: (data) => gamemap.setDdResources(data.blob, data.files),
   }
 }

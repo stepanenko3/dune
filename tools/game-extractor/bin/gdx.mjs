@@ -28,6 +28,8 @@ const DEPS = {
   makeUsmap: async (o) => { await ensureImage(JMAP_IMAGE, path.join(import.meta.dirname, '..', 'usmap'), { platform: 'linux/amd64' }); return makeUsmap(o) },
   exportRaw, normalizeRaw, writeBundle, prune,
   log: (...a) => console.log('[gdx]', ...a),
+  // крок конвеєра — окремим рядком: за ним панель сайту показує, де зараз оновлення (server/lib/gamedata/update.mjs)
+  step: (name) => console.log('[gdx:step]', name),
 }
 
 function args(argv) {
@@ -84,6 +86,7 @@ function lock(work) {
 /** конвеєр до кроку until (включно) */
 async function pipeline(o, d, until) {
   const state = readState(o.work)
+  d.step('check')
   const r = await d.check(o.work)
   d.log(`Steam: маніфест ${r.manifestId} (${r.date}), образ ${r.serverTarSha}${state.lastCheck?.serverTarSha === r.serverTarSha ? ' — як минулого разу' : ''}`)
   const known = Object.entries(state.builds ?? {}).find(([b, v]) => v.sha === r.serverTarSha && v.bundled && bundled(o.work, b))
@@ -94,8 +97,9 @@ async function pipeline(o, d, until) {
   const at = (s) => STEPS.indexOf(s) <= STEPS.indexOf(until === 'all' ? 'bundle' : until)
   const depot = path.join(o.work, 'depot')
   const tar = path.join(depot, 'images', 'battlegroup', 'server.tar')
-  if (at('fetch')) { d.log('завантажую образ сервера'); await d.fetchServer(o.work, depot, { onLine: (l) => /%|Total/.test(l) && d.log(l.trim()) }) }
+  if (at('fetch')) { d.step('fetch'); d.log('завантажую образ сервера'); await d.fetchServer(o.work, depot, { onLine: (l) => /%|Total/.test(l) && d.log(l.trim()) }) }
   if (!at('unpack')) return save(), 0
+  d.step('unpack')
   let info = unpacked(o.work, r.serverTarSha)
   if (!info) {
     const incoming = path.join(o.work, 'extract', 'sha-' + r.serverTarSha.slice(0, 12))
@@ -111,13 +115,17 @@ async function pipeline(o, d, until) {
   }
   d.log(`збірка ${info.build}, версія ${info.version ?? '?'}`)
   if (!at('usmap')) return save(), 0
+  d.step('usmap')
   const usmap = await d.makeUsmap({ work: o.work, build: info.build, image: info.tag, serverTar: tar, log: d.log })
   if (!at('export')) return save(), 0
+  d.step('export')
   await d.exportRaw({ work: o.work, build: info.build, root: info.root, usmap })
   if (!at('normalize')) return save(), 0
+  d.step('normalize')
   const sections = d.normalizeRaw({ work: o.work, build: info.build })
   for (const [k, v] of Object.entries(sections)) if (v instanceof Error) d.log(`розділ ${k}: ${v.message}`)
   if (!at('bundle')) return save(), 0
+  d.step('bundle')
   const dir = await d.writeBundle({ work: o.work, build: info.build, version: info.version, manifestId: r.manifestId, sections, extractor: { version: EXTRACTOR_VERSION } })
   d.log(`пакет: ${dir}`)
   save({ builds: { ...(state.builds ?? {}), [info.build]: { sha: r.serverTarSha, bundled: Date.now() } } })
@@ -160,4 +168,8 @@ export async function main(argv, deps = DEPS) {
   }
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) process.exitCode = await main(process.argv.slice(2))
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+  process.exitCode = await main(process.argv.slice(2))
+  // код виходу рядком: панель сайту читає журнал і після власного перезапуску (процес уже не її дитина)
+  console.log(`[gdx:exit] ${process.exitCode}`)
+}

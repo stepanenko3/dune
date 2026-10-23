@@ -166,3 +166,14 @@
 .event-pin--at span {
   background: #6a5acd;
 }
+
+/* «де найкраще»: підпис підсвіченого сектора / ділянки */
+.leaflet-tooltip.best-tip {
+  background: rgb(28 19 12 / 0.85);
+  border: 1px solid #e8833a;
+  color: #f6e7d0;
+  font: 700 12px/1.2 'JetBrains Mono', ui-monospace, monospace;
+  padding: 2px 6px;
+  box-shadow: none;
+}
+.leaflet-tooltip.best-tip::before { display: none; }

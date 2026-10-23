@@ -91,7 +91,9 @@ export function createBasesRoutes({ bases, thumbs, items, content, hub }) {
       if (!t) return next(fail('немає такої бази', 404))
       const open = it.visibility === 'public' || it.visibility === 'link'
       res.set('cache-control', req.query.v === t.tag ? `${open ? 'public' : 'private'}, max-age=31536000, immutable` : 'no-cache')
-      res.sendFile(t.file)
+      const jpg = await t.read()
+      if (!jpg) throw new Error('знімок зник зі сховища')
+      res.type('image/jpeg').send(jpg)
     } catch (e) {
       if (e.status) next(e)
       else res.status(503).set('cache-control', 'no-store').json({ error: req.t('знімок зараз недоступний') })
@@ -237,7 +239,9 @@ export function createBasesRoutes({ bases, thumbs, items, content, hub }) {
   }))
 
   r.post('/api/bases/:id/history/:hid/restore', need(), wrap(async (req, res) => {
-    const { it } = await load(req, 'edit', { doc: false })
+    const { it, c } = await load(req, 'edit', { doc: false })
+    // відновлюють давню версію ті, хто й змінює базу, і бачить її історію (інакше історія, закрита правом, відкривалась би так)
+    if (!c.history) throw DENY.history()
     const out = await bases.restore(id(req), Number(req.params.hid), req.user.id)
     if (!out) throw fail('немає такої версії', 404)
     if (out.conflict) return res.status(409).json({ error: req.t('хтось уже змінив цю базу'), ...noted(out, req) })

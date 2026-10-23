@@ -6,10 +6,12 @@ import { create } from 'zustand'
 import { get, patch, post, put } from '@/lib/api'
 import { leaveFreely, useStore } from '@/store'
 import { t } from '@/lib/i18n'
+import { optionLabel } from './labels'
 
 export type FieldType = 'text' | 'textarea' | 'code' | 'email' | 'url' | 'color' | 'slug' | 'int' | 'num' | 'bool' | 'flag' | 'datetime' | 'select' | 'relation' | 'owner' | 'json' | 'pairs' | 'list' | 'permissions'
-/** also — давні назви того ж значення (у журналі), фільтр шукає й за ними */
-export interface Option { value: string; label: string; also?: string[] }
+/** also — давні назви того ж значення (у журналі), фільтр шукає й за ними; parent — значення поля, від якого варіант
+ *  залежить (підкатегорія — від категорії); icon — зображення запису (вибір зі списку записів) */
+export interface Option { value: string; label: string; also?: string[]; parent?: string; icon?: string | null }
 export interface Field {
   key: string
   label: string
@@ -40,6 +42,18 @@ export interface Field {
   tr?: boolean
   /** обчислюється сервером (немає в таблиці бази — ні фільтра, ні сортування) */
   virtual?: boolean
+  /** значення — адреса зображення: мініатюра в таблиці, картинка у формі (збільшити, завантажити нове, прибрати) */
+  image?: boolean
+  /** pairs / list: id яких записів там (розділ) — вибір зі списку з іконкою й назвою; сервер дає <key>__refs */
+  refs?: string
+  /** як підписати варіанти select (словник сайту, ./labels.ts) */
+  labels?: string
+  /** варіанти select залежать від значення цього поля (option.parent) */
+  dependsOn?: string
+  /** службове (JSON, внутрішні коди) — у згорнутому блоці «Технічні дані» під формою */
+  advanced?: boolean
+  /** 'duration' — мілісекунди показувати як «1 хв 5 с» */
+  format?: string
 }
 export interface Action {
   key: string
@@ -84,15 +98,19 @@ export interface Resource {
   relations: Relation[]
   abilities: string[]
 }
-export interface Relation { resource: string; field?: string; match?: Record<string, string>; label?: string }
-/** закріплені умови для пов'язаного списку: field = id запису, match — з підстановкою $id */
-export const fixedOf = (rel: Relation, id: string): Record<string, string> =>
-  rel.field ? { [rel.field]: id } : Object.fromEntries(Object.entries(rel.match ?? {}).map(([k, v]) => [k, v === '$id' ? id : v]))
+/** has — у списку чи парах пов'язаного розділу є id цього запису (рецепти, де потрібен предмет) */
+export interface Relation { resource: string; field?: string; match?: Record<string, string>; has?: string; label?: string }
+/** закріплені умови для пов'язаного списку: field = id запису, match — з підстановкою $id, has — { поле: { has: id } } */
+export const fixedOf = (rel: Relation, id: string): Record<string, unknown> =>
+  rel.has ? { [rel.has]: { has: id } } : rel.field ? { [rel.field]: id } : Object.fromEntries(Object.entries(rel.match ?? {}).map(([k, v]) => [k, v === '$id' ? id : v]))
+/** ключ вкладки пов'язаних записів (в адресі ?tab=): розділ, а якщо він у картці не один — ще й поле */
+export const relKey = (rel: Relation, all: Relation[]) => (all.filter((x) => x.resource === rel.resource).length > 1 ? `${rel.resource}.${rel.has ?? rel.field ?? Object.keys(rel.match ?? {})[0] ?? ''}` : rel.resource)
 export type Row = Record<string, unknown> & { _id: string }
 export interface Revision { id: number; action: string; actor: string | null; actor_name?: string | null; at: number; note: string; entity?: string; entity_id?: string }
 export interface Change { path: string; type: 'add' | 'remove' | 'change'; from?: unknown; to?: unknown }
-export interface ListQuery { page: number; size: number; search: string; sort: string | null; desc: boolean; filters: Record<string, unknown>; fixed?: Record<string, string> }
-export interface ListResult { rows: Row[]; total: number; page: number; size: number }
+export interface ListQuery { page: number; size: number; search: string; sort: string | null; desc: boolean; filters: Record<string, unknown>; fixed?: Record<string, unknown> }
+/** all — скільки записів без пошуку й фільтрів (є, коли вони задані) */
+export interface ListResult { rows: Row[]; total: number; all?: number; page: number; size: number }
 
 interface Meta { resources: Resource[]; langs: { code: string; name: string }[]; role: string; permissions: string[] }
 /** title — назва відкритого запису для крихт над заголовком (ставить картка запису) */
@@ -101,7 +119,7 @@ export const useAdmin = create<{ meta: Meta | null; error: string; title: string
   error: '',
   title: null,
   load: async () => {
-    try { set({ meta: await get<Meta>('/api/admin/meta'), error: '' }) } catch (e) { set({ error: (e as Error).message }) }
+    try { set({ meta: withLabels(await get<Meta>('/api/admin/meta')), error: '' }) } catch (e) { set({ error: (e as Error).message }) }
   },
 }))
 /** чи є дозвіл — як на сервері (roles.has): точний, «*» чи «<розділ>.*» */
@@ -129,8 +147,34 @@ export const adminApi = {
   revisionDiff: (id: number) => get<{ revision: Revision; changes: Change[] }>(`/api/admin/revisions/${id}/diff`),
   versionDiff: (kind: 'base' | 'roadmap', hid: number) => get<{ from: { version: number; updated: number }; to: { version: number; updated: number } | null; changes: Change[] }>(`/api/admin/version-diff/${kind}/${hid}`),
   permissionsCatalog: () => get<{ sections: { name: string; label: string; group: string; abilities: string[]; actions: Record<string, string> }[]; site: { key: string; label: string }[] }>('/api/admin/permissions-catalog'),
+  /** скільки записів: [[розділ, fixed?], …] → [n | null] */
+  counts: (list: [string, Record<string, unknown>?][]) => get<{ counts: (number | null)[] }>(`/api/admin/counts?q=${enc(JSON.stringify(list))}`).then((r) => r.counts),
+  /** зображення в сховище → адреса /media/… */
+  upload: (res: string, file: Blob) => sendFile<{ url: string }>('POST', `/api/admin/upload?res=${enc(res)}`, file),
+  basePhoto: (id: string) => get<BasePhoto>(`/api/admin/bases/${enc(id)}/photo`),
+  setBasePhoto: (id: string, file: Blob) => sendFile<BasePhoto>('POST', `/api/admin/bases/${enc(id)}/photo`, file),
+  dropBasePhoto: (id: string) => sendFile<BasePhoto>('DELETE', `/api/admin/bases/${enc(id)}/photo`, null),
+  redrawBasePhoto: (id: string) => post<BasePhoto>(`/api/admin/bases/${enc(id)}/photo/redraw`, {}),
   gameTexts: (kind: string, id: string) => get<{ texts: Record<string, { name: string; description: string; source: string; locked: boolean }> }>(`/api/admin/game-texts/${kind}?id=${enc(id)}`),
   saveGameTexts: (kind: string, id: string, texts: Record<string, { name: string; description: string }>) => put(`/api/admin/game-texts/${kind}?id=${enc(id)}`, { texts }),
+}
+
+/** фото бази: своє (завантажене) чи знімок 3D; url null — знімок не вдався */
+export interface BasePhoto { custom: boolean; url: string | null }
+
+/** файл тілом запиту (зображення): помилку сервера — його текстом */
+async function sendFile<T>(method: string, url: string, file: Blob | null): Promise<T> {
+  const r = await fetch(url, { method, credentials: 'same-origin', headers: file ? { 'content-type': file.type || 'application/octet-stream' } : {}, body: file ?? undefined })
+  let body: unknown = null
+  try { body = await r.json() } catch { /* не JSON */ }
+  if (!r.ok) throw new Error((body as { error?: string } | null)?.error || t('Не вдалося зберегти'))
+  return body as T
+}
+
+/** варіанти полів зі словником сайту (labels) — підписами мовою сайту (категорії гри тощо) */
+function withLabels(m: Meta): Meta {
+  for (const r of m.resources) for (const f of r.fields) if (f.labels && f.options) f.options = f.options.map((o) => ({ ...o, label: optionLabel(f.labels!, o.value) }))
+  return m
 }
 
 /**

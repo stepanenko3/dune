@@ -22,6 +22,7 @@ import { SCHOOL_ICON } from '@/components/skills/icons'
 import { RoadmapProgress } from '@/pages/RoadmapList'
 import { ConfirmDialog } from '@/pages/Account'
 import { AccessBadge, OwnerLink } from './Access'
+import { Img } from '@/components/ui/img'
 
 const ICON = { base: Castle, roadmap: TrendingUp, build: Sparkles, calc: Calculator, marker: MapPin, place: MapPin, event: CalendarDays }
 
@@ -38,7 +39,7 @@ export function openItem(it: Pick<Item, 'kind' | 'id'>) {
   }
 }
 
-/** база в кошику: повернути чи стерти назавжди (лише тим, хто нею керує) */
+/** база в кошику: повернути (тим, хто нею керує) чи стерти назавжди (власнику; у гільдії — лідеру) */
 function TrashActions({ it, onChange }: { it: Item; onChange?: () => void }) {
   const [asking, setAsking] = useState(false)
   const back = () => removeBase(it.id, true).then(() => { toast.success(t('«{name}» повернуто', { name: it.title })); onChange?.() }, (e) => toast.error((e as Error).message))
@@ -46,7 +47,8 @@ function TrashActions({ it, onChange }: { it: Item; onChange?: () => void }) {
   return (
     <div className="flex flex-wrap gap-1.5 px-3.5 pb-3">
       <Button size="sm" variant="secondary" onClick={back}><RotateCcw size={13} />{t('Повернути')}</Button>
-      <Button size="sm" variant="ghost" className="text-bad hover:text-bad" onClick={() => setAsking(true)}><Trash2 size={13} />{t('Видалити назавжди')}</Button>
+      {/* стерти назавжди — лише власник (у гільдії — лідер); офіцер повертає, але не стирає */}
+      {it.can?.own && <Button size="sm" variant="ghost" className="text-bad hover:text-bad" onClick={() => setAsking(true)}><Trash2 size={13} />{t('Видалити назавжди')}</Button>}
       {asking && createPortal(
         <ConfirmDialog danger title={t('Стерти «{name}» назавжди — разом з усіма версіями? Повернути вже не вийде.', { name: it.title })} confirm={t('Видалити назавжди')} onClose={() => setAsking(false)} onConfirm={() => void purge()} />,
         document.body,
@@ -92,7 +94,7 @@ function Thumb({ it, gone }: { it: Item; gone: boolean }) {
   return (
     <div className="aspect-[960/560] overflow-hidden bg-[var(--plan-bg)]">
       {/* ?v= — щоб після правок бази браузер узяв новий знімок, а не старий з кешу */}
-      <img src={`/api/bases/${it.id}/thumb.jpg?v=${it.updated}`} alt="" loading="lazy" decoding="async" onError={() => setBad(true)} className={cn('h-full w-full object-cover transition-transform duration-300', gone ? 'opacity-50 grayscale' : 'group-hover:scale-[1.02]')} />
+      <Img src={`/api/bases/${it.id}/thumb.jpg?v=${it.updated}`} onError={() => setBad(true)} className={cn('h-full w-full object-cover transition-transform duration-300', gone ? 'opacity-50 grayscale' : 'group-hover:scale-[1.02]')} />
     </div>
   )
 }

@@ -1,10 +1,12 @@
 /*
- * Планувальник фонових задач (як cron): оновлення мапи з TH.GL, збір довідника й умінь, знімки баз, прибирання
+ * Планувальник фонових задач (як cron): оновлення мапи, перевірка даних гри, знімки баз, прибирання
  * сеансів і кодів. Розклад — cron-рядок «хв год день міс день-тижня» (зірочка, крок «/n», діапазон a-b, перелік a,b), його можна змінити в панелі
  * керування, як і вимкнути задачу чи запустити зараз. Кожен запуск — рядок cron_runs: початок, тривалість, стан,
- * журнал (усе, що задача написала через log). Одна задача не запускається вдруге, поки йде попередній запуск.
+ * журнал (усе, що задача написала через say, а з capture — і через log). Поки запуск іде, його журнал видно наживо
+ * (watch — для панелі, SSE). Одна задача не запускається вдруге, поки йде попередній запуск.
  * Час — місцевий час сервера (cronTimeZone). Запуск, який обірвав перезапуск сервера, на старті стає помилкою.
  */
+import { AsyncLocalStorage } from 'node:async_hooks'
 import { fail } from './util.mjs'
 
 /** «*\/5 * * * *» → перевірка, чи підходить дата; кидає помилку на хибному рядку */
@@ -67,7 +69,17 @@ export function cronTimeZone() {
   return Intl.DateTimeFormat().resolvedOptions().timeZone
 }
 
-export async function createCron(db, { log = console } = {}) {
+/** рядок журналу з того, що передали say чи log: текст як є, помилка — її повідомлення, решта — JSON */
+const fmt = (a) => a.map((x) => (typeof x === 'string' ? x : x instanceof Error ? x.message : (() => { try { return JSON.stringify(x) } catch { return String(x) } })())).join(' ')
+/** найдовший рядок журналу (решту обрізаємо) і скільки рядків тримаємо */
+const LINE_MAX = 2000, LINES_MAX = 500
+
+/**
+ * capture — усе, що задача (і те, що вона викликає) пише в log.info/warn/error, теж іде в журнал її запуску: log
+ * доповнюємо на місці (його ділять усі модулі сервера), запис у журнал — лише з асинхронного контексту запуску,
+ * тож журнали запитів і інших задач туди не потрапляють.
+ */
+export async function createCron(db, { log = console, capture = false } = {}) {
   await db.exec(`
     CREATE TABLE IF NOT EXISTS cron_jobs (
       key TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT NOT NULL DEFAULT '', schedule TEXT NOT NULL, enabled INTEGER NOT NULL DEFAULT 1,
@@ -81,8 +93,25 @@ export async function createCron(db, { log = console } = {}) {
   `)
   const jobs = new Map() // key → { run(log) }
   const running = new Set()
+  /** запуски, що йдуть у цьому процесі: id → { key, lines, subs } — для журналу наживо */
+  const live = new Map()
+  /** контекст запуску: куди писати рядки журналу (для capture) */
+  const ctx = new AsyncLocalStorage()
   let timer = null
-  const stamp = () => new Date().toISOString().slice(11, 19)
+  // час рядків журналу — місцевий час сервера, як і розклад (а не UTC)
+  const stamp = () => new Date().toTimeString().slice(0, 8)
+
+  if (capture) {
+    for (const [m, mark] of [['info', ''], ['log', ''], ['warn', '⚠'], ['error', '⚠']]) {
+      const orig = log[m]
+      if (typeof orig !== 'function') continue
+      log[m] = function (...a) {
+        const w = ctx.getStore()
+        if (w) w(...(mark ? [mark] : []), ...a)
+        return orig.apply(this, a)
+      }
+    }
+  }
 
   // запуски, які обірвав перезапуск сервера (оновлення, падіння), лишились «Виконується» — тепер це помилка з поясненням;
   // у задачі — теж: останній запуск невдалий. Тривалість лишаємо порожньою — коли саме зупинився процес, невідомо
@@ -106,39 +135,67 @@ export async function createCron(db, { log = console } = {}) {
     key, name, description, sched, nextRun(sched))
   }
 
-  async function execute(key, trigger = 'schedule') {
+  /**
+   * почати запуск: рядок cron_runs одразу (його id — щоб стежити за журналом наживо), сама задача — у фоні.
+   * { id, done } — done завершується { status, ms, error }. Журнал, поки задача йде, раз на кілька секунд пишемо й у
+   * базу — картка запуску після перезавантаження показує, докуди дійшло.
+   */
+  async function begin(key, trigger) {
     const job = jobs.get(key)
     if (!job) throw fail('немає такої задачі', 404)
     if (running.has(key)) throw fail('задача вже виконується')
     running.add(key) // ще до першого await — другий запуск одразу бачить, що задача йде
     const started = Date.now()
-    const lines = []
-    const write = (...a) => { lines.push(`${stamp()} ${a.map(String).join(' ')}`); if (lines.length > 500) lines.shift() }
     let id
     try {
       id = (await db.get('INSERT INTO cron_runs (job, started, trigger) VALUES (?, ?, ?) RETURNING id', key, started, trigger)).id
     } catch (e) { running.delete(key); throw e }
-    let status = 'ok', error = null
-    try {
-      const out = await job.run(write)
-      if (out !== undefined) write(typeof out === 'string' ? out : JSON.stringify(out))
-    } catch (e) {
-      status = 'error'
-      error = String(e?.message || e).slice(0, 500)
-      write('⚠', error)
-    } finally {
-      running.delete(key)
+    const run = { key, lines: [], subs: new Set(), closed: false }
+    live.set(Number(id), run)
+    let flush = null
+    const save = () => db.run("UPDATE cron_runs SET log = ? WHERE id = ? AND status = 'running'", run.lines.join('\n').slice(-20000), id).catch(() => {})
+    const write = (...a) => {
+      if (run.closed) return
+      const line = `${stamp()} ${fmt(a)}`.slice(0, LINE_MAX)
+      run.lines.push(line)
+      if (run.lines.length > LINES_MAX) run.lines.shift()
+      for (const fn of run.subs) fn({ line })
+      if (!flush) { flush = setTimeout(() => { flush = null; void save() }, 2000); flush.unref?.() }
     }
-    const ms = Date.now() - started
-    const job0 = await db.get('SELECT schedule FROM cron_jobs WHERE key = ?', key)
-    await db.run('UPDATE cron_runs SET finished = ?, status = ?, ms = ?, log = ? WHERE id = ?', Date.now(), status, ms, lines.join('\n').slice(-20000), id)
-    await db.run(`UPDATE cron_jobs SET last_run = ?, last_status = ?, last_ms = ?, last_error = ?, runs = runs + 1, fails = fails + ?, next_run = ? WHERE key = ?`,
-      started, status, ms, error, status === 'error' ? 1 : 0, nextRun(job0.schedule), key)
-    // тримаємо 200 останніх запусків кожної задачі
-    await db.run('DELETE FROM cron_runs WHERE job = ? AND id NOT IN (SELECT id FROM cron_runs WHERE job = ? ORDER BY id DESC LIMIT 200)', key, key)
-    if (status === 'error') log.warn?.(`[cron] ${key}: ${error}`)
-    return { status, ms, error }
+    const done = (async () => {
+      let status = 'ok', error = null
+      try {
+        const out = await ctx.run(write, () => job.run(write))
+        if (out !== undefined) write(typeof out === 'string' ? out : JSON.stringify(out))
+      } catch (e) {
+        status = 'error'
+        error = String(e?.message || e).slice(0, 500)
+        write('⚠', error)
+      } finally {
+        running.delete(key)
+      }
+      run.closed = true
+      clearTimeout(flush)
+      const ms = Date.now() - started
+      try {
+        const job0 = await db.get('SELECT schedule FROM cron_jobs WHERE key = ?', key)
+        await db.run('UPDATE cron_runs SET finished = ?, status = ?, ms = ?, log = ? WHERE id = ?', Date.now(), status, ms, run.lines.join('\n').slice(-20000), id)
+        await db.run(`UPDATE cron_jobs SET last_run = ?, last_status = ?, last_ms = ?, last_error = ?, runs = runs + 1, fails = fails + ?, next_run = ? WHERE key = ?`,
+          started, status, ms, error, status === 'error' ? 1 : 0, nextRun(job0.schedule), key)
+        // тримаємо 200 останніх запусків кожної задачі
+        await db.run('DELETE FROM cron_runs WHERE job = ? AND id NOT IN (SELECT id FROM cron_runs WHERE job = ? ORDER BY id DESC LIMIT 200)', key, key)
+      } finally {
+        // хто стежив наживо — дізнається, чим скінчилось (журнал уже в базі)
+        live.delete(Number(id))
+        for (const fn of run.subs) fn({ done: true, status, ms })
+        run.subs.clear()
+      }
+      if (status === 'error') log.warn?.(`[cron] ${key}: ${error}`)
+      return { status, ms, error }
+    })()
+    return { id: Number(id), done }
   }
+  const execute = async (key, trigger = 'schedule') => (await begin(key, trigger)).done
 
   /** раз на 20 с: що пора — запускаємо (без очікування, кожна задача окремо) */
   async function tick() {
@@ -149,12 +206,13 @@ export async function createCron(db, { log = console } = {}) {
     }
   }
 
-  /** «Запустити зараз» без очікування: збір довідника йде 10–15 хв, а відповідь панелі — одразу; стан і журнал — у «Запусках задач» */
+  /** «Запустити зараз» без очікування: збір довідника йде 10–15 хв, а відповідь панелі — одразу (з id запуску — журнал наживо) */
   async function launch(key) {
     if (!jobs.has(key)) throw fail('немає такої задачі', 404)
     if (running.has(key)) return { started: false, running: true }
-    execute(key, 'manual').catch((e) => log.warn?.(`[cron] ${key}: ${e.message}`))
-    return { started: true }
+    const { id, done } = await begin(key, 'manual')
+    done.catch((e) => log.warn?.(`[cron] ${key}: ${e.message}`))
+    return { started: true, id }
   }
 
   return {
@@ -162,6 +220,18 @@ export async function createCron(db, { log = console } = {}) {
     /** запустити й дочекатися: { status, ms, error } */
     run: (key) => execute(key, 'manual'),
     running: () => [...running],
+    /** id запусків, що йдуть у цьому процесі: { задача: id } */
+    live: () => Object.fromEntries([...live].map(([id, r]) => [r.key, id])),
+    /**
+     * стежити за журналом запуску наживо: null — запуск уже не йде (журнал — у базі); інакше { lines } (що вже є) і
+     * fn({ line }) на кожен новий рядок, fn({ done, status, ms }) наприкінці; stop() — перестати
+     */
+    watch(id, fn) {
+      const run = live.get(Number(id))
+      if (!run) return null
+      run.subs.add(fn)
+      return { key: run.key, lines: [...run.lines], stop: () => run.subs.delete(fn) }
+    },
     async setSchedule(key, schedule) {
       const at = checkCron(schedule)
       await db.run('UPDATE cron_jobs SET schedule = ?, next_run = ? WHERE key = ?', schedule, at, key)
@@ -170,7 +240,7 @@ export async function createCron(db, { log = console } = {}) {
       const j = await db.get('SELECT schedule FROM cron_jobs WHERE key = ?', key)
       await db.run('UPDATE cron_jobs SET enabled = ?, next_run = ? WHERE key = ?', on ? 1 : 0, on && j ? nextRun(j.schedule) : null, key)
     },
-    /** start() — увімкнути планувальник (раз на 20 с); start(key) — запустити задачу у фоні: { started: true } одразу
+    /** start() — увімкнути планувальник (раз на 20 с); start(key) — запустити задачу у фоні: { started: true, id } одразу
      *  або { started: false, running: true }, якщо вона вже йде */
     start(key) {
       if (key !== undefined) return launch(key)

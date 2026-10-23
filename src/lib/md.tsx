@@ -11,6 +11,8 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ourImg } from '@/lib/media'
+import { Img as MediaImg } from '@/components/ui/img'
 import { openPath } from '@/store'
 
 /**
@@ -59,21 +61,12 @@ const sitePath = (u: string) => /^\/(?![\/\\])/.test(u) && !/[\u0000-\u001f\\]/.
 /** зовнішня — лише http(s); внутрішня — шлях цього сайту (не «//чужий» і не «/\чужий», які браузер вважає чужим сайтом) */
 const safeHref = (u: string) => (/^https?:\/\//.test(u) || sitePath(u) ? u : null)
 
-/** картинки — лише з цього сайту й CDN іконок гри (gaming.tools): чужа адреса в тексті не стежить за глядачами */
-const IMG_HOSTS = new Set(['cdn-hosted.gaming.tools'])
-export function safeImg(u: string): string | null {
-  if (sitePath(u)) return u
-  try {
-    const x = new URL(u)
-    return x.protocol === 'https:' && IMG_HOSTS.has(x.hostname) ? u : null
-  } catch {
-    return null
-  }
-}
+/** картинки — лише з цього сайту (давні адреси CDN іконок гри — через наш проксі з медіатеки, lib/media): чужа адреса в тексті не стежить за глядачами */
+export const safeImg = (u: string): string | null => (sitePath(u) ? u : ourImg(u))
 const IMG_RE = /^!\[([^\]]*)\]\(([^)\s]+)\)\s*/
 
-function Img({ src, alt, className }: { src: string; alt: string; className?: string }) {
-  return <img src={src} alt={alt} loading="lazy" decoding="async" referrerPolicy="no-referrer" className={cn('inline-block object-contain', className)} />
+function Img({ src, alt, className, boxClassName }: { src: string; alt: string; className?: string; boxClassName?: string }) {
+  return <MediaImg src={src} alt={alt} className={cn('inline-block object-contain', className)} boxClassName={boxClassName} />
 }
 
 function go(e: React.MouseEvent, href: string) {
@@ -155,7 +148,7 @@ export function Md({ text, className }: { text: string; className?: string }) {
       const rest = [para[0].slice(pic[0].length), ...para.slice(1)]
       blocks.push(
         <div key={k++} className="flex items-start gap-3">
-          <Img src={src} alt={pic[1]} className="h-16 w-16 shrink-0 rounded-md bg-panel2/60 p-1" />
+          <Img src={src} alt={pic[1]} className="h-16 w-16 shrink-0 rounded-md bg-panel2/60 p-1" boxClassName="shrink-0 rounded-md" />
           <div className="grid min-w-0 gap-1.5">{rows(rest, `${k}-`)}</div>
         </div>,
       )

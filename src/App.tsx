@@ -7,7 +7,7 @@ import { UnsavedBar } from '@/components/UnsavedBar'
 import { Crumbs, pageReady } from '@/components/Crumbs'
 import { useBusy, useBusyStore } from '@/lib/busy'
 import { StormAlert } from '@/components/DDTimer'
-import { FrozenRoute, useStore, type Route } from '@/store'
+import { FrozenRoute, openPath, useStore, type Route } from '@/store'
 import { BasesList } from '@/pages/BasesList'
 import { Roadmap } from '@/pages/Roadmap'
 import { Home } from '@/pages/Home'
@@ -31,7 +31,7 @@ const TITLE: Partial<Record<string, () => string>> = {
   bases: () => t('Бази'), roadmap: () => t('Роадмапи'), map: () => t('Мапа'), catalog: () => t('Довідник'), calculator: () => t('Розрахунок'),
   skills: () => t('Планувальник'), builds: () => t('Уміння'), calcs: () => t('Калькулятор'), library: () => t('Бібліотека'), login: () => t('Вхід'), account: () => t('Налаштування профілю'), guilds: () => t('Гільдії'),
   guild: () => t('Гільдія'), invite: () => t('Запрошення'), admin: () => t('Панель керування'), data: () => t('Оновлення даних'), notfound: () => t('Такої сторінки нема'),
-  events: () => t('Події'),
+  events: () => t('Події'), world: () => t('Карта світу'),
 }
 
 // панель керування — рідко й не всім: окремим шматком
@@ -45,6 +45,7 @@ const SkillsPage = lazy(() => import('@/pages/SkillsPage'))
 const DataUpdates = lazy(() => import('@/pages/DataUpdates'))
 // події: список, сторінка й редактор (з мапою для точок — Leaflet своїм шматком)
 const Events = lazy(() => import('@/pages/Events'))
+// карта світу: схема карти поверхні гри й переходи між мапами
 // сторінка бази — рушій баз, three.js і редактор: найважче на сайті, тож теж окремо
 const loadBasePage = () => import('@/pages/BasePage')
 const BasePage = lazy(() => loadBasePage().then((m) => ({ default: m.BasePage })))
@@ -78,6 +79,12 @@ function Fallback({ label, title }: { label: string; title?: string }) {
 
 
 /** сторінка за адресою (App кладе її в одне з двох місць: на екрані чи наступна, що вантажиться) */
+/** давня адреса /world[/<місце>]: карта світу тепер — одна з мап розділу «Мапа» */
+function WorldRedirect({ place }: { place: string | null }) {
+  useEffect(() => { openPath(`/map?m=overmap${place ? `&loc=${encodeURIComponent(place)}` : ''}`, true) }, [place])
+  return null
+}
+
 function Page({ r }: { r: Route }) {
   const { view, base, param } = r
   return (
@@ -108,6 +115,8 @@ function Page({ r }: { r: Route }) {
           <Suspense fallback={<Fallback label={t('Завантаження подій…')} title={param ? undefined : t('Події спільноти')} />}>
             <Events id={param} edit={r.sub === 'edit'} />
           </Suspense>
+        ) : view === 'world' ? (
+          <WorldRedirect place={r.sub} />
         ) : view === 'roadmap' ? (
           param ? <Roadmap key={param} id={param} /> : <RoadmapList />
         ) : view === 'library' ? (

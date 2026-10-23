@@ -6,14 +6,16 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { makeUsmap, parseGlobals, waitFor } from '../lib/usmap.mjs'
 
 /** фейковий docker: ready — чи сервер «дійшов» до Game Engine Initialized; jmap кладе файли в змонтовану /out */
-function fakeDocker({ ready, alive = true, haveImage = true }) {
+function fakeDocker({ ready, alive = true, haveImage = true, lateStart = 0 }) {
   const calls = []
+  let pg = 0, gr = 0
   const docker = async (args) => {
     calls.push(args)
     const [cmd] = args
     if (cmd === 'image' && !haveImage) throw new Error('No such image')
-    if (cmd === 'exec' && args.includes('grep')) { if (!ready) throw new Error('нема рядка'); return { code: 0, out: '' } }
-    if (cmd === 'exec' && args.includes('pgrep')) { if (!alive) throw new Error('нема процесу'); return { code: 0, out: '42' } }
+    // lateStart — процес сервера з'являється лише після стількох перевірок (емуляція amd64 стартує повільно)
+    if (cmd === 'exec' && args.includes('grep')) { if (!ready || ++gr <= lateStart + 1) throw new Error('нема рядка'); return { code: 0, out: '' } }
+    if (cmd === 'exec' && args.includes('pgrep')) { if (!alive || ++pg <= lateStart) throw new Error('нема процесу'); return { code: 0, out: '42' } }
     if (cmd === 'exec' && args.includes('tail')) return { code: 0, out: 'LogCore: Unhandled Exception: SIGSEGV\n' }
     if (cmd === 'run' && args.includes('sandwalkers/gd-jmap:1')) {
       const out = args[args.indexOf('-v') + 1].split(':/out')[0]
@@ -67,10 +69,15 @@ describe('usmap', () => {
     expect(calls.at(-1)).toEqual(['rm', '-f', 'gd-usmap-7'])
   })
 
+  it('процес сервера з\'являється не одразу після docker run — це не «упав»: чекаємо далі', async () => {
+    const { docker } = fakeDocker({ ready: true, lateStart: 3 })
+    expect(await makeUsmap({ work, build: '7', image: 'img:7', serverTar: '/nope', docker, timeoutMs: 5000, intervalMs: 5, startMs: 2000 })).toMatch(/DuneSandbox-7\.usmap$/)
+  })
+
   it('сервер упав до старту — швидка помилка з хвостом журналу сервера', async () => {
     const { docker } = fakeDocker({ ready: false, alive: false })
     const t0 = Date.now()
-    await expect(makeUsmap({ work, build: '7', image: 'img:7', serverTar: '/nope', docker, timeoutMs: 5000, intervalMs: 5 }))
+    await expect(makeUsmap({ work, build: '7', image: 'img:7', serverTar: '/nope', docker, timeoutMs: 5000, intervalMs: 5, startMs: 50 }))
       .rejects.toThrow(/сервер завершився[\s\S]*Unhandled Exception/)
     expect(Date.now() - t0).toBeLessThan(2000)
   })

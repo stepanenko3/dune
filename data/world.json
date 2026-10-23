@@ -1,0 +1,2725 @@
+{
+ "schema": 1,
+ "build": "2162777",
+ "version": "1.5.15",
+ "extractedAt": "2026-10-22T20:07:53.665Z",
+ "overland": "Overland",
+ "about": [
+  "ST_Localization_Progression:PROGRESSION/Tutorial_Description_OverlandAccess",
+  "ST_Localization_UI:UI/Overmap_Tutorial_Popup2"
+ ],
+ "bounds": [
+  -63050,
+  -165717,
+  60484,
+  -1203
+ ],
+ "categories": [
+  {
+   "tag": "Poi.Dungeons",
+   "name": "ST_Localization_UI:UI/Overmap_Poi_Category_Dungeons",
+   "parent": null
+  },
+  {
+   "tag": "Poi.Location",
+   "name": "ST_Localization_UI:UI/Overmap_Poi_Category_Locations",
+   "parent": null
+  },
+  {
+   "tag": "Poi.Location.Cities",
+   "name": "ST_Localization_UI:UI/Overmap_Poi_SubCategory_Cities",
+   "parent": "Poi.Location"
+  },
+  {
+   "tag": "Poi.Location.Regions",
+   "name": "ST_Localization_UI:UI/Overmap_Poi_SubCategory_Regions",
+   "parent": "Poi.Location"
+  },
+  {
+   "tag": "Poi.PointsOfInterest",
+   "name": "ST_Localization_UI:UI/Overmap_Poi_Category_PointsOfInterests",
+   "parent": null
+  },
+  {
+   "tag": "Poi.StoryRelatedMaps",
+   "name": "ST_Localization_UI:UI/Overmap_Poi_Category_StoryRelatedMaps",
+   "parent": null
+  }
+ ],
+ "locations": [
+  {
+   "id": "Overland",
+   "ids": [
+    "Overland"
+   ],
+   "tag": null,
+   "name": "ST_Localization_UI:UI/Travel_MapName_Overland",
+   "title": null,
+   "desc": null,
+   "note": null,
+   "group": "solo",
+   "hidden": false,
+   "map": "Overmap",
+   "pos": null,
+   "r": null
+  },
+  {
+   "id": "Arrakeen",
+   "ids": [
+    "Arrakeen"
+   ],
+   "tag": "Poi.Location.Cities",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_Arrakeen_Name",
+   "title": "ST_Localization_UI:UI/Travel_MapName_Arrakeen",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_Arrakeen_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_Thopter",
+   "group": "solo",
+   "hidden": false,
+   "map": "SH_Arrakeen",
+   "pos": [
+    44015,
+    -99043
+   ],
+   "r": 3815,
+   "exits": [
+    [
+     40083,
+     -94484
+    ]
+   ]
+  },
+  {
+   "id": "ArtOfKanly",
+   "ids": [
+    "ArtOfKanly"
+   ],
+   "tag": "Poi.StoryRelatedMaps",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_Arena_Name",
+   "title": "ST_Localization_UI:UI/UI/Travel_MapName_ArtOfKanly",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_Arena_Description",
+   "note": "ST_Localization_UI:UI/UI/Travel_MapDescription_ArtOfKanly",
+   "group": "solo",
+   "hidden": false,
+   "map": "Story_ArtOfKanly",
+   "pos": [
+    -22119,
+    -52886
+   ],
+   "r": 800
+  },
+  {
+   "id": "BeneathCarthag",
+   "ids": [
+    "BeneathCarthag",
+    "OldCarthagDungeon"
+   ],
+   "tag": "Poi.StoryRelatedMaps",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_Carthag_Name",
+   "title": "ST_Localization_UI:UI/Travel_MapName_BeneathCarthag",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_Carthag_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_Thopter",
+   "group": "solo",
+   "hidden": true,
+   "map": "CB_Story_Ecolab_Carthag",
+   "pos": [
+    18275,
+    -77244
+   ],
+   "r": 1875,
+   "exits": [
+    [
+     14085,
+     -76299
+    ]
+   ]
+  },
+  {
+   "id": "DarknessDungeon",
+   "ids": [
+    "DarknessDungeon"
+   ],
+   "tag": "Poi.Dungeons",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_DarknessDungeon_Name",
+   "title": "ST_Localization_UI:UI/Travel_MapName_DarknessDungeon",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_DarknessDungeon_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_Thopter",
+   "group": "party",
+   "hidden": false,
+   "map": "CB_Ecolab_Bronze_Green_024",
+   "pos": [
+    44081,
+    -48021
+   ],
+   "r": 1250,
+   "exits": [
+    [
+     46670,
+     -47954
+    ]
+   ]
+  },
+  {
+   "id": "DeepDesert",
+   "ids": [
+    "DeepDesert"
+   ],
+   "tag": "Poi.Location.Regions",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_DeepDesert_Name",
+   "title": "ST_Localization_UI:UI/Travel_MapName_DeepDesert",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_DeepDesert_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_DeepDesert",
+   "group": "solo",
+   "hidden": false,
+   "map": "DeepDesert_1",
+   "pos": [
+    -40737,
+    -143404
+   ],
+   "r": 13500,
+   "exits": [
+    [
+     -39371,
+     -130228
+    ]
+   ]
+  },
+  {
+   "id": "DestroyedZanovar",
+   "ids": [
+    "DestroyedZanovar"
+   ],
+   "tag": "Poi.StoryRelatedMaps",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_ArrakeenSpacePort_Name",
+   "title": "ST_Localization_UI:UI/Travel_MapName_DestroyedZanovar",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_ArrakeenSpacePort_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_DestroyedZanovar",
+   "group": "solo",
+   "hidden": true,
+   "map": "CB_Story_DestroyedZanovar",
+   "pos": [
+    38165,
+    -101370
+   ],
+   "r": 1250
+  },
+  {
+   "id": "ElectricityDungeon",
+   "ids": [
+    "ElectricityDungeon"
+   ],
+   "tag": "Poi.Dungeons",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_ElectricalDungeon_Name",
+   "title": "ST_Localization_UI:UI/Travel_MapName_ElectricityDungeon",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_ElectricalDungeon_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_Thopter",
+   "group": "party",
+   "hidden": false,
+   "map": "CB_Ecolab_Bronze_Green_152",
+   "pos": [
+    -6071,
+    -117596
+   ],
+   "r": 1250,
+   "exits": [
+    [
+     -6140,
+     -115210
+    ]
+   ]
+  },
+  {
+   "id": "ErythriteCaveIsland",
+   "ids": [
+    "ErythriteCaveIsland"
+   ],
+   "tag": "Poi.PointsOfInterest",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_BlushingCavern_Name",
+   "title": "ST_Localization_UI:UI/Travel_MapName_ErythriteCaveIsland",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_BlushingCavern_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_Thopter",
+   "group": "solo",
+   "hidden": false,
+   "map": "CB_Overland_S_04",
+   "pos": [
+    -26584,
+    -65069
+   ],
+   "r": 1250,
+   "exits": [
+    [
+     -22976,
+     -65113
+    ]
+   ]
+  },
+  {
+   "id": "FireDungeon",
+   "ids": [
+    "FireDungeon"
+   ],
+   "tag": "Poi.Dungeons",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_FireDungeon_Name",
+   "title": "ST_Localization_UI:UI/Travel_MapName_FireDungeon",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_FireDungeon_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_Thopter",
+   "group": "party",
+   "hidden": false,
+   "map": "CB_Ecolab_Bronze_Green_136",
+   "pos": [
+    30041,
+    -75526
+   ],
+   "r": 1250,
+   "exits": [
+    [
+     26980,
+     -75485
+    ]
+   ]
+  },
+  {
+   "id": "GroundVehicleTimeTrialIsland",
+   "ids": [
+    "GroundVehicleTimeTrialIsland"
+   ],
+   "tag": "Poi.PointsOfInterest",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_SmugglersRun_Name",
+   "title": "ST_Localization_UI:UI/Travel_MapName_GroundVehicleTimeTrialIsland",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_SmugglersRun_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_Thopter",
+   "group": "solo",
+   "hidden": false,
+   "map": "CB_Overland_S_06",
+   "pos": [
+    -2154,
+    -57014
+   ],
+   "r": 1250,
+   "exits": [
+    [
+     -4740,
+     -59417
+    ]
+   ]
+  },
+  {
+   "id": "HaggaBasin",
+   "ids": [
+    "HaggaBasin"
+   ],
+   "tag": "Poi.Location.Regions",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_Survival1_Name",
+   "title": "ST_Localization_UI:UI/Travel_MapName_HaggaBasin",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_Survival1_Description",
+   "note": null,
+   "group": "solo",
+   "hidden": false,
+   "map": "Survival_1",
+   "pos": [
+    -14004,
+    -96715
+   ],
+   "r": 2221,
+   "exits": [
+    [
+     -15712,
+     -99431
+    ],
+    [
+     -14132,
+     -99873
+    ],
+    [
+     -17251,
+     -96594
+    ],
+    [
+     -16779,
+     -95006
+    ],
+    [
+     -12415,
+     -99436
+    ],
+    [
+     -11229,
+     -98272
+    ],
+    [
+     -10857,
+     -96548
+    ],
+    [
+     -11369,
+     -94994
+    ],
+    [
+     -15694,
+     -93916
+    ],
+    [
+     -14084,
+     -93450
+    ],
+    [
+     -12506,
+     -93844
+    ]
+   ]
+  },
+  {
+   "id": "Halloween2026Shipwreck",
+   "ids": [
+    "Halloween2026Shipwreck"
+   ],
+   "tag": "Poi.PointsOfInterest",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_Halloween26Shipwreck_Name",
+   "title": "ST_Localization_UI:UI/OvermapHudPOI_Halloween26Shipwreck_Name",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_Halloween26Shipwreck_Description",
+   "note": "ST_Localization_UI:UI/OvermapHudPOI_Halloween26Shipwreck_Description",
+   "group": "solo",
+   "hidden": false,
+   "map": "CB_Halloween_Event_Shipwreck_01",
+   "pos": [
+    -41986,
+    -113306
+   ],
+   "r": 1500,
+   "exits": [
+    [
+     -39747,
+     -111480
+    ]
+   ]
+  },
+  {
+   "id": "HarkoVillage",
+   "ids": [
+    "HarkoVillage"
+   ],
+   "tag": "Poi.Location.Cities",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_Harko_Name",
+   "title": "ST_Localization_UI:UI/Travel_MapName_HarkoVillage",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_Harko_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_Thopter",
+   "group": "solo",
+   "hidden": false,
+   "map": "SH_HarkoVillage",
+   "pos": [
+    -19493,
+    -50324
+   ],
+   "r": 2853,
+   "exits": [
+    [
+     -21203,
+     -53926
+    ]
+   ]
+  },
+  {
+   "id": "HeighlinerDungeon",
+   "ids": [
+    "HeighlinerDungeon"
+   ],
+   "tag": "Poi.StoryRelatedMaps",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_FallenLight_Name",
+   "title": "ST_Localization_UI:UI/OvermapHudPOI_FallenLight_Name",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_FallenLight_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_Thopter",
+   "group": "solo",
+   "hidden": false,
+   "map": "Story_HeighlinerDungeon",
+   "pos": [
+    48671,
+    -130109
+   ],
+   "r": 3000
+  },
+  {
+   "id": "OrbitalMonitor",
+   "ids": [
+    "OrbitalMonitor"
+   ],
+   "tag": null,
+   "name": "ST_Localization_UI:UI/Travel_MapName_OrbitalMonitor",
+   "title": null,
+   "desc": null,
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_OrbitalMonitor",
+   "group": "solo",
+   "hidden": false,
+   "map": "CB_Story_OrbitalMonitor",
+   "pos": null,
+   "r": null
+  },
+  {
+   "id": "PitDungeon",
+   "ids": [
+    "PitDungeon"
+   ],
+   "tag": "Poi.Dungeons",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_TheOldQuarry_Name",
+   "title": "ST_Localization_UI:UI/Travel_MapName_TheOldQuarry",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_TheOldQuarry_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_Thopter",
+   "group": "party",
+   "hidden": false,
+   "map": "CB_Dungeon_ThePit",
+   "pos": [
+    22656,
+    -11266
+   ],
+   "r": 1250,
+   "exits": [
+    [
+     22636,
+     -14506
+    ]
+   ]
+  },
+  {
+   "id": "PoisonDungeon",
+   "ids": [
+    "PoisonDungeon"
+   ],
+   "tag": "Poi.Dungeons",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_PoisonDungeon_Name",
+   "title": "ST_Localization_UI:UI/Travel_MapName_PoisonDungeon",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_PoisonDungeon_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_Thopter",
+   "group": "party",
+   "hidden": false,
+   "map": "CB_Ecolab_Bronze_Green_195",
+   "pos": [
+    7961,
+    -81071
+   ],
+   "r": 1250,
+   "exits": [
+    [
+     4760,
+     -81010
+    ]
+   ]
+  },
+  {
+   "id": "RadiationDungeon",
+   "ids": [
+    "RadiationDungeon"
+   ],
+   "tag": "Poi.Dungeons",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_RadiationDungeon_Name",
+   "title": "ST_Localization_UI:UI/Travel_MapName_RadiationDungeon",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_RadiationDungeon_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_Thopter",
+   "group": "party",
+   "hidden": false,
+   "map": "CB_Ecolab_Bronze_Green_089",
+   "pos": [
+    -9419,
+    -71086
+   ],
+   "r": 1250,
+   "exits": [
+    [
+     -6370,
+     -71040
+    ]
+   ]
+  },
+  {
+   "id": "RadioactiveShipwreck",
+   "ids": [
+    "RadioactiveShipwreck"
+   ],
+   "tag": "Poi.PointsOfInterest",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_WreckOfTheTyche_Name",
+   "title": "ST_Localization_UI:UI/Travel_MapName_RadioactiveShipwreck",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_WreckOfTheTyche_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_Thopter",
+   "group": "solo",
+   "hidden": false,
+   "map": "CB_Overland_M_01",
+   "pos": [
+    48539,
+    -62925
+   ],
+   "r": 1250,
+   "exits": [
+    [
+     45228,
+     -62924
+    ]
+   ]
+  },
+  {
+   "id": "SandfliesFortress",
+   "ids": [
+    "SandfliesFortress"
+   ],
+   "tag": "Poi.PointsOfInterest",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_TheBroodworks_Name",
+   "title": "ST_Localization_UI:UI/Travel_MapName_SandfliesFortress",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_TheBroodworks_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_Thopter",
+   "group": "solo",
+   "hidden": false,
+   "map": "CB_Story_BanditFortress01",
+   "pos": [
+    12521,
+    -98177
+   ],
+   "r": 1250,
+   "exits": [
+    [
+     11673,
+     -95150
+    ]
+   ]
+  },
+  {
+   "id": "Story_Faction_Outpost_Atre",
+   "ids": [
+    "Story_Faction_Outpost_Atre",
+    "Story_Faction_Outpost_Hark"
+   ],
+   "tag": "Poi.PointsOfInterest",
+   "name": "ST_Localization_UI:UI/OVERLAND_MAP_LOCATION_DESCRIPTION_TEXT10",
+   "title": "ST_Localization_UI:UI/Travel_MapName_Story_Faction_Outpost_Atre",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_AbandonedOutpost_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_Thopter",
+   "group": "solo",
+   "hidden": false,
+   "map": "Story_Faction_Outpost_Atre",
+   "pos": [
+    15277,
+    -63751
+   ],
+   "r": 1500,
+   "exits": [
+    [
+     16495,
+     -65187
+    ]
+   ]
+  },
+  {
+   "id": "TheRuinsOfTsimpo",
+   "ids": [
+    "TheRuinsOfTsimpo"
+   ],
+   "tag": "Poi.PointsOfInterest",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_RuinsOfTsimpo_Name",
+   "title": "ST_Localization_UI:UI/Travel_MapName_TheRuinsOfTsimpo",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_RuinsOfTsimpo_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_Thopter",
+   "group": "solo",
+   "hidden": false,
+   "map": "CB_Overland_S_07",
+   "pos": [
+    1271,
+    -94853
+   ],
+   "r": 1250,
+   "exits": [
+    [
+     423,
+     -91826
+    ]
+   ]
+  },
+  {
+   "id": "WaterFat",
+   "ids": [
+    "WaterFat"
+   ],
+   "tag": "Poi.StoryRelatedMaps",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_WaterFat_Name",
+   "title": "ST_Localization_UI:UI/Travel_MapName_WaterFat",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_WaterFat_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_Thopter",
+   "group": "solo",
+   "hidden": true,
+   "map": "CB_Story_WaterFatManor",
+   "pos": [
+    40317,
+    -91179
+   ],
+   "r": 1310,
+   "exits": [
+    [
+     38542,
+     -89862
+    ]
+   ]
+  },
+  {
+   "id": "WindPass",
+   "ids": [
+    "WindPass"
+   ],
+   "tag": "Poi.PointsOfInterest",
+   "name": "ST_Localization_UI:UI/Travel_MapName_WindPass",
+   "title": "ST_Localization_UI:UI/Travel_MapName_WindPass",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_WindPass_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_Thopter",
+   "group": "solo",
+   "hidden": false,
+   "map": "CB_Overland_S_08",
+   "pos": [
+    -34365,
+    -15879
+   ],
+   "r": 1250,
+   "exits": [
+    [
+     -31145,
+     -15159
+    ]
+   ]
+  },
+  {
+   "id": "WreckOfHephaestus",
+   "ids": [
+    "WreckOfHephaestus",
+    "WreckOfHephaestusDungeon"
+   ],
+   "tag": "Poi.StoryRelatedMaps",
+   "name": "ST_Localization_UI:UI/OvermapHudPOI_Wreck_Name",
+   "title": "ST_Localization_UI:UI/Travel_MapName_WreckOfHephaestus",
+   "desc": "ST_Localization_UI:UI/OvermapHudPOI_Wreck_Description",
+   "note": "ST_Localization_UI:UI/Travel_MapDescription_Thopter",
+   "group": "solo",
+   "hidden": true,
+   "map": "CB_Story_Hephaestus",
+   "pos": [
+    2843,
+    -45160
+   ],
+   "r": 1600,
+   "exits": [
+    [
+     278,
+     -45337
+    ]
+   ]
+  }
+ ],
+ "links": [
+  {
+   "from": "Arrakeen",
+   "to": "HaggaBasin",
+   "mode": "taxi",
+   "dimension": false,
+   "points": 4,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "Arrakeen",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    [
+     {
+      "type": "SavedVehicle",
+      "text": "ST_Localization_UI:UI/Travel_RequirementFailedReason_Vehicle"
+     }
+    ]
+   ]
+  },
+  {
+   "from": "BeneathCarthag",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "DarknessDungeon",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "DeepDesert",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    [
+     {
+      "type": "NavigationType",
+      "text": "ST_Localization_UI:UI/Travel_RequirementFailedReason_Vehicle"
+     },
+     {
+      "type": "HarnessedVehicle"
+     }
+    ]
+   ]
+  },
+  {
+   "from": "ElectricityDungeon",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "ErythriteCaveIsland",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "FireDungeon",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "GroundVehicleTimeTrialIsland",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "HaggaBasin",
+   "to": "Arrakeen",
+   "mode": "taxi",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "HaggaBasin",
+   "to": "HarkoVillage",
+   "mode": "taxi",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "HaggaBasin",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 11,
+   "options": [
+    [
+     {
+      "type": "NavigationType",
+      "text": "ST_Localization_UI:UI/Travel_RequirementFailedReason_Vehicle"
+     },
+     {
+      "type": "HarnessedVehicle"
+     }
+    ]
+   ]
+  },
+  {
+   "from": "Halloween2026Shipwreck",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    [
+     {
+      "type": "SavedVehicle",
+      "text": "ST_Localization_UI:UI/Travel_RequirementFailedReason_Vehicle_HalloweenShipwreck"
+     }
+    ]
+   ]
+  },
+  {
+   "from": "HarkoVillage",
+   "to": "HaggaBasin",
+   "mode": "taxi",
+   "dimension": false,
+   "points": 4,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "HarkoVillage",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    [
+     {
+      "type": "SavedVehicle",
+      "text": "ST_Localization_UI:UI/Travel_RequirementFailedReason_Vehicle"
+     }
+    ]
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "Arrakeen",
+   "mode": "travel",
+   "dimension": false,
+   "points": 0,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "ArtOfKanly",
+   "mode": "travel",
+   "dimension": false,
+   "points": 0,
+   "options": [
+    [
+     {
+      "type": "JourneyCompleted"
+     }
+    ]
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "BeneathCarthag",
+   "mode": "travel",
+   "dimension": false,
+   "points": 0,
+   "options": [
+    [
+     {
+      "type": "JourneyCompleted"
+     },
+     {
+      "type": "JourneyNotCompleted"
+     }
+    ]
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "DarknessDungeon",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "DeepDesert",
+   "mode": "travel",
+   "dimension": true,
+   "points": 3,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "DestroyedZanovar",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    [
+     {
+      "type": "JourneyNotCompleted"
+     },
+     {
+      "type": "JourneyCompleted"
+     }
+    ]
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "ElectricityDungeon",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "ErythriteCaveIsland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    [
+     {
+      "type": "MapIsActiveJourneyTarget",
+      "text": "ST_Localization_UI:UI/TravelFail_NoActiveRelevantMission"
+     }
+    ]
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "FireDungeon",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "GroundVehicleTimeTrialIsland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    [
+     {
+      "type": "MapIsActiveJourneyTarget",
+      "text": "ST_Localization_UI:UI/TravelFail_NoActiveRelevantMission"
+     }
+    ]
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "HaggaBasin",
+   "mode": "travel",
+   "dimension": false,
+   "points": 12,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "Halloween2026Shipwreck",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    [
+     {
+      "type": "PlayerFlags",
+      "tags": [
+       "MTXEvent.PlayerTag.Halloween26.Phase3"
+      ]
+     }
+    ]
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "HarkoVillage",
+   "mode": "travel",
+   "dimension": false,
+   "points": 0,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "HeighlinerDungeon",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    [
+     {
+      "type": "JourneyCompleted"
+     },
+     {
+      "type": "JourneyNotCompleted"
+     }
+    ]
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "OrbitalMonitor",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    [
+     {
+      "type": "JourneyNotCompleted"
+     },
+     {
+      "type": "JourneyCompleted"
+     }
+    ]
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "PitDungeon",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "PoisonDungeon",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "RadiationDungeon",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "RadioactiveShipwreck",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    [
+     {
+      "type": "MapIsActiveJourneyTarget",
+      "text": "ST_Localization_UI:UI/TravelFail_NoActiveRelevantMission"
+     }
+    ]
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "SandfliesFortress",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    [
+     {
+      "type": "MapIsActiveJourneyTarget",
+      "text": "ST_Localization_UI:UI/TravelFail_NoActiveRelevantMission"
+     }
+    ]
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "Story_Faction_Outpost_Atre",
+   "mode": "travel",
+   "dimension": false,
+   "points": 2,
+   "options": [
+    [
+     {
+      "type": "JourneyCompleted"
+     },
+     {
+      "type": "JourneyNotCompleted"
+     }
+    ],
+    [
+     {
+      "type": "JourneyCompleted",
+      "tags": [
+       "Contract.Tracking.Active.Fac_Hark_Rank20"
+      ]
+     },
+     {
+      "type": "JourneyNotCompleted"
+     }
+    ]
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "TheRuinsOfTsimpo",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    [
+     {
+      "type": "MapIsActiveJourneyTarget",
+      "text": "ST_Localization_UI:UI/TravelFail_NoActiveRelevantMission"
+     }
+    ]
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "WaterFat",
+   "mode": "travel",
+   "dimension": false,
+   "points": 0,
+   "options": [
+    [
+     {
+      "type": "JourneyNotCompleted"
+     },
+     {
+      "type": "JourneyCompleted"
+     }
+    ]
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "WindPass",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    [
+     {
+      "type": "MapIsActiveJourneyTarget",
+      "text": "ST_Localization_UI:UI/TravelFail_NoActiveRelevantMission"
+     }
+    ]
+   ]
+  },
+  {
+   "from": "Overland",
+   "to": "WreckOfHephaestus",
+   "mode": "travel",
+   "dimension": false,
+   "points": 0,
+   "options": [
+    [
+     {
+      "type": "JourneyNotCompleted"
+     },
+     {
+      "type": "JourneyCompleted"
+     }
+    ],
+    [
+     {
+      "type": "JourneyCompleted"
+     },
+     {
+      "type": "JourneyNotCompleted"
+     }
+    ]
+   ]
+  },
+  {
+   "from": "PitDungeon",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "PoisonDungeon",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "RadiationDungeon",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "RadioactiveShipwreck",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "SandfliesFortress",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "Story_Faction_Outpost_Atre",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "TheRuinsOfTsimpo",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "WaterFat",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "WindPass",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  },
+  {
+   "from": "WreckOfHephaestus",
+   "to": "Overland",
+   "mode": "travel",
+   "dimension": false,
+   "points": 1,
+   "options": [
+    []
+   ]
+  }
+ ],
+ "texts": {
+  "ST_Localization_Progression:PROGRESSION/Tutorial_Description_OverlandAccess": {
+   "de": "Reise in neue Regionen von Arrakis, indem du mit einem Ornithopter an den Rand der Welt fliegst und die Überlandkarte aufrufst. Für Reisen brauchst du Treibstoff und Wasser.",
+   "en": "Travel to new areas of Arrakis by flying an ornithopter to the edge of the environment and entering the Overland Map.",
+   "es": "Para viajar a nuevas zonas de Arrakis, vuela con un ornitóptero hasta los límites del entorno y accede al mapa terrestre. Necesitarás combustible y agua para viajar.",
+   "fr": "Accédez à de nouvelles zones d'Arrakis en vous dirigeant en ornithoptère jusqu'en bordure de l'environnement et en accédant à la carte globale. Ce genre de voyage sur longue distance nécessite eau et carburant.",
+   "it": "Per viaggiare verso nuove aree di Arrakis, pilota un ornitottero fino al limite dell'ambiente ed entrando nella mappa globale. Per viaggiare servono carburante e acqua.",
+   "ja": "オーニソプターで環境の端まで移動して、航路マップエリアに突入し、アラキスの新たなエリアに向かおう。 移動には、燃料と水を必要とする。",
+   "ko": "아라키스의 새로운 지역으로 이동하려면 오니솝터를 타고 환경의 끝까지 날아가서 오버랜드 맵에 진입하세요. 이동하려면 연료와 물이 필요합니다.",
+   "pl": "By podróżować do nowych obszarów Arrakis, poleć ornitopterem na skraj obszaru gry, co spowoduje otwarcie mapy planetarnej. Podróżowanie zużywa paliwo i wodę.",
+   "pt-BR": "Voe em um ornitóptero até a borda do ambiente e entre no Mapa do Planeta para viajar para novas regiões de Arrakis. Viagens requerem combustível e água.",
+   "ru": "Чтобы посетить новые регионы Арракиса, долетите на орнитоптере до границы местности или перейдите на обзорную карту. Для перемещения потребуются топливо и вода.",
+   "tr": "Bir ornitopteri bulunduğun bölgenin kıyısına getirip Gezegen Haritasına girerek Arrakis’te yeni bölgelere seyahat et. Seyahat için Yakıt ve Su gerekir.",
+   "uk": "Ми можете дістатися до нових місць на Арракісі, долетівши на орнітоптері до краю середовища й перейшовши на карту поверхні. Для пересування необхідні паливо й вода.",
+   "zh-Hans": "驾驶扑翼机飞往环境的边缘及进入地图概览来抵达厄拉科斯的新区域。 航行需要燃料和水。",
+   "zh-Hant": "你可以駕駛撲翼機飛到地形的邊緣並進入陸上地圖以移動到厄拉科斯的其他地區。 移動會消耗燃料與水。"
+  },
+  "ST_Localization_UI:UI/Overmap_Tutorial_Popup2": {
+   "de": "Die Fortbewegung auf der Überlandkarte kostet Treibstoff. Auf der Überlandkarte verbrachte Zeit kostet Wasser.",
+   "en": "Movement on the overland map costs fuel. Time on the overland map costs water.",
+   "es": "En el mapa terrestre, el movimiento consume combustible, mientras que el tiempo que pasas en él consume agua.",
+   "fr": "Sur la carte globale, se déplacer coûte du carburant, tandis que le temps qui passe fait perdre de l'eau.",
+   "it": "Il movimento sulla mappa globale costa carburante. Il tempo trascorso sulla mappa globale costa acqua.",
+   "ja": "航路マップ上の移動には燃料が必要だ。航路マップの移動中は、水を消費する。",
+   "ko": "오버랜드 맵에서 이동하면 연료가 소모됩니다. 오버랜드 맵에서 시간을 보내면 물이 소모됩니다.",
+   "pl": "Przemieszczanie się po mapie planetarnej zużywa paliwo, z kolei spędzony na niej czas kosztuje wodę.",
+   "pt-BR": "Movimentar-se no Mapa do Planeta consome combustível. O tempo gasto no Mapa do Planeta consome água.",
+   "ru": "При перемещении по обзорной карте расходуется топливо, а при нахождении на ней — вода.",
+   "tr": "Gezegen haritası ile hareket yakıta mal olur. Gezegen haritası ile zaman suya mal olur.",
+   "uk": "На переміщення картою поверхні витрачається паливо. Час, проведений на ній, коштує води.",
+   "zh-Hans": "在地图概览上移动需要燃料。地图概览上的时间会消耗水源。",
+   "zh-Hant": "在陸上地圖進行移動會消耗燃料。待在陸上地圖會消耗水分。"
+  },
+  "ST_Localization_UI:UI/Overmap_Poi_SubCategory_Cities": {
+   "de": "Siedlungen",
+   "en": "Settlements",
+   "es": "Asentamientos",
+   "fr": "Agglomérations",
+   "it": "Insediamenti",
+   "ja": "集落",
+   "ko": "정착지",
+   "pl": "Osady",
+   "pt-BR": "Assentamentos",
+   "ru": "Поселения",
+   "tr": "Yerleşimler",
+   "uk": "Поселення",
+   "zh-Hans": "定居点",
+   "zh-Hant": "定居點"
+  },
+  "ST_Localization_UI:UI/Overmap_Poi_Category_Dungeons": {
+   "en": "Dungeons",
+   "es": "Mazmorras",
+   "fr": "Donjons",
+   "it": "Dungeon",
+   "ja": "ダンジョン",
+   "ko": "던전",
+   "pl": "Lochy",
+   "pt-BR": "Masmorras",
+   "ru": "Подземелья",
+   "tr": "Zindanlar",
+   "uk": "Підземелля",
+   "zh-Hans": "地下城",
+   "zh-Hant": "地牢"
+  },
+  "ST_Localization_UI:UI/Overmap_Poi_Category_Locations": {
+   "de": "Interessante Punkte",
+   "en": "Locations",
+   "es": "Ubicaciones",
+   "fr": "Lieux",
+   "it": "Luoghi",
+   "ja": "場所",
+   "ko": "위치",
+   "pl": "Lokalizacje",
+   "pt-BR": "Locais",
+   "ru": "Места",
+   "tr": "Konum",
+   "uk": "Містини",
+   "zh-Hans": "地点",
+   "zh-Hant": "位置"
+  },
+  "ST_Localization_UI:UI/Overmap_Poi_Category_PointsOfInterests": {
+   "de": "Landmarken",
+   "en": "Minor Landmarks",
+   "es": "Puntos de referencia menores",
+   "fr": "Sites remarquables mineurs",
+   "it": "Punti di riferimento minori",
+   "ja": "小さな目印",
+   "ko": "작은 랜드마크",
+   "pl": "Mniejsze punkty orientacyjne",
+   "pt-BR": "Pontos de Referência Menores",
+   "ru": "Интересные места",
+   "tr": "Küçük Yer İşaretleri",
+   "uk": "Незначні орієнтири",
+   "zh-Hans": "次要地标",
+   "zh-Hant": "小型地標"
+  },
+  "ST_Localization_UI:UI/Overmap_Poi_SubCategory_Regions": {
+   "de": "Regionen",
+   "en": "Regions",
+   "es": "Regiones",
+   "fr": "Régions",
+   "it": "Regioni",
+   "ja": "地区",
+   "ko": "지역",
+   "pl": "Regiony",
+   "pt-BR": "Regiões",
+   "ru": "Регионы",
+   "tr": "Bölgeler",
+   "uk": "Регіони",
+   "zh-Hans": "地区",
+   "zh-Hant": "地區"
+  },
+  "ST_Localization_UI:UI/Overmap_Poi_Category_StoryRelatedMaps": {
+   "de": "Geschichte",
+   "en": "Story",
+   "es": "Historia",
+   "fr": "Histoire",
+   "it": "Storia",
+   "ja": "ストーリー",
+   "ko": "스토리",
+   "pl": "Fabuła",
+   "pt-BR": "História",
+   "ru": "Сюжет",
+   "tr": "Hikaye",
+   "uk": "Історія",
+   "zh-Hans": "剧情",
+   "zh-Hant": "故事"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_Arrakeen_Name": {
+   "en": "Arrakeen",
+   "ja": "アラキーン",
+   "ko": "아라킨",
+   "pl": "Arrakin",
+   "pt-BR": "Arrakina",
+   "ru": "Арракин",
+   "uk": "Арракін",
+   "zh-Hans": "厄拉奇恩",
+   "zh-Hant": "厄拉欽恩"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_Arrakeen": {
+   "en": "Arrakeen",
+   "ja": "アラキーン",
+   "ko": "아라킨",
+   "pl": "Arrakin",
+   "pt-BR": "Arrakina",
+   "ru": "Арракин",
+   "uk": "Арракін",
+   "zh-Hans": "厄拉奇恩",
+   "zh-Hant": "厄拉欽恩"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_Arrakeen_Description": {
+   "de": "Vom Krieg gezeichnete Hauptstadt der Atreiden, die Händlern und Flüchtlingen eine Heimat bietet.",
+   "en": "Battle-scarred capital of the Atreides, home for merchants and refugees alike.",
+   "es": "La capital de los Atreides, muy dañada por los combates, que acoge a comerciantes y refugiados por igual.",
+   "fr": "Capitale des Atréides, fortement touchée par la guerre. Abrite marchands comme réfugiés.",
+   "it": "Capitale degli Atreides, segnata dalle battaglie, rifugio di mercanti e profughi.",
+   "ja": "戦災を受けたアトレイデス家の首都。小売商人や難民が暮らしている。",
+   "ko": "전쟁의 상흔이 남은 아트레이데스의 수도로, 상인과 난민의 안식처입니다.",
+   "pl": "Sponiewierana w walkach stolica Atrydów, dom dla kupców i szukających schronienia.",
+   "pt-BR": "Capital dos Atreides, marcada pela batalha, lar de comerciantes e refugiados.",
+   "ru": "Столица Атрейдесов, прошедшая сквозь горнило многих битв, служит домом торговцам и беженцам.",
+   "tr": "Atreides Hanedanı’nın savaştan zarar görmüş başkenti ve hem tüccarların hem de mültecilerin yuvası.",
+   "uk": "Пошматована війною столиця Атрідів, притулок як для торговців, так і для біженців.",
+   "zh-Hans": "厄崔迪家族饱经战火的都城，商贾与流亡者共同的家园。",
+   "zh-Hant": "亞崔迪受戰爭重創的首都，許多商人與難民都在此處落腳。"
+  },
+  "ST_Localization_UI:UI/Travel_MapDescription_Thopter": {
+   "de": "Dein Ornithopter bleibt bis zu deinem Aufbruch auf dem Flugfeld.",
+   "en": "Your ornithopter will be inaccessible until you leave.",
+   "es": "Tu ornitóptero se quedará en el aeródromo hasta que te marches.",
+   "fr": "Votre ornithoptère restera dans la zone d'atterrissage jusqu'à votre départ.",
+   "it": "L'ornitottero rimarrà al campo volo finché non te ne andrai.",
+   "ja": "オーニソプターは、出発まで飛行場で待機する。",
+   "ko": "자리를 뜰 때까지 오니솝터는 비행장에 남아 있습니다.",
+   "pl": "Twój ornitopter pozostanie na lądowisku do twojego odejścia.",
+   "pt-BR": "Seu ornitóptero permanecerá no ar até que você vá embora.",
+   "ru": "Орнитоптер будет ждать вас на аэродроме.",
+   "tr": "Sen ayrılana kadar ornitopterin pistte kalacak.",
+   "uk": "Орнітоптер лишатиметься на аеродромі, поки ви не вирушите.",
+   "zh-Hans": "你的扑翼机将留在机场，直到你离开。",
+   "zh-Hant": "在你離開前，你的撲翼機會一直留在機場。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_Arena_Name": {
+   "de": "Arena von Neo-Carthag",
+   "en": "Neo Carthag Arena",
+   "es": "Arena de Neo-Carthag",
+   "fr": "Arène de Néo-Carthag",
+   "it": "Arena di Neo-Carthag",
+   "ja": "ネオ・カルタグのアリーナ",
+   "ko": "네오카르타그 투기장",
+   "pl": "Arena w Nowym Kartagin",
+   "pt-BR": "Arena de Nova Cartago",
+   "ru": "Арена Нового Карфага",
+   "tr": "Neo Carthag Arenası",
+   "uk": "Арена Нового Карфага",
+   "zh-Hans": "新迦太格竞技场",
+   "zh-Hant": "新迦太奇競技場"
+  },
+  "ST_Localization_UI:UI/UI/Travel_MapName_ArtOfKanly": {
+   "de": "Arena von Neo-Carthag",
+   "en": "Neo Carthag Arena",
+   "es": "Arena de Neo-Carthag",
+   "fr": "Arène de Néo-Carthag",
+   "it": "Arena di Neo-Carthag",
+   "ja": "ネオ・カルタグのアリーナ",
+   "ko": "네오카르타그 투기장",
+   "pl": "Arena w Nowym Kartagin",
+   "pt-BR": "Arena de Nova Cartago",
+   "ru": "Арена Нового Карфага",
+   "tr": "Neo Carthag Arenası",
+   "uk": "Арена Нового Карфага",
+   "zh-Hans": "新迦太格竞技场",
+   "zh-Hant": "新迦太奇競技場"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_Arena_Description": {
+   "de": "Eine illegale Kampfarena unweit der Baustelle von Neo-Carthag.",
+   "en": "An illicit fighting arena located near the construction site of Neo Carthag.",
+   "es": "Una arena de combate ilícita ubicada cerca de la zona de construcción de Neo-Carthag.",
+   "fr": "Arène de combat illégale située près du site de construction de Néo-Carthag.",
+   "it": "Un'arena di combattimento illegale nei pressi di un cantiere di Neo-Carthag.",
+   "ja": "ネオ・カルタグの建設現場近くに位置する、違法な闘技場。",
+   "ko": "네오카르타그 건설 현장 근처에 위치한 불법 투기장입니다.",
+   "pl": "Nielegalna arena do walk zlokalizowana w pobliżu placu budowy w Nowym Kartagin.",
+   "pt-BR": "Uma arena de luta ilegal localizada próximo ao canteiro de obras de Nova Cartago.",
+   "ru": "Подпольная дуэльная арена близ строящегося Нового Карфага.",
+   "tr": "Neo Carthag inşaat sahasının yakınında bulunan bir yasadışı dövüş arenası.",
+   "uk": "Незаконна бійцівська арена, розташована поблизу Нового Карфага.",
+   "zh-Hans": "新迦太格建筑工地附近的非法格斗场。",
+   "zh-Hant": "位於新迦太奇工地附近的非法決鬥場。"
+  },
+  "ST_Localization_UI:UI/UI/Travel_MapDescription_ArtOfKanly": {
+   "de": "Suche unter den Champions des Duellrings den Gesichtstänzer.",
+   "en": "Search for the Face Dancer among the dueling ring's champions.",
+   "es": "Busca al bailacaras entre los campeones de la arena de duelos.",
+   "fr": "Cherchez le Danseur-Visage parmi les champions de l'arène.",
+   "it": "Cerca il Volto Danzante fra i campioni dell'arena dei duelli.",
+   "ja": "闘技場の闘士に紛れた踊面術士を探し求めよ。",
+   "ko": "결투장 챔피언 중에서 가면 춤꾼을 찾으세요.",
+   "pl": "Odszukaj maskaradnika pośród mistrzów areny.",
+   "pt-BR": "Procure o dançarino facial entre os campeões do ringue de luta.",
+   "ru": "Найдите лицедела среди чемпионов арены.",
+   "tr": "Dövüş Arenası'nın şampiyonları arasında Yüzbazı ara.",
+   "uk": "Знайти лицепляса серед звитяжців бійцівської арени.",
+   "zh-Hans": "在决斗场的冠军中寻找变脸者。",
+   "zh-Hant": "在決鬥冠軍中尋找變臉者。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_Carthag_Name": {
+   "de": "Ruinen von Alt-Carthag",
+   "en": "Ruins of Old Carthag",
+   "es": "Ruinas de Vieja Carthag",
+   "fr": "Ruines de l'Ancienne Carthag",
+   "it": "Rovine della Vecchia Carthag",
+   "ja": "旧カルタグの遺跡",
+   "ko": "옛 카르타그 폐허",
+   "pl": "Ruiny starego miasta Kartagin",
+   "pt-BR": "Ruínas da Velha Cartago",
+   "ru": "Руины Старого Карфага",
+   "tr": "Eski Carthag Harabeleri",
+   "uk": "Руїни Старого Карфага",
+   "zh-Hans": "旧迦太格遗址",
+   "zh-Hant": "舊迦太奇的廢墟"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_BeneathCarthag": {
+   "de": "Ruinen von Alt-Carthag",
+   "en": "Ruins of Old Carthag",
+   "es": "Ruinas de Vieja Carthag",
+   "fr": "Ruines de l'Ancienne Carthag",
+   "it": "Rovine della Vecchia Carthag",
+   "ja": "旧カルタグの遺跡",
+   "ko": "옛 카르타그 폐허",
+   "pl": "Ruiny starego miasta Kartagin",
+   "pt-BR": "Ruínas da Velha Cartago",
+   "ru": "Руины Старого Карфага",
+   "tr": "Eski Carthag Harabeleri",
+   "uk": "Руїни Старого Карфага",
+   "zh-Hans": "旧迦太格遗址",
+   "zh-Hant": "舊迦太奇的遺蹟"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_Carthag_Description": {
+   "de": "Dem Erdboden gleichgemachte ehemalige Hauptstadt von Haus Harkonnen.",
+   "en": "Former capital of House Harkonnen, razed to the ground.",
+   "es": "La antigua capital de la casa Harkonnen, ahora arrasada hasta los cimientos.",
+   "fr": "Ancienne capitale de la Maison Harkonnen, totalement rasée.",
+   "it": "Ex capitale della Casa Harkonnen, rasa al suolo.",
+   "ja": "ハルコンネン家のかつての首都。現在は完全に焼け落ちている。",
+   "ko": "지금은 몰락한 하코넨 가문의 옛 수도입니다.",
+   "pl": "Dawna, zrównana z ziemią stolica rodu Harkonnenów.",
+   "pt-BR": "Antiga capital da Casa Harkonnen, completamente arrasada.",
+   "ru": "Руины былой столицы Дома Харконнен.",
+   "tr": "Harkonnen Hanedanı’nın enkaza dönmüş eski başkenti.",
+   "uk": "Колишня столиця Дому Харконненів, зруйнована вщент.",
+   "zh-Hans": "哈克南家族的旧都，已被夷为平地。",
+   "zh-Hant": "哈肯能氏族的前首都，現在已被夷為平地。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_DarknessDungeon_Name": {
+   "de": "Teststation 24",
+   "en": "Testing Station No. 24",
+   "es": "Estación Experimental Imperial N.º 24",
+   "fr": "Station Expérimentale de l'Imperium 24",
+   "it": "Stazione Sperimentale n. 24",
+   "ja": "試験所24号",
+   "ko": "제24 실험소",
+   "pl": "Stacja badawcza nr 24",
+   "pt-BR": "Estação de Testes 24",
+   "ru": "Испытательная станция № 24",
+   "tr": "Test İstasyonu 24",
+   "uk": "Випробувальна станція № 24",
+   "zh-Hans": "24号试验站",
+   "zh-Hant": "24 號測試站"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_DarknessDungeon": {
+   "de": "Imperiale Teststation 24",
+   "en": "Imperial Testing Station No. 24",
+   "es": "Estación Experimental Imperial N.º 24",
+   "fr": "Station Expérimentale de l'Imperium 24",
+   "it": "Stazione Sperimentale dell'Impero n. 24",
+   "ja": "帝国試験所24号",
+   "ko": "제24 제국 실험소",
+   "pl": "Imperialna stacja badawcza nr 24",
+   "pt-BR": "Estação de Testes Imperial 24",
+   "ru": "Имперская испытательная станция № 24",
+   "tr": "İmparatorluk Test İstasyonu No. 24",
+   "uk": "Імперська випробувальна станція № 24",
+   "zh-Hans": "24号帝国试验站",
+   "zh-Hant": "第 24 號帝國測試站"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_DarknessDungeon_Description": {
+   "de": "Der Eingang ist in der dunklen, unfertigen Konstruktion verborgen. Die Station scheint verlassen zu sein.",
+   "en": "The entrance is halfway hidden in the dark, unfinished construction. It seems abandoned.",
+   "es": "La entrada está medio oculta en esta construcción oscura e inacabada. Parece abandonada.",
+   "fr": "L'entrée est à moitié cachée dans l'obscurité. La construction de ce lieu n'a jamais été terminée, et il semble abandonné.",
+   "it": "La costruzione è buia e incompiuta e l'ingresso è semi-nascosto. Sembra abbandonata.",
+   "ja": "入り口の半分は、暗く未完成の建造物に埋まっている。放置されているようだ。",
+   "ko": "완공되지 않은 어둑한 건축물에 입구가 반쯤 가려져 있습니다. 버려진 것 같습니다.",
+   "pl": "Wejście jest na wpół ukryte w ciemnościach, pośród niedokończonej budowy. Wygląda na opuszczone.",
+   "pt-BR": "Metade da entrada fica escondida na construção escura inacabada. Parece abandonada.",
+   "ru": "Недостроенные конструкции скрывают погруженный во тьму вход. Объект выглядит заброшенным.",
+   "tr": "Giriş, karanlık ve tamamlanmamış inşaatta yarı yarıya gizlenmiş. Terkedilmiş gibi görünüyor.",
+   "uk": "Вхід у темну, недобудовану будівлю, доволі складно помітити. Споруда здається покинутою.",
+   "zh-Hans": "入口半掩在未完工的漆黑建筑里，看起来已经废弃。",
+   "zh-Hant": "入口半遮掩在黑暗且未完工的建築中，看似已廢棄。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_DeepDesert_Name": {
+   "de": "Tiefe Wüste",
+   "en": "Deep Desert",
+   "es": "Desierto profundo",
+   "fr": "Désert profond",
+   "it": "Alto Deserto",
+   "ja": "砂漠の奥地",
+   "ko": "깊은 사막",
+   "pl": "Dalekie Piaski",
+   "pt-BR": "Deserto Profundo",
+   "ru": "Сердце пустыни",
+   "tr": "Derin Çöl",
+   "uk": "Глибока пустеля",
+   "zh-Hans": "沙漠腹地",
+   "zh-Hant": "深邃沙漠"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_DeepDesert": {
+   "de": "Die Tiefe Wüste",
+   "en": "The Deep Desert",
+   "es": "El Desierto Profundo",
+   "fr": "Désert Profond",
+   "it": "L'Alto Deserto",
+   "ja": "砂漠の奥地",
+   "ko": "깊은 사막",
+   "pl": "Dalekie Piaski",
+   "pt-BR": "O Deserto Profundo",
+   "ru": "Сердце пустыни",
+   "tr": "Derin Çöl",
+   "uk": "Глибока пустеля",
+   "zh-Hans": "沙漠腹地",
+   "zh-Hant": "深邃沙漠"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_DeepDesert_Description": {
+   "de": "Gefährliche, aber für Plünderer lukrative Region ... bis zum nächsten Coriolissturm.",
+   "en": "Dangerous but bountiful expanse to plunder... until the next Coriolis storm.",
+   "es": "Una extensión peligrosa pero repleta de botines... hasta la próxima tormenta de coriolis.",
+   "fr": "Zone dangereuse mais regorgeant de trésors à récupérer... jusqu'à la prochaine tempête Coriolis.",
+   "it": "Una distesa pericolosa ma ricca da saccheggiare... fino alla prossima tempesta di Coriolis.",
+   "ja": "危険であるものの、美しく恵み深い領域...ただし、コリオリの嵐が上陸すると、状況が一変する。",
+   "ko": "위험하지만 약탈할 물품 많은 지역입니다... 다음 코리올리스 폭풍이 오기 전까지는 말이죠.",
+   "pl": "Rozległe, niebezpieczne tereny pełne zasobów do splądrowania... do czasu następnej kurzawy Coriolisa.",
+   "pt-BR": "Uma perigosa extensão mas abundante em recursos para pilhar... até à próxima tempestade de Coriolis.",
+   "ru": "Опасные пустоши, которые сулят несметные богатства… пока не придет очередная кориолисова буря.",
+   "tr": "Tehlikeli ancak yağmalamaya çok uygun bölge... Bir sonraki Coriolis fırtınasına kadar.",
+   "uk": "Небезпечна, але багата на поживу земля... до наступної коріолісової бурі.",
+   "zh-Hans": "危机与机遇并存的广阔区域，可供大肆劫掠……直到下一场科里奥利风暴来临。",
+   "zh-Hant": "在這裡有危險但豐富的寶藏……直到下一個科里奧利風暴來臨。"
+  },
+  "ST_Localization_UI:UI/Travel_MapDescription_DeepDesert": {
+   "de": "Nichts überlebt den Coriolissturm.",
+   "en": "Nothing survives the Coriolis Storm.",
+   "es": "Nada sobrevive a la tormenta de coriolis.",
+   "fr": "Rien ne survit aux tempêtes Coriolis.",
+   "it": "Niente sopravvive a una tempesta di Coriolis.",
+   "ja": "コリオリの嵐を生き延びられる者はいない。",
+   "ko": "무엇도 코리올리스 폭풍에서 살아남을 수 없습니다.",
+   "pl": "Nic nie przetrwa kurzawy Coriolisa.",
+   "pt-BR": "Nada sobrevive à tempestade de Coriolis.",
+   "ru": "Ничто не сможет выжить в кориолисовой буре.",
+   "tr": "Coriolis Fırtınasından kimse sağ çıkamaz.",
+   "uk": "Коріолісову бурю не переживає ніщо.",
+   "zh-Hans": "无人能在科里奥利风暴中幸存。",
+   "zh-Hant": "沒有任何東西能在科里奧利風暴中存活下來。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_ArrakeenSpacePort_Name": {
+   "de": "Raumhafen von Arrakeen",
+   "en": "Arrakeen Spaceport",
+   "es": "Espaciopuerto de Arrakeen",
+   "fr": "Spatioport d'Arrakeen",
+   "it": "Spazioporto di Arrakeen",
+   "ja": "アラキーン宇宙船基地",
+   "ko": "아라킨 우주항",
+   "pl": "Port kosmiczny w Arrakin",
+   "pt-BR": "Porto Espacial de Arrakina",
+   "ru": "Космопорт Арракина",
+   "tr": "Arrakeen Uzay Üssü",
+   "uk": "Арракінський космопорт",
+   "zh-Hans": "厄拉奇恩太空港",
+   "zh-Hant": "厄拉欽恩太空港"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_DestroyedZanovar": {
+   "de": "Raumhafen von Arrakeen",
+   "en": "Arrakeen Spaceport",
+   "es": "Espaciopuerto de Arrakeen",
+   "fr": "Spatioport d'Arrakeen",
+   "it": "Spazioporto di Arrakeen",
+   "ja": "アラキーン宇宙船基地",
+   "ko": "아라킨 우주항",
+   "pl": "Port kosmiczny w Arrakin",
+   "pt-BR": "Porto Espacial de Arrakina",
+   "ru": "Космопорт Арракина",
+   "tr": "Arrakeen Uzay Üssü",
+   "uk": "Арракінський космопорт",
+   "zh-Hans": "厄拉奇恩太空港",
+   "zh-Hant": "厄拉欽恩太空港"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_ArrakeenSpacePort_Description": {
+   "de": "Der pulsierende Raumhafen von Arrakeen ist ein Stück von Arrakis entfernt.",
+   "en": "This bustling spaceport in Arrakeen is a way off of the planet Arrakis.",
+   "es": "El bullicioso espaciopuerto de Arrakeen es una vía de salida del planeta Arrakis.",
+   "fr": "Le spatioport d'Arrakeen, qui voit passer énormément de monde et de marchandises, ne se trouve pas à la surface d'Arrakis.",
+   "it": "Questo vivace spazioporto ad Arrakeen è un modo per lasciare il pianeta Arrakis.",
+   "ja": "アラキーンにあるにぎやかな宇宙船基地は、惑星アラキスから旅立つ際に訪れる場所である。",
+   "ko": "아라킨의 분주한 우주항으로, 아라키스 행성에서 상당히 떨어진 곳에 위치해 있습니다.",
+   "pl": "Ten tętniący życiem port kosmiczny w Arrakin to sposób na opuszczenie Arrakis.",
+   "pt-BR": "Este movimentado porto espacial em Arrakina é uma forma de deixar o planeta Arrakis.",
+   "ru": "Оживленный космопорт Арракина — главный способ покинуть Арракис.",
+   "tr": "Arrakeen'deki bu hareketli uzay üssü Arrakis gezegeninden ayrılmanın bir yoludur.",
+   "uk": "Цей жвавий космопорт в Арракіні знаходиться далеко за межами Арракіса.",
+   "zh-Hans": "从厄拉奇恩这座繁忙的太空港，可以离开厄拉科斯。",
+   "zh-Hant": "這座坐落於厄拉欽恩的繁忙太空港，正是離開厄拉科斯行星的門戶之一。"
+  },
+  "ST_Localization_UI:UI/Travel_MapDescription_DestroyedZanovar": {
+   "de": "Von diesem Ort kannst du die Welt verlassen und deine Reise fortsetzen.",
+   "en": "From this location you can travel offworld to continue your journey.",
+   "es": "Desde esta ubicación, puedes viajar fuera del planeta para continuar tu viaje.",
+   "fr": "À partir de cet endroit, vous pouvez quitter votre planète actuelle pour continuer votre périple.",
+   "it": "Da qui puoi lasciare il pianeta e proseguire il tuo viaggio.",
+   "ja": "この場所から惑星外へと向かい、旅を続けることができる。",
+   "ko": "이 위치에서 외행성으로 이동하여 여정을 계속할 수 있습니다.",
+   "pl": "Stąd możesz udać się poza planetę i kontynuować podróż.",
+   "pt-BR": "Você pode viajar deste local para outro planeta para continuar sua jornada.",
+   "ru": "Отсюда вы можете отправиться за пределы планеты, чтобы продолжить свой путь.",
+   "tr": "Yolculuğuna devam etmek için buradan dışdünyaya seyahat edebilirsin.",
+   "uk": "Звідси ви можете вирушити до іншої планети, щоби продовжити свою подорож",
+   "zh-Hans": "你可以从这里前往外星、继续旅程。",
+   "zh-Hant": "由此地出發，你便能啟程前往外星，繼續你的旅程。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_ElectricalDungeon_Name": {
+   "de": "Teststation 152",
+   "en": "Testing Station No. 152",
+   "es": "Estación Experimental Imperial N.º 152",
+   "fr": "Station Expérimentale de l'Imperium 152",
+   "it": "Stazione Sperimentale n. 152",
+   "ja": "試験所152号",
+   "ko": "제152 실험소",
+   "pl": "Stacja badawcza nr 152",
+   "pt-BR": "Estação de Testes 152",
+   "ru": "Испытательная станция № 152",
+   "tr": "Test İstasyonu No. 152",
+   "uk": "Випробувальна станція № 152",
+   "zh-Hans": "152号试验站",
+   "zh-Hant": "152 號測試站"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_ElectricityDungeon": {
+   "de": "Imperiale Teststation 152",
+   "en": "Imperial Testing Station No. 152",
+   "es": "Estación Experimental Imperial N.º 152",
+   "fr": "Station Expérimentale de l'Imperium 152",
+   "it": "Stazione Sperimentale dell'Impero n. 152",
+   "ja": "帝国試験所152号",
+   "ko": "제152 제국 실험소",
+   "pl": "Imperialna stacja badawcza nr 152",
+   "pt-BR": "Estação de Testes Imperial 152",
+   "ru": "Имперская испытательная станция № 152",
+   "tr": "İmparatorluk Test İstasyonu No. 152",
+   "uk": "Імперська випробувальна станція № 152",
+   "zh-Hans": "152号帝国试验站",
+   "zh-Hant": "第 152 號帝國測試站"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_ElectricalDungeon_Description": {
+   "de": "Die elektromagnetischen Messerte des Coriolissturms sind an diesem Ort außergewöhnlich hoch.",
+   "en": "The electromagnetic reading of the Coriolis storm is exceptionally high in this location.",
+   "es": "Las lecturas electromagnéticas de la tormenta de coriolis son excepcionalmente intensas en esta ubicación.",
+   "fr": "Les relevés électromagnétiques sont particulièrement élevés en ce lieu, signe qu'une tempête Coriolis approche.",
+   "it": "Le letture elettromagnetiche della tempesta di Coriolis sono eccezionalmente elevate in questa località.",
+   "ja": "この場所では、コリオリの嵐の電磁気数値が異常に高い。",
+   "ko": "이 위치에서는 코리올리스 폭풍의 전자기 수치가 특히 높습니다.",
+   "pl": "Odczyt elektromagnetyczny z kurzawy Coriolisa jest w tej lokalizacji wyjątkowo wysoki.",
+   "pt-BR": "A leitura eletromagnética da tempestade de Coriolis é excepcionalmente alta neste local.",
+   "ru": "Приборы в этом месте отмечают запредельный уровень электромагнитной активности кориолисовой бури.",
+   "tr": "Coriolis Fırtınası'nın elektromanyetik değerleri bu konumda olağanüstü yüksek.",
+   "uk": "Електромагнітні показники коріолісової бурі в цьому місці надзвичайно високі.",
+   "zh-Hans": "此地的科里奥利风暴电磁读数高得不正常。",
+   "zh-Hant": "此處科里奧利風暴的電磁讀數極高。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_BlushingCavern_Name": {
+   "en": "Blushing Cavern",
+   "es": "La Caverna Ruborizada",
+   "fr": "Caverne Rougissante",
+   "it": "Caverna del Rossore",
+   "ja": "紅潮洞窟",
+   "ko": "붉은빛 동굴",
+   "pl": "Jaskinia Rumieńców",
+   "pt-BR": "Caverna Corada",
+   "ru": "Алеющие пещеры",
+   "tr": "Kızaran Mağara",
+   "uk": "Зніяковіла печера",
+   "zh-Hans": "红晕洞穴",
+   "zh-Hant": "紅頰洞穴"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_ErythriteCaveIsland": {
+   "en": "Blushing Cavern",
+   "es": "La Caverna Ruborizada",
+   "fr": "Caverne Rougissante",
+   "it": "Caverna del Rossore",
+   "ja": "紅潮洞窟",
+   "ko": "붉은빛 동굴",
+   "pl": "Jaskinia Rumieńców",
+   "pt-BR": "Caverna Corada",
+   "ru": "Алеющие пещеры",
+   "tr": "Kızaran Mağara",
+   "uk": "Зніяковіла печера",
+   "zh-Hans": "红晕洞穴",
+   "zh-Hant": "紅頰洞穴"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_BlushingCavern_Description": {
+   "de": "Eine kleine Felsinsel mit Banditenlagern auf einer großen Erythrithöhle.",
+   "en": "A small rock island with bandit camps atop a large cave of erythrite.",
+   "es": "Una pequeña isla de roca con campamentos de bandidos sobre una gran caverna de eritrita.",
+   "fr": "Petit îlot rocheux où plusieurs camps de bandits sont installés au-dessus d'une immense caverne pleine d'érythrite.",
+   "it": "Una piccola isola rocciosa con accampamenti dei banditi in cima a una grossa caverna di eritrite.",
+   "ja": "巨大なコバルト華の洞窟の上に盗賊の野営地が据えられた、小規模な岩の島。",
+   "ko": "커다란 에리트라이트 동굴 위에 도적 진영이 있는 작은 바위섬입니다.",
+   "pl": "Mała skalna wyspa z obozami bandytów na szczycie wielkiej jaskini erytrytu.",
+   "pt-BR": "Uma pequena ilha rochosa com acampamentos de bandidos sobre uma caverna grande de eritrita.",
+   "ru": "Маленький утес с бандитскими лагерями возвышается над крупным месторождением эритрина.",
+   "tr": "Büyük bir eritrit mağarasının üzerinde haydut kamplarının bulunduğu küçük bir kaya adası.",
+   "uk": "Крихітний скелястий острів, де над величезною печерою, повною еритриту, розмістили свій табір розбійники.",
+   "zh-Hans": "小型岩石岛，坐落在大型钴华洞穴上方，岛上有强盗营地。",
+   "zh-Hant": "位於巨大鈷華洞穴上方的小型岩島強盜營地。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_FireDungeon_Name": {
+   "de": "Teststation 136",
+   "en": "Testing Station No. 136",
+   "es": "Estación Experimental Imperial N.º 136",
+   "fr": "Station Expérimentale de l'Imperium 136",
+   "it": "Stazione Sperimentale n. 136",
+   "ja": "試験所136号",
+   "ko": "제136 실험소",
+   "pl": "Stacja badawcza nr 136",
+   "pt-BR": "Estação de Testes 136",
+   "ru": "Испытательная станция № 136",
+   "tr": "Test İstasyonu 136",
+   "uk": "Випробувальна станція № 136",
+   "zh-Hans": "136号试验站",
+   "zh-Hant": "136 號測試站"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_FireDungeon": {
+   "de": "Imperiale Teststation 136",
+   "en": "Imperial Testing Station No. 136",
+   "es": "Estación Experimental Imperial N.º 136",
+   "fr": "Station Expérimentale de l'Imperium 136",
+   "it": "Stazione Sperimentale dell'Impero n. 136",
+   "ja": "帝国試験所136号",
+   "ko": "제136 제국 실험소",
+   "pl": "Imperialna stacja badawcza nr 136",
+   "pt-BR": "Estação de Testes Imperial 136",
+   "ru": "Имперская испытательная станция № 136",
+   "tr": "İmparatorluk Test İstasyonu No. 136",
+   "uk": "Імперська випробувальна станція № 136",
+   "zh-Hans": "136号帝国试验站",
+   "zh-Hant": "第 136 號帝國測試站"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_FireDungeon_Description": {
+   "de": "Die Station ist von verbrannter Erde und dem starkem Geruch von verbranntem Fleisch umgeben.",
+   "en": "The Station is surrounded by fire-scorched earth and a strong smell of burnt flesh.",
+   "es": "La estación está rodeada de tierra chamuscada y un fuerte olor a carne quemada.",
+   "fr": "Le sol est totalement calciné autour de cette station, et une horrible odeur de chair brûlée flotte dans l'air.",
+   "it": "La stazione è circondata da terra bruciata ed emana un forte odore di carne bruciata.",
+   "ja": "灼熱の大地に囲まれた試験所。皮膚が燃えたような臭いがプンプンしている。",
+   "ko": "실험소 주변의 땅이 검게 그을렸으며 불에 탄 살냄새가 강하게 풍깁니다.",
+   "pl": "Stację otacza wypalona ziemia, a w powietrzu unosi się silny zapach spalonego mięsa.",
+   "pt-BR": "A estação está cercada de terra queimada por fogo e um forte cheiro de carne queimada.",
+   "ru": "Земля вокруг станции опалена, в воздухе резко пахнет жженой плотью.",
+   "tr": "İstasyon, ateşle kavrulmuş topraklarla çevrili ve etrafa yanık etin keskin kokusu yayılıyor.",
+   "uk": "Станція розташована серед випаленої вогнем землі, а в повітрі витає сморід горілої плоті.",
+   "zh-Hans": "试验站周围土地都被烧焦，空气中弥漫着浓烈的焦肉味。",
+   "zh-Hant": "車站周圍土地焦黑，散發強烈的腐肉焦味。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_SmugglersRun_Name": {
+   "de": "Smuggler's Run",
+   "en": "Smuggler’s Run",
+   "es": "El Trecho del Contrabandista",
+   "fr": "Piste des Contrebandiers",
+   "it": "Corsa del contrabbandiere",
+   "ja": "密輸業者の通り道",
+   "ko": "밀수업자의 길목",
+   "pl": "Bieg Szmuglera",
+   "pt-BR": "Corrida do Contrabandista",
+   "ru": "Трасса гонки контрабандистов",
+   "tr": "Kaçakçının Koşusu",
+   "uk": "Заїзд контрабандиста",
+   "zh-Hans": "走私贩子竞速",
+   "zh-Hant": "走私者之路"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_GroundVehicleTimeTrialIsland": {
+   "en": "Smuggler's Run",
+   "es": "El Trecho del Contrabandista",
+   "fr": "Piste des Contrebandiers",
+   "it": "Corsa del contrabbandiere",
+   "ja": "密輸業者の通り道",
+   "ko": "밀수업자의 길목",
+   "pl": "Bieg Szmuglera",
+   "pt-BR": "Corrida do Contrabandista",
+   "ru": "Гонка контрабандистов",
+   "tr": "Kaçakçının Koşusu",
+   "uk": "Заїзд контрабандиста",
+   "zh-Hans": "走私贩子竞速",
+   "zh-Hant": "走私者之路"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_SmugglersRun_Description": {
+   "de": "Eine kleine Felsinsel mit einer gut sichtbaren, aber schwierigen Straße für Bodenfahrzeuge.",
+   "en": "A small rock island with a well-defined and challenging road suitable for driving ground vehicles.",
+   "es": "Una pequeña isla rocosa con una carretera definida y desafiante apta para vehículos terrestres.",
+   "fr": "Petit îlot rocheux doté d'une route difficile spécialement conçue pour les véhicules terrestres.",
+   "it": "Una piccola isola rocciosa con una strada impegnativa e ben definita, adatta alla guida con veicoli terrestri.",
+   "ja": "明確に定められた難易度の高い道路がある、小さな岩の島。地上乗り物での移動に適している。",
+   "ko": "지상 차량 운전에 적합하며 도전 의식을 북돋우는 잘 정비된 도로가 있는 작은 바위섬.",
+   "pl": "Mała skalna wyspa z dobrze wytyczoną, ale wymagającą drogą, odpowiednią dla pojazdów naziemnych.",
+   "pt-BR": "Uma pequena ilha rochosa com uma estrada bem definida e desafiadora própria para veículos terrestres.",
+   "ru": "Маленький скалистый остров с четко очерченной и сложной дорогой, подходящей для вождения наземного транспорта.",
+   "tr": "Kara taşıtlarının sürüşüne uygun, iyi tanımlanmış ve yolları sarp küçük bir kaya adası.",
+   "uk": "Невеличкий скелястий острів із чітко окресленою і звивистою дорогою, придатною для руху наземних транспортних засобів.",
+   "zh-Hans": "小型岩石岛，有条设计精妙、充满挑战的道路，适合驾驶地面载具。",
+   "zh-Hant": "一個擁有崎嶇道路的小型岩島，適合進行地面載具駕駛挑戰。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_Survival1_Name": {
+   "de": "Hagga-Becken",
+   "en": "Hagga Basin",
+   "es": "Depresión de Hagga",
+   "fr": "Bassin de Hagga",
+   "it": "Bacino di Hagga",
+   "ja": "ハガ盆地",
+   "ko": "하가 분지",
+   "pl": "Basen Hagga",
+   "pt-BR": "Bacia de Hagga",
+   "ru": "Котловина Хагга",
+   "tr": "Hagga Havzası",
+   "uk": "Западина Хаґґа",
+   "zh-Hans": "哈加盆地",
+   "zh-Hant": "哈卡盆地"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_HaggaBasin": {
+   "de": "Hagga-Becken",
+   "en": "Hagga Basin",
+   "es": "Depresión de Hagga",
+   "fr": "Bassin de Hagga",
+   "it": "Bacino di Hagga",
+   "ja": "ハガ盆地",
+   "ko": "하가 분지",
+   "pl": "Basen Hagga",
+   "pt-BR": "Bacia de Hagga",
+   "ru": "Котловина Хагга",
+   "tr": "Hagga Havzası",
+   "uk": "Западина Хаґґа",
+   "zh-Hans": "哈加盆地",
+   "zh-Hant": "哈卡盆地"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_Survival1_Description": {
+   "de": "Vom Krieg verwüstete Region, die zum Teil durch den Schildwall geschützt wird.",
+   "en": "Region laid to waste by the war, partly sheltered by the Shield Wall.",
+   "es": "Una región devastada por la guerra y protegida en parte por la Muralla Escudo.",
+   "fr": "Région dévastée par la guerre. En partie protégée par le Bouclier.",
+   "it": "Regioni devastate dalla guerra, in parte protette dal Muro Scudo.",
+   "ja": "防嵐壁で一部保護されているが、戦争により荒廃の一途をたどっている地区。",
+   "ko": "전쟁으로 인해 황폐화된 지역입니다. 일부 지역은 방어벽이 보호하고 있습니다.",
+   "pl": "Region zniszczony przez wojnę, częściowo chroniony przez Mur Zaporowy.",
+   "pt-BR": "Região devastada pela guerra, parcialmente protegida pela Muralha-Escudo.",
+   "ru": "Опустошенный войной регион, который частично прикрыт Барьерной стеной.",
+   "tr": "Savaş yüzünden yerle bir olan bölge kısmen Kalkan Yamacı tarafından korunur.",
+   "uk": "Спустошені війною землі, частково захищені Оборонною стіною.",
+   "zh-Hans": "这片地区因战争而沦为废墟，其部分区域受到屏蔽场城墙的庇护。",
+   "zh-Hant": "本地區受戰爭摧殘，受到大盾壁的部分保護。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_Halloween26Shipwreck_Name": {
+   "de": "Wrack der Hieronymus",
+   "en": "Wreck of the Hieronymus",
+   "es": "Restos de la Hieronymus",
+   "fr": "Épave du Hiéronymos",
+   "it": "Relitto della Hieronymus",
+   "ja": "ヒエロニムス号の残骸",
+   "ko": "히에로니무스호의 잔해",
+   "pl": "Wrak Hieronymusa",
+   "pt-BR": "Destroços do Hieronymus",
+   "ru": "Место крушения «Иеронима»",
+   "tr": "Hieronymus Enkazı",
+   "uk": "Уламки «Ієроніма»",
+   "zh-Hans": "海罗尼穆斯号的残骸",
+   "zh-Hant": "希羅尼穆斯號殘骸"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_Halloween26Shipwreck_Description": {
+   "de": "Das Wrack eines verseuchten Schiffs, das Wahnsinn und Krankheit nach Arrakis brachte.",
+   "en": "The wreck of a plague ship that carried madness and infection to Arrakis.",
+   "es": "Los restos de una nave infectada que llevó la locura y la enfermedad a Arrakis.",
+   "fr": "L'épave d'un vaisseau contaminé apportant démence et infection sur Arrakis.",
+   "it": "Il relitto della nave appestata che ha portato infezione e follia su Arrakis.",
+   "ja": "疫病船の残骸。狂気と伝染病をアラキスにもたらした。",
+   "ko": "아라키스에 광기와 감염을 가져온 역병선의 잔해입니다.",
+   "pl": "Wrak statku, który przywiózł na Arrakis szaleństwo i zarazę.",
+   "pt-BR": "Os destroços de uma nave doente que levou loucura e infecção para Arrakis.",
+   "ru": "Остов зараженного судна, принесшего на Арракис мор и безумие.",
+   "tr": "Arrakis'e delilik ve enfeksiyon taşıyan bir salgın gemisinin enkazı.",
+   "uk": "Уламки зараженого корабля, що приніс на Араккіс пошесть та божевілля.",
+   "zh-Hans": "一艘将疯狂与感染带到厄拉科斯的瘟疫船残骸。",
+   "zh-Hant": "一艘瘟疫船的殘骸，它將瘋狂與感染帶到了厄拉科斯。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_Harko_Name": {
+   "en": "Harko Village",
+   "es": "Aldea Harko",
+   "fr": "Village d'Harko",
+   "it": "Villaggio di Harko",
+   "ja": "ハルコビレッジ",
+   "ko": "하코 마을",
+   "pl": "Wioska Harko",
+   "pt-BR": "Vila Harko",
+   "ru": "Деревня Харко",
+   "tr": "Harko Köyü",
+   "uk": "Селище Харко",
+   "zh-Hans": "哈克村",
+   "zh-Hant": "哈肯村"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_HarkoVillage": {
+   "en": "Harko Village",
+   "es": "Aldea Harko",
+   "fr": "Village d'Harko",
+   "it": "Villaggio di Harko",
+   "ja": "ハルコビレッジ",
+   "ko": "하코 마을",
+   "pl": "Wioska Harko",
+   "pt-BR": "Vila Harko",
+   "ru": "Деревня Харко",
+   "tr": "Harko Köyü",
+   "uk": "Селище Харко",
+   "zh-Hans": "哈克村",
+   "zh-Hant": "哈肯村"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_Harko_Description": {
+   "de": "Vorübergehendes Hauptquartier der Harkonnen und Zentrum des Sklavenhandels von Carthag.",
+   "en": "Interim headquarters of the Harkonnens, and nexus of the Carthag slave trade.",
+   "es": "El cuartel general temporal de los Harkonnen y el eje del comercio de esclavos de Carthag.",
+   "fr": "Quartier général temporaire des Harkonnen et haut lieu du commerce d'esclaves de Carthag.",
+   "it": "Quartier generale temporaneo degli Harkonnen e snodo del mercato di schiavi per Carthag.",
+   "ja": "ハルコンネン家の暫定首都で、カルタグの奴隷貿易の中心地。",
+   "ko": "하코넨의 임시 거점이자 카르타그 노예 무역의 중심지입니다.",
+   "pl": "Tymczasowa siedziba Harkonnenów i centrum handlu niewolnikami w Kartagin.",
+   "pt-BR": "Quartel-general interino Harkonnen e ponto de tráfico de escravos de Cartago.",
+   "ru": "Временная штаб-квартира Харконненов, а также центр работорговли в Карфаге.",
+   "tr": "Harkonnenların geçici karargahı ve Carthag köle ticaretinin merkezi.",
+   "uk": "Тимчасова ставка Харконненів й осередок работоргівлі для Карфага.",
+   "zh-Hans": "哈克南的临时首都，同时也是迦太格奴隶贸易的核心地带。",
+   "zh-Hant": "哈肯能暫時的總部，同時也是迦太奇迦太奇奴隸買賣的中心。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_FallenLight_Name": {
+   "de": "Lichtfall",
+   "en": "Fallen Light",
+   "es": "Luz Caída",
+   "fr": "Brunante",
+   "it": "Luce Caduta",
+   "ja": "フォールンライト",
+   "ko": "추락한 빛",
+   "pl": "Upadła Łuna",
+   "pt-BR": "Luz Caída",
+   "ru": "Павший свет",
+   "tr": "Düşen Işık",
+   "uk": "Загибле Полум’я",
+   "zh-Hans": "陨落光芒",
+   "zh-Hant": "隕落之光"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_FallenLight_Description": {
+   "de": "Geheimversteck von Schmugglern und Freihändlern in einem in der Tiefen Wüste abgestürzten Heighliner.",
+   "en": "Secret lair of the smugglers, hidden in a fallen heighliner in the Deep Desert.",
+   "es": "Una guarida secreta de contrabandistas y comerciantes libres en un crucero derribado en el desierto profundo.",
+   "fr": "Long-courrier qui s'est écrasé dans le désert profond, transformé en repaire secret par les contrebandiers et les libres commerçants.",
+   "it": "Covo segreto di contrabbandieri e Liberi Commercianti in un incrociatore precipitato nell'Alto Deserto.",
+   "ja": "砂漠の奥地に墜落した輸送母船内にある、密輸業者と自由交易商人の秘密のねぐら。",
+   "ko": "깊은 사막의 추락한 하이라이너 안에 있는 밀수업자와 자유 상인의 비밀 은신처입니다.",
+   "pl": "Tajna kryjówka przemytników i wolnych handlarzy w zestrzelonym liniowcu na Dalekich Piaskach.",
+   "pt-BR": "Esconderijo de contrabandistas e livres-cambistas em uma nave caída no deserto profundo.",
+   "ru": "Тайное логово контрабандистов и вольных торговцев в обломках хайлайнера в сердце пустыни.",
+   "tr": "Derin Çöl'deki düşmüş bir yüksek hat üzerinde Kaçakçılar ve serbest tacirlerin gizli sığınağı.",
+   "uk": "Таємне лігво контрабандистів і вільних крамарів у розбитому гайлайнері посеред Глибокої пустелі.",
+   "zh-Hans": "在一艘坠毁大型远航机内，走私贩子和自由行商的秘密巢穴，位于沙漠腹地。",
+   "zh-Hant": "隱藏在深邃沙漠墜毀運輸艦內的偷渡者與自由行商巢穴。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_TheOldQuarry_Name": {
+   "de": "Der alte Steinbruch",
+   "en": "The Old Quarry",
+   "es": "La Vieja Cantera",
+   "fr": "L'ancienne carrière",
+   "it": "La Vecchia Cava",
+   "ja": "古い採石場",
+   "ko": "오래된 채석장",
+   "pl": "Stary Kamieniołom",
+   "pt-BR": "Velha Pedreira",
+   "ru": "Старый карьер",
+   "tr": "Eski Taş Ocağı",
+   "uk": "Старий кар’єр",
+   "zh-Hans": "旧采石场",
+   "zh-Hant": "舊採石場"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_TheOldQuarry": {
+   "de": "Der alte Steinbruch",
+   "en": "The Old Quarry",
+   "es": "La Vieja Cantera",
+   "fr": "L'ancienne carrière",
+   "it": "La Vecchia Cava",
+   "ja": "古い採石場",
+   "ko": "오래된 채석장",
+   "pl": "Stary Kamieniołom",
+   "pt-BR": "Velha Pedreira",
+   "ru": "Старый карьер",
+   "tr": "Eski Taş Ocağı",
+   "uk": "Старий кар’єр",
+   "zh-Hans": "旧采石场",
+   "zh-Hant": "舊採石場"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_TheOldQuarry_Description": {
+   "de": "Ein verlassener Steinbruch der Wasserschiffer am Rand der Polarsenke.",
+   "en": "An abandoned Water Shipper-owned quarry on the outskirts of the Polar Sink.",
+   "es": "Una cantera abandonada propiedad de los transportistas de agua en los límites de la Dolina Polar.",
+   "fr": "Carrière abandonnée appartenant aux convoyeurs d'eau, en bordure de la Fosse Polaire.",
+   "it": "Cava abbandonata di proprietà dei convogliatori d'acqua, ai confini del Sink Polare.",
+   "ja": "極圏陥没地のはずれにある、水の荷主が所有する打ち捨てられた採石場。",
+   "ko": "극지 침몰의 변두리에 위치한 물 운송업자 소유의 버려진 채석장.",
+   "pl": "Opuszczony kamieniołom należący do Spedytorów Wody, położony na obrzeżach Polarnego Zapadliska.",
+   "pt-BR": "Uma pedreira abandonada dos fornecedores de água nas cercanias da Pia Polar.",
+   "ru": "Заброшенный карьер на окраине Полярной впадины, некогда принадлежавший водоторговцам.",
+   "tr": "Kutup Çukurunun kenarında terkedilmiş bir Su Nakliyatçısına ait taş ocağı.",
+   "uk": "Покинутий кар’єр на краю Полярного низькодолу, який колись належав водоторгівцям.",
+   "zh-Hans": "废弃的运水者采石场，位于极地洼地区外围。",
+   "zh-Hant": "極地盆地邊緣一座遭棄置的供水商採石場。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_PoisonDungeon_Name": {
+   "de": "Teststation 195",
+   "en": "Testing Station No. 195",
+   "es": "Estación Experimental Imperial N.º 195",
+   "fr": "Station Expérimentale de l'Imperium 195",
+   "it": "Stazione Sperimentale n. 195",
+   "ja": "試験所195号",
+   "ko": "제195 실험소",
+   "pl": "Stacja badawcza nr 195",
+   "pt-BR": "Estação de Testes 195",
+   "ru": "Испытательная станция № 195",
+   "tr": "Test İstasyonu 195",
+   "uk": "Випробувальна станція № 195",
+   "zh-Hans": "195号试验站",
+   "zh-Hant": "195 號測試站"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_PoisonDungeon": {
+   "de": "Imperiale Teststation 195",
+   "en": "Imperial Testing Station No. 195",
+   "es": "Estación Experimental Imperial N.º 195",
+   "fr": "Station Expérimentale de l'Imperium 195",
+   "it": "Stazione Sperimentale dell'Impero n. 195",
+   "ja": "帝国試験所195号",
+   "ko": "제195 제국 실험소",
+   "pl": "Imperialna stacja badawcza nr 195",
+   "pt-BR": "Estação de Testes Imperial 195",
+   "ru": "Имперская испытательная станция № 195",
+   "tr": "İmparatorluk Test İstasyonu No. 195",
+   "uk": "Імперська випробувальна станція № 195",
+   "zh-Hans": "195号帝国试验站",
+   "zh-Hant": "第 195 號帝國測試站"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_PoisonDungeon_Description": {
+   "de": "Der Eingang wird von Ranken versperrt und aus dem Inneren steigt der schwache Duft von verbranntem Elaccaholz auf.",
+   "en": "Vines are covering the entrance and a faint smell of burnt elacca wood emanates from below.",
+   "es": "Hay enredaderas que cubren la entrada y un leve olor a madera de elacca que emana de las profundidades.",
+   "fr": "Les lianes cachent l'entrée et une légère odeur d'elacca brûlé remonte du dessous.",
+   "it": "L'ingresso è coperto dai rampicanti e da sotto proviene un lieve odore di legno d'elacca bruciato.",
+   "ja": "入り口が蔓に覆われており、燃えたエラッカ木のかすかな香りが下の方から漂ってくる。",
+   "ko": "덩굴이 입구를 덮고 있으며, 아래에서 타버린 엘라카 나무 냄새가 희미하게 납니다.",
+   "pl": "Pnącza pokrywają wejście, a gdzieś z dołu wydobywa się delikatny zapach palonego drewna elakki.",
+   "pt-BR": "Vinhas estão cobrindo a entrada e há um leve cheiro de madeira de elacca queimada vindo de baixo.",
+   "ru": "Вход увит лозами; из глубин доносится запах жженой элакковой древесины.",
+   "tr": "Girişi sarmaşıklar kaplamış ve aşağıdan yanmış Elakka odununun hafif bir kokusu yayılıyor.",
+   "uk": "Вхід обплетений ліанами, а знизу доноситься ледь відчутний запах диму обпаленого дерева елака.",
+   "zh-Hans": "藤蔓覆盖着入口，下方飘出淡淡的伊拉卡木焦味。",
+   "zh-Hant": "入口布滿藤蔓，下方散發出微弱的艾樂迦木焦味。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_RadiationDungeon_Name": {
+   "de": "Teststation 89",
+   "en": "Testing Station No. 89",
+   "es": "Estación Experimental Imperial N.º 89",
+   "fr": "Station Expérimentale de l'Imperium 89",
+   "it": "Stazione Sperimentale n. 89",
+   "ja": "試験所89号",
+   "ko": "제89 실험소",
+   "pl": "Stacja badawcza nr 89",
+   "pt-BR": "Estação de Testes 89",
+   "ru": "Испытательная станция № 89",
+   "tr": "Test İstasyonu 89",
+   "uk": "Випробувальна станція № 89",
+   "zh-Hans": "89号试验站",
+   "zh-Hant": "89 號測試站"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_RadiationDungeon": {
+   "de": "Imperiale Teststation 89",
+   "en": "Imperial Testing Station No. 89",
+   "es": "Estación Experimental Imperial N.º 89",
+   "fr": "Station Expérimentale de l'Imperium 89",
+   "it": "Stazione Sperimentale dell'Impero n. 89",
+   "ja": "帝国試験所89号",
+   "ko": "제89 제국 실험소",
+   "pl": "Imperialna stacja badawcza nr 89",
+   "pt-BR": "Estação de Testes Imperial 89",
+   "ru": "Имперская испытательная станция № 89",
+   "tr": "İmparatorluk Test İstasyonu No. 89",
+   "uk": "Імперська випробувальна станція № 89",
+   "zh-Hans": "89号帝国试验站",
+   "zh-Hant": "第 89 號帝國測試站"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_RadiationDungeon_Description": {
+   "de": "Der Eingangsbereich weist hohe Strahlungswerte auf.",
+   "en": "High radiation readings are registered around the entrance.",
+   "es": "Se ha registrado mucha radiación cerca de la entrada.",
+   "fr": "La quantité de radiations est importante à l'entrée de cette station.",
+   "it": "Attorno all'ingresso si rilevano alti livelli di radiazioni.",
+   "ja": "入り口付近からは、高い放射線量が確認されている。",
+   "ko": "입구 주변에서 높은 방사능 수치가 검출됩니다.",
+   "pl": "Wokół wejścia odnotowuje się wysokie odczyty promieniowania.",
+   "pt-BR": "Foram registradas leituras de altos níveis de radiação perto da entrada.",
+   "ru": "У входа зафиксирован высокий радиационный фон.",
+   "tr": "Girişin etrafında yüksek radyasyon seviyeleri kaydediliyor.",
+   "uk": "Поблизу входу фіксується високий рівень радіації.",
+   "zh-Hans": "入口周围检测到强辐射。",
+   "zh-Hant": "入口周圍測得高強度輻射反應。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_WreckOfTheTyche_Name": {
+   "de": "Wrack der Tyche",
+   "en": "Wreck of the Tyche",
+   "es": "Restos de la Tyche",
+   "fr": "Épave du Tyché",
+   "it": "Relitto della Tiche",
+   "ja": "テュケー号の残骸",
+   "ko": "티케의 잔해",
+   "pl": "Wrak Tyche",
+   "pt-BR": "Destroços do Tyche",
+   "ru": "Место крушения «Тихе»",
+   "tr": "Tyche'nin Enkazı",
+   "uk": "Місце трощі «Тихе»",
+   "zh-Hans": "堤喀号的残骸",
+   "zh-Hant": "泰琪號殘骸"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_RadioactiveShipwreck": {
+   "de": "Wrack der Tyche",
+   "en": "Wreck of the Tyche",
+   "es": "Restos de la Tyche",
+   "fr": "Épave du Tyché",
+   "it": "Relitto della Tiche",
+   "ja": "テュケー号の残骸",
+   "ko": "티케의 잔해",
+   "pl": "Wrak Tyche",
+   "pt-BR": "Destroços do Tyche",
+   "ru": "Место крушения «Тихе»",
+   "tr": "Tyche'nin Enkazı",
+   "uk": "Місце трощі «Тихе»",
+   "zh-Hans": "堤喀号的残骸",
+   "zh-Hant": "泰琪號殘骸"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_WreckOfTheTyche_Description": {
+   "de": "Das verstrahlte Wrack eines innerhalb des Schildwalls abgestürzten Schiffes.",
+   "en": "An irradiated shipwreck crashed inside the Shield Wall.",
+   "es": "Los restos radiactivos de una nave derribada dentro de la Muralla Escudo.",
+   "fr": "L'épave irradiée d'un vaisseau qui s'est écrasé à l'intérieur du Bouclier.",
+   "it": "Un relitto radioattivo precipitato dentro al Muro Scudo.",
+   "ja": "防嵐壁内に墜落した、放射線に汚染された難破船。",
+   "ko": "방사능에 오염된 난파선이 방어벽 안으로 추락했습니다.",
+   "pl": "Napromieniowany wrak statku, który rozbił się wewnątrz muru zaporowego.",
+   "pt-BR": "Destroços irradiados de uma nave caíram dentro da Muralha-Escudo.",
+   "ru": "Радиоактивный остов судна, пробившего при крушении Барьерную стену.",
+   "tr": "Radyasyonlu bir gemi enkazı kalkan duvarının içine düştü.",
+   "uk": "Заражене радіацією місце трощі корабля, що розбився біля Оборонної стіни.",
+   "zh-Hans": "一艘遭受辐射的飞船残骸坠毁在屏蔽场城墙内。",
+   "zh-Hant": "一艘墜毀在大盾壁內的受輻射船隻遺骸。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_TheBroodworks_Name": {
+   "de": "Die Broodworks",
+   "en": "The Broodworks",
+   "es": "El Criadero",
+   "fr": "Colonie",
+   "it": "Il Termitaio",
+   "ja": "ブルードワーク",
+   "ko": "브루드웍스",
+   "pl": "Wylęgarnia",
+   "pt-BR": "O Covil",
+   "ru": "Улей",
+   "uk": "Лігво рою",
+   "zh-Hans": "巢穴工厂",
+   "zh-Hant": "巢穴"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_SandfliesFortress": {
+   "de": "Die Broodworks",
+   "en": "The Broodworks",
+   "es": "El Criadero",
+   "fr": "Colonie",
+   "it": "Il Termitaio",
+   "ja": "ブルードワーク",
+   "ko": "브루드웍스",
+   "pl": "Wylęgarnia",
+   "pt-BR": "O Covil",
+   "ru": "Улей",
+   "uk": "Лігво рою",
+   "zh-Hans": "巢穴工厂",
+   "zh-Hant": "巢穴"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_TheBroodworks_Description": {
+   "de": "Eine große, gut verteidigte Banditenfestung auf dem Schildwall.",
+   "en": "A large, well-defended bandit stronghold located on the shieldwall.",
+   "es": "Una fortaleza de bandidos grande y bien defendida ubicada en la Muralla Escudo.",
+   "fr": "Immense forteresse de bandits, bien défendue et située dans le Bouclier.",
+   "it": "Una roccaforte dei banditi, grande e ben difesa, posizionata sul Muro Scudo.",
+   "ja": "防嵐壁に存在する、大規模かつ厳重に警備された盗賊の拠点。",
+   "ko": "방어벽에 있는 방어가 삼엄한 대규모 도적 거점.",
+   "pl": "Duża, dobrze broniona forteca bandytów zlokalizowana na murze obronnym.",
+   "pt-BR": "Uma fortaleza de bandidos grande e fortemente protegida localizada na Muralha-Escudo.",
+   "ru": "Большая и хорошо укрепленная бандитская крепость, расположенная на Барьерной стене.",
+   "tr": "Kalkan duvarı üzerinde bulunan büyük, korunaklı bir haydut karargâhı.",
+   "uk": "Великий, добре захищений оплот розбійників на Оборонній стіні.",
+   "zh-Hans": "一个位于屏蔽场城墙上，防御严密的大型强盗据点。",
+   "zh-Hant": "位於大盾壁上、防禦森嚴的大型強盜根據地。"
+  },
+  "ST_Localization_UI:UI/OVERLAND_MAP_LOCATION_DESCRIPTION_TEXT10": {
+   "de": "Arsunt-Garnison",
+   "en": "Arsunt Garrison",
+   "es": "Guarnición de Arsunt",
+   "fr": "Garnison d'Arsunt",
+   "it": "Guarnigione di Arsunt",
+   "ja": "アルスント駐屯地",
+   "ko": "아르선트 주둔지",
+   "pl": "Garnizon w Arsunt",
+   "pt-BR": "Guarnição Arsunt",
+   "ru": "Арсунский гарнизон",
+   "tr": "Arsunt Garnizonu",
+   "uk": "Гарнізон Арсунт",
+   "zh-Hans": "阿森特驻防地",
+   "zh-Hant": "阿桑特駐軍處"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_Story_Faction_Outpost_Atre": {
+   "de": "Arsunt-Garnison",
+   "en": "Arsunt Garrison",
+   "es": "Guarnición de Arsunt",
+   "fr": "Garnison d'Arsunt",
+   "it": "Guarnigione di Arsunt",
+   "ja": "アルスント駐屯地",
+   "ko": "아르선트 주둔지",
+   "pl": "Garnizon w Arsunt",
+   "pt-BR": "Guarnição Arsunt",
+   "ru": "Арсунский гарнизон",
+   "tr": "Arsunt Garnizonu",
+   "uk": "Гарнізон Арсунт",
+   "zh-Hans": "阿森特驻防地",
+   "zh-Hant": "阿桑特駐軍處"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_AbandonedOutpost_Description": {
+   "de": "Ein nach der Zerstörung aufgegebener ehemaliger Außenposten der Armee.",
+   "en": "A former military outpost, abandoned after the destruction of Carthag.",
+   "es": "Un antiguo puesto de avanzada militar abandonado después de la destrucción de Carthag.",
+   "fr": "Ancien avant-poste militaire, abandonné suite à la destruction de Carthag.",
+   "it": "Un vecchio avamposto militare, abbandonato dopo la distruzione di Carthag.",
+   "ja": "かつての軍事前哨基地。カルタグ壊滅後に放棄された。",
+   "ko": "카르타그가 파괴된 후 버려진 옛 군사 전초기지입니다.",
+   "pl": "Dawna placówka wojskowa, opuszczona po zniszczeniu Kartagin.",
+   "pt-BR": "Um antigo posto avançado militar, abandonado após a destruição de Cartago.",
+   "ru": "Старый военный аванпост, заброшенный после разрушения Карфага.",
+   "tr": "Carthag'ın yıkımından sonra terk edilmiş eski bir askeri karakol.",
+   "uk": "Колишній військовий аванпост, покинутий після падіння Карфага.",
+   "zh-Hans": "前军事哨站，迦太格被毁后遭到废弃。",
+   "zh-Hant": "曾是軍事前哨站，在迦太奇被毀後廢棄。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_RuinsOfTsimpo_Name": {
+   "de": "Ruinen von Tsimpo",
+   "en": "Ruins of Tsimpo",
+   "es": "Ruinas de Tsimpo",
+   "fr": "Ruines de Tsimpo",
+   "it": "Rovine di Tsimpo",
+   "ja": "シンポの遺跡",
+   "ko": "침포의 폐허",
+   "pl": "Ruiny Tsimpo",
+   "pt-BR": "Ruínas de Tsimpo",
+   "ru": "Руины Цимпо",
+   "tr": "Tsimpo Harabeleri",
+   "uk": "Руїни Цимпо",
+   "zh-Hans": "茨姆波废墟",
+   "zh-Hant": "齊木坡廢墟"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_TheRuinsOfTsimpo": {
+   "de": "Die Ruinen von Tsimpo",
+   "en": "The Ruins of Tsimpo",
+   "es": "Las ruinas de Tsimpo",
+   "fr": "Ruines de Tsimpo",
+   "it": "Le rovine di Tsimpo",
+   "ja": "シンポの遺跡",
+   "ko": "침포의 폐허",
+   "pl": "Ruiny Tsimpo",
+   "pt-BR": "As Ruínas de Tsimpo",
+   "ru": "Руины Цимпо",
+   "tr": "Tsimpo Harabeleri",
+   "uk": "Руїни Цимпо",
+   "zh-Hans": "茨姆波废墟",
+   "zh-Hant": "齊木坡廢墟"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_RuinsOfTsimpo_Description": {
+   "de": "Ein während des Krieges dezimiertes Dorf in einer Schlucht, das von Geistern der Vergangenheit und Gegenwart heimgesucht wird.",
+   "en": "A box‑canyon village decimated during the war, haunted by the ghosts of past and present.",
+   "es": "Una aldea en un desfiladero que quedó arrasada por la guerra y está encantada por fantasmas del pasado y el presente.",
+   "fr": "Village situé dans un canyon ayant été décimé pendant la guerre et qui est désormais hanté par les fantômes du passé et du présent.",
+   "it": "Un villaggio chiuso in un canyon, devastato durante la guerra e perseguitato dai fantasmi del passato e del presente.",
+   "ja": "戦争で壊滅した絶壁の峡谷の村。過去と現在の亡霊がさまよう場所。",
+   "ko": "전쟁으로 파괴된 채 과거와 현재의 망령이 떠도는, 사면이 절벽으로 막힌 협곡 마을입니다.",
+   "pl": "Wioska w kanionie zniszczona podczas wojny, nawiedzana przez duchy przeszłości i teraźniejszości.",
+   "pt-BR": "Uma vila em um desfiladeiro dizimada durante a guerra, assombrada pelos fantasmas do passado e do presente.",
+   "ru": "Поселение, расположенное в глухом каньоне. Война разрушила его, и теперь здесь обитают призраки прошлого и настоящего.",
+   "tr": "Savaş sırasında yok edilen bir kutu-kanyon köyü, geçmişin ve günümüzün hayaletleriyle lanetlenmiş.",
+   "uk": "Селище між каньйонами, знищене під час війни. Відтоді там вештаються привиди минулого й теперішнього.",
+   "zh-Hans": "一个在战争中被摧毁的箱形峡谷村庄，萦绕着过去与现在的幽灵。",
+   "zh-Hant": "一個在戰爭中被摧毀的狹谷村莊，被過去與現在的幽靈所糾纏。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_WaterFat_Name": {
+   "de": "Anwesen des Wasserschiffers",
+   "en": "Water Shipper's Mansion",
+   "es": "Mansión del transportista de agua",
+   "fr": "Demeure du convoyeur d'eau",
+   "it": "Villa del convogliatore d'acqua",
+   "ja": "水の荷主の屋敷",
+   "ko": "물 운송업자 저택",
+   "pl": "Rezydencja Spedytora Wody",
+   "pt-BR": "Mansão do Fornecedor de Água",
+   "ru": "Особняк водоторговца",
+   "tr": "Su Nakliyatçısının Köşkü",
+   "uk": "Маєток водоторгівця",
+   "zh-Hans": "运水者的豪宅",
+   "zh-Hant": "供水商的大宅"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_WaterFat": {
+   "de": "Anwesen des Wasserschiffers",
+   "en": "Water Shipper's Mansion",
+   "es": "Mansión del transportista de agua",
+   "fr": "Demeure du convoyeur d'eau",
+   "it": "Villa del convogliatore d'acqua",
+   "ja": "水の荷主の屋敷",
+   "ko": "물 운송업자 저택",
+   "pl": "Rezydencja Spedytora Wody",
+   "pt-BR": "Mansão do Fornecedor de Água",
+   "ru": "Особняк водоторговца",
+   "tr": "Su Nakliyatçısının Köşkü",
+   "uk": "Маєток водоторгівця",
+   "zh-Hans": "运水者的豪宅",
+   "zh-Hant": "供水商的大宅"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_WaterFat_Description": {
+   "de": "Von Taufeldern umgebener Hochsicherheitgebäudekomplex vor den Toren von Arrakeen.",
+   "en": "High-security housing complex surrounded by dew fields, just outside Arrakeen.",
+   "es": "Un complejo residencial de alta seguridad rodeado de campos de rocío a las afueras de Arrakeen.",
+   "fr": "Complexe d'habitation hautement sécurisé situé juste en dehors d'Arrakeen et entouré de champs de rosée.",
+   "it": "Complesso residenziale ad alta sicurezza circondato da campi di rugiada, poco lontano da Arrakeen.",
+   "ja": "アラキーンの外れにある、露畑に囲まれた、警備の厳重な居住施設。",
+   "ko": "아라킨 바로 외곽에 있는, 이슬밭으로 둘러싸인 보안이 철저한 주택 단지입니다.",
+   "pl": "Otoczony polami rosy kompleks mieszkalny o wysokim poziomie bezpieczeństwa, położony na obrzeżach Arrakin.",
+   "pt-BR": "Complexo habitacional de alta segurança nos arredores de Arrakina, cercado por campos de orvalho.",
+   "ru": "Хорошо защищенный жилой комплекс, окруженный полями росоловок, в окрестностях Арракина.",
+   "tr": "Arrakeen’in hemen dışında, çevresi çiy tarlalarıyla dolu yüksek güvenlikli bir konut kompleksi.",
+   "uk": "Комплекс житлових будівель із високим рівнем охорони прямо за Арракіном, оточений полями роси.",
+   "zh-Hans": "厄拉奇恩城外，一片被露水田环绕、戒备森严的住宅区。",
+   "zh-Hant": "在厄拉欽恩郊外被露水田圍繞著的高安全住宅區。"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_WindPass": {
+   "en": "Wind Pass",
+   "es": "Paso del Viento",
+   "fr": "Passe du Vent",
+   "it": "Passo del Vento",
+   "ja": "風の峠",
+   "ko": "바람고개",
+   "pl": "Przełęcz Wiatru",
+   "pt-BR": "Passo do Vento",
+   "ru": "Ветровой перевал",
+   "tr": "Rüzgar Geçidi",
+   "uk": "Вітряний Перевал",
+   "zh-Hans": "风口关",
+   "zh-Hant": "風口峽谷"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_WindPass_Description": {
+   "de": "Ein von den Wasserschiffern umfunktionierter Ort in einer windgepeitschten Schlucht.",
+   "en": "A windswept canyon village repurposed by the secretive Water Shippers.",
+   "es": "Un poblado en un cañón azotado por el viento que han reconstruido los discretos transportistas de agua.",
+   "fr": "Village situé dans un canyon balayé par les vents, où les convoyeurs d'eau se sont installés.",
+   "it": "Un villaggio in un canyon spazzato dal vento, ristrutturato in segreto dai convogliatori d'acqua.",
+   "ja": "秘密主義の水の荷主が別の目的に利用している、風吹き荒れる峡谷村。",
+   "ko": "비밀스러운 물 운송업자들이 다른 목적을 가지고 다시 세운 강풍 부는 협곡 마을.",
+   "pl": "Wietrzna wioska w kanionie przebudowana przez tajemniczych Spedytorów Wody.",
+   "pt-BR": "Um vilarejo no cânion varrido pelo vento, reaproveitado pelos reservados fornecedores de água.",
+   "ru": "Затерянный в ущелье и открытый всем ветрам поселок, — теперь его облюбовали скрытные водоторговцы.",
+   "tr": "Rüzgarın yıktığı ve ketum Su Nakliyatçılarının yeniden işlevsel hale getirdiği bir kanyon köyü.",
+   "uk": "Поселення у вітряному каньйоні, яке переобладнали таємничі водоторгівці.",
+   "zh-Hans": "一个被风侵蚀的峡谷村庄，被神秘的运水者加以改造利用。",
+   "zh-Hant": "一座由神秘供水商改建的當風峽谷村莊。"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_Wreck_Name": {
+   "de": "Wrack der Hephaistos",
+   "en": "Wreck of the Hephaestus",
+   "es": "Restos de la Hephaestus",
+   "fr": "Épave de l'Héphaïstos",
+   "it": "Relitto dell'Efesto",
+   "ja": "ヘーパイストス号の残骸",
+   "ko": "헤파이터스의 잔해",
+   "pl": "Wrak Hefajstosa",
+   "pt-BR": "Destroços do Hefesto",
+   "ru": "Обломки «Гефеста»",
+   "tr": "Hephaistos Enkazı",
+   "uk": "Уламки «Гефеста»",
+   "zh-Hans": "赫菲斯托斯的残骸",
+   "zh-Hant": "赫菲斯托斯號的殘骸"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_WreckOfHephaestus": {
+   "de": "Das Wrack der Hephaistos",
+   "en": "The Wreck of the Hephaestus",
+   "es": "Los restos de la Hephaestus",
+   "fr": "Épave de l'Héphaïstos",
+   "it": "Il relitto dell'Efesto",
+   "ja": "ヘーパイストス号の残骸",
+   "ko": "헤파이터스의 잔해",
+   "pl": "Wrak Hefajstosa",
+   "pt-BR": "Os Destroços do Hefesto",
+   "ru": "Обломки «Гефеста»",
+   "tr": "Hephaistos Enkazı",
+   "uk": "Уламки «Гефеста»",
+   "zh-Hans": "赫菲斯托斯的残骸",
+   "zh-Hant": "赫菲斯托斯號的殘骸"
+  },
+  "ST_Localization_UI:UI/OvermapHudPOI_Wreck_Description": {
+   "de": "Brennendes Wrack eines ixianischen Frachters.",
+   "en": "Burning remains of an Ixian freighter.",
+   "es": "Los restos ardientes de un carguero ixiano.",
+   "fr": "Épave en flammes d'un vaisseau-cargo ixien.",
+   "it": "I resti in fiamme di un trasporto Ixiano.",
+   "ja": "イクスの貨物船の焼け残り。",
+   "ko": "불 타고 있는 익스 화물선 잔해입니다.",
+   "pl": "Płonące szczątki iksjańskiego frachtowca.",
+   "pt-BR": "Restos em chamas de um cargueiro ixiano.",
+   "ru": "Горящие останки иксианского грузового корабля.",
+   "tr": "Ix yük gemisinin yanan kalıntıları.",
+   "uk": "Згорілі рештки іксіанського вантажного корабля.",
+   "zh-Hans": "一艘熊熊燃烧的伊克斯货船残骸",
+   "zh-Hant": "伊克斯運輸艦焚燒中的殘骸。"
+  },
+  "ST_Localization_UI:UI/TravelFail_NoActiveRelevantMission": {
+   "de": "Du brauchst eine aktive kompatible Landsraad-Mission, um an diesen Ort zu reisen.",
+   "en": "Travel to this location requires an active compatible Landsraad Mission.",
+   "es": "Viajar a esta ubicación requiere una misión del Landsraad compatible activa.",
+   "fr": "Il faut une mission du Landsraad compatible pour pouvoir se rendre à cet endroit.",
+   "it": "Per raggiungere questa località ti servirà una missione compatibile del Landsraad.",
+   "ja": "この場所に移動するには、対応する有効な領主会議任務が必要です。",
+   "ko": "이 위치로 이동하려면 활성 상태의 호환 가능한 대귀족평의회 임무가 필요합니다.",
+   "pl": "By podróżować do tej lokalizacji, musisz przyjąć właściwą misję od Landsraadu.",
+   "pt-BR": "A viagem até este local requer uma missão do Landsraad ativa e compatível.",
+   "ru": "В это место можно переместиться, только если у вас есть соответствующее активное задание Ландсраада.",
+   "tr": "Bu konuma seyahat etmek için aktif ve uyumlu bir Landsraad Görevi gereklidir.",
+   "uk": "Для подорожі до цього місця необхідно прийняти відповідне завдання від Ландсрааду.",
+   "zh-Hans": "前往此地点需要激活对应的兰兹拉德联合会任务。",
+   "zh-Hant": "前往此地點需要啟用相關的蘭茲拉德聯盟任務。"
+  },
+  "ST_Localization_UI:UI/Travel_RequirementFailedReason_Vehicle_HalloweenShipwreck": {
+   "de": "Fliegendes Fahrzeug erforderlich. Rede mit Frida Maltros über den Rücktransport nach Arrakeen.",
+   "en": "A flying vehicle is required. Talk to Frida Maltros for transportation back to Arrakeen.",
+   "es": "Es necesario un vehículo volador. Habla con Frida Maltros para conseguir transporte de vuelta a Arrakeen.",
+   "fr": "Un véhicule volant est requis. Allez voir Frida Maltros pour obtenir un moyen de transport vers Arrakeen.",
+   "it": "È richiesto un veicolo volante. Parla con Frida Maltros per trovare un trasporto di ritorno per Arrakeen.",
+   "ja": "航空機が必要。アラキーンへの移動手段を求めて、フリーダ・マルトロスに話しかけよう。",
+   "ko": "비행 수단이 필요합니다. 아라킨으로 돌아가려면 프리다 말트로스와 얘기해 보세요.",
+   "pl": "Wymagany jest pojazd latający. Porozmawiaj z Fridą Maltros, aby otrzymać transport z powrotem do Arrakin.",
+   "pt-BR": "É necessário um veículo voador. Fale com Frida Maltros para voltar para Arrakina.",
+   "ru": "Требуется воздушный транспорт. Поговорите с Фридой Мальтрос, чтобы вернуться в Арракин.",
+   "tr": "Uçan bir taşıt gereklidir. Arrakeen'e dönmek için Frida Maltros ile konuş.",
+   "uk": "Потрібен повітряний транспорт. Поговоріть із Фрідою Малтрос, щоб повернутися до Арракіна.",
+   "zh-Hans": "需要飞行载具。与弗里达·马尔特罗斯交谈，搭乘交通工具返回厄拉奇恩。",
+   "zh-Hant": "需要飛行載具。與芙瑞達·馬特羅斯交談以返回厄拉欽恩。"
+  },
+  "ST_Localization_UI:UI/Travel_RequirementFailedReason_Vehicle": {
+   "de": "Luftfahrzeug erforderlich.",
+   "en": "A flying vehicle is required.",
+   "es": "Es necesario un vehículo volador.",
+   "fr": "Il faut un véhicule volant.",
+   "it": "È richiesto un veicolo volante.",
+   "ja": "航空機が必要。",
+   "ko": "비행 수단이 필요합니다.",
+   "pl": "Wymagany jest pojazd latający.",
+   "pt-BR": "Um veículo voador é necessário.",
+   "ru": "Требуется воздушный транспорт.",
+   "tr": "Bir hava taşıtı gerekli.",
+   "uk": "Потрібен повітряний транспорт.",
+   "zh-Hans": "需要飞行载具。",
+   "zh-Hant": "需要飛行載具。"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_Overland": {
+   "de": "Überlandkarte",
+   "en": "Overland Map",
+   "es": "Mapa terrestre",
+   "fr": "Carte globale",
+   "it": "Mappa globale",
+   "ja": "航路マップ",
+   "ko": "오버랜드 맵",
+   "pl": "Mapa planetarna",
+   "pt-BR": "Mapa do Planeta",
+   "ru": "Обзорная карта",
+   "tr": "Gezegen Haritası",
+   "uk": "Карта поверхні",
+   "zh-Hans": "地图概览",
+   "zh-Hant": "陸上地圖"
+  },
+  "ST_Localization_UI:UI/Travel_MapName_OrbitalMonitor": {
+   "de": "Sardaukar-Orbitalbastion",
+   "en": "Sardaukar Orbital Bastion",
+   "es": "Baluarte orbital Sardaukar",
+   "fr": "Bastion orbital des Sardaukars",
+   "it": "Bastione orbitale dei Sardaukar",
+   "ja": "サーダカー軌道要塞",
+   "ko": "사다우카 궤도 요새",
+   "pl": "Bastion orbitalny sardaukarów",
+   "pt-BR": "Bastião Orbital Sardaukar",
+   "ru": "Орбитальная станция сардаукаров",
+   "tr": "Sardaukar Yörünge Kalesi",
+   "uk": "Орбітальна твердиня сардаукарів",
+   "zh-Hans": "萨多卡轨道堡垒",
+   "zh-Hant": "薩督卡軌道堡壘"
+  },
+  "ST_Localization_UI:UI/Travel_MapDescription_OrbitalMonitor": {
+   "de": "Von diesem Ort kannst du die Welt verlassen und deine Reise fortsetzen.",
+   "en": "From this location you can travel offworld to continue your journey.",
+   "es": "Desde esta ubicación, puedes viajar fuera del planeta para continuar tu viaje.",
+   "fr": "À partir de cet endroit, vous pouvez quitter votre planète actuelle pour continuer votre périple.",
+   "it": "Da qui puoi lasciare il pianeta e proseguire il tuo viaggio.",
+   "ja": "この場所から惑星外へと向かい、旅を続けることができる。",
+   "ko": "이 위치에서 외행성으로 이동하여 여정을 계속할 수 있습니다.",
+   "pl": "Stąd możesz udać się poza planetę i kontynuować podróż.",
+   "pt-BR": "Você pode viajar deste local para outro planeta para continuar sua jornada.",
+   "ru": "Отсюда вы можете отправиться за пределы планеты, чтобы продолжить свой путь.",
+   "tr": "Yolculuğuna devam etmek için buradan dışdünyaya seyahat edebilirsin.",
+   "uk": "Звідси ви можете вирушити до іншої планети, щоби продовжити свою подорож",
+   "zh-Hans": "你可以从这里前往外星、继续旅程。",
+   "zh-Hant": "由此地出發，你便能啟程前往外星，繼續你的旅程。"
+  }
+ }
+}

@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { tileLayer } from '@/lib/map/tiles'
 import '@/components/map/map.css'
 import { HIDDEN_MAPS, loadSource, MAP_ORDER, mapName, type MapDef, type SourceResp } from '@/lib/map/data'
 import type { Point } from '@/lib/events'
@@ -65,13 +66,11 @@ export default function EventMap({ arena, watch, picking = null, onPick, classNa
     const crs = L.extend({}, L.CRS.Simple, { transformation: new L.Transformation(tr[0], tr[1], tr[2], tr[3]) })
     const bounds = L.latLngBounds(def.bounds)
     // масштаб без кроків (як на мапі сайту): ціла мапа точно вписується у висоту, а не на пів кроку дрібніше
-    const map = L.map(box.current, { crs, zoomControl: true, minZoom: -6, maxZoom: def.maxNativeZoom + 2, zoomSnap: 0, zoomDelta: 0.5, maxBounds: bounds.pad(0.05), attributionControl: true,
+    const map = L.map(box.current, { crs, zoomControl: true, minZoom: -6, maxZoom: def.maxNativeZoom + 2, zoomSnap: 0, zoomDelta: 0.5, maxBounds: bounds.pad(0.05), attributionControl: false,
       // на сторінці події колесо гортає сторінку, а не масштабує маленьку мапу (масштаб — кнопками й пальцями)
       scrollWheelZoom: edit })
-    map.attributionControl.setPrefix(false)
-    L.tileLayer(`/map-tiles/${tiles}/{z}/{y}/{x}.webp`, {
+    tileLayer(`/map-tiles/${tiles}/{z}/{y}/{x}.webp`, {
       tileSize: def.tileSize, minZoom: -6, minNativeZoom: def.minNativeZoom, maxNativeZoom: def.maxNativeZoom, bounds, noWrap: true,
-      attribution: '<a href="https://duneawakening.th.gl" target="_blank" rel="noopener">TH.GL</a>',
     }).addTo(map)
     map.fitBounds(bounds, { animate: false })
     // дрібніше за цілу мапу — нема куди

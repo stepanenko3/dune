@@ -1,18 +1,15 @@
 /**
- * Налаштування сайту зручною формою: указ Ландсрааду цього тижня (один на сайт, картками — усі укази одразу), реєстрація,
+ * Налаштування сайту зручною формою: указ Ландсрааду цього тижня з домом-переможцем (DecreeSettings), реєстрація,
  * мова за замовчуванням, назва сайту (у листах), ліміт учасників гільдії, ліміти речей, скільки зберігати журнал.
  * Кожен блок зберігає лише свої поля.
  */
 import { useEffect, useState } from 'react'
-import { Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { SnInput, SnNumberField, SnSegmented, SnSegmentedItem, SnSelect, valueOf } from '@/components/sn'
 import { Loading } from '@/components/states'
 import { get, patch } from '@/lib/api'
 import { LANGS, t } from '@/lib/i18n'
-import { DECREES, useDecree, type DecreeId } from '@/lib/decree'
-import { fmtWhen } from '@/lib/ddReset'
-import { cn } from '@/lib/utils'
+import { DecreeSettings } from './DecreeSettings'
 import { FieldShell } from './fields'
 import { adminHref, adminLink, hasPerm, useAdmin } from './api'
 import { PageHeader, Panel } from './ui'
@@ -20,31 +17,6 @@ import { useUnsaved } from '@/components/UnsavedBar'
 
 type Limits = Record<'user' | 'guild', Record<string, number>>
 type Values = { registration: string; defaultLang: string; siteName: string; guildCap: number; limits: Limits; auditDays: number; revisionDays: number }
-
-/** указ тижня: усі відомі укази картками + «не вказано» */
-function DecreePicker() {
-  const { id, until, loaded, load, set, canSet } = useDecree()
-  useEffect(() => { if (!loaded) void load() }, [loaded, load])
-  if (!loaded) return <Loading lines={3} />
-  const card = (on: boolean) => cn('grid gap-1 rounded-lg border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60', on ? 'border-spice/70 bg-spice/10' : 'border-line hover:border-spice/40')
-  return (
-    <div className="grid gap-2">
-      <p className="text-[13px] text-muted">{id && until ? t('Діє до {when} (буря Коріоліса) — потім скинеться сам.', { when: fmtWhen(until) }) : t('Указ не вказано. Вибраний діятиме до найближчої бурі Коріоліса.')}</p>
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-2 xl:grid-cols-3">
-        <button type="button" disabled={!canSet} aria-pressed={!id} onClick={() => set(null)} className={card(!id)}>
-          <span className="flex items-center gap-1.5 text-[13.5px] font-semibold">{!id && <Check size={14} className="text-spice" />}{t('Не вказано')}</span>
-          <span className="text-[12.5px] text-muted">{t('Указ ще не відомий')}</span>
-        </button>
-        {DECREES.map((d) => (
-          <button key={d.id} type="button" disabled={!canSet} aria-pressed={id === d.id} onClick={() => set(d.id as DecreeId)} className={card(id === d.id)}>
-            <span className="flex items-center gap-1.5 text-[13.5px] font-semibold">{id === d.id && <Check size={14} className="text-spice" />}{d.name}</span>
-            <span className="text-[12.5px] leading-snug text-muted">{d.effect}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 export function SiteSettings() {
   const [v, setV] = useState<Values | null>(null)
@@ -82,8 +54,8 @@ export function SiteSettings() {
       <PageHeader title={t('Налаштування сайту')} about={t('Кожна зміна тут потрапляє в «Історію змін» — видно, хто й коли що змінив.')}
         actions={<a href={adminHref(['settings'])} onClick={adminLink(['settings'])} className="text-[13px] text-spice hover:underline">{t('Усі значення')}</a>} />
       {can('site.decree') && (
-        <Panel title={t('Указ Ландсрааду цього тижня')} description={t('Один на весь сайт, як у грі на сервері. На головній його бачать усі, калькулятор враховує.')}>
-          <DecreePicker />
+        <Panel title={t('Указ Ландсрааду цього тижня')} description={t('Один на весь сайт, як у грі на сервері. На головній його бачать усі, а діє він — і калькулятор його рахує — лише для людей дому-переможця.')}>
+          <DecreeSettings />
         </Panel>
       )}
       {can('site.settings') && (!v ? <Loading lines={5} /> : (

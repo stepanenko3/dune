@@ -24,7 +24,7 @@ import { Lock, Medal, Plus, TriangleAlert, X } from 'lucide-react'
 import { SCHOOL_ICON as ICON } from '@/components/skills/icons'
 import { toast } from 'sonner'
 import { cn, plural } from '@/lib/utils'
-import { gtLang, t, T } from '@/lib/i18n'
+import { t } from '@/lib/i18n'
 import { BuildsBar, OpenBuild, type SavedBuild } from '@/components/skills/BuildsBar'
 import { prefGet, prefSet } from '@/lib/prefs'
 import { del, get, put } from '@/lib/api'
@@ -41,6 +41,8 @@ import './skills.css'
 import { useCrumb, useScopeOf } from '@/components/Crumbs'
 import { useUnsaved } from '@/components/UnsavedBar'
 import { DataStamp } from '@/components/DataStamp'
+import { iconUrl } from '@/lib/catalog'
+import { Img } from '@/components/ui/img'
 
 const UX = 104 // крок сітки по горизонталі (сусідні ряди зсунуті на пів кроку)
 const ROW = 80 // крок рядів
@@ -476,23 +478,25 @@ export default function SkillsPage() {
 
   return (
     // місце під смугу прокрутки — завжди: інакше вона, з'являючись, звужує дерево, масштаб перераховується, і гілки
-    // «стрибають» (найпомітніше після переходу з бібліотеки, де вона вже була)
-    <div className="flex min-h-0 flex-1 flex-col gap-2.5">
+    // «стрибають» (найпомітніше після переходу з бібліотеки, де вона вже була).
+    // Телефон — одна прокрутка: гортається вся сторінка (шлях, відкритий білд, планувальник), а не вікно під нерухомою
+    // шапкою білду; з sm — як було: блок білду стоїть, дерево гортається своєю прокруткою
+    <div className="flex min-h-0 flex-1 flex-col gap-2.5 max-sm:overflow-y-auto max-sm:overflow-x-hidden">
     {/* відкритий збережений білд — окремим блоком над планувальником (як шапка бази) */}
     {saved && <OpenBuild b={saved} onChange={setSaved} />}
-    <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
+    <div ref={scroller} className="sm:min-h-0 sm:flex-1 sm:overflow-y-auto sm:overflow-x-hidden sm:[scrollbar-gutter:stable] max-sm:flex max-sm:shrink-0 max-sm:flex-col">
       <section className="sk-night flex min-h-full flex-col gap-5 rounded-2xl px-3 py-4 sm:px-6 sm:py-5" aria-label={t('Навички')}>
         {/* школи, очки, посилання */}
-        {/* школи й назва ліворуч, праворуч очки й дії; не влазить (телефон) — праве переходить на другий рядок, а не
-            за край екрана */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 py-1">
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5" role="tablist" aria-label={t('Школи')}>
+        {/* школи й назва ліворуч, праворуч очки й дії. Телефон — два рядки: школи на всю ширину, під ними одним рядком
+            назва, очки з рівнем і «Дії» значком (назва переноситься, а не обрізається) */}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-2.5 py-1 sm:gap-x-4">
+          <div className="flex items-center gap-1 max-sm:w-full max-sm:justify-between sm:min-w-0 sm:flex-wrap sm:gap-1.5" role="tablist" aria-label={t('Школи')}>
             {SCHOOLS.map(([id, name]) => {
               const I = ICON[id]
               const n = bySchool(id)
               const on = view === 'tree' && school === id
               return (
-                <a key={id} href={tabHref(id)} role="tab" aria-selected={on} aria-label={name} data-tip={name} onClick={(e) => { if (!plainClick(e)) return; e.preventDefault(); setSchool(id) }} className="group relative grid h-12 w-12 shrink-0 place-items-center">
+                <a key={id} href={tabHref(id)} role="tab" aria-selected={on} aria-label={name} data-tip={name} onClick={(e) => { if (!plainClick(e)) return; e.preventDefault(); setSchool(id) }} className="group relative grid h-11 w-11 shrink-0 place-items-center sm:h-12 sm:w-12">
                   <span className={cn('absolute inset-[7px] rotate-45 rounded-[4px] border-2 transition-colors', on ? 'border-spice bg-spice' : 'border-line bg-panel group-hover:border-spice/70')} />
                   <I size={17} className={cn('relative', on ? 'text-on-spice' : 'text-ink/85')} />
                   {n > 0 && <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-full bg-panel px-1 font-mono text-[10px] leading-[14px] text-spice ring-1 ring-spice/50">{n}</span>}
@@ -500,7 +504,7 @@ export default function SkillsPage() {
               )
             })}
             {/* спеціалізації — окремо від шкіл, за рискою */}
-            <span className="mx-1 h-7 w-px bg-line" aria-hidden />
+            <span className="h-7 w-px bg-line sm:mx-1" aria-hidden />
             <a
               href={tabHref('spec')}
               role="tab"
@@ -508,35 +512,44 @@ export default function SkillsPage() {
               aria-label={t('Спеціалізації')}
               data-tip={t('Спеціалізації')}
               onClick={(e) => { if (!plainClick(e)) return; e.preventDefault(); setView('spec'); setTip(null) }}
-              className="group relative grid h-12 w-12 shrink-0 place-items-center"
+              className="group relative grid h-11 w-11 shrink-0 place-items-center sm:h-12 sm:w-12"
             >
               <span className={cn('absolute inset-[7px] rounded-[6px] border-2 transition-colors', view === 'spec' ? 'border-spice bg-spice' : 'border-line bg-panel group-hover:border-spice/70')} />
               <Medal size={17} className={cn('relative', view === 'spec' ? 'text-on-spice' : 'text-ink/85')} />
               {specLv > 0 && <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-full bg-panel px-1 font-mono text-[10px] leading-[14px] text-spice ring-1 ring-spice/50" title={t('Куплено рис')}>{specGot}</span>}
             </a>
-            {/* опис школи (чи спеціалізацій) — підказкою при наведенні на назву, не текстом на сторінці */}
+          </div>
+          {/* опис школи (чи спеціалізацій) — підказкою при наведенні на назву, не текстом на сторінці */}
+          <div className="min-w-0 max-sm:flex-1 sm:-ml-2">
             <h1
               tabIndex={0}
               data-tip={view === 'spec' ? SPEC_ABOUT() : sc[2]}
-              className="ml-2 cursor-help whitespace-nowrap rounded-md bg-ink px-2.5 py-1 font-display text-[12px] font-bold uppercase tracking-[0.12em] text-panel"
+              className="inline-block max-w-full cursor-help break-words rounded-md bg-ink px-2.5 py-1 font-display text-[12px] font-bold uppercase leading-tight tracking-[0.12em] text-panel max-sm:px-2 max-sm:text-[11px] max-sm:tracking-[0.08em] sm:whitespace-nowrap"
             >
               {view === 'spec' ? t('Спеціалізації') : sc[1]}
             </h1>
           </div>
-          <div className="ml-auto flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
-            {/* очки — одним рядком, такої ж висоти, як кнопки поруч */}
+          <div className="flex shrink-0 items-center justify-end gap-2 sm:ml-auto sm:min-w-0 sm:flex-1 sm:flex-wrap">
+            {/* очки — одним рядком, такої ж висоти, як кнопки поруч; на телефоні — стиснуто: «очки» й «рівень» дрібно
+                над числом, «з бюджету» — у підказці */}
             <div
-              className="flex h-9 shrink-0 items-center gap-2 rounded-lg border border-line bg-panel/60 pl-3 pr-1 text-[12.5px]"
+              className="flex h-9 shrink-0 items-center gap-2 rounded-lg border border-line bg-panel/60 pl-3 pr-1 text-[12.5px] max-sm:h-auto max-sm:gap-2.5 max-sm:py-1 max-sm:pl-2"
               title={fromCombat
                 ? t('Очки навичок: {lvl} — за рівень персонажа (очко за рівень, до 200), {pts} — з куплених бойових рис «Очки навичок»', { lvl, pts: fromCombat })
                 : t('Очки навичок: {lvl} — за рівень персонажа (очко за рівень, до 200); ще до 54 дають бойові риси «Очки навичок» (спеціалізації)', { lvl })}
             >
-              <span className="font-semibold">{t('Очки навичок')}</span>
-              <b className={cn('font-mono text-[15px] leading-none tabular-nums', left < 0 ? 'text-bad' : 'text-spice')}>{left}</b>
-              <span className="whitespace-nowrap text-muted">{t('{total} з {budget} · рів.', { total, budget })}</span>
-              {/* на телефоні — 16 px, інакше iOS збільшує сторінку при вводі */}
-              <LevelInput value={lvl} min={1} max={200} onCommit={setLvl} label={t('Рівень персонажа')}
-                className="h-7 w-12 rounded border border-line bg-panel px-1 font-mono text-[16px] text-ink sm:h-6 sm:w-11 sm:text-[12px]" />
+              <span className="grid justify-items-center gap-0.5 sm:flex sm:items-center sm:gap-2">
+                <span className="font-semibold max-sm:hidden">{t('Очки навичок')}</span>
+                <span className="text-[9.5px] font-semibold uppercase leading-none tracking-wide text-muted sm:hidden" aria-hidden>{t('Очки')}</span>
+                <b className={cn('font-mono text-[15px] leading-none tabular-nums', left < 0 ? 'text-bad' : 'text-spice')}>{left}</b>
+              </span>
+              <span className="whitespace-nowrap text-muted max-sm:hidden">{t('{total} з {budget} · рів.', { total, budget })}</span>
+              <label className="grid justify-items-center gap-0.5 sm:contents">
+                <span className="text-[9.5px] font-semibold uppercase leading-none tracking-wide text-muted sm:hidden" aria-hidden>{t('рівень')}</span>
+                {/* на телефоні — 16 px, інакше iOS збільшує сторінку при вводі */}
+                <LevelInput value={lvl} min={1} max={200} onCommit={setLvl} label={t('Рівень персонажа')}
+                  className="h-7 w-12 rounded border border-line bg-panel px-1 text-center font-mono text-[16px] text-ink sm:h-6 sm:w-11 sm:text-left sm:text-[12px]" />
+              </label>
             </div>
             <BuildsBar code={code} about={buildAbout} snap={() => snap(data, build, eq, spec)} open={saved} onOpen={openSaved} onCopy={copy} onBack={saved || prev !== null ? backToMine : null} onDelete={saved?.item.can?.manage ? () => setDeleting(true) : null} onReset={() => {
                 if (total || specLv > 0) setResetting(true)
@@ -636,10 +649,8 @@ export default function SkillsPage() {
                           />
                         </svg>
                         {n.icon && (
-                          <img
-                            src={`/catalog-icons/${n.icon}.webp`}
-                            alt=""
-                            loading="lazy"
+                          <Img
+                            src={iconUrl(n.icon)}
                             className={cn('pointer-events-none absolute inset-0 m-auto object-contain', type === 'ability' ? 'h-[52%] w-[52%]' : 'h-[66%] w-[66%]', r > 0 ? 'brightness-0' : can ? 'opacity-95' : 'opacity-30')}
                           />
                         )}
@@ -681,7 +692,7 @@ export default function SkillsPage() {
                       <svg width={56} height={56} className="absolute inset-0">
                         <Shape kind={shape} size={56} className={s ? 'fill-spice stroke-ink/90' : 'fill-panel/70 stroke-line'} />
                       </svg>
-                      {s?.icon ? <img src={`/catalog-icons/${s.icon}.webp`} alt="" className="relative h-7 w-7 object-contain brightness-0" /> : <Plus size={15} className="relative text-ink/40" />}
+                      {s?.icon ? <Img src={iconUrl(s.icon)} width={28} height={28} className="relative h-7 w-7 object-contain brightness-0" /> : <Plus size={15} className="relative text-ink/40" />}
                     </button>
                   )
                 })}
@@ -698,12 +709,9 @@ export default function SkillsPage() {
             <p>{t('Наведи на вузол — картка з рангами. Клік — ранг вище, правий клік чи Shift+клік — нижче; на телефоні: дотик — картка, ще дотик — ранг вище.')}</p>
           )}
           <p>
+            {/* звідки дані — лише дата (сторонніх джерел у тексті не називаємо) */}
             {view === 'tree' && <>{t('Коло — атрибут, восьмикутник — прийом, ромб — здібність; у рамці — завершальний вузол гілки.')} </>}
-            <T
-              text="Дерево навичок — з файлів гри; значення рангів і спеціалізації — {gaming}."
-              gaming={<a className="underline hover:text-spice" href={`https://dune.gaming.tools/${gtLang()}/skills`} target="_blank" rel="noopener">dune.gaming.tools</a>}
-            />
-            <DataStamp sep sections={['skills']} />
+            <DataStamp sep={view === 'tree'} sections={['skills']} />
           </p>
         </div>
       </section>

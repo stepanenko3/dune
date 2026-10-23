@@ -1,10 +1,11 @@
 /**
- * Гільдії (як у грі — людина лише в одній, у гільдії — не більше guildCap людей): усі гільдії картками з пошуком і
- * заявкою на вступ (чи причиною, чому подати не можна), створення нової; сторінка гільдії — учасники й ролі, вміст
- * гільдії, події гільдії, запрошення й заявки (офіцерам), налаштування (лідеру); сторінка запрошення.
+ * Гільдії (як у грі — людина лише в одній, у гільдії — не більше guildCap людей): каталог — картки з гербом, регіоном,
+ * мовами, стилем гри й розкладом у поясі глядача, фільтри (у адресі), пошук, «Мої заявки», створення нової; сторінка
+ * гільдії — блоки її картки (видимі глядачеві), учасники й ролі, вміст, події, заявка за анкетою (/g/…/apply), черга
+ * заявок і запрошення (офіцерам), налаштування (офіцерам — картка й набір, лідеру — ще назва й видалення); запрошення.
  */
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { Calculator, Castle, Check, Settings, ChevronRight, Crown, Inbox, Link2, LogOut, MapPin, Plus, Shield, Sparkles, Trash2, TrendingUp, UserMinus, Users, X } from 'lucide-react'
+import { Calculator, Castle, Check, Settings, ChevronRight, Crown, Inbox, Link2, LogOut, MapPin, Plus, Shield, Sparkles, Trash2, TrendingUp, UserMinus, Users, CalendarClock, ClipboardList } from 'lucide-react'
 import { toast } from 'sonner'
 import { del, get, patch, post } from '@/lib/api'
 import { GUILD_RANK, GUILD_ROLE_LABEL, roleWithRank, loginHref, useAuth, type Guild, type GuildRole, type MyGuild, type User } from '@/lib/auth'
@@ -27,6 +28,16 @@ import { ColorPick, ConfirmDialog, Section, submitOnEnter } from './Account'
 import { useCrumb } from '@/components/Crumbs'
 import { useUnsaved } from '@/components/UnsavedBar'
 import { GuildEvents } from '@/components/events/bits'
+import { HOUSES, houseOf, useDecree } from '@/lib/decree'
+import { Img } from '@/components/ui/img'
+import { LANG_CODES, REGION_IDS, SIZES, SIZE_LABEL, STATUS_LABEL, STYLES, STYLE_LABEL, langLabel, regionLabel, sizeOf, type CardProfile, type MyRequest, type Size, type Style } from '@/lib/guildProfile'
+import { myZone, summary, toViewer, utcLabel } from '@/lib/weekly'
+import { useGuildNotes } from '@/lib/notify-guild'
+import { ApplyForm } from './guild/Apply'
+import { Queue } from './guild/Queue'
+import { GuildSettings } from './guild/Settings'
+import { GuildLinks, ProfileBlocks, ProfileFacts } from './guild/Profile'
+import type { GuildData, Member } from './guild/types'
 
 const run = async (fn: () => Promise<unknown>, ok?: string) => {
   try { await fn(); if (ok) toast.success(ok); return true } catch (e) { toast.error((e as Error).message); return false }
@@ -63,19 +74,21 @@ function Capacity({ n, cap, className }: { n: number; cap: number; className?: s
 function StatusChips({ g, cap }: { g: Guild; cap: number }) {
   return (
     <>
-      {g.open ? <span className="rounded-full bg-ok/10 px-2 py-0.5 text-[11px] font-semibold text-ok">{t('приймає заявки')}</span> : <span className="rounded-full bg-panel2 px-2 py-0.5 text-[11px] text-muted">{t('за запрошенням')}</span>}
+      {g.open ? <span className="rounded-full bg-ok/10 px-2 py-0.5 text-[11px] font-semibold text-ok">{t('набір відкрито')}</span> : <span className="rounded-full bg-panel2 px-2 py-0.5 text-[11px] text-muted">{t('за запрошенням')}</span>}
       {g.members >= cap && <span className="rounded-full bg-bad/10 px-2 py-0.5 text-[11px] font-semibold text-bad">{t('заповнена')}</span>}
     </>
   )
 }
 
 /** bar — налаштування наявної гільдії: замість кнопки — смуга незбережених змін (components/UnsavedBar) */
-function GuildForm({ initial, submit, label, bar }: { initial?: Partial<Guild>; submit: (g: Partial<Guild>) => Promise<unknown>; label: string; bar?: boolean }) {
+/** identity — лише назва, тег, колір і дім (лідерові в налаштуваннях; опис і набір — у картці гільдії) */
+function GuildForm({ initial, submit, label, bar, identity }: { initial?: Partial<Guild>; submit: (g: Partial<Guild>) => Promise<unknown>; label: string; bar?: boolean; identity?: boolean }) {
   const from = { name: '', tag: '', about: '', color: '#2f6fd0', open: true, ...initial }
   const [g, setG] = useState<Partial<Guild>>(from)
   const [busy, setBusy] = useState(false)
-  const go = async (e?: FormEvent) => { e?.preventDefault(); setBusy(true); await submit(g); setBusy(false) }
-  const dirty = !!bar && (['name', 'tag', 'about', 'color', 'open'] as const).some((k) => (g[k] ?? '') !== (from[k] ?? ''))
+  const keys = identity ? (['name', 'tag', 'color', 'house'] as const) : (['name', 'tag', 'about', 'color', 'open', 'house'] as const)
+  const go = async (e?: FormEvent) => { e?.preventDefault(); setBusy(true); await submit(identity ? Object.fromEntries(keys.map((k) => [k, g[k]])) : g); setBusy(false) }
+  const dirty = !!bar && keys.some((k) => (g[k] ?? '') !== (from[k] ?? ''))
   useUnsaved(dirty, { save: () => go(), discard: () => setG(from), label: t('Налаштування гільдії не збережено') })
   return (
     <form onSubmit={go} onKeyDown={submitOnEnter} className="grid gap-3.5">
@@ -87,11 +100,28 @@ function GuildForm({ initial, submit, label, bar }: { initial?: Partial<Guild>; 
           <SnInput size="lg" className="uppercase" modelValue={g.tag ?? ''} minLength={2} maxLength={5} required accessibilityLabel={t('Тег')} onInput={(e: Event) => setG({ ...g, tag: valueOf(e).toUpperCase() })} />
         </Field>
       </div>
-      <Field label={t('Про гільдію')}>
-        <SnTextarea size="lg" rows={3} modelValue={g.about ?? ''} maxLength={1000} placeholder={t('Сервер, чим займаєтесь, кого шукаєте')} accessibilityLabel={t('Про гільдію')} onInput={(e: Event) => setG({ ...g, about: valueOf(e) })} />
-      </Field>
+      {!identity && (
+        <Field label={t('Про гільдію')}>
+          <SnTextarea size="lg" rows={3} modelValue={g.about ?? ''} maxLength={1000} placeholder={t('Сервер, чим займаєтесь, кого шукаєте')} accessibilityLabel={t('Про гільдію')} onInput={(e: Event) => setG({ ...g, about: valueOf(e) })} />
+        </Field>
+      )}
       <Field label={t('Колір')}><ColorPick value={g.color || '#2f6fd0'} onChange={(color) => setG({ ...g, color })} /></Field>
-      <SnCheckbox modelValue={!!g.open} label={t('Приймати заявки на вступ (інакше — лише за запрошенням)')} onChange={(e: Event) => setG({ ...g, open: checkedOf(e) })} />
+      {!identity && <SnCheckbox modelValue={!!g.open} label={t('Приймати заявки на вступ (інакше — лише за запрошенням)')} onChange={(e: Event) => setG({ ...g, open: checkedOf(e) })} />}
+      <Field label={t('Дім у Ландсрааді')} hint={t('Указ тижня діє лише на людей дому-переможця. Учасникам, які свій дім не вказали, береться цей.')}>
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-3" role="radiogroup" aria-label={t('Дім у Ландсрааді')}>
+          {[...HOUSES.map((h) => ({ id: h.id, name: h.name, color: h.color as string | null })), { id: null, name: t('Не вказано'), color: null }].map((h) => {
+            const on = (g.house ?? null) === h.id
+            return (
+              <button key={h.id ?? 'none'} type="button" role="radio" aria-checked={on} onClick={() => setG({ ...g, house: h.id })}
+                className={cn('flex items-center gap-2 rounded-lg border px-3 py-2.5 text-left text-[13.5px] font-semibold transition-colors', on ? 'border-spice/70 bg-spice/10' : 'border-line bg-panel2/40 hover:border-spice/40')}>
+                {h.color && <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: h.color }} aria-hidden />}
+                <span className="min-w-0 flex-1">{h.name}</span>
+                {on && <Check size={15} className="shrink-0 text-spice" aria-hidden />}
+              </button>
+            )
+          })}
+        </div>
+      </Field>
       <div className="flex items-center gap-2">
         <GuildTag tag={(g.tag || t('ТЕГ')).slice(0, 5)} color={g.color || '#2f6fd0'} />
         <span className="text-[13px] text-muted">{t('так виглядатиме тег на всьому гільдійському')}</span>
@@ -101,39 +131,21 @@ function GuildForm({ initial, submit, label, bar }: { initial?: Partial<Guild>; 
   )
 }
 
-/** заявка на вступ: кілька слів для офіцерів — у вікні (монтуй, коли людина натиснула «Подати заявку») */
-function JoinDialog({ g, onClose, onDone }: { g: Guild; onClose: () => void; onDone: () => void }) {
-  const [note, setNote] = useState('')
-  const [busy, setBusy] = useState(false)
-  const send = async () => {
-    setBusy(true)
-    const ok = await run(() => post(`/api/guilds/${g.slug}/requests`, { note: note.trim() }), t('Заявку подано'))
-    setBusy(false)
-    if (ok) { onClose(); onDone() }
-  }
+type CatalogGuild = Guild & { profile: CardProfile }
+interface GuildsData { list: CatalogGuild[]; requests: string[]; myRequests: MyRequest[]; cap: number }
+
+/** герб гільдії чи її тег на кольорі */
+function Emblem({ g, emblem, size = 48 }: { g: Guild; emblem: string | null; size?: number }) {
   return (
-    <Modal
-      open
-      onOpenChange={onClose}
-      title={t('Заявка до «{name}»', { name: g.name })}
-      description={t("Кілька слів для офіцерів (необов'язково)")}
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>{t('Скасувати')}</Button>
-          <Button onClick={send} disabled={busy}>{t('Подати заявку')}</Button>
-        </>
-      }
-    >
-      <SnTextarea size="lg" rows={3} modelValue={note} maxLength={300} placeholder={t('Хто ти, звідки, чому до нас')} accessibilityLabel={t("Кілька слів для офіцерів (необов'язково)")} onInput={(e: Event) => setNote(valueOf(e))} />
-    </Modal>
+    <span className={cn('grid shrink-0 place-items-center overflow-hidden rounded-xl font-display font-bold text-white', !emblem && 'px-1', g.tag.length > 4 ? 'text-[10.5px]' : g.tag.length > 3 ? 'text-[12px]' : 'text-[14px]')} style={{ background: g.color, width: size, height: size, minWidth: size }}>
+      {emblem ? <Img src={emblem} alt="" width={size} height={size} className="object-cover" style={{ width: size, height: size }} /> : g.tag}
+    </span>
   )
 }
 
-interface GuildsData { list: Guild[]; requests: string[]; cap: number }
-
 /** картка гільдії: хто вони, скільки їх із ліміту, чи приймають заявки — і що з цим може людина */
 function GuildCard({ g, cap, user, mine, requested, onApply, onCancel }: {
-  g: Guild
+  g: CatalogGuild
   cap: number
   user: User | null
   mine: MyGuild | null
@@ -144,18 +156,30 @@ function GuildCard({ g, cap, user, mine, requested, onApply, onCancel }: {
   const setView = useStore((s) => s.setView)
   const here = mine?.id === g.id
   const join = joinState(g, { user, mine, cap })
+  const p = g.profile
+  const when = p.schedule.length ? summary(toViewer(p.schedule, p.tz, myZone())) : ''
   return (
     <li className={cn('flex flex-col overflow-hidden rounded-xl border bg-panel shadow-sm transition-colors hover:border-spice/60', here ? 'border-spice/60' : 'border-line')}>
       <div className="h-1.5 shrink-0" style={{ background: g.color }} />
       <a href={`/g/${g.slug}`} onClick={(e) => { if (!plainClick(e)) return; e.preventDefault(); setView('guild', { param: g.slug }) }} className="flex flex-1 flex-col gap-2.5 p-3.5">
         <div className="flex items-start gap-3">
-          <span className={cn('grid h-12 min-w-12 shrink-0 place-items-center rounded-xl px-1 font-display font-bold text-white', g.tag.length > 4 ? 'text-[10.5px]' : g.tag.length > 3 ? 'text-[12px]' : 'text-[14px]')} style={{ background: g.color }}>{g.tag}</span>
+          <Emblem g={g} emblem={p.emblem} />
           <div className="min-w-0 flex-1">
             <h3 className="break-words font-display text-[15.5px] font-bold leading-snug">{g.name}</h3>
             <div className="mt-1 flex flex-wrap items-center gap-1.5"><StatusChips g={g} cap={cap} /></div>
           </div>
         </div>
-        {g.about && <p className="line-clamp-3 whitespace-pre-line text-[13px] leading-snug text-muted">{g.about}</p>}
+        {(p.region || p.server || p.langs.length > 0) && (
+          <p className="break-words text-[12.5px] leading-snug">
+            {[regionLabel(p.region), p.server].filter(Boolean).join(' · ')}
+            {p.langs.length > 0 && <span className="text-muted">{(p.region || p.server) ? ' · ' : ''}<span className="first-letter:uppercase">{p.langs.map(langLabel).join(', ')}</span></span>}
+          </p>
+        )}
+        {p.styles.length > 0 && (
+          <div className="flex flex-wrap gap-1">{p.styles.map((x) => <span key={x} className="rounded-full bg-spice/10 px-2 py-0.5 text-[11.5px] font-semibold text-spice">{STYLE_LABEL[x]}</span>)}</div>
+        )}
+        {when && <p className="flex items-start gap-1.5 text-[12.5px] leading-snug text-muted"><CalendarClock size={13} className="mt-0.5 shrink-0" aria-hidden /><span className="min-w-0 break-words">{when}</span></p>}
+        {g.about && <p className="line-clamp-3 whitespace-pre-line break-words text-[13px] leading-snug text-muted">{g.about}</p>}
         <Capacity n={g.members} cap={cap} className="mt-auto pt-0.5" />
       </a>
       <div className="flex min-h-[3.25rem] flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-line px-3.5 py-2.5">
@@ -191,11 +215,17 @@ export function Guilds() {
   const setShow = (v: 'all' | 'open') => setView('guilds', { sub: v === 'open' ? 'open' : null, search: location.search })
   const showHref = (v: 'all' | 'open') => pathOf('guilds', null, false, null, v === 'open' ? 'open' : null) + location.search
   // шлях: «Гільдії [Усі / Приймають заявки]»
-  useCrumb([], { sub: show === 'open' ? 'open' : null, value: show === 'open' ? t('Приймають заявки') : t('Усі') })
+  useCrumb([], { sub: show === 'open' ? 'open' : null, value: show === 'open' ? t('Набір відкрито') : t('Усі') })
   const [data, setData] = useState<GuildsData | null>(null)
   const [error, setError] = useState('')
   const [creating, setCreating] = useState(false)
-  const [joining, setJoining] = useState<Guild | null>(null)
+  // фільтри — в адресі (посилання «гільдії EU українською» можна переслати)
+  const [region, setRegion, regionHref] = useUrlParam<string>('region', '', (v) => (REGION_IDS as string[]).includes(v))
+  const [lang, setLang, langHref] = useUrlParam<string>('lang', '', (v) => LANG_CODES.includes(v))
+  const [style, setStyle, styleHref] = useUrlParam<string>('style', '', (v) => (STYLES as string[]).includes(v))
+  const [size, setSize, sizeHref] = useUrlParam<string>('size', '', (v) => (SIZES as string[]).includes(v))
+  const [tz, setTz, tzHref] = useUrlParam<string>('tz', '', (v) => /^UTC([+−]\d{1,2}(:\d\d)?)?$/.test(v))
+  const [server, setServer, serverHref] = useUrlParam<string>('server', '')
   const seq = useRef(0)
   const load = () => {
     const n = ++seq.current
@@ -205,9 +235,35 @@ export function Guilds() {
   }
   useEffect(() => { const h = setTimeout(load, q ? 250 : 0); return () => clearTimeout(h) }, [q])
   const cap = data?.cap ?? site.guildCap
-  const list = useMemo(() => (data?.list ?? []).filter((g) => show === 'all' || g.open), [data, show])
+  const all = data?.list ?? []
+  const list = useMemo(() => all.filter((g) => (show === 'all' || g.open)
+    && (!region || g.profile.region === region) && (!lang || g.profile.langs.includes(lang)) && (!style || g.profile.styles.includes(style as Style))
+    && (!size || sizeOf(g.members) === size) && (!tz || (g.profile.tz && utcLabel(g.profile.tz) === tz)) && (!server || g.profile.server.toLowerCase() === server.toLowerCase())), [data, show, region, lang, style, size, tz, server])
+  const filtered = !!(region || lang || style || size || tz || server)
   /** гільдій на сайті нема взагалі (а не «нічого не знайшлося») */
-  const noGuilds = !!data && !data.list.length && !q && show === 'all'
+  const noGuilds = !!data && !data.list.length && !q && show === 'all' && !filtered
+  // варіанти фільтрів — лише ті, що є серед гільдій (і вибраний, навіть якщо зник)
+  const present = <T extends string>(vals: T[], cur: string) => [...new Set([...vals, ...(cur ? [cur as T] : [])])]
+  const regions = present(REGION_IDS.filter((r) => all.some((g) => g.profile.region === r)), region)
+  const langs = present(LANG_CODES.filter((c) => all.some((g) => g.profile.langs.includes(c))), lang)
+  const styles = present(STYLES.filter((x) => all.some((g) => g.profile.styles.includes(x))), style)
+  const zones = present([...new Set(all.map((g) => (g.profile.tz ? utcLabel(g.profile.tz) : '')).filter(Boolean))].sort((a, b) => zoneMins(a) - zoneMins(b)), tz)
+  const servers = present([...new Set(all.map((g) => g.profile.server).filter(Boolean))].sort((a, b) => a.localeCompare(b)), server)
+  const filters: { key: string; label: string; value: string; set: (v: string) => void; href: (v: string) => string; items: { id: string; label: string }[] }[] = [
+    { key: 'region', label: t('Регіон'), value: region, set: setRegion, href: regionHref, items: regions.map((r) => ({ id: r, label: regionLabel(r) })) },
+    { key: 'tz', label: t('Пояс'), value: tz, set: setTz, href: tzHref, items: zones.map((z) => ({ id: z, label: z })) },
+    { key: 'server', label: t('Сервер'), value: server, set: setServer, href: serverHref, items: servers.map((x) => ({ id: x, label: x })) },
+    { key: 'lang', label: t('Мова'), value: lang, set: setLang, href: langHref, items: langs.map((c) => ({ id: c, label: langLabel(c) })) },
+    { key: 'style', label: t('Стиль гри'), value: style, set: setStyle, href: styleHref, items: styles.map((x) => ({ id: x, label: STYLE_LABEL[x as Style] })) },
+    { key: 'size', label: t('Розмір'), value: size, set: setSize, href: sizeHref, items: SIZES.map((x) => ({ id: x, label: SIZE_LABEL[x as Size] })) },
+  ].filter((f) => f.items.length > 0 && (f.key !== 'size' || all.length > 1))
+  const clear = () => { for (const f of filters) if (f.value) f.set('') }
+  // непрочитані сповіщення про власні заявки (прийнято, відхилено) — підсвітити в «Моїх заявках» і позначити прочитаними
+  const { notes, read } = useGuildNotes(!!user)
+  const fresh = new Set(notes.filter((n) => n.kind !== 'guild.app.new').map((n) => n.data.guild as string))
+  useEffect(() => { const mineNotes = notes.filter((n) => n.kind !== 'guild.app.new'); if (mineNotes.length) { const h = setTimeout(() => read(mineNotes), 4000); return () => clearTimeout(h) } }, [notes])
+  const myReqs = (data?.myRequests ?? []).filter((r) => r.status !== 'closed' || fresh.has(r.guild.id)).slice(0, 6)
+  const apply = (g: Guild) => setView('guild', { param: g.slug, sub: 'apply' })
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
@@ -226,9 +282,20 @@ export function Guilds() {
           }
         >
           <div className="flex flex-wrap items-center gap-2">
-            <SnInput type="search" size="lg" className="block min-w-[220px] flex-1" modelValue={q} placeholder={t('Назва чи тег')} accessibilityLabel={t('Пошук гільдій')} onInput={(e: Event) => setQ(valueOf(e), { replace: true })} />
-            <Seg label={t('Які показати')} value={show} onChange={setShow} href={showHref} items={[{ id: 'all', label: t('Усі') }, { id: 'open', label: t('Приймають заявки') }]} />
+            <SnInput type="search" size="lg" className="block min-w-[min(220px,100%)] flex-1" modelValue={q} placeholder={t('Назва чи тег')} accessibilityLabel={t('Пошук гільдій')} onInput={(e: Event) => setQ(valueOf(e), { replace: true })} />
+            <Seg label={t('Які показати')} value={show} onChange={setShow} href={showHref} items={[{ id: 'all', label: t('Усі') }, { id: 'open', label: t('Набір відкрито') }]} />
           </div>
+          {filters.length > 0 && (
+            <div className="mt-2.5 grid gap-2" role="group" aria-label={t('Фільтри')}>
+              {filters.map((f) => (
+                <div key={f.key} className="flex flex-wrap items-center gap-x-2 gap-y-1 sm:grid sm:grid-cols-[6.5rem_minmax(0,1fr)] sm:gap-3">
+                  <span className="text-[12.5px] font-semibold text-muted">{f.label}</span>
+                  <Seg size="sm" label={f.label} value={f.value} onChange={f.set} href={f.href} items={[{ id: '', label: t('Усі') }, ...f.items]} />
+                </div>
+              ))}
+              {filtered && <div><Button size="sm" variant="ghost" onClick={clear}>{t('Скинути фільтри')}</Button></div>}
+            </div>
+          )}
         </PageHeader>
         {mine && (
           <div className="flex flex-wrap items-center gap-3 rounded-xl border border-spice/40 bg-spice/5 px-4 py-3">
@@ -240,6 +307,21 @@ export function Guilds() {
             <Button size="sm" variant="secondary" onClick={() => setView('guild', { param: mine.slug })}>{t('До моєї гільдії')}</Button>
           </div>
         )}
+        {myReqs.length > 0 && !mine && (
+          <section className="grid gap-2 rounded-xl border border-line bg-panel px-4 py-3 shadow-sm" aria-label={t('Мої заявки')}>
+            <h2 className="flex items-center gap-1.5 text-[13.5px] font-bold"><ClipboardList size={15} className="text-spice" />{t('Мої заявки')}</h2>
+            <ul className="grid gap-1.5">
+              {myReqs.map((r) => (
+                <li key={r.guild.id} className={cn('flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-lg px-2 py-1.5', fresh.has(r.guild.id) && 'bg-spice/10')}>
+                  <GuildTag tag={r.guild.tag} color={r.guild.color} />
+                  <a href={`/g/${r.guild.slug}`} onClick={(e) => { if (!plainClick(e)) return; e.preventDefault(); setView('guild', { param: r.guild.slug }) }} className="min-w-0 break-words text-[13.5px] font-semibold hover:text-spice">{r.guild.name}</a>
+                  <span className={cn('text-[12.5px] font-semibold', r.status === 'accepted' ? 'text-ok' : r.status === 'rejected' ? 'text-bad' : 'text-muted')}>{STATUS_LABEL[r.status]}</span>
+                  {r.reason && <span className="basis-full break-words text-[12.5px] text-muted sm:basis-auto">{t('Причина: {reason}', { reason: r.reason })}</span>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         {creating && !mine && (
           <Section title={t('Нова гільдія')} hint={t('Ти станеш її лідером; потім запросиш согільдійців посиланням.')}>
             <GuildForm label={t('Створити')} submit={(g) => run(async () => { const r = await post<{ guild: Guild }>('/api/guilds', g); await refreshMe(); setView('guild', { param: r.guild.slug }) }, t('Гільдію створено'))} />
@@ -248,40 +330,30 @@ export function Guilds() {
         {error ? <PageError message={error} onRetry={load} />
           : !data ? <Loading />
             : !list.length ? (
-              <Empty icon={Users} title={noGuilds ? t('Гільдій ще нема') : q.trim() ? t('Не знайшлося.') : t('Нема відкритих гільдій')}
-                description={noGuilds ? t('Стань першим: створи гільдію й запроси согільдійців посиланням.') : q.trim() ? t('Спробуй іншу назву чи тег.') : t('Зараз жодна гільдія не приймає заявок — вступають за запрошенням.')}>
+              <Empty icon={Users} title={noGuilds ? t('Гільдій ще нема') : q.trim() || filtered ? t('Не знайшлося.') : t('Нема відкритих гільдій')}
+                description={noGuilds ? t('Стань першим: створи гільдію й запроси согільдійців посиланням.') : filtered ? t('Спробуй прибрати якийсь фільтр.') : q.trim() ? t('Спробуй іншу назву чи тег.') : t('Зараз жодна гільдія не приймає заявок — вступають за запрошенням.')}>
                 {noGuilds && user && !mine && <Button onClick={() => setCreating(true)}><Plus size={15} />{t('Створити гільдію')}</Button>}
+                {filtered && <Button variant="secondary" onClick={clear}>{t('Скинути фільтри')}</Button>}
               </Empty>
             ) : (
               <ul className="grid grid-cols-[minmax(0,1fr)] gap-2.5 sm:grid-cols-[repeat(auto-fill,minmax(min(300px,100%),1fr))]">
                 {list.map((g) => (
-                  <GuildCard key={g.id} g={g} cap={cap} user={user} mine={mine} requested={data.requests.includes(g.id)} onApply={() => setJoining(g)}
+                  <GuildCard key={g.id} g={g} cap={cap} user={user} mine={mine} requested={data.requests.includes(g.id)} onApply={() => apply(g)}
                     onCancel={() => run(async () => { await del(`/api/guilds/${g.slug}/requests`); load() }, t('Заявку скасовано'))} />
                 ))}
               </ul>
             )}
-        {joining && <JoinDialog g={joining} onClose={() => setJoining(null)} onDone={load} />}
       </div>
     </div>
   )
 }
 
+/** «UTC+5:30» → хвилини (для порядку поясів у фільтрі) */
+const zoneMins = (z: string) => { const m = /^UTC(?:([+−])(\d{1,2})(?::(\d\d))?)?$/.exec(z); return m && m[1] ? (m[1] === '−' ? -1 : 1) * (+m[2] * 60 + +(m[3] || 0)) : 0 }
+
 // ---------- сторінка гільдії ----------
-interface Member { id: string; login: string; name: string; nick: string; color: string; role: GuildRole; joined: number; seen?: number | null }
-interface GuildData {
-  guild: Guild
-  role: GuildRole | 'admin' | null
-  rank: number
-  members: Member[]
-  /** ліміт учасників гільдії (налаштування сайту) */
-  cap: number
-  request: boolean
-  requests: { id: string; login: string; name: string; nick: string; color: string; note: string; created: number }[]
-  invites: { code: string; created: number; expires: number | null; uses: number; maxUses: number | null; role: GuildRole; by: string | null; live: boolean }[]
-  public: Item[]
-}
-type Tab = 'home' | 'members' | 'items' | 'events' | 'invites' | 'requests' | 'settings'
-const TABS: Tab[] = ['home', 'members', 'items', 'events', 'invites', 'requests', 'settings']
+type Tab = 'home' | 'members' | 'items' | 'events' | 'invites' | 'requests' | 'settings' | 'apply'
+const TABS: Tab[] = ['home', 'members', 'items', 'events', 'invites', 'requests', 'settings', 'apply']
 
 export function GuildPage() {
   const slug = useStore((s) => s.param)
@@ -296,7 +368,6 @@ export function GuildPage() {
   const setTab = (v: Tab) => setView('guild', { param: slug, sub: v })
   const tabHref = (v: Tab) => pathOf('guild', null, false, slug, v)
   const [own, setOwn] = useState<Item[] | null>(null)
-  const [joining, setJoining] = useState(false)
   const [leaving, setLeaving] = useState(false)
   const load = () => get<GuildData>(`/api/guilds/${slug}`).then((x) => { setD(x); setError('') }).catch((e) => setError((e as Error).message))
   useEffect(() => { setD(null); setOwn(null); load() }, [slug])
@@ -304,8 +375,12 @@ export function GuildPage() {
   // вміст гільдії — учасникам на головній і у «Вмісті» (решті — лише публічне, воно вже в d.public)
   useEffect(() => { if (d?.rank && (tabParam === 'items' || tabParam === 'home') && !own) void loadOwn() }, [d, tabParam])
   // шлях: «Гільдії [Усі]» › назва › вкладка (окрема сторінка; головна — без неї)
-  const TAB_CRUMB: Partial<Record<Tab, string>> = { members: t('Учасники'), items: d?.rank ? t('Вміст гільдії') : t('Публічне'), events: t('Події'), invites: t('Запрошення'), requests: t('Заявки'), settings: t('Налаштування') }
+  const TAB_CRUMB: Partial<Record<Tab, string>> = { members: t('Учасники'), items: d?.rank ? t('Вміст гільдії') : t('Публічне'), events: t('Події'), invites: t('Запрошення'), requests: t('Заявки'), settings: t('Налаштування'), apply: t('Заявка') }
   useCrumb(error ? [] : d ? [{ label: d.guild.name, view: 'guild', param: slug ?? undefined }, ...(TAB_CRUMB[tabParam] ? [{ label: TAB_CRUMB[tabParam]! }] : [])] : null)
+  // свої сповіщення про цю гільдію (заявку прийнято чи відхилено) — показані на сторінці, тож прочитані
+  const { notes, read } = useGuildNotes(!!me && !!d, d?.guild.id)
+  const fresh = notes.filter((n) => n.kind !== 'guild.app.new')
+  useEffect(() => { if (fresh.length) read(fresh) }, [notes])
   if (error) return <PageError page message={error} onRetry={load} />
   if (!d) return <Loading page />
   const g = d.guild
@@ -316,13 +391,16 @@ export function GuildPage() {
     { id: 'home' as const, label: t('Головна') },
     { id: 'members' as const, label: t('Учасники · {n} з {cap}', { n: g.members, cap: d.cap }) },
     { id: 'items' as const, label: d.rank ? t('Вміст гільдії') : t('Публічне') },
-    { id: 'events' as const, label: t('Події') },
-    ...(officer ? [{ id: 'invites' as const, label: t('Запрошення') }, { id: 'requests' as const, label: d.requests.length ? t('Заявки · {n}', { n: d.requests.length }) : t('Заявки') }] : []),
-    ...(leader ? [{ id: 'settings' as const, label: t('Налаштування') }] : []),
+    // події гільдії чужим — якщо гільдія їх не сховала
+    ...(d.rank || d.profile.show.events !== 'hidden' ? [{ id: 'events' as const, label: t('Події') }] : []),
+    ...(officer ? [{ id: 'requests' as const, label: d.requests.length ? t('Заявки · {n}', { n: d.requests.length }) : t('Заявки') }, { id: 'invites' as const, label: t('Запрошення') }] : []),
+    ...(officer ? [{ id: 'settings' as const, label: t('Налаштування') }] : []),
   ]
   const myRole = d.role && d.role !== 'admin' ? d.role : null
-  // вкладка з адреси, якої цій людині не видно (запрошення — офіцерам, налаштування — лідеру), — головна
-  const tab: Tab = tabs.some((x) => x.id === tabParam) ? tabParam : 'home'
+  // вкладка з адреси, якої цій людині не видно (запрошення й налаштування — офіцерам), — головна; заявка — тим, хто ще не в гільдії
+  const tab: Tab = tabParam === 'apply' ? (!d.rank && me ? 'apply' : 'home') : tabs.some((x) => x.id === tabParam) ? tabParam : 'home'
+  const req = d.request
+  const showSeg = tab !== 'apply'
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
@@ -331,6 +409,7 @@ export function GuildPage() {
           // значки — у рядку з назвою (як у баз і роадмапів)
           badges={
             <>
+              {d.profile.emblem && <Emblem g={g} emblem={d.profile.emblem} size={28} />}
               <GuildTag tag={g.tag} color={g.color} className="px-2 py-0.5 text-[12.5px]" />
               <span className={cn('inline-flex items-center gap-1 text-[12.5px]', full ? 'font-semibold text-bad' : 'text-muted')} title={t('Учасників: {n} з {cap}', { n: g.members, cap: d.cap })}>
                 <Users size={13} aria-hidden />{g.members} / {d.cap}
@@ -344,13 +423,14 @@ export function GuildPage() {
           lead={g.about ? <span className="whitespace-pre-line">{g.about}</span> : undefined}
           actions={
             <>
-              {!d.rank && (me
-                ? d.request ? (
+              {!d.rank && tab !== 'apply' && (me
+                ? req?.status === 'pending' ? (
                   <>
-                    <span className="text-[12.5px] text-muted">{t('Заявку подано')}</span>
+                    <span className="text-[12.5px] text-muted">{t('Заявку подано — чекає розгляду')}</span>
+                    <Button variant="secondary" onClick={() => setTab('apply')}>{t('Змінити заявку')}</Button>
                     <Button variant="ghost" onClick={() => run(async () => { await del(`/api/guilds/${g.slug}/requests`); load() }, t('Заявку скасовано'))}>{t('Скасувати заявку')}</Button>
                   </>
-                ) : join.can ? <Button onClick={() => setJoining(true)}>{t('Подати заявку')}</Button>
+                ) : join.can ? <Button onClick={() => setTab('apply')}>{req?.status === 'rejected' ? t('Подати знову') : t('Подати заявку')}</Button>
                   : (
                     <>
                       <span className="text-[12.5px] text-muted">{join.reason}</span>
@@ -359,11 +439,11 @@ export function GuildPage() {
                   )
                 : <Button onClick={() => openPath(loginHref())}>{t('Увійти')}</Button>)}
               {/* рідше потрібне — у меню «Дії»: вийти, налаштування й видалення (лідерові) */}
-              {(myRole && myRole !== 'leader') || leader ? (
+              {(myRole && myRole !== 'leader') || officer ? (
                 <Menu
                   trigger={<ActionsTrigger />}
                   items={[
-                    ...(leader ? [{ label: t('Налаштування'), icon: <Settings size={14} />, onSelect: () => setTab('settings') }] : []),
+                    ...(officer ? [{ label: t('Налаштування'), icon: <Settings size={14} />, onSelect: () => setTab('settings') }] : []),
                     ...(myRole && myRole !== 'leader' ? [{ label: t('Вийти з гільдії'), icon: <LogOut size={14} />, onSelect: () => setLeaving(true) }] : []),
                     ...(leader ? [{ kind: 'separator' as const }, { label: t('Видалити гільдію'), icon: <Trash2 size={14} />, danger: true, onSelect: () => setTab('settings') }] : []),
                   ]}
@@ -372,9 +452,15 @@ export function GuildPage() {
             </>
           }
         >
-          <div><Seg label={t('Розділ гільдії')} value={tab} onChange={setTab} href={tabHref} items={tabs} /></div>
+          {showSeg && <div><Seg label={t('Розділ гільдії')} value={tab} onChange={setTab} href={tabHref} items={tabs} /></div>}
         </PageHeader>
-        {joining && <JoinDialog g={g} onClose={() => setJoining(false)} onDone={load} />}
+        {/* відповідь на заявку — тому, хто її подав (поки не в гільдії) */}
+        {!d.rank && req && req.status === 'rejected' && tab !== 'apply' && (
+          <p className="rounded-xl border border-bad/40 bg-bad/5 px-4 py-3 text-[13.5px] leading-snug">
+            <b className="font-semibold">{t('Заявку відхилено.')}</b>{req.reason ? ` ${t('Причина: {reason}', { reason: req.reason })}` : ''}{g.open ? ` ${t('Можна подати знову.')}` : ''}
+          </p>
+        )}
+        {!d.rank && me && !g.open && tab === 'home' && <p className="rounded-xl border border-line bg-panel px-4 py-3 text-[13.5px] leading-snug text-muted">{t('Набір закрито — вступають лише за запрошенням. Попроси його в офіцерів гільдії.')}</p>}
         {leaving && (
           <ConfirmDialog title={t('Вийти з гільдії «{name}»?', { name: g.name })} confirm={t('Вийти з гільдії')} onClose={() => setLeaving(false)}
             onConfirm={() => run(async () => { await post(`/api/guilds/${g.slug}/leave`); await refreshMe(); setView('guilds') }, t('Ти вийшов з гільдії'))} />
@@ -385,32 +471,19 @@ export function GuildPage() {
         {tab === 'items' && (d.rank ? (own ? <OwnContent items={own} onChange={() => void loadOwn()} /> : <Loading />) : <ItemGrid items={d.public} empty={t('Гільдія ще нічого не виклала публічно.')} />)}
         {tab === 'events' && <GuildEvents guild={g} canCreate={d.rank >= GUILD_RANK.member} />}
         {tab === 'invites' && officer && <Invites d={d} reload={load} />}
-        {tab === 'requests' && officer && (
-          <Section title={t('Заявки на вступ')} hint={t('Прийнятий за заявкою — новобранець: бачить гільдійське, але не змінює. Підвищити можна в «Учасниках».')}>
-            {full && d.requests.length > 0 && <p className="mb-2 text-[13px] font-medium text-bad">{t('Гільдія заповнена ({n} з {cap}): прийняти можна, коли звільниться місце.', { n: g.members, cap: d.cap })}</p>}
-            {!d.requests.length ? <p className="text-[13.5px] text-muted">{t('Заявок нема.')}</p> : (
-              <ul className="divide-y divide-line">
-                {d.requests.map((r) => (
-                  <li key={r.id} className="flex flex-wrap items-center gap-3 py-2.5">
-                    <Avatar name={r.name} color={r.color} size={30} />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[14px] font-semibold">{r.name} <span className="font-normal text-muted">@{r.login}{r.nick && ` · ${r.nick}`}</span></div>
-                      {r.note && <div className="text-[13px] text-muted">«{r.note}»</div>}
-                    </div>
-                    <Button size="sm" disabled={full} onClick={() => run(async () => { await post(`/api/guilds/${g.slug}/requests/${r.id}`, { accept: true }); load() }, t('{name} — у гільдії', { name: r.name }))}><Check size={14} />{t('Прийняти')}</Button>
-                    <Button size="sm" variant="ghost" onClick={() => run(async () => { await post(`/api/guilds/${g.slug}/requests/${r.id}`, { accept: false }); load() }, t('Відхилено'))}><X size={14} />{t('Відхилити')}</Button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Section>
-        )}
-        {tab === 'settings' && leader && (
+        {tab === 'apply' && <ApplyForm d={d} onCancel={() => setTab('home')} onDone={() => { void load(); setTab('home') }} />}
+        {tab === 'requests' && officer && <Queue d={d} onChange={load} />}
+        {tab === 'settings' && officer && (
           <>
-            <Section title={t('Налаштування гільдії')}>
-              <GuildForm bar initial={g} label={t('Зберегти')} submit={(x) => run(async () => { await patch(`/api/guilds/${g.slug}`, x); await refreshMe(); load() }, t('Збережено'))} />
-            </Section>
-            <DeleteGuild g={g} />
+            <GuildSettings d={d} reload={load} />
+            {leader && (
+              <>
+                <Section title={t('Назва, тег, колір і дім')} hint={t('Це міняє лише лідер.')}>
+                  <GuildForm bar identity initial={g} label={t('Зберегти')} submit={(x) => run(async () => { await patch(`/api/guilds/${g.slug}`, x); await refreshMe(); load(); void useDecree.getState().load() }, t('Збережено'))} />
+                </Section>
+                <DeleteGuild g={g} />
+              </>
+            )}
           </>
         )}
       </div>
@@ -489,7 +562,9 @@ function GuildHome({ d, own, go }: { d: GuildData; own: Item[] | null; go: (t: T
     ...(member ? [{ k: 'marker', label: t('Позначки на мапі'), icon: MapPin }] : []),
   ] as const
   const count = (k: string) => (items ?? []).filter((i) => i.kind === k && !i.deleted).length
-  const fresh = [...(items ?? [])].filter((i) => !i.deleted && i.kind !== 'marker' && i.kind !== 'place').sort((a, b) => b.updated - a.updated).slice(0, 6)
+  // чужим публічні бази вже показує свій блок картки — тут без них
+  const basesBlock = !member && d.profile.show.bases !== 'hidden'
+  const fresh = [...(items ?? [])].filter((i) => !i.deleted && i.kind !== 'marker' && i.kind !== 'place' && !(basesBlock && i.kind === 'base')).sort((a, b) => b.updated - a.updated).slice(0, 6)
   const lead = d.members.filter((m) => m.role === 'leader' || m.role === 'officer').sort((a, b) => GUILD_RANK[b.role] - GUILD_RANK[a.role])
   const newbies = member ? [...d.members].sort((a, b) => b.joined - a.joined).slice(0, 4) : []
   const pct = Math.min(100, Math.round((g.members / Math.max(1, d.cap)) * 100))
@@ -508,8 +583,10 @@ function GuildHome({ d, own, go }: { d: GuildData; own: Item[] | null; go: (t: T
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-2.5 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div className="grid min-w-0 gap-2.5">
+        {/* чужим спершу — те, що гільдія розповідає про себе для набору */}
+        {!member && <ProfileBlocks d={d} />}
         {/* що в гільдії — числами */}
-        <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-5 [&>li]:min-w-0" aria-label={member ? t('Вміст гільдії') : t('Публічне')}>
+        <ul className="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-2.5 sm:grid-cols-3 xl:grid-cols-5 [&>li]:min-w-0" aria-label={member ? t('Вміст гільдії') : t('Публічне')}>
           {KINDS.map(({ k, label, icon: I }) => (
             <li key={k}>
               <button type="button" onClick={() => go('items')} className="group flex w-full items-center gap-3 rounded-xl border border-line bg-panel px-3.5 py-3 text-left shadow-sm transition-colors hover:border-spice/50">
@@ -531,6 +608,7 @@ function GuildHome({ d, own, go }: { d: GuildData; own: Item[] | null; go: (t: T
             <ItemGrid items={fresh} empty={<Empty icon={Inbox} title={member ? t('У гільдії поки нічого нема') : t('Гільдія ще нічого не виклала публічно.')} description={member ? t('Створюючи базу, роадмап чи білд, вибери власником гільдію — і воно з’явиться тут.') : undefined} />} />
           )}
         </section>
+        {member && <ProfileBlocks d={d} />}
       </div>
       <aside className="grid gap-2.5">
         {officer && d.requests.length > 0 && (
@@ -543,17 +621,22 @@ function GuildHome({ d, own, go }: { d: GuildData; own: Item[] | null; go: (t: T
         <Section title={t('Про гільдію')}>
           <dl className="grid gap-2.5 text-[13.5px]">
             <div className="flex items-center justify-between gap-3"><dt className="text-muted">{t('Тег')}</dt><dd><GuildTag tag={g.tag} color={g.color} /></dd></div>
+            <ProfileFacts p={d.profile} />
             <div className="flex items-center justify-between gap-3"><dt className="text-muted">{t('Заснована')}</dt><dd className="font-medium">{new Date(g.created).toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' })}</dd></div>
             <div className="grid gap-1.5">
               <div className="flex items-center justify-between gap-3"><dt className="text-muted">{t('Учасники')}</dt><dd className="font-mono font-semibold tabular-nums">{g.members} / {d.cap}</dd></div>
               <div className="h-1.5 overflow-hidden rounded-full bg-panel2" aria-hidden><div className={cn('h-full rounded-full', pct >= 100 ? 'bg-bad' : 'bg-spice')} style={{ width: `${pct}%` }} /></div>
             </div>
-            <div className="flex items-center justify-between gap-3"><dt className="text-muted">{t('Вступ')}</dt><dd className="font-medium">{g.open ? t('приймає заявки') : t('за запрошенням')}</dd></div>
+            <div className="flex items-center justify-between gap-3"><dt className="text-muted">{t('Набір')}</dt><dd className="font-medium">{g.open ? t('відкрито') : t('за запрошенням')}</dd></div>
+            <div className="flex items-center justify-between gap-3"><dt className="text-muted">{t('Дім у Ландсрааді')}</dt><dd className="flex items-center gap-1.5 text-right font-medium">{houseOf(g.house) ? <><span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: houseOf(g.house)!.color }} aria-hidden />{houseOf(g.house)!.name}</> : <span className="text-muted">{t('не вказано')}</span>}</dd></div>
           </dl>
+          <div className="mt-3 empty:hidden"><GuildLinks p={d.profile} /></div>
         </Section>
-        <Section title={t('Керівництво')}>
-          {lead.length ? <ul className="-mx-1.5 grid gap-0.5">{lead.map(person)}</ul> : <p className="text-[13px] text-muted">{t('Поки нікого.')}</p>}
-        </Section>
+        {(member || d.profile.show.officers !== 'hidden') && (
+          <Section title={t('Керівництво')}>
+            {lead.length ? <ul className="-mx-1.5 grid gap-0.5">{lead.map(person)}</ul> : <p className="text-[13px] text-muted">{t('Поки нікого.')}</p>}
+          </Section>
+        )}
         {member && (
           <Section title={t('Нові учасники')}>
             <ul className="-mx-1.5 grid gap-0.5">{newbies.map(person)}</ul>

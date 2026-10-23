@@ -14,7 +14,7 @@ export interface GdSummary { added: number; removed: number; changed: number; ex
 export interface GdChange { id: number; at: number; section: string; driver: string; build: string | null; names?: string[]; summary: GdSummary }
 
 /** порядок показу розділів (як server/lib/gamedata/sections.mjs) */
-export const SECTION_ORDER = ['items', 'placeables', 'recipes', 'buildables', 'skills', 'texts', 'maps', 'markers', 'markerTypes', 'resources', 'spice', 'ddLayouts', 'config', 'images']
+export const SECTION_ORDER = ['items', 'placeables', 'recipes', 'buildables', 'skills', 'texts', 'maps', 'markers', 'markerTypes', 'resources', 'spice', 'ddLayouts', 'ddResources', 'config', 'images']
 export const bySectionOrder = (a: { id: string }, b: { id: string }) => SECTION_ORDER.indexOf(a.id) - SECTION_ORDER.indexOf(b.id)
 
 /** назва розділу мовою сайту (функція, а не таблиця: t() — у мить показу) */
@@ -32,6 +32,7 @@ export function sectionLabel(id: string): string {
     case 'resources': return t('Ресурси')
     case 'spice': return t('Поля меланжу')
     case 'ddLayouts': return t('Розкладки Глибокої пустелі')
+    case 'ddResources': return t('Ресурси Глибокої пустелі')
     case 'config': return t('Налаштування гри')
     case 'images': return t('Картинки')
     default: return id

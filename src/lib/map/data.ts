@@ -60,6 +60,10 @@ export interface MapIndex {
   map: string
   layout: number | null
   counts: Record<string, number>
+  /** у типів руди з часткою: скільки місць з часткою в кожному кроці 5 % (0–4, 5–9 … 100) — лічильник за порогом повзунка */
+  shares?: Record<string, number[]>
+  /** так само, але лише місця, де жереб випав на цю руду (вид «очікувана кількість») */
+  picks?: Record<string, number[]>
   named: Named[]
   /** межі всіх точок [[xmin, ymin], [xmax, ymax]] — для центрування міст і підземель */
   bbox: Box | null
@@ -69,6 +73,10 @@ export interface MapIndex {
 export interface TypePoints {
   pts: number[]
   info: Record<string, [string | null, string | null, string | null]>
+  /** частка руди цього типу в кожній точці, % (вузли ресурсів з файлів гри: руда в місці вибирається з кількох) */
+  share?: number[]
+  /** 1 — жереб місця випав на цю руду (вид «очікувана кількість»: у місці одна руда за вагами, як у грі) */
+  pick?: number[]
 }
 
 export interface LootHit {
@@ -93,6 +101,14 @@ export interface LootPlace {
 export interface Loot {
   hits: LootHit[]
   places: LootPlace[]
+}
+
+/** мапа, де випадає предмет: скільки скринь і найбільший шанс (Глибока пустеля — поточна розкладка) */
+export interface LootMap {
+  map: string
+  layout: number | null
+  n: number
+  best: number
 }
 
 /** «що тут є» для локації: лут контейнерів поблизу і руда / рослини довкола */
@@ -183,6 +199,16 @@ export function loadLoot(map: string, layout: number | null, query: string) {
   return lootCache.get(k)!
 }
 
+const lootMapsCache = new Map<string, Promise<LootMap[]>>()
+/** предмет із довідника: на яких мапах випадає (більший шанс — вище); ddLayout — розкладка Глибокої пустелі, яку дивимось */
+export function loadLootMaps(query: string, ddLayout: number | null = null) {
+  const k = `${query.toLowerCase()}|${ddLayout}`
+  if (!lootMapsCache.has(k)) {
+    lootMapsCache.set(k, json<{ maps: LootMap[] }>(`/api/map/loot-maps${q(ddLayout, `q=${encodeURIComponent(query)}&`)}`).then((r) => r.maps).catch((e) => { lootMapsCache.delete(k); throw e }))
+  }
+  return lootMapsCache.get(k)!
+}
+
 const sumCache = new Map<string, Promise<Summaries>>()
 export function loadSummary(map: string, layout: number | null) {
   touchMap(map, layout)
@@ -217,6 +243,7 @@ const UK: Record<string, string> = {
   pentashield_keys: 'Ключі пентащитів (ID-стрічки)',
   // групи мапи з файлів гри, яких нема в легенді гри
   loot: 'Лут',
+  resourcePoints: 'Точки ресурсів без типу',
   keys: 'Ключі пентащитів (ID-стрічки)',
   discoverable: 'Відкриття',
   // у TH.GL без назви Дому — лише «House Representative»
@@ -234,7 +261,113 @@ const CLARIFY: Record<string, { twin: string; note: () => string }> = {
   exploration: { twin: 'explorationpointofinterest', note: () => t('мале') },
 }
 
+
+/**
+ * Наші назви (усіма мовами, через t()) для того, що гра на мапі не називає: групи сайту, фракції NPC, види луту й тіл,
+ * ключі (гра зве однаково ключі лабораторій і уламків), типи без перекладу в самій грі. Мапа з файлів гри.
+ */
+const OWN: Record<string, () => string> = {
+  cutteray: () => t('Ресурси'),
+  hand: () => t('Підбирання руками'),
+  plants: () => t('Рослини'),
+  loot: () => t('Лут'),
+  keys: () => t('Ключі пентащитів (ID-стрічки)'),
+  // мітки без категорії легенди гри (огляд — мапа подорожей)
+  'MapMarkers.Other': () => t('Інше'),
+  npcs: () => t('NPC'),
+  Atreides: () => t('Атріди'),
+  Harkonnen: () => t('Харконнени'),
+  Fremen: () => t('Фримени'),
+  Sardaukar: () => t('Сардаукари'),
+  Smugglers: () => t('Контрабандисти'),
+  SpacingGuild: () => t('Гільдія лоцманів'),
+  CHOAM: () => t('ДАПТ'),
+  BeneGesserit: () => t('Бене Ґессерит'),
+  Unaffiliated: () => t('Незалежні'),
+  Bandits: () => t('Бандити'),
+  AmmoContainer: () => t('Скриня з набоями'),
+  AmmoContainer_Polar: () => t('Скриня з набоями (полярна)'),
+  AnimatedStorage: () => t('Шафа'),
+  BasicContainer: () => t('Звичайна скриня'),
+  BasicContainer_Polar: () => t('Звичайна скриня (полярна)'),
+  ContractContainer: () => t('Скриня контракту'),
+  MedicalContainer: () => t('Медична скриня'),
+  MedicalContainer_Polar: () => t('Медична скриня (полярна)'),
+  PrimitiveContainer: () => t('Примітивна скриня'),
+  RareContainer: () => t('Рідкісна скриня'),
+  RareContainer_Polar: () => t('Рідкісна скриня (полярна)'),
+  UltraRareContainer: () => t('Надрідкісна скриня'),
+  SmallUltraRare: () => t('Мала надрідкісна скриня'),
+  FuelContainer: () => t('Скриня з паливом'),
+  FuelGenerator: () => t('Паливний генератор'),
+  EcoLabWaterTap: () => t('Кран з водою (лабораторія)'),
+  WaterCisternSmall: () => t('Мала цистерна для води'),
+  WaterCisternMedium: () => t('Середня цистерна для води'),
+  InsulatedCisternMedium: () => t('Середня ізольована цистерна'),
+  WeaponLockerBig: () => t('Велика шафа зі зброєю'),
+  WeaponLockerSmall: () => t('Мала шафа зі зброєю'),
+  Fabricator: () => t('Фабрикатор'),
+  SurvivalFabricator: () => t('Фабрикатор виживання'),
+  VehicleFabricator: () => t('Фабрикатор транспорту'),
+  WeaponFabricator: () => t('Фабрикатор зброї'),
+  WearablesFabricator: () => t('Фабрикатор одягу'),
+  SmallOreRefinery: () => t('Мала переробна установка руди'),
+  MediumOreRefinery: () => t('Середня переробна установка руди'),
+  SmallChemicalRefinery: () => t('Маленька хімічна переробна установка'),
+  SmallSpiceRefinery: () => t('Мала переробна установка прянощів'),
+  MediumSpiceRefinery: () => t('Середня переробна установка прянощів'),
+  LightOrnithopterWreck: () => t('Уламки легкого орнітоптера'),
+  SandBikeWreck: () => t('Уламки піщаного байка'),
+  TankWreck: () => t('Уламки танка'),
+  SpiceMoundPickup: () => t('Купа прянощів'),
+  CorpseAtreidesAssault: () => t('Тіло штурмовика Атрідів'),
+  CorpseAtreidesHanged: () => t('Повішене тіло (Атріди)'),
+  CorpseAtreidesScout: () => t('Тіло розвідника Атрідів'),
+  CorpseCHOAMAssault: () => t('Тіло штурмовика ДАПТ'),
+  CorpseCHOAMPants: () => t('Тіло (ДАПТ)'),
+  CorpseCHOAMScout: () => t('Тіло розвідника ДАПТ'),
+  CorpseDeserter1: () => t('Тіло дезертира (1)'),
+  CorpseDeserter2: () => t('Тіло дезертира (2)'),
+  CorpseHarkonnenAssault: () => t('Тіло штурмовика Харконненів'),
+  CorpseHarkonnenCS1: () => t('Тіло (Харконнени)'),
+  CorpseHarkonnenScout: () => t('Тіло розвідника Харконненів'),
+  CorpseKirab1: () => t('Тіло кірабця (1)'),
+  CorpseKirab2: () => t('Тіло кірабця (2)'),
+  CorpseKirab3: () => t('Тіло кірабця (3)'),
+  CorpseKirabSitting: () => t('Тіло кірабця (сидить)'),
+  CorpseRadiationSuit_1: () => t('Тіло в протирадіаційному костюмі (1)'),
+  CorpseRadiationSuit_2: () => t('Тіло в протирадіаційному костюмі (2)'),
+  CorpseRadiationSuit_3: () => t('Тіло в протирадіаційному костюмі (3)'),
+  CorpseSandfly1: () => t('Тіло (Піщані мухи)'),
+  CorpseScavenger1: () => t('Тіло мародера (1)'),
+  CorpseScavenger2: () => t('Тіло мародера (2)'),
+  CorpseScavenger3: () => t('Тіло мародера (3)'),
+  CorpseScavengerHanging1: () => t('Повішене тіло мародера (1)'),
+  CorpseScavengerHanging2: () => t('Повішене тіло мародера (2)'),
+  CorpseScavengerSitting: () => t('Тіло мародера (сидить)'),
+  Code_EcoLab_Blue: () => t('Синя ID-стрічка (лабораторія)'),
+  Code_EcoLab_Blue_Multi_01: () => t('Синя ID-стрічка (лабораторія, друга)'),
+  Code_EcoLab_Green: () => t('Зелена ID-стрічка (лабораторія)'),
+  Code_EcoLab_Orange: () => t('Жовтогаряча ID-стрічка (лабораторія)'),
+  Code_EcoLab_Purple: () => t('Пурпурна ID-стрічка (лабораторія)'),
+  Code_EcoLab_White: () => t('Біла ID-стрічка (лабораторія)'),
+  Code_NPCBase_Red: () => t('Червона ID-стрічка (база)'),
+  Code_Shipwreck_Blue: () => t('Синя ID-стрічка (уламок корабля)'),
+  Code_Shipwreck_Green: () => t('Зелена ID-стрічка (уламок корабля)'),
+  Code_Shipwreck_Green_Multi_01: () => t('Зелена ID-стрічка (уламок корабля, друга)'),
+  Code_Shipwreck_Orange: () => t('Жовтогаряча ID-стрічка (уламок корабля)'),
+  Code_Shipwreck_Purple: () => t('Пурпурна ID-стрічка (уламок корабля)'),
+  EnemyLaborOutpost: () => t('Табір робітників'),
+  ExplorationPointOfInterest: () => t('Орієнтир'),
+  Overmap_Poi_Location: () => t('Поселення й регіони'),
+  Overmap_Poi_Dungeon: () => t('Підземелля'),
+  Overmap_Poi_Story: () => t('Сюжетні місця'),
+  Overmap_Poi_Landsraad: () => t('Цікаві місця'),
+}
+
 const baseLabel = (labels: SourceResp['labels'], id: string): string => {
+  const mine = OWN[id]
+  if (mine) return mine()
   const own = currentLang() === 'uk' ? UK[id] : null
   if (own) return own
   // представник Дому без назви Дому — назва з id («house_representativesalexin» → «Alexin»)

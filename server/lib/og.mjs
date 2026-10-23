@@ -8,6 +8,11 @@ import fs from 'node:fs'
 import { can } from './items.mjs'
 import { STORM_REGIONS } from './storm.mjs'
 import { endsOf, EVENT_TYPE_L, formatOf } from './events.mjs'
+import { profileFor } from './guild-profile.mjs'
+
+/** регіони гри — коротко, як у грі (не перекладаються); стилі гри гільдії — ключі перекладу */
+const REGION_L = { eu: 'EU', na: 'NA', sa: 'SA', oce: 'OCE' }
+const STYLE_L = { pve: 'PvE', pvp: 'PvP', dd: 'Глибока пустеля', craft: 'Крафт', trade: 'Торгівля' }
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 const cut = (s, n) => { const x = String(s || '').replace(/\s+/g, ' ').trim(); return x.length > n ? x.slice(0, n - 1).trimEnd() + '…' : x }
@@ -67,7 +72,19 @@ export function createOg({ file, db, items, auth, guilds, thumbs, access, events
     }
     if (a === 'g' && id) {
       const g = await guilds.get(id)
-      return g ? { title: `[${g.tag}] ${g.name}`, description: cut(g.about, 200) || t('Гільдія на Sandwalkers') } : null
+      if (!g) return null
+      // лише те, що гільдія показує всім (картка для чужого — profileFor)
+      const p = profileFor(await guilds.profile(g.id), {})
+      const lang = (code) => { try { return new Intl.DisplayNames([req.lang || 'uk'], { type: 'language' }).of(code) || code } catch { return code } }
+      const facts = [
+        g.open ? t('Набір відкрито') : t('Лише за запрошенням'),
+        [p.region ? REGION_L[p.region] : '', p.server].filter(Boolean).join(' · '),
+        p.langs.map(lang).join(', '),
+        p.styles.map((s) => t(STYLE_L[s])).join(', '),
+        t('Учасників: {n}', { n: await guilds.memberCount(g.id) }),
+      ].filter(Boolean).join(' · ')
+      const about = p.show.about === 'public' ? cut(g.about, 140) : ''
+      return { title: `[${g.tag}] ${g.name}`, description: [facts, about].filter(Boolean).join('. ') || t('Гільдія на Sandwalkers'), image: p.emblem || null }
     }
     if (a === 'skills' && req.query.build) {
       const it = await open('build', String(req.query.build))

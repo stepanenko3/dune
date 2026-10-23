@@ -1,17 +1,22 @@
 /*
  * Стан ігрових даних для індикатора оновлень (spec §5): GET /api/gamedata/status — розділи, джерело, коли змінились;
  * GET /api/gamedata/changes — журнал реальних змін сторінками. Адмінське: перевірити зараз, прийняти розділ, що чекає
- * підтвердження, звірити запасне з файлами гри, перемкнути основне джерело розділу. Реєстр вимкнено (нема GAMEDATA=1) —
- * порожній стан.
+ * підтвердження, звірити запасне з файлами гри, перемкнути основне джерело розділу, оновити дані до нової версії гри
+ * (видобувач окремим процесом, з прогресом — lib/gamedata/update.mjs). Реєстр вимкнено (нема GAMEDATA=1) — порожній стан.
  */
+import path from 'node:path'
 import express from 'express'
 import { wrap } from './auth.mjs'
 import { SECTIONS } from '../lib/gamedata/sections.mjs'
 import { compareReport, sectionsReport, switchPrimary } from '../lib/gamedata/index.mjs'
 import { GROUPS, groupOf } from '../lib/gamedata/sections.mjs'
 import { APPLIED } from '../lib/gamedata/apply.mjs'
+import { createUpdater } from '../lib/gamedata/update.mjs'
 
 const EMPTY = { game: { version: null, build: null }, updatedAt: null, sections: [] }
+
+/** розділ журналу → вид текстів гри, чиї id — id записів розділу */
+const NAME_KIND = { items: 'item', placeables: 'placeable', recipes: 'recipe', buildables: 'buildable', skills: 'skill', markerTypes: 'markerType' }
 
 export function createGameDataRoutes({ sources, roles, game }) {
   const registry = sources?.registry ?? null
@@ -23,6 +28,9 @@ export function createGameDataRoutes({ sources, roles, game }) {
   }
   const off = (req, res) => res.status(409).json({ error: req.t('перевірку даних гри вимкнено') })
   const known = (section) => SECTIONS.includes(section)
+  // робоча тека видобувача: GD_WORK, інакше — тека над пакетами (…/gamefiles/bundles → …/gamefiles)
+  const work = process.env.GD_WORK || (process.env.GAMEDATA_BUNDLE_DIR ? path.dirname(path.resolve(process.env.GAMEDATA_BUNDLE_DIR)) : null)
+  const updater = createUpdater({ work: registry ? work : null, registry })
 
   r.get('/api/gamedata/status', wrap(async (req, res) => {
     if (!registry) return res.set('cache-control', 'no-cache').json(EMPTY)
@@ -34,7 +42,18 @@ export function createGameDataRoutes({ sources, roles, game }) {
   r.get('/api/gamedata/changes', wrap(async (req, res) => {
     const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 30))
     const before = req.query.before != null && Number.isFinite(Number(req.query.before)) ? Number(req.query.before) : null
-    res.set('cache-control', 'no-cache').json(registry ? await registry.changes({ limit, before }) : { items: [], next: null })
+    if (!registry) return res.set('cache-control', 'no-cache').json({ items: [], next: null })
+    const out = await registry.changes({ limit, before })
+    // приклади записів — назвою гри мовою людини (журнал пише англійську назву запису)
+    if (game?.names && req.lang && req.lang !== 'en') {
+      for (const [section, kind] of Object.entries(NAME_KIND)) {
+        const ex = out.items.filter((c) => c.section === section).flatMap((c) => c.summary?.examples ?? [])
+        if (!ex.length) continue
+        const loc = await game.names(req.lang, kind, [...new Set(ex.map((x) => x.id))])
+        for (const x of ex) if (loc.has(x.id)) x.name = loc.get(x.id)
+      }
+    }
+    res.set('cache-control', 'no-cache').set('vary', 'cookie, accept-language').json(out)
   }))
 
   r.post('/api/admin/gamedata/check', allow('gamedata.manage'), wrap(async (req, res) => {
@@ -63,6 +82,19 @@ export function createGameDataRoutes({ sources, roles, game }) {
     if (!APPLIED.includes(section)) return res.status(400).json({ error: req.t('цей розділ не застосовується в таблиці сайту') })
     if (!registry) return off(req, res)
     try { res.json({ ok: await registry.reapply(section) }) } catch (e) { res.status(409).json({ error: e.message }) }
+  }))
+  // оновлення до нової версії гри: стан (панель опитує, поки йде), запуск, перевірка Steam, зупинка
+  r.get('/api/admin/gamedata/update', allow('gamedata.manage'), wrap(async (req, res) => {
+    res.set('cache-control', 'no-store').json(await updater.status())
+  }))
+  r.post('/api/admin/gamedata/update', allow('gamedata.manage'), express.json(), wrap(async (req, res) => {
+    res.json(await updater.start('all', { force: req.body?.force === true, by: req.user.id }))
+  }))
+  r.post('/api/admin/gamedata/update/check', allow('gamedata.manage'), wrap(async (req, res) => {
+    res.json(await updater.start('check', { by: req.user.id }))
+  }))
+  r.post('/api/admin/gamedata/update/stop', allow('gamedata.manage'), wrap(async (req, res) => {
+    res.json(await updater.stop())
   }))
   // основне джерело групи (довідник, мапа) чи окремого розділу
   r.post('/api/admin/gamedata/primary/:target', allow('gamedata.manage'), express.json(), wrap(async (req, res) => {

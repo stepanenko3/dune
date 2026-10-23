@@ -38,3 +38,11 @@ describe('хеш розділу', () => {
     expect(d.examples[0]).toEqual({ id: 'n0', name: null, op: '+' })
   })
 })
+
+describe('blob з кількістю (ресурси ГП)', () => {
+  it('кількість — з blob.count (запобіжник обсягу працює й для розділу-переліку); без неї — 1', async () => {
+    const { normalizeSection: norm } = await import('./lib/gamedata/hash.mjs')
+    expect(norm({ blob: { count: 1234, layouts: {} } }).count).toBe(1234)
+    expect(norm({ blob: { x: 1 } }).count).toBe(1)
+  })
+})

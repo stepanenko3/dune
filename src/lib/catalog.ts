@@ -3,6 +3,7 @@
  * (за id, «як отримати», «де використовується», «у будівництві»). Каталог — мовою сайту (loc — перекладені назви).
  */
 import { currentLang, t } from './i18n'
+import { ourImg } from './media'
 
 export interface CItem {
   id: string
@@ -120,9 +121,13 @@ function index(cat: Catalog): CatalogIndex {
   return ix
 }
 
-export const iconUrl = (icon: string | null) => (icon ? `/catalog-icons/${icon}.webp` : null)
-/** зображення вікі — через наш кеш */
-export const wikiImg = (url: string | null) => (url ? url.replace(/^https:\/\/media\.awakening\.wiki\//, '/catalog-wiki/') : null)
+/**
+ * Іконка предмета: сервер дає нашу адресу з медіатеки (/media/…), а ще не завантажену — шлях текстури гри, з якого
+ * складаємо адресу нашого проксі (він дотягне її в медіатеку)
+ */
+export const iconUrl = (icon: string | null) => (icon ? (icon.startsWith('/') ? icon : `/catalog-icons/${icon}.webp`) : null)
+/** картинка модуля: наша адреса (/media/… чи проксі); давня чужа адреса — через наш проксі */
+export const wikiImg = (url: string | null) => ourImg(url)
 
 /** Назва для показу: мовою сайту, якщо є переклад, інакше англійська. */
 export const nameOf = (x: { name: string; loc?: string | null } | undefined, fallback = '') => (x ? x.loc || x.name : fallback && (MISSING[fallback]?.() ?? prettyId(fallback)))
@@ -219,18 +224,28 @@ export function kindOf(i: CItem): string | null {
 const prettySet = (set: string) =>
   set.replace(/^MTX_/, '').replace(/_Patent$/, '').replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Za-z])(\d)/g, '$1 $2').trim()
 /** заглушки назв у даних гри */
-const STUB = /^(EMPTY_TEXT|NA_|LOC_|XX_)/
+const STUB = /^(EMPTY_TEXT|NA_|LOC_|XX_|N\/A\b)/
 /** набір модуля гри (патент) → назва мовою сайту: предмет-патент гри з тим самим id */
 const SET_NAMES = new Map<string, string>()
 /** запам'ятати назви наборів з довідника (кличе індекс каталогу) */
 export function rememberSets(cat: Pick<Catalog, 'items' | 'buildables'>) {
   const items = new Map(cat.items.map((i) => [i.id, i]))
+  // гра набору не назвала — назва його першого модуля мовою сайту (а не id англійською)
+  const first = new Map<string, string>()
+  for (const b of cat.buildables) if (b.loc && !first.has(b.set)) first.set(b.set, b.loc)
   for (const b of cat.buildables) {
     const it = items.get(b.set)
     const name = it ? it.loc || it.name : null
-    SET_NAMES.set(b.set, name && !STUB.test(name) ? name : prettySet(b.set))
+    SET_NAMES.set(b.set, name && !STUB.test(name) ? name : first.get(b.set) ?? prettySet(b.set))
   }
 }
+/** службова назва гри (заглушка, внутрішній id, «TBD») */
+export const junkName = (name: string) => name.includes('/') || /\bTBD\b/.test(name) || /^[A-Z0-9]+_[A-Z0-9_]*$/.test(name) || /^(XX|NA|PH)_/.test(name) || /^\[DEPRECATED\]/i.test(name)
+/**
+ * заглушка розробників, а не предмет гри: службова назва, або (не англійською) — назви нема жодною мовою гри (тоді й
+ * мовою сайту): у гри перекладено все, що є в ній насправді
+ */
+export const isDevEntry = (x: { name: string; loc?: string | null }, lang = currentLang()) => junkName(x.name) || (lang !== 'en' && !x.loc)
 export const setLabel = (set: string) => SET_NAMES.get(set) ?? prettySet(set)
 /** модуль — пристрій (рядок пристроїв гри), а не будівельна деталь */
 export const isDevice = (b: Pick<CBuild, 'id'>) => /_Placeable$/.test(b.id)

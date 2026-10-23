@@ -71,4 +71,12 @@ describe('порівняння розділу', () => {
     expect(r.items.find((i) => i.op === '~')).toMatchObject({ id: 's@100:200', name: 'Cave', changes: [['type', 'cave', 'Cave']] })
     expect(r.items.filter((i) => i.op === '+').map((i) => `${i.name} ${i.id}`)).toEqual(['Cave s@900:900', 'Cave d@1:1#b'])
   })
+
+  it('ресурси: група й вага точки (лише у файлах гри) — не зміна; тип — так', () => {
+    const r = compareSection('resources', {
+      a: { id: 'thgl', records: [{ id: 's@1:1', map: 's', type: 'azurite', x: 1, y: 1, z: 0 }] },
+      b: { id: 'gamefiles', records: [{ id: 's@1:1~AzuriteOre', map: 's', kind: 'core', group: 'Minerals', type: 'AzuriteOre', weight: 77, x: 1, y: 1, z: 0 }] },
+    })
+    expect(r).toMatchObject({ changed: 1, filled: 0, fields: { type: 1 } })
+  })
 })

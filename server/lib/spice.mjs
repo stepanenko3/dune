@@ -1,12 +1,12 @@
 /*
- * Активні поля меланжу — позначки гравців: «це поле зараз є». Позначити можна мале, середнє й велике поле
- * (свої з мапи TH.GL, велике — ще й на можливому місці чи просто на мапі). Позначка — для себе, гільдії чи всіх.
+ * Активні поля меланжу — позначки гравців: «це поле зараз є». Позначити можна мале, середнє й велике поле з мапи;
+ * місця великих полів фіксовані — лише з файлів гри, самому поставити велике поле деінде не можна (рішення
+ * користувача 2026-10-23). Позначка — для себе, гільдії чи всіх.
  *
  * Поле активне від ПЕРШОЇ позначки, яку глядач бачить: наступні лише підтверджують його (лічильник і список людей),
  * строку не подовжують; строк — перша позначка + час життя поля за величиною (TTL). Позначка після строку починає
  * нове «вікно». Рахується окремо для кожного глядача з тих позначок, які він бачить (приватна чужа позначка не
- * зсуває відлік публічного глядача). Давні позначки лишаються в базі: з них мапа знає місця великих полів, яких
- * немає у відомих. Відомі місця великих полів за розкладкою Глибокої пустелі — з файлів гри (game_spice_spots: розділ
+ * зсуває відлік публічного глядача). Місця великих полів за розкладкою Глибокої пустелі — з файлів гри (game_spice_spots: розділ
  * spice реєстру джерел пише їх сюди, setKnown).
  */
 import { fail } from './util.mjs'
@@ -80,14 +80,10 @@ export async function createSpice({ db, guilds }) {
     return new Map(rows.map((u) => [u.id, u.name || u.login]))
   }
 
-  /** відомі й «вивчені» з позначок місця великих полів, які бачить глядач */
-  async function largeSpots(ctx, map, layout) {
+  /** місця великих полів розкладки — лише з файлів гри */
+  async function largeSpots(layout) {
     if (layout == null) return []
-    const out = new Map()
-    for (const [x, y] of await known(layout)) out.set(`${x}:${y}`, { x, y, src: 'known' })
-    const rows = await db.all("SELECT x, y, user_id, visibility, guild_id FROM spice_marks WHERE map = ? AND layout = ? AND size = 'large' ORDER BY created DESC LIMIT 2000", map, layout)
-    for (const r of rows) if (sees(ctx, r) && !out.has(`${r.x}:${r.y}`)) out.set(`${r.x}:${r.y}`, { x: r.x, y: r.y, src: 'marked' })
-    return [...out.values()]
+    return (await known(layout)).map(([x, y]) => ({ x, y, src: 'known' }))
   }
 
   /** що бачить глядач на мапі: активні поля (зі строком і людьми) і місця великих полів */
@@ -99,7 +95,7 @@ export async function createSpice({ db, guilds }) {
     return {
       ttl: SPICE_TTL,
       now,
-      spots: await largeSpots(ctx, map, layout),
+      spots: await largeSpots(layout),
       fields: fields.map((f) => {
         const users = [...new Set(f.marks.map((m) => m.user_id))]
         const mine = ctx?.user ? f.marks.find((m) => m.user_id === ctx.user.id) : null
@@ -115,13 +111,18 @@ export async function createSpice({ db, guilds }) {
     }
   }
 
-  /** найближче відоме місце чи давня позначка тієї ж величини (з тих, що людина бачить) — до них «прилипаємо» */
+  /**
+   * найближче відоме місце чи давня позначка тієї ж величини (з тих, що людина бачить) — до них «прилипаємо»; велике
+   * поле — лише на відомому місці з файлів гри, інакше null
+   */
   async function snap(ctx, p) {
     const R = SNAP[p.size]
     let best = null, bd = R
     const near = (x, y) => { const d = Math.hypot(x - p.x, y - p.y); if (d <= bd) { bd = d; best = { x, y } } }
-    if (p.size === 'large' && p.layout != null) for (const [x, y] of await known(p.layout)) near(x, y)
-    if (best) return best
+    if (p.size === 'large') {
+      if (p.layout != null) for (const [x, y] of await known(p.layout)) near(x, y)
+      return best
+    }
     const [w, a] = layoutSql(p.layout)
     const rows = await db.all(`SELECT x, y, user_id, visibility, guild_id FROM spice_marks WHERE map = ? AND ${w} AND size = ? AND x BETWEEN ? AND ? AND y BETWEEN ? AND ? ORDER BY created DESC LIMIT 200`,
       p.map, ...a, p.size, p.x - R, p.x + R, p.y - R, p.y + R)
@@ -147,6 +148,7 @@ export async function createSpice({ db, guilds }) {
         if (!guild) throw fail('ти не в гільдії — познач для себе чи для всіх')
       }
       const at = await snap(ctx, p)
+      if (!at) throw fail('велике поле можна позначити лише на його місці з гри')
       const x = Math.round(at.x), y = Math.round(at.y)
       const rows = (await recent(p.map, p.layout ?? null, now)).filter((r) => sees(ctx, r))
       const f = windows(rows, now).find((w) => w.size === p.size && w.x === x && w.y === y)

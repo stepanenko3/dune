@@ -26,6 +26,8 @@ export interface Can {
   /** копіювати можна (за правами речі) і куди */
   copy?: boolean
   copyTo?: ('user' | 'guild')[]
+  /** бачити історію версій (бази, роадмапи — за правами речі) */
+  history?: boolean
 }
 export interface Item {
   kind: Kind

@@ -319,7 +319,7 @@ export function ItemActions({ item, onChange, onCopy, accessExtra: own, more, co
   return (
     <>
       {starable && (item.visibility === 'public' || stars.n > 0) && (
-        <Button variant="secondary" size="sm" onClick={toggleStar} aria-pressed={stars.on} title={stars.on ? t('Прибрати зірку') : t('Поставити зірку')}>
+        <Button variant="secondary" size="sm" onClick={toggleStar} aria-pressed={stars.on} title={!me ? t('Увійди, щоб поставити зірку') : stars.on ? t('Прибрати зірку') : t('Поставити зірку')}>
           <Star size={14} className={stars.on ? 'fill-current text-spice' : ''} />
           {stars.n}
         </Button>

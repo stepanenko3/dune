@@ -22,6 +22,7 @@ const AUDIT = [
   ['POST /api/me/2fa/recovery', 'Нові резервні коди'],
   ['POST /api/me/2fa/disable', 'Вимкнення двофакторної перевірки'],
   ['PATCH /api/me', 'Зміна профілю'],
+  ['PUT /api/me/house', 'Зміна дому в Ландсрааді'],
   ['DELETE /api/me', 'Видалення облікового запису', ['user.delete.self']],
   ['DELETE /api/me/sessions/:id', 'Завершення сеансу'],
   ['POST /api/me/sessions/others', 'Завершення інших сеансів'],
@@ -78,10 +79,16 @@ const AUDIT = [
   ['POST /api/guilds/:slug/requests', 'Заявка до гільдії'],
   ['DELETE /api/guilds/:slug/requests', 'Скасування заявки до гільдії'],
   ['POST /api/guilds/:slug/requests/:uid', 'Розгляд заявки до гільдії', ['guild.accept']],
+  ['POST /api/guilds/:slug/requests/:uid/comments', 'Коментар до заявки в гільдію'],
+  ['POST /api/guilds/:slug/emblem', 'Новий герб гільдії'],
+  ['DELETE /api/guilds/:slug/emblem', 'Герб гільдії прибрано'],
   ['PUT /api/guilds/:slug/decree', 'Указ гільдії'],
   ['PUT /api/decree', 'Указ Ландсрааду'],
   ['POST /api/catalog/refresh', 'Оновлення довідника'],
   ['POST /api/map/refresh', 'Оновлення мапи'],
+  ['POST /api/admin/gamedata/update', 'Дані гри: оновлення до нової версії'],
+  ['POST /api/admin/gamedata/update/check', 'Дані гри: перевірка нової версії в Steam'],
+  ['POST /api/admin/gamedata/update/stop', 'Дані гри: зупинка оновлення'],
   ['POST /api/push/subscribe', 'Підписка на сповіщення'],
   ['POST /api/push/unsubscribe', 'Відписка від сповіщень'],
   ['POST /api/push/test', 'Пробне сповіщення'],
@@ -93,6 +100,8 @@ const AUDIT = [
   ['admin.announcements.bulk', 'Панель: оголошення кільком мовам'],
   ['admin.game-texts', 'Панель: тексти гри'],
   ['admin.game-texts.import', 'Панель: тексти гри з файлу'],
+  ['admin.upload', 'Панель: завантаження зображення'],
+  ['admin.base-photo', 'Панель: фото бази'],
 ]
 export const AUDIT_OPTIONS = AUDIT.map(([value, label, also]) => (also ? { value, label, also } : { value, label }))
 

@@ -6,7 +6,8 @@ const { safeImg } = await import('./md')
 
 describe('картинки в розмітці роадмапу', () => {
   it('з CDN іконок гри й з цього сайту — можна', () => {
-    expect(safeImg('https://cdn-hosted.gaming.tools/dune/images/dune/x.webp')).toBe('https://cdn-hosted.gaming.tools/dune/images/dune/x.webp')
+    // давня адреса CDN іконок гри — через наш проксі з медіатеки
+    expect(safeImg('https://cdn-hosted.gaming.tools/dune/images/dune/x.webp')).toBe('/catalog-gt/images/dune/x.webp')
     expect(safeImg('/icons/x.png')).toBe('/icons/x.png')
   })
   it('чужі сайти, http, «//чужий» і javascript: — ні', () => {

@@ -1,7 +1,9 @@
 /**
  * Головна: «вікно» на Глибоку пустелю цього тижня (справжні тайли, сітка секторів, скан, що
- * проявляє меланж і титан), під ним — що корисного зараз у пустелі, найближчі події спільноти, розділи застосунку і стан
- * записів про ресурси. Числа — з /api/home, тобто з тих самих даних, що й мапа.
+ * проявляє меланж і титан; активні поля меланжу пульсують), під ним — що корисного зараз у пустелі, найближчі події
+ * спільноти, розділи застосунку і стан записів про ресурси. Числа — з /api/home, тобто з тих самих даних, що й мапа для
+ * поточної розкладки: точки з джерела мапи, великі поля — ще й місця з файлів гри та позначок гравців, активні поля — ті,
+ * що бачить людина.
  */
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowRight, Castle, Check, Map as MapIcon, TrendingUp } from 'lucide-react'
@@ -25,6 +27,8 @@ import type { ModelKey, ScanLine } from './Orni3D'
 import { DesertScan, type ScanDot } from './DesertScan'
 import './home.css'
 import { DuneLoading } from '@/components/ui/dune-loader'
+import { clockOf, spanText } from '@/lib/map/spice'
+import { Img } from '@/components/ui/img'
 
 interface HomeData {
   dd: {
@@ -34,14 +38,22 @@ interface HomeData {
     tiles: string
     bounds: [[number, number], [number, number]]
     transformation: [number, number, number, number]
+    /** id шарів мапи (посилання «відкрити шар на мапі») */
+    layers: Record<'titanium' | 'stravidium' | 'spice_small' | 'spice_medium' | 'spice_large' | 'shipwreck' | 'ecolab' | 'cave', string>
     counts: Record<string, number>
-    top: Record<'titanium' | 'stravidium' | 'spice_medium' | 'spice_large', [string, number][]>
+    /** найкращі сектори [сектор, вузлів, 1 — чистий острівець руди]: острівці — першими */
+    top: Record<'titanium' | 'stravidium' | 'spice_medium' | 'spice_large', [string, number, 1?][]>
     dots: Record<'spice_large' | 'spice_medium' | 'spice_small' | 'titanium' | 'stravidium', [number, number][]>
+    /** меланж: точка, звідки в межах радіуса найбільше середніх і великих полів */
+    spiceSpot?: { x: number; y: number; n: number; large: number; radius: number; sector: string | null } | null
   } | null
+  /** активні поля меланжу, які бачить людина (позначки гравців): окремо від тижня — міняються щохвилини */
+  active: Active | null
   places: { total: number; ok: number; recent: { id: string; res: string; place: string; zone: string; ok: boolean; updated: number }[] }
   syncedAt: string
 }
 
+type Active = { now: number; total: number; fields: { size: 'small' | 'medium' | 'large'; x: number; y: number; sector: string | null; first: number; expires: number; n: number }[] }
 type Go = (v: 'bases' | 'roadmap' | 'map', search?: string) => (e: React.MouseEvent) => void
 
 // сцена орні/дрона — three.js і понад сотню КБ свого коду: окремим шматком, щоб головна з'являлась, не чекаючи на неї
@@ -127,14 +139,14 @@ export function Home() {
                 </a>
               </div>
             </div>
-            {dd ? <DesertWindow dd={dd} onScanned={onScanned} /> : <div className={cn('home-map w-full max-w-[520px] justify-self-end bg-[rgb(255_255_255/0.04)]', !failed && 'animate-pulse')} aria-hidden />}
+            {dd ? <DesertWindow dd={dd} active={data?.active ?? null} onScanned={onScanned} /> : <div className={cn('home-map w-full max-w-[520px] justify-self-end bg-[rgb(255_255_255/0.04)]', !failed && 'animate-pulse')} aria-hidden />}
           </div>
         </section>
 
         {dd && <OrniSection dd={dd} start={orniGo} />}
 
         {failed && (
-          <ErrorAlert title={t('Зведення тижня не завантажилось')} message={t('Решта розділів працює. Онови сторінку трохи згодом.')}>
+          <ErrorAlert title={t('Зведення тижня не завантажилось')} message={t('Тому тут не видно Глибокої пустелі цього тижня. Спробуй ще раз за хвилину.')}>
             <Button size="xs" variant="outline" className="mt-2" onClick={() => reload.current()}>{t('Спробувати ще')}</Button>
           </ErrorAlert>
         )}
@@ -148,7 +160,7 @@ export function Home() {
         {/* події спільноти: найближчі бої, турніри, збори */}
         <UpcomingEvents onNew={() => { if (useAuth.getState().user) setView('events', { param: 'new' }); else setView('login', { search: `?next=${encodeURIComponent('/events/new')}` }) }} />
 
-        {dd && <WeekSection dd={dd} go={go} />}
+        {dd && <WeekSection dd={dd} active={data?.active ?? null} go={go} />}
 
         <div className="grid grid-cols-[minmax(0,1fr)] gap-2.5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
           <BasesTile go={go} />
@@ -170,7 +182,7 @@ export function Home() {
         {data && data.places.total > 0 && <PlacesSection p={data.places} go={go} />}
 
         <p className="px-1 pb-2 text-[12px] text-muted">
-          <T text="Мапа, точки й лут — {thgl}; бази й записи — від гравців сайту." thgl={<a className="underline hover:text-spice" href="https://duneawakening.th.gl" target="_blank" rel="noopener">TH.GL</a>} />
+          {t('Бази, записи про ресурси й позначки полів меланжу — від гравців сайту.')}
           <DataStamp sep sections={['maps', 'markers', 'items']} />
         </p>
       </div>
@@ -189,7 +201,7 @@ const RES = {
  * Мапа Глибокої пустелі цього тижня: тайли z1, сітка секторів і точки, які проявляє скан (полотно DesertScan).
  * Після скану — найкращий сектор для титану, стравідію і меланжу, кожен своїм кольором.
  */
-function DesertWindow({ dd, onScanned: scannedUp }: { dd: NonNullable<HomeData['dd']>; onScanned: () => void }) {
+function DesertWindow({ dd, active, onScanned: scannedUp }: { dd: NonNullable<HomeData['dd']>; active: Active | null; onScanned: () => void }) {
   const [a, b, c, d] = dd.transformation
   const S = 1000 / 9
   // точки в координатах мапи 0…1000, шарами: титан, стравідій, меланж від малого до великого (великий — зверху).
@@ -205,15 +217,19 @@ function DesertWindow({ dd, onScanned: scannedUp }: { dd: NonNullable<HomeData['
       ...at(dd.dots.spice_large, 8.5, '#d9481f'),
     ]
   }, [dd, a, b, c, d])
+  // активні поля (позначки гравців, які бачить людина) — кільцями, що розходяться, як на мапі
+  const pulses = (active?.fields ?? []).map((f) => ({ key: `${f.size}@${f.x}:${f.y}`, x: ((a * f.y + b) / 512) * 1000, y: ((c * f.x + d) / 512) * 1000, r: f.size === 'large' ? 15 : f.size === 'medium' ? 11 : 8 }))
   /** скан дійшов до низу — проступають найкращі сектори */
   const [scanned, setScanned] = useState(false)
   const onScanned = useCallback(() => { setScanned(true); scannedUp() }, [scannedUp])
-  // найкращі сектори: великі поля меланжу, якщо є цього тижня, інакше середні
-  const spiceTop = dd.top.spice_large[0] ? { s: dd.top.spice_large[0], large: true } : dd.top.spice_medium[0] ? { s: dd.top.spice_medium[0], large: false } : null
+  // меланж — найкраща точка (коло радіуса, у якому найбільше середніх і великих полів), а не сектор
+  const ss = dd.spiceSpot
+  const spot = ss ? { cx: ((a * ss.y + b) / 512) * 1000, cy: ((c * ss.x + d) / 512) * 1000, r: Math.abs((a * ss.radius) / 512) * 1000, text: t('меланж: {fields} поруч', { fields: plural(ss.n, [t('поле'), t('поля'), t('полів')]) }) } : null
+  // руда: усі чисті острівці (сектори, де руда завжди одна), інакше — найкращий сектор
+  const ore = (rows: [string, number, 1?][]) => { const isl = rows.filter((r) => r[2]); return isl.length ? isl : rows.slice(0, 1) }
   const best = [
-    dd.top.titanium[0] && { key: 'titanium', sector: dd.top.titanium[0][0], text: t('титан {n}', { n: dd.top.titanium[0][1] }), color: RES.titanium.color },
-    dd.top.stravidium[0] && { key: 'stravidium', sector: dd.top.stravidium[0][0], text: t('стравідій {n}', { n: dd.top.stravidium[0][1] }), color: RES.stravidium.color },
-    spiceTop && { key: 'spice', sector: spiceTop.s[0], text: spiceTop.large ? t('меланж {n} вел.', { n: spiceTop.s[1] }) : t('меланж {n} сер.', { n: spiceTop.s[1] }), color: RES.spice.color },
+    ...ore(dd.top.titanium).map((r) => ({ key: 'titanium:' + r[0], sector: r[0], text: t('титан {n}', { n: r[1] }), color: RES.titanium.color })),
+    ...ore(dd.top.stravidium).map((r) => ({ key: 'stravidium:' + r[0], sector: r[0], text: t('стравідій {n}', { n: r[1] }), color: RES.stravidium.color })),
   ].filter(Boolean) as { key: string; sector: string; text: string; color: string }[]
   // підписи над клітинками; якщо клітинки однакові чи поруч — наступний підпис нижче, щоб не налазили
   const placed: { x: number; y: number; w: number }[] = []
@@ -257,11 +273,23 @@ function DesertWindow({ dd, onScanned: scannedUp }: { dd: NonNullable<HomeData['
             {labels.map((l) => (
               <rect key={'r' + l.key} x={l.X + 3 + l.inset} y={l.Y + 3 + l.inset} width={S - 6 - l.inset * 2} height={S - 6 - l.inset * 2} rx="6" fill="none" stroke={l.color} strokeWidth="4" />
             ))}
+            {spot && <circle cx={spot.cx} cy={spot.cy} r={spot.r} fill="rgb(232 131 58 / 0.12)" stroke={RES.spice.color} strokeWidth="4" strokeDasharray="10 6" />}
+            {pulses.map((p) => (
+              <g key={p.key} className="home-field">
+                <circle cx={p.x} cy={p.y} r={p.r} fill="#ee8a2c" stroke="rgb(28 19 12 / 0.8)" strokeWidth="3" />
+                <circle cx={p.x} cy={p.y} r={p.r} fill="none" stroke="#ee8a2c" strokeWidth="4" className="home-field-ring" />
+              </g>
+            ))}
             {labels.map((l) => (
               <text key={'t' + l.key} x={l.lx} y={l.ly} textAnchor="middle" fill={l.color} stroke="rgb(28 19 12 / 0.9)" strokeWidth="7" paintOrder="stroke" style={{ font: '700 24px Unbounded, sans-serif' }}>
                 {l.sector} · {l.text}
               </text>
             ))}
+            {spot && (
+              <text x={Math.min(Math.max(spot.cx, 180), 820)} y={spot.cy - spot.r - 12 < 30 ? spot.cy + spot.r + 34 : spot.cy - spot.r - 12} textAnchor="middle" fill={RES.spice.color} stroke="rgb(28 19 12 / 0.9)" strokeWidth="7" paintOrder="stroke" style={{ font: '700 24px Unbounded, sans-serif' }}>
+                {spot.text}
+              </text>
+            )}
           </g>
         </svg>
       </figure>
@@ -274,6 +302,12 @@ function DesertWindow({ dd, onScanned: scannedUp }: { dd: NonNullable<HomeData['
           <span className="h-3 w-3 rounded-full bg-[#d9481f]" />
           {t('Меланж: мале, середнє, велике поле')}
         </li>
+        {pulses.length > 0 && (
+          <li className="flex items-center gap-1.5">
+            <span className="home-now is-spice inline-block h-2.5 w-2.5 shrink-0 rounded-full" aria-hidden />
+            {t('Активне зараз (позначки гравців)')}
+          </li>
+        )}
       </ul>
     </div>
   )
@@ -353,11 +387,12 @@ function OrniLoading({ aside }: { aside: (model: ModelKey) => React.ReactNode })
 }
 
 /** Цей тиждень: де найбільше руди за секторами, скільки полів меланжу і місць із лутом. */
-function WeekSection({ dd, go }: { dd: NonNullable<HomeData['dd']>; go: Go }) {
-  const lists: { title: string; count: (n: number) => string; rows: [string, number][]; layer: string; total: number }[] = [
-    { title: t('Титан'), count: nodes, rows: dd.top.titanium, layer: 'titanium', total: dd.counts.titanium },
-    { title: t('Стравідій'), count: nodes, rows: dd.top.stravidium, layer: 'stravidium', total: dd.counts.stravidium },
-    { title: t('Середні поля меланжу'), count: (n) => plural(n, [t('поле'), t('поля'), t('полів')]), rows: dd.top.spice_medium, layer: 'spice_field_medium,spice_field_large', total: dd.counts.spice_medium + dd.counts.spice_large },
+function WeekSection({ dd, active, go }: { dd: NonNullable<HomeData['dd']>; active: Active | null; go: Go }) {
+  const L = dd.layers
+  const lists: { title: string; count: (n: number) => string; rows: [string, number, 1?][]; layer: string; total: number }[] = [
+    { title: t('Титан'), count: nodes, rows: dd.top.titanium, layer: L.titanium, total: dd.counts.titanium },
+    { title: t('Стравідій'), count: nodes, rows: dd.top.stravidium, layer: L.stravidium, total: dd.counts.stravidium },
+    { title: t('Середні поля меланжу'), count: (n) => plural(n, [t('поле'), t('поля'), t('полів')]), rows: dd.top.spice_medium, layer: `${L.spice_medium},${L.spice_large}`, total: dd.counts.spice_medium + dd.counts.spice_large },
   ]
   const extra = {
     wrecks: plural(dd.counts.shipwreck, [t('уламок корабля'), t('уламки кораблів'), t('уламків кораблів')]),
@@ -371,14 +406,14 @@ function WeekSection({ dd, go }: { dd: NonNullable<HomeData['dd']>; go: Go }) {
         <p className="text-[13px] text-muted">{t('Де найбільше — за секторами. Натисни сектор, щоб відкрити шар на мапі.')}</p>
         <p className="text-[12.5px] text-muted">
           <T
-            text="PvE і PvP-сервери Глибокої пустелі мають, судячи з усіх трекерів, ту саму розкладку. Але на PvP — у рядах B–I за щитом — видобуток усіх ресурсів {mult}, а лут Testing Station свій."
+            text="PvE і PvP-сервери Глибокої пустелі мають, судячи з усіх трекерів, ту саму розкладку й той самий лут. Але на PvP — у рядах B–I за щитом — видобуток усіх ресурсів {mult}."
             mult={<b className="text-ink">×{fmtP(2.5)}</b>}
           />
         </p>
       </div>
       <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-6 md:grid-cols-3">
         {lists.map((l) => {
-          const max = l.rows[0]?.[1] || 1
+          const max = Math.max(1, ...l.rows.map((r) => r[1]))
           return (
             <div key={l.title} className="min-w-0">
               <div className="mb-2 flex items-baseline gap-2">
@@ -387,10 +422,13 @@ function WeekSection({ dd, go }: { dd: NonNullable<HomeData['dd']>; go: Go }) {
               </div>
               {l.rows.length ? (
                 <ul className="grid gap-1">
-                  {l.rows.map(([s, n]) => (
+                  {l.rows.map(([s, n, island]) => (
                     <li key={s}>
                       <a href={`/map?m=deepdesert_1&l=${l.layer}`} onClick={go('map', `?m=deepdesert_1&l=${l.layer}`)} className="group grid grid-cols-[2.6rem_minmax(0,1fr)_3rem] items-center gap-2 rounded-md px-1 py-0.5 hover:bg-panel2">
-                        <span className="font-mono text-[13px] font-semibold">{s}</span>
+                        <span className="font-mono text-[13px] font-semibold" data-tip={island ? t('Чистий острівець: руда тут завжди одна') : undefined}>
+                          {s}
+                          {island && <span className="ml-0.5 text-spice" aria-label={t('Чистий острівець: руда тут завжди одна')}>◆</span>}
+                        </span>
                         <span className="h-2 overflow-hidden rounded-full bg-panel2">
                           <span className="block h-full rounded-full bg-spice/80 group-hover:bg-spice" style={{ width: `${(n / max) * 100}%` }} />
                         </span>
@@ -406,12 +444,51 @@ function WeekSection({ dd, go }: { dd: NonNullable<HomeData['dd']>; go: Go }) {
           )
         })}
       </div>
+      <ActiveFields dd={dd} active={active} go={go} />
       <p className="mt-4 text-[13px] text-muted">
         {dd.counts.spice_large
           ? t('Ще в пустелі: {wrecks}, {labs}, {caves}, {spice}.', { ...extra, spice: bigFields(dd.counts.spice_large) })
           : t('Ще в пустелі: {wrecks}, {labs}, {caves}. Великих полів меланжу цього тижня немає.', extra)}
       </p>
     </section>
+  )
+}
+
+const SIZE_NAME = { small: t('мале поле'), medium: t('середнє поле'), large: t('велике поле') }
+/**
+ * Активні поля меланжу зараз — позначки гравців, які бачить людина (свої, гільдії, публічні): де, яке, відколи й
+ * приблизно доки. Посилання — на мапу з шаром полів; позначити поле — там же.
+ */
+function ActiveFields({ dd, active, go }: { dd: NonNullable<HomeData['dd']>; active: Active | null; go: Go }) {
+  const L = dd.layers
+  const href = `?m=deepdesert_1&l=${L.spice_small},${L.spice_medium},${L.spice_large}`
+  const now = active?.now ?? Date.now()
+  return (
+    <div className="mt-5 border-t border-line pt-4">
+      <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h3 className="flex items-center gap-2 text-[14px] font-semibold">
+          <span className="home-now is-spice inline-block h-2 w-2 shrink-0 rounded-full" aria-hidden />
+          {t('Активні поля меланжу зараз')}
+        </h3>
+        <span className="font-mono text-[12px] tabular-nums text-muted">{plural(active?.total ?? 0, [t('поле'), t('поля'), t('полів')])}</span>
+        <a href={`/map${href}`} onClick={go('map', href)} className="ml-auto text-[13px] font-semibold text-spice hover:underline">{t('Позначити на мапі')}</a>
+      </div>
+      {active?.fields.length ? (
+        <ul className="grid grid-cols-[minmax(0,1fr)] gap-1 sm:grid-cols-2 lg:grid-cols-3">
+          {active.fields.slice(0, 9).map((f) => (
+            <li key={`${f.size}@${f.x}:${f.y}`}>
+              <a href={`/map${href}`} onClick={go('map', href)} className="flex min-w-0 flex-wrap items-baseline gap-x-2 rounded-md px-1 py-0.5 hover:bg-panel2">
+                <span className="font-mono text-[13px] font-semibold">{f.sector ?? '—'}</span>
+                <span className="text-[13px]">{SIZE_NAME[f.size]}</span>
+                <span className="text-[12.5px] text-muted">{t('з {time} ({ago} тому) · {n} позн.', { time: clockOf(f.first), ago: spanText(now - f.first), n: f.n })}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-[13px] text-muted">{t('Зараз ніхто з тих, чиї позначки ти бачиш, не позначив активних полів. Бачиш поле в грі — познач його на мапі.')}</p>
+      )}
+    </div>
   )
 }
 
@@ -430,10 +507,10 @@ function BasesTile({ go }: { go: Go }) {
   const src = main && !broken ? thumbUrl(main) : DEFAULT_BASE_IMG
   return (
     <a href="/bases" onClick={go('bases')} className="group relative grid min-h-[320px] overflow-hidden rounded-xl border border-line bg-[#2a2118] shadow-sm transition-colors hover:border-spice/50">
-      <img src={src} onError={() => setBroken(true)} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]" />
+      <Img src={src} onError={() => setBroken(true)} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]" />
       <div className="absolute inset-0 bg-gradient-to-t from-[rgb(20_14_8/0.88)] via-[rgb(20_14_8/0.25)] to-transparent" aria-hidden />
       {dd && !broken && (
-        <img src={thumbUrl(dd)} alt="" className="absolute right-4 top-4 hidden w-[34%] rounded-lg border border-[rgb(255_255_255/0.25)] shadow-xl sm:block" />
+        <Img src={thumbUrl(dd)} className="absolute right-4 top-4 hidden w-[34%] rounded-lg border border-[rgb(255_255_255/0.25)] shadow-xl sm:block" />
       )}
       <div className="relative mt-auto grid gap-1.5 self-end p-5 text-[rgb(245_236_222)]">
         <div className="flex items-center gap-2">

@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { ArrowRight, Library, Plus, TrendingUp } from 'lucide-react'
 import { toast } from 'sonner'
 import { get, post } from '@/lib/api'
-import { useAuth } from '@/lib/auth'
+import { creatorGuilds, useAuth } from '@/lib/auth'
 import { plainClick } from '@/lib/urlState'
 import { progressOf } from '@/lib/roadmap'
 import type { Item, Visibility } from '@/lib/items'
@@ -122,6 +122,9 @@ export function RoadmapList() {
   }, [])
   useEffect(load, [load])
   const sc = useScope()
+  const guilds = useAuth((s) => s.guilds)
+  // у своїй гільдії людина створює, лише якщо вона там щонайменше учасник
+  const guildMaker = !!sc.guild && creatorGuilds(guilds).some((g) => g.id === sc.guild!.id)
   // вкладка: мої — особисті, гільдія — роадмапи моєї гільдії
   const shown = useMemo(() => (rows ?? []).filter((it) => (sc.scope === 'guild' ? it.owner.kind === 'guild' && it.owner.id === sc.guild?.id : it.owner.kind === 'user' && it.owner.id === user?.id)), [rows, sc.scope, sc.guild?.id, user?.id])
   const groups = useMemo(() => byOwner(shown, user?.id), [shown, user?.id])
@@ -142,8 +145,9 @@ export function RoadmapList() {
         {failed && rows && <ErrorAlert message={t('Список не оновився. Онови сторінку трохи згодом.')} />}
         {!rows && !failed && <ListSkeleton />}
         {rows && !shown.length && (
-          <Empty icon={TrendingUp} title={sc.scope === 'guild' ? t('У гільдії роадмапів поки нема') : t('Роадмапів поки нема')} description={t('Створи перший — особистий чи для гільдії: етапи, задачі й таблиці витрат в одному місці.')}>
-            <Button onClick={() => setOpen(true)}><Plus size={15} />{t('Створи перший роадмап')}</Button>
+          <Empty icon={TrendingUp} title={sc.scope === 'guild' ? t('У гільдії роадмапів поки нема') : t('Роадмапів поки нема')}
+            description={sc.scope === 'guild' && !guildMaker ? t('Створювати роадмапи гільдії можуть її учасники; новобранець лише дивиться.') : t('Створи перший — особистий чи для гільдії: етапи, задачі й таблиці витрат в одному місці.')}>
+            {(sc.scope !== 'guild' || guildMaker) && <Button onClick={() => setOpen(true)}><Plus size={15} />{t('Створи перший роадмап')}</Button>}
             <Button variant="secondary" onClick={() => sc.set('public')}><Library size={15} />{t('Подивитись публічні')}</Button>
           </Empty>
         )}

@@ -13,8 +13,19 @@ export const RADIUS = {
   landsraad_control_point: 10000, secret_door: 5000, intel_point: 3000, exploration: 8000,
   discoverable: 8000, bank: 5000, taxiservice: 3000,
 }
+// типи міток гри (мапа з файлів гри): ті самі місця під своїми id
+Object.assign(RADIUS, {
+  Cave: 9000, Sietch: 15000, Shipwreck: 20000, EnemyOutpost: 15000, EnemyCamp: 6000, EnemyLaborOutpost: 20000, EcoLab: 15000,
+  ExplorationPointOfInterest: 20000, TradingPost: 8000, AtreidesFortress: 15000, HarkonnenFortress: 15000, Discoverable: 8000,
+  Bank: 5000, TaxiService: 3000, Intel: 3000,
+})
 const MAX_R = 20000
-const MINOR = new Set(['intel_point', 'secret_door', 'taxiservice', 'bank', 'discoverable'])
+/** «ймовірне» місце руди: частка від стількох % (як типовий поріг повзунка мапи) */
+const LIKELY = 10
+const MINOR = new Set(['intel_point', 'secret_door', 'taxiservice', 'bank', 'discoverable', 'Discoverable', 'Bank', 'TaxiService', 'Intel', 'LevelExit'])
+/** групи місць і руди: TH.GL — locations і resources; файли гри — категорія легенди «Місцевість», видобуток і рослини */
+const isLocGroup = (id) => id === 'locations' || /Map_Legend_Category_Location$/.test(id)
+const isResGroup = (id) => id === 'resources' || id === 'cutteray' || id === 'plants'
 
 /** «<b>Items:</b><br>Пластелева плита (100%)<br>…» → [[назва, шанс], …] */
 export function parseLoot(desc) {
@@ -53,12 +64,13 @@ const cache = new WeakMap()
  */
 export function summaries(P, groups) {
   if (cache.has(P)) return cache.get(P)
-  const locTypes = new Set(groups.find((g) => g.id === 'locations')?.types.map((t) => t.id) ?? [])
-  const resTypes = new Set(groups.find((g) => g.id === 'resources')?.types.map((t) => t.id) ?? [])
+  const locTypes = new Set(groups.filter((g) => isLocGroup(g.id)).flatMap((g) => g.types.map((t) => t.id)))
+  const resTypes = new Set(groups.filter((g) => isResGroup(g.id)).flatMap((g) => g.types.map((t) => t.id)))
   const loot = grid(), res = grid(), locs = grid()
   for (const [type, T] of Object.entries(P.types)) {
     const n = T.pts.length / 3
-    if (resTypes.has(type)) for (let i = 0; i < n; i++) res.add(T.pts[i * 3], T.pts[i * 3 + 1], [type, T.pts[i * 3], T.pts[i * 3 + 1]])
+    // руда з часткою (вузли з файлів гри: руда місця вибирається з кількох) — лише ймовірні місця
+    if (resTypes.has(type)) for (let i = 0; i < n; i++) if (!T.share || T.share[i] >= LIKELY) res.add(T.pts[i * 3], T.pts[i * 3 + 1], [type, T.pts[i * 3], T.pts[i * 3 + 1]])
     if (locTypes.has(type)) for (let i = 0; i < n; i++) locs.add(T.pts[i * 3], T.pts[i * 3 + 1], { type, i, x: T.pts[i * 3], y: T.pts[i * 3 + 1], r: RADIUS[type] ?? 8000, name: T.info[i]?.[0] ?? null })
     for (const [i, inf] of Object.entries(T.info)) {
       const items = parseLoot(inf[1])

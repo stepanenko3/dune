@@ -82,7 +82,10 @@ export function createContent({ items, guilds, auth, bases, roadmaps, builds, ca
     if (o.kind === 'guild') {
       const g = typeof o.id === 'string' ? await guilds.get(o.id) : null
       if (!g) throw fail('немає такої гільдії', 404)
-      if (req.user.role !== 'admin' && (req.ctx.ranks.get(g.id) || 0) < 2) throw fail('у цій гільдії ти ще новобранець — створювати й передавати їй не можна', 403)
+      const rank = req.user.role === 'admin' ? 4 : req.ctx.ranks.get(g.id) || 0
+      // не в гільдії — так і кажемо; новобранець — лише дивиться
+      if (!rank) throw fail('ти не в цій гільдії — створювати й передавати їй не можна', 403)
+      if (rank < 2) throw fail('у цій гільдії ти ще новобранець — створювати й передавати їй не можна', 403)
       return { kind: 'guild', id: g.id }
     }
     // сам сайт — офіційний вміст (бібліотека, приклади); віддати йому може лише адміністрація (дозвіл site.content)

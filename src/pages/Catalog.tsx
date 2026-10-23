@@ -11,7 +11,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { BookOpen, Calculator, Droplet, Hammer, MapPin, SearchX, Timer } from 'lucide-react'
 import {
-  buildName, fmtTime, groupLabel, iconUrl, kindLabel, kindOf, loadCatalog, nameOf, rarityLabel, SECTIONS, sectionOfItem, setLabel, subLabel,
+  buildName, fmtTime, groupLabel, iconUrl, isDevEntry, kindLabel, kindOf, loadCatalog, nameOf, rarityLabel, SECTIONS, sectionOfItem, setLabel, subLabel,
   tierLabel, VEHICLE_KEYS, vehicleKey, vehicleLabel, wikiImg,
   type CatalogIndex, type CBuild, type CItem, type CPlace, type CRecipe, type SectionId,
 } from '@/lib/catalog'
@@ -22,7 +22,7 @@ import { locale, t } from '@/lib/i18n'
 import { SnInput, valueOf } from '@/components/sn'
 import { prefGet, prefSet } from '@/lib/prefs'
 import { useDecree } from '@/lib/decree'
-import { buildOfPlace, Icon, Ref } from '@/components/catalog/bits'
+import { buildOfPlace, Icon, preloadIcon, Ref } from '@/components/catalog/bits'
 import { buildKey, decreeFx, encodeTargets, inputQty, waterQty, type Target } from '@/lib/calc'
 import { SHEET_BASE, SheetBackdrop, SheetHead } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
@@ -56,13 +56,12 @@ const PLACE_GROUP = (cat: string) => PLACE_LABEL[PLACE_KEY(cat)]
 const GROUP_ORDER = [...VEHICLE_KEYS, 'RawResources', 'Resources', 'RefinedResources', 'CraftedResources', 'Ammo', 'Consumables', 'Deployables', 'Modules', 'Augments', 'Emotes', 'Schematics', 'production', 'power', 'storage', 'vehicle', 'decor']
 const groupRank = (g: string) => { if (g === 'other') return 99; const i = GROUP_ORDER.indexOf(g); return i < 0 ? 50 : i }
 /** службові записи гри без справжньої назви: «BUILDINGS/TBD» тощо */
-const junk = (name: string) => name.includes('/') || /\bTBD\b/.test(name) || /^[A-Z0-9]+_[A-Z0-9_]*$/.test(name) || /^(XX|NA)_/.test(name)
 
 /** усі записи розділу */
 function entriesOf(ix: CatalogIndex, section: SectionId): Entry[] {
-  if (section === 'placeable') return ix.cat.placeables.filter((x) => !junk(x.name)).map((x) => ({ t: 'place', x }))
+  if (section === 'placeable') return ix.cat.placeables.filter((x) => !isDevEntry(x)).map((x) => ({ t: 'place', x }))
   if (section === 'building') return ix.cat.buildables.map((x) => ({ t: 'build', x }))
-  return ix.cat.items.filter((i) => sectionOfItem(i) === section && !junk(i.name)).map((x) => ({ t: 'item', x }))
+  return ix.cat.items.filter((i) => sectionOfItem(i) === section && !isDevEntry(i)).map((x) => ({ t: 'item', x }))
 }
 
 type By = 'type' | 'tier'
@@ -121,7 +120,12 @@ export default function Catalog() {
   useEffect(() => { if (route.id) setSheet('catalog-detail') }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    const onPop = () => { const r = readPath(); setRoute(r); setQ(r.q); setSubState(r.g); setTierState(r.tier); if (r.by) setByState(r.by) }
+    const onPop = () => {
+      // пішли з довідника (інша сторінка ще вантажиться, а ця на екрані) — чужа адреса не наша: інакше на мить
+      // показали б головну довідника
+      if (!/^\/catalog(\/|$)/.test(location.pathname)) return
+      const r = readPath(); setRoute(r); setQ(r.q); setSubState(r.g); setTierState(r.tier); if (r.by) setByState(r.by)
+    }
     addEventListener('popstate', onPop)
     // перехід звичайним посиланням сайту (пункт «Довідник» у шапці, крихти) — адреса змінилась без popstate: шлях уже не
     // той, що показує сторінка
@@ -204,8 +208,8 @@ export default function Catalog() {
     const words = ql.split(/\s+/)
     const hit = (...parts: (string | null | undefined)[]) => { const s = parts.filter(Boolean).join(' ').toLowerCase(); return words.every((w) => s.includes(w)) }
     const out: Entry[] = []
-    for (const x of ix.cat.items) if (!junk(x.name) && hit(x.name, x.loc)) out.push({ t: 'item', x })
-    for (const x of ix.cat.placeables) if (!junk(x.name) && hit(x.name, x.loc)) out.push({ t: 'place', x })
+    for (const x of ix.cat.items) if (!isDevEntry(x) && hit(x.name, x.loc)) out.push({ t: 'item', x })
+    for (const x of ix.cat.placeables) if (!isDevEntry(x) && hit(x.name, x.loc)) out.push({ t: 'place', x })
     for (const x of ix.cat.buildables) if (hit(buildName(x), x.name, x.id.replace(/_/g, ' '), setLabel(x.set), x.set)) out.push({ t: 'build', x })
     return out.slice(0, 400)
   }, [ix, ql])
@@ -442,6 +446,8 @@ export default function Catalog() {
                   <a
                     href={catalogUrl(sec, k, { q, ...keep(sec) })}
                     onClick={(ev) => { if (!plainClick(ev)) return; ev.preventDefault(); nav(sec, k) }}
+                    onPointerEnter={() => loadExtra(e)}
+                    onFocus={() => loadExtra(e)}
                     aria-current={on ? 'page' : undefined}
                     className={cn('flex h-full w-full items-center gap-2.5 rounded-lg border p-2 text-left transition-colors', on ? 'border-spice/70 bg-spice/10' : 'border-line/70 bg-panel2/30 hover:border-line hover:bg-panel2')}
                   >
@@ -449,7 +455,6 @@ export default function Catalog() {
                     {/* довгі схожі назви («Схема креслення, ранг…») різняться в кінці — повна назва в підказці */}
                     <span className="min-w-0 flex-1" title={entryName(e)}>
                       <span className="line-clamp-2 text-[12.5px] font-medium leading-tight">{entryName(e)}</span>
-                      {e.t !== 'build' && e.x.loc && <span className="mt-0.5 block truncate text-[10.5px] text-muted">{e.x.name}</span>}
                       {e.t === 'build' && <span className="mt-0.5 block truncate text-[10.5px] text-muted">{setLabel(e.x.set)}</span>}
                     </span>
                   </a>
@@ -470,7 +475,7 @@ export default function Catalog() {
         <SheetHead title={selected ? entryName(selected) : t('Картка')} className="lg:hidden" />
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
           {selected ? (
-            <Detail key={selected.t + keyOf(selected)} e={selected} ix={ix} open={openEntity} navBuild={(b) => nav('building', b.id)} />
+            <DetailSwap e={selected} ix={ix} open={openEntity} navBuild={(b) => nav('building', b.id)} />
           ) : route.id ? (
             <div className="grid h-full place-items-center">
               <Empty icon={SearchX} title={t('Такого запису нема')} description={t('Його могли прибрати з довідника після оновлення гри.')} framed={false} />
@@ -490,7 +495,7 @@ export default function Catalog() {
 function RecipeRow({ r, ix, open, show }: { r: CRecipe; ix: CatalogIndex; open: (k: 'item' | 'place', id: string) => void; show: 'in' | 'out' }) {
   // указ тижня з головної: входи й вода рецепта — з ним, а час — з контрактом на переробку; вимкнено в калькуляторі
   // («рахувати без указу», calc:decree) — і тут без нього, щоб числа збігались
-  const decree = useDecree((s) => s.id)
+  const decree = useDecree((s) => s.forMe)
   const fx = decreeFx(prefGet('calc:decree', true) ? decree : null)
   const grade = ix.item.get(r.out[0]?.[0])?.grade ?? 0
   const cheap = fx.production && grade >= 4
@@ -579,19 +584,48 @@ interface Extra {
 
 const WEAPON: Record<string, string> = { damage: t('Шкода'), fireRate: t('Темп'), clipSize: t('Магазин'), reloadTime: t('Перезарядка, с'), accuracy: t('Точність'), effectiveRange: t('Дальність'), maxRange: t('Макс. дальність'), shieldDamage: t('Шкода щиту') }
 
-function Detail({ e, ix, open, navBuild }: { e: Entry; ix: CatalogIndex; open: (k: 'item' | 'place', id: string) => void; navBuild: (b: CBuild) => void }) {
-  const [extra, setExtra] = useState<Extra | null>(null)
-  const cap = useCap()
+/**
+ * Опис, об’єм, ціна — окремим запитом, разом із великою картинкою. Кеш на сторінку: повторне відкриття й наведення на
+ * плитку (попереднє завантаження) не чекають.
+ */
+const extraCache = new Map<string, { p: Promise<Extra | null>; v?: Extra | null }>()
+function loadExtra(e: Entry) {
+  const k = e.t + keyOf(e)
+  let c = extraCache.get(k)
+  if (!c) {
+    const data = e.t === 'build' ? Promise.resolve(null) : fetch(`/api/catalog/${e.t === 'item' ? 'item' : 'placeable'}/${encodeURIComponent(e.x.id)}`)
+      .then((r) => (r.ok ? (r.json() as Promise<Extra>) : null))
+      .catch(() => { extraCache.delete(k); return null })
+    const entry: { p: Promise<Extra | null>; v?: Extra | null } = { p: Promise.all([data, preloadIcon(entryIcon(e))]).then(([x]) => (entry.v = x)) }
+    extraCache.set(k, entry)
+    c = entry
+  }
+  return c
+}
+
+/**
+ * Картка відкривається вже повною: поки дані нового запису не прийшли, на екрані лишається попередня (до 0,6 с —
+ * далі нова без них, а вони доповнять її). Інакше опис і факти з'являлись би по одному й розсували картку.
+ */
+function DetailSwap({ e, ...rest }: { e: Entry; ix: CatalogIndex; open: (k: 'item' | 'place', id: string) => void; navBuild: (b: CBuild) => void }) {
+  const [shown, setShown] = useState<{ e: Entry; extra: Extra | null } | null>(() => {
+    const c = loadExtra(e)
+    return 'v' in c ? { e, extra: c.v ?? null } : null
+  })
   useEffect(() => {
-    setExtra(null)
-    if (e.t === 'build') return
+    const c = loadExtra(e)
+    if ('v' in c) { setShown({ e, extra: c.v ?? null }); return }
     let live = true
-    fetch(`/api/catalog/${e.t === 'item' ? 'item' : 'placeable'}/${encodeURIComponent(e.x.id)}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => live && setExtra(d))
-      .catch(() => {})
-    return () => { live = false }
+    const slow = setTimeout(() => live && setShown({ e, extra: null }), 600)
+    c.p.then((x) => { if (live) { clearTimeout(slow); setShown({ e, extra: x }) } })
+    return () => { live = false; clearTimeout(slow) }
   }, [e])
+  if (!shown) return null
+  return <Detail key={shown.e.t + keyOf(shown.e)} e={shown.e} extra={shown.extra} {...rest} />
+}
+
+function Detail({ e, extra, ix, open, navBuild }: { e: Entry; extra: Extra | null; ix: CatalogIndex; open: (k: 'item' | 'place', id: string) => void; navBuild: (b: CBuild) => void }) {
+  const cap = useCap()
 
   const go = useStore.getState().setView
   if (e.t === 'build') {
@@ -630,7 +664,7 @@ function Detail({ e, ix, open, navBuild }: { e: Entry; ix: CatalogIndex; open: (
     const build = buildOfPlace(ix, p)
     return (
       <div>
-        <Head icon={iconUrl(p.icon)} title={nameOf(p)} sub={p.loc ? p.name : PLACE_GROUP(p.cat)} grade={p.grade} />
+        <Head icon={iconUrl(p.icon)} title={nameOf(p)} sub={PLACE_GROUP(p.cat)} grade={p.grade} />
         <Facts
           list={[
             ...(pw?.produce ? [[t('Дає енергії'), fmtN(pw.produce)] as [string, string]] : []),
@@ -678,7 +712,7 @@ function Detail({ e, ix, open, navBuild }: { e: Entry; ix: CatalogIndex; open: (
   for (const r of uses) for (const [id] of r.out) if (!usedFor.has(id)) usedFor.set(id, r)
   return (
     <div>
-      <Head icon={iconUrl(it.icon)} title={nameOf(it)} sub={it.loc ? it.name : it.cat === 'misc' ? kindLabel(kindOf(it)) : subLabel(it.sub)} grade={it.grade} />
+      <Head icon={iconUrl(it.icon)} title={nameOf(it)} sub={it.cat === 'misc' ? kindLabel(kindOf(it)) : subLabel(it.sub)} grade={it.grade} />
       <Facts list={facts} />
       {extra?.description && <p className="mt-3 whitespace-pre-line text-[12.5px] leading-relaxed text-muted"><GameText text={extra.description} /></p>}
       {/* бойові параметри — лише ненульові: у деталей техніки й інструментів гра віддає самі нулі */}
@@ -714,12 +748,17 @@ function Detail({ e, ix, open, navBuild }: { e: Entry; ix: CatalogIndex; open: (
       })()}
       {builds.length > 0 && (
         <Section title={t('У будівництві — {n}', { n: builds.length })}>
-          <ul className="grid gap-0.5 text-[12px]">
+          {/* як «Як отримати»: картка з зображенням будівлі; назва переноситься, кількість — завжди видно */}
+          <ul className="grid gap-1.5">
             {cap('builds', builds, 30).shown.map((b) => (
               <li key={b.set + b.id}>
-                <button type="button" onClick={() => navBuild(b)} className="flex w-full items-center gap-2 rounded px-1 py-0.5 text-left hover:bg-panel2">
-                  <span className="min-w-0 flex-1 truncate">{buildName(b)} <span className="text-muted">· {setLabel(b.set)}</span></span>
-                  <span className="font-mono text-[11px]">{b.cost.find(([id]) => id === it.id)?.[1]}×</span>
+                <button type="button" onClick={() => navBuild(b)} className="flex w-full items-center gap-2 rounded-lg border border-line/70 p-1.5 text-left hover:border-spice/50">
+                  <Icon src={wikiImg(b.img)} size={36} />
+                  <span className="min-w-0 flex-1 break-words text-[12.5px] leading-snug">
+                    {buildName(b)}
+                    <span className="block text-[11.5px] text-muted">{setLabel(b.set)}</span>
+                  </span>
+                  <span className="shrink-0 font-mono text-[12px] font-semibold">{fmtN(b.cost.find(([id]) => id === it.id)?.[1] ?? 0)}×</span>
                 </button>
               </li>
             ))}

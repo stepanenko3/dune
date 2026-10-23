@@ -1,15 +1,19 @@
 /**
  * Поля панелі керування: показ значення (у таблиці й картці) і поле форми для кожного типу — усе на компонентах
- * @snotax/ui. Типи — як у server/admin/engine.mjs.
+ * @snotax/ui. Типи — як у server/admin/engine.mjs. Зображення — картинкою (збільшити, завантажити нове в сховище,
+ * прибрати); id записів у списках і парах (інгредієнти, станції) — вибором зі списку з іконкою й назвою.
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Plus, X } from 'lucide-react'
+import { ImageOff, Link2, Plus, Trash2, Upload, X } from 'lucide-react'
+import { toast } from 'sonner'
+import { Modal } from '@/components/ui/modal'
 import {
   SnBadge, SnButton, SnCheckbox, SnColorPicker, SnField, SnFieldDescription, SnFieldLabel, SnInput, SnNumberField, SnSegmented, SnSegmentedItem, SnSelect,
   SnSkeleton, SnSwitch, SnTextarea, checkedOf, sn, valueOf,
 } from '@/components/sn'
 import { locale, t } from '@/lib/i18n'
 import { adminApi, adminHref, adminLink, resourceOf, type Field, type Option } from './api'
+import { wikiImg } from '@/lib/catalog'
 import { Panel } from './ui'
 
 const SnCombobox = sn('sn-combobox')
@@ -23,6 +27,128 @@ export const fmtDate = (ms: unknown, withTime = true) =>
   typeof ms === 'number' && ms > 0
     ? new Date(ms).toLocaleString(locale(), withTime ? { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' } : { day: 'numeric', month: 'short', year: 'numeric' })
     : ''
+
+/**
+ * адреса зображення з того, що лежить у полі: наше сховище (/media/…) і адреси сайту — як є; шлях іконки гри
+ * (assets/Dune/…) — через /catalog-icons; картинки вікі — через /catalog-wiki (сайт кешує їх у себе)
+ */
+export function imageSrc(v: unknown): string | null {
+  if (typeof v !== 'string' || !v.trim()) return null
+  const s = v.trim()
+  if (/^https:\/\/media\.awakening\.wiki\//.test(s)) return wikiImg(s)
+  if (s.startsWith('/') || /^https?:\/\//.test(s) || s.startsWith('data:image/')) return s
+  if (/^assets\//.test(s)) return `/catalog-icons/${s}.webp`
+  return null
+}
+
+/** тривалість у мс — словами: «850 мс», «4,2 с», «3 хв 5 с», «1 год 12 хв» */
+export function fmtDuration(ms: unknown): string {
+  const n = Number(ms)
+  if (!Number.isFinite(n) || n < 0) return ''
+  if (n < 1000) return t('{n} мс', { n: Math.round(n) })
+  const s = n / 1000
+  if (s < 60) return t('{n} с', { n: s < 10 ? s.toLocaleString(locale(), { maximumFractionDigits: 1 }) : Math.round(s) })
+  const m = Math.floor(s / 60)
+  if (m < 60) return t('{m} хв {s} с', { m, s: Math.round(s % 60) })
+  return t('{h} год {m} хв', { h: Math.floor(m / 60), m: m % 60 })
+}
+
+/** розклад cron словами (часті випадки); незвичний — null */
+export function cronText(expr: unknown): string | null {
+  const p = String(expr ?? '').trim().split(/\s+/)
+  if (p.length !== 5) return null
+  const [mi, h, dom, mon, dow] = p
+  const num = (x: string) => /^\d+$/.test(x)
+  const hm = (hh: string, mm: string) => `${hh.padStart(2, '0')}:${mm.padStart(2, '0')}`
+  if (mon !== '*') return null
+  let m: RegExpExecArray | null
+  if ((m = /^\*\/(\d+)$/.exec(mi)) && h === '*' && dom === '*' && dow === '*') return t('кожні {n} хв', { n: m[1] })
+  if (mi === '*' && h === '*' && dom === '*' && dow === '*') return t('щохвилини')
+  if (num(mi) && h === '*' && dom === '*' && dow === '*') return t('щогодини о :{mm}', { mm: mi.padStart(2, '0') })
+  if (num(mi) && (m = /^\*\/(\d+)$/.exec(h)) && dom === '*' && dow === '*') return t('кожні {n} год о :{mm}', { n: m[1], mm: mi.padStart(2, '0') })
+  if (num(mi) && num(h) && dom === '*' && dow === '*') return t('щодня о {time}', { time: hm(h, mi) })
+  if (num(mi) && num(h) && dom === '*' && /^[0-7]$/.test(dow)) {
+    // 7 січня 2024 — неділя: день тижня мовою сайту
+    const day = new Date(2024, 0, 7 + (Number(dow) % 7)).toLocaleDateString(locale(), { weekday: 'long' })
+    return t('щотижня: {day} о {time}', { day, time: hm(h, mi) })
+  }
+  if (num(mi) && num(h) && num(dom) && dow === '*') return t('щомісяця {d}-го о {time}', { d: dom, time: hm(h, mi) })
+  return null
+}
+
+/** мініатюра: картинка в рамці; нема чи не завантажилась — значок */
+export function ImageThumb({ src, size = 28, className }: { src: string | null; size?: number; className?: string }) {
+  const [bad, setBad] = useState(false)
+  useEffect(() => setBad(false), [src])
+  return (
+    <span className={`inline-grid shrink-0 place-items-center overflow-hidden rounded-md border border-line bg-panel2/60 ${className ?? ''}`} style={{ width: size, height: size }}>
+      {src && !bad ? <img src={src} alt="" loading="lazy" decoding="async" className="h-full w-full object-contain" onError={() => setBad(true)} /> : <ImageOff size={Math.max(12, Math.round(size * 0.45))} className="text-muted" aria-hidden />}
+    </span>
+  )
+}
+
+/** зображення на весь екран (у вікні), з адресою під ним */
+function ImageZoom({ src, title, onClose }: { src: string; title: string; onClose: () => void }) {
+  return (
+    <Modal open onOpenChange={(o) => !o && onClose()} title={title} size="lg">
+      <div className="grid gap-2">
+        <div className="grid min-h-[200px] place-items-center rounded-lg border border-line bg-[repeating-conic-gradient(rgb(var(--c-panel2))_0%_25%,transparent_0%_50%)] bg-[length:20px_20px] p-3">
+          <img src={src} alt="" className="max-h-[70vh] max-w-full object-contain" />
+        </div>
+        <a href={src} target="_blank" rel="noopener" className="inline-flex items-center gap-1.5 break-all text-[12.5px] text-spice hover:underline"><Link2 size={13} className="shrink-0" />{t('Відкрити окремо')}</a>
+      </div>
+    </Modal>
+  )
+}
+
+/** зображення в картці: мініатюра, клік — збільшити */
+export function ImageView({ value, label, size = 72 }: { value: unknown; label: string; size?: number }) {
+  const src = imageSrc(value)
+  const [zoom, setZoom] = useState(false)
+  if (!src) return <span className="text-muted">—</span>
+  return (
+    <>
+      <button type="button" onClick={() => setZoom(true)} className="rounded-md outline-offset-2 hover:opacity-90" aria-label={t('Збільшити: {what}', { what: label })} title={t('Збільшити')}>
+        <ImageThumb src={src} size={size} />
+      </button>
+      {zoom && <ImageZoom src={src} title={label} onClose={() => setZoom(false)} />}
+    </>
+  )
+}
+
+/** id у парі чи списку → [назва, іконка] з того, що дав сервер (<key>__refs) */
+type Refs = Record<string, [string, string | null]>
+const refsOf = (f: Field, row: Record<string, unknown>) => (row[f.key + '__refs'] ?? {}) as Refs
+
+/** пари й списки записів у картці: значками з іконкою, кількістю й назвою — посиланнями на записи */
+function RefChips({ f, row }: { f: Field; row: Record<string, unknown> }) {
+  const refs = refsOf(f, row)
+  const v = row[f.key]
+  const list: [string, number | null][] = f.type === 'pairs' ? ((v as [string, number][]) ?? []) : ((v as string[]) ?? []).map((id) => [id, null])
+  if (!list.length) return <span className="text-muted">—</span>
+  const canOpen = !!(f.refs && resourceOf(f.refs))
+  return (
+    <ul className="flex flex-wrap gap-1.5">
+      {list.map(([id, n], i) => {
+        const r = refs[id]
+        const body = (
+          <>
+            <ImageThumb src={imageSrc(r?.[1])} size={24} />
+            {n != null && <span className="font-semibold tabular-nums">{n}×</span>}
+            <span className="min-w-0 break-words">{r?.[0] ?? id}</span>
+            {!r && <span className="text-[11.5px] text-muted">{t('немає в даних гри')}</span>}
+          </>
+        )
+        const cls = 'inline-flex max-w-full items-center gap-1.5 rounded-md border border-line bg-panel2/40 py-0.5 pl-0.5 pr-2 text-[13px]'
+        return (
+          <li key={`${id}:${i}`} className="max-w-full">
+            {canOpen && r ? <a href={adminHref([f.refs!, id])} onClick={adminLink([f.refs!, id])} title={id} className={`${cls} hover:border-spice/50 hover:text-spice`}>{body}</a> : <span className={cls} title={id}>{body}</span>}
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
 
 /** куди в панелі веде значення поля: [розділ, id] чи [розділ]; null — нікуди (чи цей розділ людині не видно) */
 export function linkOf(f: Field, row: Record<string, unknown>): string[] | null {
@@ -59,7 +185,10 @@ export function textOf(f: Field, row: Record<string, unknown>): string {
     return Array.isArray(r) && r.length > 1 ? String(r[1]) : ''
   }
   const v = row[f.key]
+  // порожнє поле-назва з підписом від сервера (рецепт без назви — назвою того, що з нього виходить)
+  if ((v == null || v === '') && row[f.key + '__label'] != null && f.type !== 'relation' && f.type !== 'owner') return String(row[f.key + '__label'])
   if (v == null || v === '') return ''
+  if (f.format === 'duration') return fmtDuration(v)
   switch (f.type) {
     case 'datetime': return fmtDate(v)
     case 'flag': return fmtDate(v)
@@ -67,8 +196,8 @@ export function textOf(f: Field, row: Record<string, unknown>): string {
     case 'select': return t(f.options?.find((o) => o.value === String(v) || o.also?.includes(String(v)))?.label ?? String(v))
     case 'owner': if (f.kindField && row[f.kindField] === 'site') return t('Сайт'); return String(row[f.key + '__label'] ?? v)
     case 'relation': return String(row[f.key + '__label'] ?? v)
-    case 'pairs': return (v as [string, number][]).map(([id, n]) => `${n}× ${id}`).join(', ')
-    case 'list': return (v as string[]).join(', ')
+    case 'pairs': { const refs = refsOf(f, row); return (v as [string, number][]).map(([id, n]) => `${n}× ${refs[id]?.[0] ?? id}`).join(', ') }
+    case 'list': { const refs = refsOf(f, row); return (v as string[]).map((id) => refs[id]?.[0] ?? id).join(', ') }
     case 'json': { const s = JSON.stringify(v); return s.length > 80 ? s.slice(0, 80) + '…' : s }
     default: return f.tr ? trText(String(v)) : String(v)
   }
@@ -80,7 +209,11 @@ export function ValueView({ f, row }: { f: Field; row: Record<string, unknown> }
   const to = linkOf(f, row)
   if (to) return <a href={adminHref(to)} onClick={adminLink(to)} className="text-spice hover:underline">{textOf(f, row)}</a>
   if (f.ref) { const s = textOf(f, row); return s ? <span>{s}</span> : <span className="text-muted">—</span> }
+  if (f.image) return <ImageView value={v} label={t(f.label)} />
+  if ((v == null || v === '') && row[f.key + '__label'] != null && f.type !== 'relation') return <span className="text-muted">{textOf(f, row)}</span>
   if (v == null || v === '' || (Array.isArray(v) && !v.length)) return <span className="text-muted">—</span>
+  if (f.refs && (f.type === 'pairs' || f.type === 'list')) return <RefChips f={f} row={row} />
+  if (f.view === 'cron') { const h = cronText(v); return <span className="inline-flex flex-wrap items-baseline gap-x-2"><span className="font-mono text-[12.5px]">{String(v)}</span>{h && <span className="text-muted">{h}</span>}</span> }
   if (f.tones && f.type === 'select') return <SnBadge tone={f.tones[String(v)] ?? 'neutral'} variant="soft">{textOf(f, row)}</SnBadge>
   if (f.type === 'color') return <span className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full border border-line" style={{ background: String(v) }} />{String(v)}</span>
   if (f.type === 'bool') return <SnBadge tone={v ? 'success' : 'neutral'} variant="soft">{textOf(f, row)}</SnBadge>
@@ -151,8 +284,11 @@ function DateTimeInput({ value, onChange, label }: { value: unknown; onChange: (
   )
 }
 
-/** вибір запису іншого розділу: пошук на сервері (щонайбільше 30 варіантів), підпис замість id */
-export function RelationInput({ resource, value, label, onChange, placeholder }: { resource: string; value: unknown; label?: string | null; onChange: (v: string | null) => void; placeholder?: string }) {
+/**
+ * вибір запису іншого розділу: пошук на сервері (щонайбільше 30 варіантів, у даних гри — і назвою мовою сайту),
+ * підпис замість id; у розділу з зображенням — іконка біля кожного варіанта й біля вибраного
+ */
+export function RelationInput({ resource, value, label, icon, onChange, placeholder, accessibilityLabel }: { resource: string; value: unknown; label?: string | null; icon?: string | null; onChange: (v: string | null, o?: Option) => void; placeholder?: string; accessibilityLabel?: string }) {
   const [opts, setOpts] = useState<Option[]>([])
   const [q, setQ] = useState('')
   const [known, setKnown] = useState<Option | null>(null)
@@ -165,34 +301,56 @@ export function RelationInput({ resource, value, label, onChange, placeholder }:
     const h = setTimeout(() => adminApi.options(resource, q).then(setOpts).catch(() => setOpts([])), q ? 220 : 0)
     return () => clearTimeout(h)
   }, [resource, q, active])
+  // фокус і введення — рідними подіями з тіньового DOM (обгортка sn() пропускає лише власні події елемента): відкрили
+  // поле — тягнемо варіанти, вводять — шукаємо на сервері
+  useEffect(() => {
+    const node = box.current
+    if (!node) return
+    const focus = () => setActive(true)
+    const input = () => { setActive(true); setQ(String((node as unknown as { search?: string; inputValue?: string }).search ?? (node as unknown as { inputValue?: string }).inputValue ?? '')) }
+    node.addEventListener('focusin', focus)
+    node.addEventListener('input', input)
+    return () => { node.removeEventListener('focusin', focus); node.removeEventListener('input', input) }
+  }, [])
   // підпис вибраного, якщо його нема серед знайденого (відкрили запис з уже заданим зв'язком)
   useEffect(() => {
     if (!v || label || opts.some((o) => o.value === v) || known?.value === v) return
     adminApi.options(resource, '', [v]).then((o) => setKnown(o[0] ?? { value: v, label: v })).catch(() => {})
   }, [v, resource, label, opts, known])
   const all = useMemo(() => {
-    const cur = v && !opts.some((o) => o.value === v) ? [{ value: v, label: label || (known?.value === v ? known.label : v) }] : []
+    const cur: Option[] = v && !opts.some((o) => o.value === v) ? [{ value: v, label: label || (known?.value === v ? known.label : v), icon: icon ?? (known?.value === v ? known.icon : null) }] : []
     return [...cur, ...opts]
-  }, [opts, v, label, known])
-  return (
+  }, [opts, v, label, icon, known])
+  // іконки є — розділ із зображеннями (предмети, пристрої): показуємо їх і біля вибраного
+  const withIcons = all.some((o) => o.icon)
+  const sel = all.find((o) => o.value === v)
+  const combo = (
     <SnCombobox
       ref={box}
-      className="block min-w-0"
+      className="block min-w-0 flex-1"
       modelValue={v}
       showClear
-      onFocus={() => setActive(true)}
-      onChange={(e: Event) => onChange(valueOf<string>(e) || null)}
-      onInput={() => setQ(String((box.current as unknown as { inputValue?: string })?.inputValue ?? ''))}
+      onChange={(e: Event) => { const nv = valueOf<string>(e) || null; onChange(nv, all.find((o) => o.value === nv)) }}
     >
-      <SnComboboxInput placeholder={placeholder || t('Почни вводити, щоб знайти')} />
+      <SnComboboxInput placeholder={placeholder || t('Почни вводити, щоб знайти')} label={accessibilityLabel} />
       <SnComboboxContent>
         <SnComboboxList>
-          {all.map((o) => <SnComboboxItem key={o.value} value={o.value}>{o.label}</SnComboboxItem>)}
+          {all.map((o) => {
+            // однакові назви (різні записи гри з тією ж назвою) — ще й кодом, щоб розрізнити
+            const label = all.some((x) => x !== o && x.label === o.label) ? `${o.label} · ${o.value}` : o.label
+            return (
+              <SnComboboxItem key={o.value} value={o.value} title={o.value}>
+                {withIcons ? <span className="flex min-w-0 items-center gap-2"><ImageThumb src={imageSrc(o.icon)} size={26} />{label}</span> : label}
+              </SnComboboxItem>
+            )
+          })}
         </SnComboboxList>
         <SnComboboxEmpty>{t('Нічого не знайшлося')}</SnComboboxEmpty>
       </SnComboboxContent>
     </SnCombobox>
   )
+  // обгортка — завжди та сама (інакше, щойно прийдуть варіанти з іконками, поле змонтувалося б заново й загубило введене)
+  return <div className="flex min-w-0 items-center gap-2">{(withIcons || icon) && <ImageThumb src={imageSrc(sel?.icon ?? icon)} size={34} />}{combo}</div>
 }
 
 /** власник: людина чи гільдія — перемикач і пошук у відповідному розділі */
@@ -303,21 +461,122 @@ export function PermissionsBlocks({ value, onChange, readonly }: { value: unknow
   )
 }
 
-/** пари [id, кількість] — інгредієнти рецепта, ціна будівлі */
-function PairsInput({ value, onChange }: { value: unknown; onChange: (v: [string, number][]) => void }) {
+/** пари [id, кількість] — інгредієнти рецепта, ціна будівлі: запис — вибором зі списку (з іконкою й назвою) */
+function PairsInput({ f, value, refs, onChange }: { f: Field; value: unknown; refs: Refs; onChange: (v: [string, number][]) => void }) {
   const list = (Array.isArray(value) ? value : []) as [string, number][]
   const set = (i: number, p: [string, number]) => onChange(list.map((x, j) => (j === i ? p : x)))
+  // ключі рядків: прибрали рядок посередині — решта полів не переплутує свій стан
+  const keys = useRef<number[]>([])
+  const next = useRef(0)
+  while (keys.current.length < list.length) keys.current.push(next.current++)
+  keys.current.length = list.length
+  const what = f.refs ? t(resourceOf(f.refs)?.one ?? 'Запис') : t('id предмета')
   return (
-    <div className="grid gap-1.5">
+    <div className="grid gap-2">
       {list.map(([id, n], i) => (
-        <div key={i} className="flex items-center gap-1.5">
-          <SnInput className="min-w-0 flex-1" modelValue={id} placeholder={t('id предмета')} accessibilityLabel={t('id предмета')} onInput={(e: Event) => set(i, [valueOf(e), n])} />
-          <SnNumberField className="w-[130px]" modelValue={n} min={0} accessibilityLabel={t('Кількість')} onChange={(e: Event) => set(i, [id, Number(valueOf(e)) || 0])} />
-          <SnButton variant="ghost" size="icon-sm" accessibilityLabel={t('Прибрати')} onClick={() => onChange(list.filter((_, j) => j !== i))}><X size={14} /></SnButton>
+        <div key={keys.current[i]} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5 sm:grid-cols-[minmax(0,1fr)_140px_auto]">
+          <div className="col-span-2 min-w-0 sm:col-span-1">
+            {f.refs
+              ? <RelationInput resource={f.refs} value={id || null} label={refs[id]?.[0]} icon={refs[id]?.[1]} accessibilityLabel={what} placeholder={t('Знайти: {what}', { what: what.toLowerCase() })} onChange={(nv) => set(i, [nv ?? '', n])} />
+              : <SnInput className="min-w-0" modelValue={id} placeholder={t('id предмета')} accessibilityLabel={t('id предмета')} onInput={(e: Event) => set(i, [valueOf(e), n])} />}
+          </div>
+          <SnNumberField className="w-full min-w-[110px]" modelValue={n} min={0} accessibilityLabel={t('Кількість')} onChange={(e: Event) => set(i, [id, Number(valueOf(e)) || 0])} />
+          <SnButton variant="ghost" size="icon-sm" accessibilityLabel={t('Прибрати')} onClick={() => { keys.current.splice(i, 1); onChange(list.filter((_, j) => j !== i)) }}><X size={14} /></SnButton>
         </div>
       ))}
-      <div><SnButton size="sm" variant="outline" onClick={() => onChange([...list, ['', 1]])}><Plus size={14} />{t('Додати рядок')}</SnButton></div>
+      {!list.length && <p className="text-[13px] text-muted">{t('Порожньо.')}</p>}
+      <div><SnButton size="sm" variant="outline" onClick={() => onChange([...list, ['', 1]])}><Plus size={14} />{t('Додати')}</SnButton></div>
     </div>
+  )
+}
+
+/** список id записів (станції рецепта, потрібні вміння): значками з «×», новий — вибором зі списку */
+function RefListInput({ f, value, refs, onChange }: { f: Field; value: unknown; refs: Refs; onChange: (v: string[]) => void }) {
+  const list = (Array.isArray(value) ? value : []) as string[]
+  // підписи того, що вибрали тут (сервер їх ще не знає)
+  const [picked, setPicked] = useState<Refs>({})
+  const [k, setK] = useState(0)
+  const what = t(resourceOf(f.refs!)?.one ?? 'Запис')
+  return (
+    <div className="grid gap-2">
+      {list.length > 0 ? (
+        <ul className="flex flex-wrap gap-1.5">
+          {list.map((id) => {
+            const r = refs[id] ?? picked[id]
+            return (
+              <li key={id} className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-line bg-panel2/40 py-0.5 pl-0.5 pr-1 text-[13px]" title={id}>
+                <ImageThumb src={imageSrc(r?.[1])} size={24} />
+                <span className="min-w-0 break-words">{r?.[0] ?? id}</span>
+                <SnButton variant="ghost" size="icon-sm" accessibilityLabel={t('Прибрати: {what}', { what: r?.[0] ?? id })} onClick={() => onChange(list.filter((x) => x !== id))}><X size={13} /></SnButton>
+              </li>
+            )
+          })}
+        </ul>
+      ) : <p className="text-[13px] text-muted">{t('Порожньо.')}</p>}
+      <RelationInput key={k} resource={f.refs!} value={null} accessibilityLabel={t('Додати: {what}', { what })} placeholder={t('Додати: {what}', { what: what.toLowerCase() })}
+        onChange={(id, o) => { if (!id) return; if (!list.includes(id)) { setPicked((p) => ({ ...p, [id]: [o?.label ?? id, o?.icon ?? null] })); onChange([...list, id]) } setK((n) => n + 1) }} />
+    </div>
+  )
+}
+
+/** зображення в формі: що зараз (клік — збільшити), завантажити нове в сховище (чи перетягнути файл), прибрати, адреса */
+function ImageInput({ f, value, resource, onChange }: { f: Field; value: unknown; resource?: string; onChange: (v: string | null) => void }) {
+  const [busy, setBusy] = useState(false)
+  const [zoom, setZoom] = useState(false)
+  const [edit, setEdit] = useState(false)
+  const [over, setOver] = useState(false)
+  const file = useRef<HTMLInputElement>(null)
+  const src = imageSrc(value)
+  const label = t(f.label)
+  const send = async (x: File | undefined) => {
+    if (!x || !resource) return
+    if (!x.type.startsWith('image/')) { toast.error(t('Це не зображення')); return }
+    setBusy(true)
+    try { const { url } = await adminApi.upload(resource, x); onChange(url); toast.success(t('Зображення завантажено — збережи запис')) } catch (e) { toast.error((e as Error).message) } finally { setBusy(false) }
+  }
+  return (
+    <div className="flex flex-wrap items-start gap-3">
+      <button
+        type="button"
+        onClick={() => (src ? setZoom(true) : file.current?.click())}
+        onDragOver={(e) => { e.preventDefault(); setOver(true) }}
+        onDragLeave={() => setOver(false)}
+        onDrop={(e) => { e.preventDefault(); setOver(false); void send(e.dataTransfer.files?.[0]) }}
+        className={`grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-lg border bg-panel2/50 transition-colors ${over ? 'border-spice' : 'border-line hover:border-spice/50'}`}
+        aria-label={src ? t('Збільшити: {what}', { what: label }) : t('Завантажити: {what}', { what: label })}
+      >
+        {src ? <ImageThumb src={src} size={94} className="border-0 bg-transparent" /> : <span className="grid place-items-center gap-1 text-[11.5px] text-muted"><ImageOff size={20} />{t('Нема')}</span>}
+      </button>
+      <div className="grid min-w-0 flex-1 gap-1.5">
+        <div className="flex flex-wrap gap-1.5">
+          <SnButton size="sm" variant="outline" loading={busy} disabled={!resource || undefined} onClick={() => file.current?.click()}><Upload size={14} />{src ? t('Замінити') : t('Завантажити')}</SnButton>
+          {value != null && value !== '' && <SnButton size="sm" variant="ghost" onClick={() => onChange(null)}><Trash2 size={14} />{t('Прибрати')}</SnButton>}
+          <SnButton size="sm" variant="ghost" aria-pressed={edit} onClick={() => setEdit((x) => !x)}>{t('Адреса')}</SnButton>
+        </div>
+        {edit
+          ? <SnInput className="font-mono" modelValue={value == null ? '' : String(value)} placeholder="/media/… · https://…" accessibilityLabel={t('Адреса: {what}', { what: label })} onInput={(e: Event) => onChange(valueOf(e) || null)} />
+          : <p className="min-w-0 break-all font-mono text-[11.5px] text-muted">{value ? String(value) : t('Зображення нема — завантаж файл чи перетягни його сюди')}</p>}
+        <input ref={file} type="file" accept="image/*" hidden onChange={(e) => { void send(e.target.files?.[0]); e.target.value = '' }} />
+      </div>
+      {zoom && src && <ImageZoom src={src} title={label} onClose={() => setZoom(false)} />}
+    </div>
+  )
+}
+
+/** вибір із довгого списку (наборів, категорій пристроїв): поле з пошуком серед варіантів */
+function SearchSelect({ value, options, label, onChange }: { value: unknown; options: Option[]; label: string; onChange: (v: string | null) => void }) {
+  const v = value == null ? '' : String(value)
+  const all = v && !options.some((o) => o.value === v) ? [{ value: v, label: v }, ...options] : options
+  return (
+    <SnCombobox className="block min-w-0" modelValue={v} showClear onChange={(e: Event) => onChange(valueOf<string>(e) || null)}>
+      <SnComboboxInput placeholder={t('Почни вводити, щоб знайти')} label={label} />
+      <SnComboboxContent>
+        <SnComboboxList>
+          {all.map((o) => <SnComboboxItem key={o.value} value={o.value} title={o.value}>{t(o.label)}</SnComboboxItem>)}
+        </SnComboboxList>
+        <SnComboboxEmpty>{t('Нічого не знайшлося')}</SnComboboxEmpty>
+      </SnComboboxContent>
+    </SnCombobox>
   )
 }
 
@@ -351,10 +610,25 @@ function JsonInput({ value, onChange, readonly, onInvalid }: { value: unknown; o
   )
 }
 
-/** поле форми за типом */
-export function FieldInput({ f, value, row, onChange, onKind, readonly, onInvalid }: { f: Field; value: unknown; row?: Record<string, unknown>; onChange: (v: unknown) => void; onKind?: (kind: string) => void; readonly?: boolean; onInvalid?: (bad: boolean) => void }) {
+/** варіанти select: залежні — лише ті, що є у вибраному значенні іншого поля (підкатегорії категорії); без повторів */
+export function selectOptions(f: Field, values?: Record<string, unknown>): Option[] {
+  const parent = f.dependsOn ? values?.[f.dependsOn] : undefined
+  const seen = new Set<string>()
+  return (f.options || []).filter((o) => parent == null || parent === '' || o.parent == null || o.parent === String(parent)).filter((o) => (seen.has(o.value) ? false : (seen.add(o.value), true)))
+}
+
+/**
+ * поле форми за типом. values — поточні значення всієї форми (варіанти, що залежать від іншого поля); resource — розділ
+ * запису (куди завантажувати зображення)
+ */
+export function FieldInput({ f, value, row, values, resource, onChange, onKind, readonly, onInvalid }: { f: Field; value: unknown; row?: Record<string, unknown>; values?: Record<string, unknown>; resource?: string; onChange: (v: unknown) => void; onKind?: (kind: string) => void; readonly?: boolean; onInvalid?: (bad: boolean) => void }) {
   const label = t(f.label)
   if (readonly && f.type !== 'json' && f.type !== 'permissions') return <div className="min-h-8 py-1 text-[14px]"><ValueView f={f} row={{ ...(row || {}), [f.key]: value }} /></div>
+  if (f.image) return <ImageInput f={f} value={value} resource={resource} onChange={onChange} />
+  if (f.refs && f.type === 'pairs') return <PairsInput f={f} value={value} refs={row ? refsOf(f, row) : {}} onChange={onChange} />
+  if (f.refs && f.type === 'list') return <RefListInput f={f} value={value} refs={row ? refsOf(f, row) : {}} onChange={onChange} />
+  // довгий список варіантів (набори, категорії пристроїв) — з пошуком
+  if (f.type === 'select' && selectOptions(f, values).length > 30) return <SearchSelect value={value} options={selectOptions(f, values)} label={label} onChange={onChange} />
   switch (f.type) {
     case 'textarea':
       return <SnTextarea rows={4} modelValue={value == null ? '' : String(value)} maxLength={f.max} accessibilityLabel={label} onInput={(e: Event) => onChange(valueOf(e))} />
@@ -371,8 +645,13 @@ export function FieldInput({ f, value, row, onChange, onKind, readonly, onInvali
       )
     case 'datetime':
       return <DateTimeInput value={value} label={label} onChange={onChange} />
-    case 'select':
-      return <SnSelect modelValue={value == null ? '' : String(value)} options={(f.options || []).map((o) => ({ value: o.value, label: t(o.label) }))} placeholder={t('Вибери')} accessibilityLabel={label} onChange={(e: Event) => onChange(valueOf(e))} />
+    case 'select': {
+      const opts = selectOptions(f, values)
+      // значення, якого нема серед варіантів (давнє), — теж видно
+      const cur = value == null ? '' : String(value)
+      const list = cur && !opts.some((o) => o.value === cur) ? [{ value: cur, label: cur }, ...opts] : opts
+      return <SnSelect modelValue={cur} options={list.map((o) => ({ value: o.value, label: t(o.label) }))} placeholder={t('Вибери')} accessibilityLabel={label} onChange={(e: Event) => onChange(valueOf(e))} />
+    }
     case 'relation':
       return <RelationInput resource={f.resource!} value={value} label={row?.[f.key + '__label'] as string | null} onChange={onChange} />
     case 'owner':
@@ -386,10 +665,14 @@ export function FieldInput({ f, value, row, onChange, onKind, readonly, onInvali
     case 'json':
       return <JsonInput value={value} onChange={onChange} readonly={readonly} onInvalid={onInvalid} />
     case 'pairs':
-      return <PairsInput value={value} onChange={onChange} />
+      return <PairsInput f={f} value={value} refs={{}} onChange={onChange} />
     case 'list':
       return <SnTextarea rows={4} modelValue={Array.isArray(value) ? value.join('\n') : ''} placeholder={t('По одному в рядку')} accessibilityLabel={label} onInput={(e: Event) => onChange(valueOf(e).split('\n').map((s: string) => s.trim()).filter(Boolean))} />
-    default:
-      return <SnInput type={f.type === 'email' ? 'email' : f.type === 'url' ? 'url' : 'text'} modelValue={value == null ? '' : String(value)} maxLength={f.max} accessibilityLabel={label} className={f.mono ? 'font-mono' : undefined} onInput={(e: Event) => onChange(valueOf(e))} />
+    default: {
+      const input = <SnInput type={f.type === 'email' ? 'email' : f.type === 'url' ? 'url' : 'text'} modelValue={value == null ? '' : String(value)} maxLength={f.max} accessibilityLabel={label} className={f.mono ? 'font-mono' : undefined} onInput={(e: Event) => onChange(valueOf(e))} />
+      // розклад — ще й словами, щоб було видно, що вийшло
+      if (f.view === 'cron') { const h = cronText(value); return <div className="grid gap-1">{input}{h && <p className="text-[12.5px] text-muted">{t('Тобто: {when}', { when: h })}</p>}</div> }
+      return input
+    }
   }
 }

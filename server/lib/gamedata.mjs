@@ -210,6 +210,13 @@ export async function createGameData(db, { dataDir, log = console } = {}) {
   }
   const setPrimary = (target, driver) => setMeta('primary:' + target, driver ?? '')
 
+  /** назви записів одного виду мовою: Map id → назва (лише ті, що перекладено) */
+  async function names(lang, kind, ids) {
+    if (!ids.length) return new Map()
+    const rows = await db.all(`SELECT id, name FROM game_texts WHERE lang = ? AND kind = ? AND id IN (${ids.map(() => '?').join(', ')})`, lang, kind, ...ids)
+    return new Map(rows.filter((r) => r.name).map((r) => [r.id, r.name]))
+  }
+
   /** тексти мовою: Map `${kind}:${id}` → {name, description} */
   async function texts(lang, kinds) {
     const rows = await db.all(`SELECT kind, id, name, description FROM game_texts WHERE lang = ? AND kind IN (${kinds.map(() => '?').join(', ')})`, lang, ...kinds)
@@ -286,7 +293,7 @@ export async function createGameData(db, { dataDir, log = console } = {}) {
     return { totals, rows }
   }
 
-  return { upsert, putTexts, importCatalog, importSkills, catalog, skills, description, coverage, count, invalidate, getMeta, setMeta, getPrimary, setPrimary, markReleased }
+  return { upsert, putTexts, importCatalog, importSkills, catalog, skills, description, names, coverage, count, invalidate, getMeta, setMeta, getPrimary, setPrimary, markReleased }
 }
 
 /**

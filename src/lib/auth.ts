@@ -52,6 +52,8 @@ export interface Guild {
   about: string
   color: string
   open: boolean
+  /** Великий дім гільдії в Ландсрааді (вказує лідер): від нього — чи діє на учасників указ тижня */
+  house?: 'atreides' | 'harkonnen' | null
   created: number
   members: number
 }

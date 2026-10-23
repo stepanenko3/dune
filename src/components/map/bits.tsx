@@ -1,6 +1,6 @@
 /** Дрібниці панелі мапи: іконка зі спрайта (TH.GL чи файлів гри), згортаний розділ, рядок типу, підтвердження дії. */
 import { useState, type ReactNode } from 'react'
-import { ChevronRight, Eye, EyeOff } from 'lucide-react'
+import { ChevronRight, Crosshair, Eye, EyeOff } from 'lucide-react'
 import { prefGet, prefSet } from '@/lib/prefs'
 import { cn, fmtN, plural } from '@/lib/utils'
 import { t } from '@/lib/i18n'
@@ -125,9 +125,12 @@ export function TypeRow({
   onToggle,
   ring,
   swatch,
+  onFind,
 }: {
   /** свій значок замість іконки зі спрайта (поля меланжу) */
   swatch?: ReactNode
+  /** «де найкраще»: підсвітити на мапі найкращі сектори / ділянки цього шару */
+  onFind?: () => void
   icon: [number, number, number, number] | null
   dims: [number, number] | null
   label: string
@@ -136,23 +139,38 @@ export function TypeRow({
   onToggle: () => void
   ring?: boolean
 }) {
-  return (
+  const row = (
     <button
       type="button"
       onClick={onToggle}
       aria-pressed={on}
       className={cn(
-        'flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left text-[12px] transition-colors hover:bg-panel2 [@media(pointer:coarse)]:min-h-10',
+        'flex w-full min-w-0 items-center gap-2 rounded-md px-1.5 py-1 text-left text-[12px] transition-colors hover:bg-panel2 [@media(pointer:coarse)]:min-h-10',
         on ? 'text-ink' : 'text-muted',
       )}
     >
       <span className={cn('flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] border', on ? 'border-spice bg-spice text-on-spice' : 'border-line')}>
         {on && <svg viewBox="0 0 10 10" className="h-2.5 w-2.5"><path d="M2 5.2 4.1 7.3 8 2.8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
       </span>
-      {swatch ? <span className={cn('flex h-[18px] w-[18px] shrink-0 items-center justify-center', on ? '' : 'opacity-60')}>{swatch}</span> : <SpriteIcon icon={icon} dims={dims} px={18} className={on ? '' : 'opacity-60'} />}
+      {swatch ? <span className={cn('flex h-[18px] min-w-[18px] shrink-0 items-center justify-center', on ? '' : 'opacity-60')}>{swatch}</span> : <SpriteIcon icon={icon} dims={dims} px={18} className={on ? '' : 'opacity-60'} />}
       <span className="min-w-0 flex-1 break-words">{label}</span>
       {ring && <span className="h-2 w-2 shrink-0 rounded-full bg-spice" data-tip={t('Підсвічено для вибраного ресурсу')} />}
       <span className="font-mono text-[10.5px] tabular-nums text-muted">{fmtN(count)}</span>
     </button>
+  )
+  if (!onFind) return row
+  return (
+    <div className="flex items-center">
+      {row}
+      <button
+        type="button"
+        onClick={onFind}
+        className={cn('grid h-6 w-6 shrink-0 place-items-center rounded text-muted hover:bg-panel2 hover:text-spice', TOUCH)}
+        data-tip={t('Де найкраще: підсвітити на мапі')}
+        aria-label={t('Де найкраще: підсвітити на мапі')}
+      >
+        <Crosshair size={13} />
+      </button>
+    </div>
   )
 }

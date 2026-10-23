@@ -6,15 +6,16 @@
  *   • 41 риса — картки на своїх рівнях; кожну купують окремо за меланж («Рис придбано 1 (41)», «Купити»), коли
  *     трек дорісь до її рівня. Бойові риси «Очки навичок» додають очки до дерева (усі разом — 54).
  * Тож у білді спеціалізація — рівень кожного треку й куплені риси (номери в треку, за рівнем).
- * Дані — з dune.gaming.tools (дані гри мовою сайту; тягне браузер, як і навички, lib/skillsUk) і кеш у
- * localStorage; описи треків — свої (t(), у даних їх немає). Іконки — з їхнього CDN.
+ * Дані гри мовою сайту тягне браузер (як і навички, lib/skillsUk) і кешує в localStorage; описи треків — свої (t(),
+ * у даних їх немає). Іконки — з нашої медіатеки (GT_IMG).
  */
 import { gtLang, locale, t } from './i18n'
 import { create } from 'zustand'
 import { unflatten } from './skillsUk'
 
 const GT = `https://cdn-hosted.gaming.tools/dune/data/${gtLang()}/specializations/`
-export const GT_IMG = 'https://cdn-hosted.gaming.tools/dune'
+/** іконки — через наш проксі з медіатеки (шлях з даних: /images/…): браузер на чужий CDN за картинками не ходить */
+export const GT_IMG = '/catalog-gt'
 const CACHE = `skills:spec:${gtLang()}:v2`
 const STALE = 3 * 24 * 3600 * 1000
 export const SPEC_MAX = 100

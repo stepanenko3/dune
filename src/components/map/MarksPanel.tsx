@@ -6,7 +6,7 @@
  * далі «Публічні»).
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { ChevronLeft, ChevronRight, Gem, MapPinned, Plus, RefreshCw, SearchX, Users, X } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Gem, MapPinned, Plus, RefreshCw, SearchX, Users, X } from 'lucide-react'
 import { get } from '@/lib/api'
 import { loginHref, useAuth } from '@/lib/auth'
 import { markerKind, useMarkers, type Marker } from '@/lib/markers'
@@ -22,6 +22,7 @@ import { locale, t } from '@/lib/i18n'
 import type { Item } from '@/lib/items'
 import { checkedOf, SnCheckbox, SnInput, SnSwitch, valueOf } from '@/components/sn'
 import { Button } from '@/components/ui/button'
+import { Menu } from '@/components/ui/menu'
 import { Toggle } from '@/components/ui/toggle'
 import { Seg } from '@/components/ui/seg'
 import { Empty, ErrorAlert, Loading } from '@/components/states'
@@ -159,11 +160,11 @@ export function MarksPanel({
   }, [pSel]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const addMarker = () => {
-    if (!user) { location.assign(loginHref()); return }
+    if (!user) return
     useMarkers.getState().setPicking(!mPicking)
   }
   const addPlace = () => {
-    if (!user) { location.assign(loginHref()); return }
+    if (!user) return
     useMarkers.getState().setPicking(false)
     useMapUi.getState().edit(newDraft(def.id))
   }
@@ -174,6 +175,7 @@ export function MarksPanel({
       <div className="grid gap-2 border-b border-line p-2.5">
         <Seg<Scope>
           label={t('Чиї позначки')}
+          size="sm"
           value={scope}
           onChange={(v) => { chose.current = true; setScope(v) }}
           href={scopeHref}
@@ -194,12 +196,21 @@ export function MarksPanel({
             placeholder={scope === 'public' ? t('Назва чи автор…') : t('Фільтр списку')}
             accessibilityLabel={t('Пошук позначок')}
           />
-          <Button size="xs" variant={mPicking ? 'default' : 'secondary'} aria-pressed={mPicking} onClick={addMarker} data-tip={mPicking ? t('Клацни на мапі, де її поставити (Esc — скасувати)') : t('Нова позначка: база, збір, небезпека…')}>
-            <Plus size={12} /> {t('Позначка')}
-          </Button>
-          <Button size="xs" variant="secondary" onClick={addPlace} data-tip={t('Новий запис: ресурс і де його брати')}>
-            <Plus size={12} /> {t('Ресурс')}
-          </Button>
+          {/* ставити своє — після входу; гостю кнопки не показуємо (на «Моїх» йому пояснено, що треба увійти). Одна «+»
+              з меню: фільтр лишається широким */}
+          {user && (
+            <Menu
+              trigger={
+                <Button size="sm" variant={mPicking ? 'default' : 'secondary'} aria-label={t('Додати')} aria-pressed={mPicking} data-tip={mPicking ? t('Клацни на мапі, де поставити позначку (Esc — скасувати)') : t('Додати позначку чи ресурс')}>
+                  <Plus size={15} /><ChevronDown size={13} className="opacity-70" />
+                </Button>
+              }
+              items={[
+                { label: mPicking ? t('Скасувати нову позначку') : t('Позначка'), icon: <MapPinned size={14} />, hint: mPicking ? undefined : t('база, збір, небезпека'), onSelect: addMarker },
+                { label: t('Ресурс'), icon: <Gem size={14} />, hint: t('що й де брати'), onSelect: addPlace },
+              ]}
+            />
+          )}
         </div>
         <Seg<TypeF>
           label={t('Що в списку')}

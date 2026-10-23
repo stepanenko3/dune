@@ -1229,6 +1229,8 @@
     // Від першої особи: WASD — уперед, назад, убік (по землі, куди дивиться камера), Q/E — нижче, вище, Shift — утричі
     // швидше (фізичні клавіші — працює й на кирилиці); навколо центру клавіші камеру не рухають. В обох: пробіл + тягни — зсув; коліщатко миші — до точки під курсором;
     // трекпад: два пальці — зсув, щипок — масштаб; подвійний клік — камера туди (не під час будування).
+    // Навколо центру (у будівельнику це режим за замовчуванням) центр стоїть на місці: лише обертання й ближче/далі
+    // до нього — без зсуву, кроку до курсора чи перельоту (користувач: «не можна переміщувати точку центру»).
     // Лише в будівельнику (opts.freeLook): звичайний перегляд бази — тільки обертання навколо центру, як було.
     // var, а не let: setView (вище) читає його ще до цього рядка, на старті сцени
     var navFly = false; // eslint-disable-line no-var
@@ -1295,7 +1297,7 @@
     }
     /** масштаб до точки під курсором: k < 1 — ближче */
     function zoomAt(cx, cy, k) {
-      const P = pointUnder(cx, cy);
+      const P = nav.mode === 'fly' ? pointUnder(cx, cy) : controls.target;
       if (!P) return;
       if (nav.mode === 'fly') {
         // від першої особи — крок уперед чи назад у бік курсора, не ближче за пів блоку до поверхні
@@ -1307,17 +1309,17 @@
         if (step > 0) step = Math.min(step, Math.max(0, len - 0.5));
         shiftBy(dir.multiplyScalar(step));
       } else {
+        // навколо центру — ближче чи далі до самого центру, він не зсувається
         const dist = camera.position.distanceTo(controls.target);
         const nd = Math.min(controls.maxDistance, Math.max(controls.minDistance, dist * k));
-        const s = nd / (dist || 1);
-        camera.position.sub(P).multiplyScalar(s).add(P);
-        controls.target.sub(P).multiplyScalar(s).add(P);
+        camera.position.sub(controls.target).multiplyScalar(nd / (dist || 1)).add(controls.target);
       }
       controls.update();
       invalidate();
     }
     /** зсув у площині землі на dx, dy пікселів (трекпад) */
     function panPixels(dx, dy) {
+      if (nav.mode !== 'fly') return; // навколо центру центр не зсувається
       const dist = Math.max(2, camera.position.distanceTo(nav.mode === 'fly' ? (pointUnder(state.w / 2 + renderer.domElement.getBoundingClientRect().left, state.h / 2 + renderer.domElement.getBoundingClientRect().top) || controls.target) : controls.target));
       const px = (2 * Math.tan((camera.fov * Math.PI) / 360) * dist) / Math.max(1, state.h);
       const { fwd, right } = groundAxes();
@@ -1327,8 +1329,11 @@
     /** кнопки миші: режим власника (build/view) і пробіл (ліва — зсув) */
     function applyButtons() {
       const MO = THREE.MOUSE;
-      const b = nav.mouse === 'build' ? { LEFT: -1, MIDDLE: MO.PAN, RIGHT: MO.ROTATE } : { LEFT: MO.ROTATE, MIDDLE: nav.mode === 'fly' ? MO.PAN : MO.DOLLY, RIGHT: MO.PAN };
-      if (nav.space) b.LEFT = MO.PAN;
+      const fly = nav.mode === 'fly';
+      const b = nav.mouse === 'build' ? { LEFT: -1, MIDDLE: fly ? MO.PAN : MO.DOLLY, RIGHT: MO.ROTATE } : { LEFT: MO.ROTATE, MIDDLE: fly ? MO.PAN : MO.DOLLY, RIGHT: MO.PAN };
+      if (nav.space && fly) b.LEFT = MO.PAN;
+      // навколо центру (будівельник) — без зсуву: центр стоїть на місці
+      controls.enablePan = !NAV_ON || fly;
       controls.mouseButtons = b;
       renderer.domElement.style.cursor = nav.space ? 'grab' : '';
     }
@@ -1393,7 +1398,7 @@
       if (!state.running || e.metaKey || e.ctrlKey || e.altKey || typingIn(e)) return;
       nav.fast = e.shiftKey;
       if (e.code === 'Space') {
-        if (!nav.hover && !nav.space) return;
+        if ((!nav.hover && !nav.space) || nav.mode !== 'fly') return;
         e.preventDefault();
         if (!nav.space) { nav.space = true; applyButtons(); }
         return;
@@ -1409,6 +1414,7 @@
       nav.keys.delete(e.code);
     };
     const onBlur = () => { nav.keys.clear(); if (nav.space) { nav.space = false; applyButtons(); } };
+    if (NAV_ON) applyButtons(); // старт — навколо центру, без зсуву
     if (NAV_ON && root.addEventListener) {
       root.addEventListener('keydown', onKeyDown);
       root.addEventListener('keyup', onKeyUp);
@@ -1416,7 +1422,7 @@
     }
     // подвійний клік — плавно туди (будування — ні: там клік ставить деталь)
     cvs.addEventListener('dblclick', (e) => {
-      if (!NAV_ON || nav.mouse === 'build' || !state.running) return;
+      if (!NAV_ON || nav.mouse === 'build' || nav.mode !== 'fly' || !state.running) return;
       const P = pointUnder(e.clientX, e.clientY);
       if (!P) return;
       const p0 = camera.position.clone(), c0 = controls.target.clone();

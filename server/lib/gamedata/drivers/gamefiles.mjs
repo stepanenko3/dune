@@ -57,6 +57,9 @@ export function createGamefilesDriver({ dir }) {
       if (!s) throw new Error(`у пакеті нема розділу ${section}`)
       if (s.error) throw new Error(s.error)
       const data = JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(c.root, s.file))).toString('utf8'))
+      // розділ з файлами (ресурси ГП: перелік розкладок, файл на розкладку) — читач файлу, неперелічуваний (поза хешем)
+      const layouts = section === 'ddResources' ? data?.blob?.layouts : null
+      if (layouts) Object.defineProperty(data, 'files', { enumerable: false, value: (k) => fs.readFileSync(path.join(c.root, layouts[k]?.file ?? '')) })
       return { data, version: c.build }
     },
   }

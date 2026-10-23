@@ -1,5 +1,5 @@
 // Експортер файлів сервера Dune: Awakening (CUE4Parse): таблиці → JSON, .locres → JSON, станції крафту, список пакетів, рівні мапи.
-// gdx-export tables <пакет>… | locres | stations <пакет CDT_PlaceableData> | files | levels <рівень>…
+// gdx-export tables <пакет>… | locres | stations <пакет CDT_PlaceableData> | files | levels <рівень>… | bytes <пакет>…
 // Паки — GDX_PAKS (/paks), usmap — GDX_USMAP (/map.usmap), вихід — GDX_OUT (/out).
 using CUE4Parse.FileProvider;
 using CUE4Parse.MappingsProvider.Usmap;
@@ -59,6 +59,19 @@ switch (args[0])
         foreach (var pkg in args.Skip(1))
             try { Write(Path.Combine("tables", Path.GetFileName(pkg) + ".json"), Json(provider.LoadPackage(pkg).GetExports())); }
             catch (Exception e) { Write(Path.Combine("tables", Path.GetFileName(pkg) + ".error"), e.Message); }
+        break;
+
+    case "bytes":
+        // сирі байти пакета (.uasset разом із даними поза властивостями — напр. біти BitMapData: зони луту, теги
+        // подій), bytes/<ім'я>.bin; зламаний — .error
+        foreach (var pkg in args.Skip(1))
+            try
+            {
+                var f = Path.Combine(outDir, "bytes", Path.GetFileName(pkg) + ".bin");
+                Directory.CreateDirectory(Path.GetDirectoryName(f)!);
+                File.WriteAllBytes(f, provider.SaveAsset(pkg + ".uasset"));
+            }
+            catch (Exception e) { Write(Path.Combine("bytes", Path.GetFileName(pkg) + ".error"), e.Message); }
         break;
 
     case "files":

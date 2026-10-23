@@ -5,8 +5,8 @@
  * Сам білд — код планувальника (той самий, що в адресі ?b=…) і знімок «вузол: ранг» (lib/skills.snap): за ним білд
  * відкривається тим самим і після оновлення гри. Опис (школи й очки) — українською, показуємо мовою сайту (aboutText).
  */
-import { useState, type FormEvent } from 'react'
-import { Copy, Eraser, LogIn, Save, Trash2, Undo2 } from 'lucide-react'
+import { useState, useSyncExternalStore, type FormEvent } from 'react'
+import { Copy, Eraser, LogIn, MoreHorizontal, Save, Trash2, Undo2 } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 import { post, put } from '@/lib/api'
@@ -30,6 +30,10 @@ export interface SavedBuild { id: string; name: string; code: string; notes: str
 /** на вхід — без перезавантаження сторінки, і назад сюди ж */
 const toLogin = () => useStore.getState().setView('login', { search: `?next=${encodeURIComponent(location.pathname + location.search)}` })
 
+/** вузький екран (до sm): «Дії» — значком */
+const narrow = typeof matchMedia === 'function' ? matchMedia('(max-width: 639.98px)') : null
+const usePhone = () => useSyncExternalStore((f) => { narrow?.addEventListener('change', f); return () => narrow?.removeEventListener('change', f) }, () => !!narrow?.matches)
+
 /**
  * Дії планувальника одним меню (місце у верхньому рядку — для шкіл і очок): копіювати посилання, зберегти,
  * мої білди, бібліотека білдів, скинути. Вікна — поза темним блоком дерева (portal), щоб мали звичайні кольори.
@@ -44,6 +48,7 @@ export function BuildsBar({ code, about, snap, open, onOpen, onCopy, onReset, on
   onDelete?: (() => void) | null
 }) {
   const user = useAuth((s) => s.user)
+  const phone = usePhone()
   const [saving, setSaving] = useState(false)
   const need = () => { if (!user) { toLogin(); return false } return true }
   // відкрито чужий чи збережений — одна дія «назад до свого»; свій — «Очистити» (їх ніколи не видно разом)
@@ -53,7 +58,8 @@ export function BuildsBar({ code, about, snap, open, onOpen, onCopy, onReset, on
   return (
     <>
       <Menu
-        trigger={<ActionsTrigger />}
+        // на телефоні — лише значок «…» (місце в одному рядку з назвою школи й очками), з sm — «Дії» словом
+        trigger={phone ? <Button variant="secondary" size="icon" aria-label={t('Дії')}><MoreHorizontal size={15} /></Button> : <ActionsTrigger />}
         items={!user ? [
           // гість: білд — у цьому браузері й в адресі (поділитися — посиланням); в акаунт — після входу
           { label: t('Копіювати посилання'), icon: <Copy size={14} />, onSelect: onCopy },

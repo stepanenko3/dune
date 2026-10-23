@@ -2,12 +2,16 @@
 import type { ReactNode } from 'react'
 import { SnCard, SnCardContent, SnCardDescription, SnCardHeader, SnCardTitle, SnCardAction } from '@/components/sn'
 
-export function PageHeader({ title, about, actions }: { title: ReactNode; about?: string; actions?: ReactNode }) {
+/** count — скільки записів (сірим дрібним біля заголовка): число чи «12 з 340» */
+export function PageHeader({ title, about, actions, count }: { title: ReactNode; about?: string; actions?: ReactNode; count?: ReactNode }) {
   return (
     <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
       {/* опис не стискається в стовпчик біля кнопок: вужче за 20rem — кнопки переходять у рядок нижче */}
       <div className="min-w-[min(100%,20rem)] max-w-full flex-1">
-        <h1 className="line-clamp-2 break-words font-display text-[clamp(19px,2.4vw,26px)] font-bold leading-tight [overflow-wrap:anywhere]" title={typeof title === 'string' ? title : undefined}>{title}</h1>
+        <h1 className="break-words font-display text-[clamp(19px,2.4vw,26px)] font-bold leading-tight [overflow-wrap:anywhere]" title={typeof title === 'string' ? title : undefined}>
+          {title}
+          {count != null && count !== '' && <span className="ml-2 align-baseline font-sans text-[13.5px] font-normal tabular-nums text-muted">{count}</span>}
+        </h1>
         {about && <p className="mt-1 max-w-[80ch] text-[13.5px] leading-snug text-muted">{about}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}

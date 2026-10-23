@@ -52,6 +52,21 @@ describe('пакет', () => {
     expect(manifest().sections.buildables).toEqual({ error: 'нема таблиці' })
   })
 
+  it('розділ з файлами (ресурси ГП): кожен файл розкладки — поруч, у переліку — шлях файлу; хеш розділу — з переліку', async () => {
+    const gz = zlib.gzipSync(JSON.stringify({ types: { TitaniumOre: { kind: 'core', pts: [1, 2, 3, 40] } } }))
+    await writeBundle({ work, ...meta, sections: { ...good(), ddResources: { blob: { layouts: { 11: { count: 1, hash: 'h11' } } }, files: { 11: gz } } } })
+    const m = manifest()
+    const idx = JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(work, 'bundles', '7', m.sections.ddResources.file))))
+    expect(idx).toEqual({ blob: { layouts: { 11: { count: 1, hash: 'h11', file: 'sections/ddResources-11.json.gz' } } } })
+    expect(m.sections.ddResources.hash).toBe(sectionHash(idx))
+    expect(JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(work, 'bundles', '7', 'sections', 'ddResources-11.json.gz')))).types.TitaniumOre.pts).toEqual([1, 2, 3, 40])
+  })
+
+  it('ресурси ГП без жодної розкладки — розділ з помилкою', async () => {
+    await writeBundle({ work, ...meta, sections: { ...good(), ddResources: { blob: { layouts: {} }, files: {} } } })
+    expect(manifest().sections.ddResources.error).toContain('розклад')
+  })
+
   it('усі розділи зламані — пакета нема', async () => {
     const bad = Object.fromEntries(Object.keys(good()).map((k) => [k, new Error('x')]))
     await expect(writeBundle({ work, ...meta, sections: bad })).rejects.toThrow('пакет не складено')

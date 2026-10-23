@@ -79,8 +79,11 @@ for (const [engine, pgCfg] of ENGINES) {
       const g = gated()
       await cron.register('slow', { name: 'Довга', schedule: '0 4 * * 3', run: g.run })
       const t0 = Date.now()
-      assert.deepEqual(await cron.start('slow'), { started: true })
+      const st = await cron.start('slow')
+      assert.equal(st.started, true)
+      assert.ok(Number.isInteger(st.id))
       assert.ok(Date.now() - t0 < 1000)
+      assert.deepEqual(cron.live(), { slow: st.id })
       assert.deepEqual(cron.running(), ['slow'])
       await until(async () => (await runsOf('slow')).length === 1)
       assert.equal((await runsOf('slow'))[0].status, 'running')
@@ -141,6 +144,42 @@ for (const [engine, pgCfg] of ENGINES) {
       assert.deepEqual(cron2.running(), [])
       g.open()
       await until(() => !cron.running().length)
+    })
+
+    it('журнал наживо: watch дає те, що вже є, нові рядки й кінець; після кінця — null', async () => {
+      const g = gated('кінець')
+      await cron.register('w', { name: 'Наживо', schedule: '0 4 * * 3', run: g.run })
+      const { id } = await cron.start('w')
+      const got = []
+      const w = cron.watch(id, (m) => got.push(m))
+      assert.equal(w.key, 'w')
+      assert.match(w.lines.join('\n'), /почали/)
+      g.open()
+      await until(() => got.some((m) => m.done))
+      assert.ok(got.some((m) => /кінець/.test(m.line || '')))
+      assert.equal(got.at(-1).status, 'ok')
+      assert.equal(cron.watch(id, () => {}), null)
+    })
+
+    it('capture: log.info/warn із самої задачі — у журнал запуску, з інших місць — ні', async () => {
+      const seen = []
+      const logger = { info: (m) => seen.push(m), warn: (m) => seen.push(m), error() {} }
+      const c = await createCron(db, { log: logger, capture: true })
+      await c.register('cap', { name: 'Із журналом', schedule: '0 4 * * 3', run: async (say) => {
+        say('сама задача')
+        await new Promise((r) => setTimeout(r, 5))
+        logger.info('[thumbs] з модуля')
+        logger.warn('щось не так')
+      } })
+      logger.info('поза задачею')
+      assert.equal((await c.run('cap')).status, 'ok')
+      const [r] = await runsOf('cap')
+      assert.match(r.log, /сама задача/)
+      assert.match(r.log, /\[thumbs\] з модуля/)
+      assert.match(r.log, /⚠ щось не так/)
+      assert.doesNotMatch(r.log, /поза задачею/)
+      // і в звичайний журнал сервера теж
+      assert.ok(seen.includes('[thumbs] з модуля') && seen.includes('поза задачею'))
     })
 
     it('setSchedule: 31 лютого — помилка й розклад не змінено; «*/5 * * * *» — так', async () => {

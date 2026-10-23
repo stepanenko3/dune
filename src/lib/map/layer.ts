@@ -26,12 +26,10 @@ export interface Batch {
   icon: [number, number, number, number] | null
   color: string
   size: number
-  /** ключі «x,y» зібраних точок: малюються блідими з галочкою */
-  done?: Set<string>
-  /** зібрані вузли, що відновлюються: ключ → частка відновлення 0…1 (дуга замість галочки) */
-  respawn?: Map<string, number>
-  /** малювати лише ці індекси (фільтр «Наших ресурсів») */
+  /** малювати лише ці індекси (фільтр «Наших ресурсів», «лише ймовірні місця руди») */
   only?: Set<number>
+  /** непрозорість кожної точки (0…1): малоймовірна руда — блідіша */
+  alpha?: number[]
 }
 
 export interface Mark {
@@ -71,6 +69,8 @@ interface Cluster {
   x: number
   y: number
   n: number
+  /** непрозорість групи — найімовірнішої з її точок */
+  a?: number
   i: number
   x0: number
   y0: number
@@ -107,13 +107,17 @@ const initial = (word: string) => (Array.from(word.trim())[0] ?? '').toUpperCase
 const spice = (r: number, color: string, name: string, label: string) => ({ r, color, name, label, letter: initial(name) })
 
 /**
- * Поля меланжу: у TH.GL три майже однакові іконки — малюємо свої, розмір і колір за величиною поля.
- * name — величина одним словом (підказка), label — рядок у панелі, letter — знак на кружечку.
+ * Поля меланжу: іконка з гри (у гри вона одна на всі три), а величину видно з розміру й кольорової обводки-ромба:
+ * мале — жовта, середнє — помаранчева, велике — червона. Без спрайта — кружечок того самого кольору з літерою.
+ * r — половина іконки; name — величина одним словом (підказка), label — рядок у панелі, letter — знак на кружечку.
  */
+const SMALL = spice(8, '#f2c14e', t('мале'), t('Мале поле'))
+const MEDIUM = spice(10.5, '#ee8a2c', t('середнє'), t('Середнє поле'))
+const LARGE = spice(13.5, '#d9481f', t('велике'), t('Велике поле'))
+/** id типів — TH.GL (spice_field_*) і файлів гри (SpiceField*) */
 export const SPICE: Record<string, { r: number; color: string; letter: string; name: string; label: string }> = {
-  spice_field_small: spice(6, '#f2c14e', t('мале'), t('Мале поле')),
-  spice_field_medium: spice(8.5, '#ee8a2c', t('середнє'), t('Середнє поле')),
-  spice_field_large: spice(11.5, '#d9481f', t('велике'), t('Велике поле')),
+  spice_field_small: SMALL, spice_field_medium: MEDIUM, spice_field_large: LARGE,
+  SpiceFieldSmall: SMALL, SpiceFieldMedium: MEDIUM, SpiceFieldLarge: LARGE,
 }
 
 export class PointsLayer extends L.Layer {
@@ -275,7 +279,7 @@ export class PointsLayer extends L.Layer {
         for (let i = 0; i < n; i++) {
           if (!want(i)) continue
           const cx = kx * b.pts[i * 3 + 1] + ox, cy = ky * b.pts[i * 3] + oy
-          if (inView(cx, cy)) drawSpice(ctx, cx, cy, r, sp.color, r >= 8 ? sp.letter : '')
+          if (inView(cx, cy)) drawSpice(ctx, cx, cy, r, sp.color, sp.letter, this.sprite && b.icon ? { img: this.sprite, rect: b.icon } : null)
         }
         continue
       }
@@ -289,16 +293,10 @@ export class PointsLayer extends L.Layer {
         const x = b.pts[i * 3], y = b.pts[i * 3 + 1]
         const cx = kx * y + ox, cy = ky * x + oy
         if (!inView(cx, cy)) continue
-        const done = b.done?.has(x + ',' + y)
-        if (done) ctx.globalAlpha = 0.35
+        if (b.alpha) ctx.globalAlpha = b.alpha[i] ?? 1
         ctx.drawImage(sprite, sx, sy, sw, sh, cx - ipx / 2, cy - ipx / 2, ipx, ipx)
-        if (done) {
-          ctx.globalAlpha = 1
-          const p = b.respawn?.get(x + ',' + y)
-          if (p != null) drawRespawn(ctx, cx, cy, ipx / 2 + 2, p)
-          else drawCheck(ctx, cx + ipx / 2 - 3, cy + ipx / 2 - 3)
-        }
       }
+      ctx.globalAlpha = 1
     }
 
     // наш шар: лут, точки записів, вибрана — поверх усього
@@ -391,7 +389,7 @@ export class PointsLayer extends L.Layer {
       if (used[i] || (b.only && !b.only.has(i))) continue
       const x = b.pts[i * 3], y = b.pts[i * 3 + 1]
       const gx = Math.floor(x / r), gy = Math.floor(y / r)
-      let sx = 0, sy = 0, cnt = 0, x0 = x, x1 = x, y0 = y, y1 = y
+      let sx = 0, sy = 0, cnt = 0, x0 = x, x1 = x, y0 = y, y1 = y, a = 0
       for (let dx = -1; dx <= 1; dx++) {
         for (let dy = -1; dy <= 1; dy++) {
           for (const j of cells.get(gx + dx + ':' + (gy + dy)) ?? []) {
@@ -400,12 +398,13 @@ export class PointsLayer extends L.Layer {
             if ((jx - x) ** 2 + (jy - y) ** 2 > r2) continue
             used[j] = 1
             sx += jx; sy += jy; cnt++
+            if (b.alpha) a = Math.max(a, b.alpha[j] ?? 1)
             if (jx < x0) x0 = jx; if (jx > x1) x1 = jx
             if (jy < y0) y0 = jy; if (jy > y1) y1 = jy
           }
         }
       }
-      out.push({ x: sx / cnt, y: sy / cnt, n: cnt, i, x0, y0, x1, y1 })
+      out.push({ x: sx / cnt, y: sy / cnt, n: cnt, i, x0, y0, x1, y1, ...(b.alpha ? { a } : {}) })
     }
     per.set(bucket, out)
     return out
@@ -444,19 +443,12 @@ export class PointsLayer extends L.Layer {
       const cx = kx * c.y + ox, cy = ky * c.x + oy
       if (!inView(cx, cy)) continue
       this.drawn.push({ type: b.type, c, sx: cx - px, sy: cy - py, r: r + (c.n > 1 ? 6 : 2) })
-      if (sp) drawSpice(ctx, cx, cy, r, sp.color, r >= 8 ? sp.letter : '')
+      if (sp) drawSpice(ctx, cx, cy, r, sp.color, sp.letter, this.sprite && b.icon ? { img: this.sprite, rect: b.icon } : null)
       else {
         const [sx, sy, sw, sh] = b.icon!
-        const key = b.pts[c.i * 3] + ',' + b.pts[c.i * 3 + 1]
-        const done = c.n === 1 && b.done?.has(key)
-        if (done) ctx.globalAlpha = 0.35
+        if (c.a != null) ctx.globalAlpha = c.a
         ctx.drawImage(this.sprite!, sx, sy, sw, sh, cx - ipx / 2, cy - ipx / 2, ipx, ipx)
-        if (done) {
-          ctx.globalAlpha = 1
-          const p = b.respawn?.get(key)
-          if (p != null) drawRespawn(ctx, cx, cy, ipx / 2 + 2, p)
-          else drawCheck(ctx, cx + ipx / 2 - 3, cy + ipx / 2 - 3)
-        }
+        ctx.globalAlpha = 1
       }
       if (c.n > 1) drawBadge(ctx, cx + r - 2, cy + r - 4, fmtCount(c.n))
     }
@@ -589,8 +581,29 @@ export function sectorOf(g: Grid, x: number, y: number) {
   return String.fromCharCode(65 + r) + (c + 1)
 }
 
-export function drawSpice(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, color: string, letter: string) {
+export function drawSpice(
+  ctx: CanvasRenderingContext2D, x: number, y: number, r: number, color: string, letter: string,
+  icon: { img: HTMLImageElement; rect: [number, number, number, number] } | null = null,
+) {
   ctx.save()
+  if (icon) {
+    // ромб-обводка кольору величини (іконка гри — теж ромб), під нею тінь, зверху сама іконка
+    const d = r + 3.5
+    const rhomb = (k: number, dy = 0) => { ctx.beginPath(); ctx.moveTo(x, y - k + dy); ctx.lineTo(x + k, y + dy); ctx.lineTo(x, y + k + dy); ctx.lineTo(x - k, y + dy); ctx.closePath() }
+    rhomb(d + 1, 1.5)
+    ctx.fillStyle = 'rgba(0,0,0,.4)'
+    ctx.fill()
+    rhomb(d)
+    ctx.fillStyle = color
+    ctx.fill()
+    ctx.lineWidth = 1.2
+    ctx.strokeStyle = 'rgba(30,14,4,.9)'
+    ctx.stroke()
+    const [sx, sy, sw, sh] = icon.rect
+    ctx.drawImage(icon.img, sx, sy, sw, sh, x - r, y - r, r * 2, r * 2)
+    ctx.restore()
+    return
+  }
   ctx.beginPath()
   ctx.arc(x, y + 1, r + 0.5, 0, Math.PI * 2)
   ctx.fillStyle = 'rgba(0,0,0,.3)'
@@ -607,7 +620,7 @@ export function drawSpice(ctx: CanvasRenderingContext2D, x: number, y: number, r
   ctx.lineWidth = 1
   ctx.strokeStyle = 'rgba(255,255,255,.7)'
   ctx.stroke()
-  if (letter) {
+  if (letter && r >= 8) {
     ctx.font = `700 ${Math.round(r * 1.05)}px "Golos Text", system-ui, sans-serif`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
@@ -656,40 +669,6 @@ function drawBadge(ctx: CanvasRenderingContext2D, x: number, y: number, text: st
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.fillText(text, x, y + 0.5)
-  ctx.restore()
-}
-
-/** вузол відновлюється: темне кільце і бурштинова дуга за годинниковою стрілкою — скільки вже минуло */
-function drawRespawn(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, p: number) {
-  ctx.save()
-  ctx.lineCap = 'round'
-  ctx.beginPath()
-  ctx.arc(x, y, r, 0, Math.PI * 2)
-  ctx.lineWidth = 4
-  ctx.strokeStyle = 'rgba(0,0,0,.55)'
-  ctx.stroke()
-  ctx.beginPath()
-  ctx.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, Math.max(0.02, p)))
-  ctx.lineWidth = 2.5
-  ctx.strokeStyle = '#f0a54a'
-  ctx.stroke()
-  ctx.restore()
-}
-
-function drawCheck(ctx: CanvasRenderingContext2D, x: number, y: number) {
-  ctx.save()
-  ctx.lineCap = 'round'
-  ctx.lineJoin = 'round'
-  ctx.beginPath()
-  ctx.moveTo(x - 4, y)
-  ctx.lineTo(x - 1, y + 3)
-  ctx.lineTo(x + 5, y - 4)
-  ctx.lineWidth = 4
-  ctx.strokeStyle = 'rgba(0,0,0,.75)'
-  ctx.stroke()
-  ctx.lineWidth = 2
-  ctx.strokeStyle = '#6ee27a'
-  ctx.stroke()
   ctx.restore()
 }
 

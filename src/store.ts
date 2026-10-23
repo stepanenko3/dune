@@ -16,11 +16,11 @@ import { create } from 'zustand'
 
 export type View =
   | 'home' | 'bases' | 'roadmap' | 'map' | 'catalog' | 'calculator' | 'skills' | 'builds' | 'calcs'
-  | 'library' | 'login' | 'account' | 'user' | 'guilds' | 'guild' | 'invite' | 'admin' | 'data' | 'events' | 'notfound'
+  | 'library' | 'login' | 'account' | 'user' | 'guilds' | 'guild' | 'invite' | 'admin' | 'data' | 'events' | 'world' | 'notfound'
 
 /** вкладки списків (сегмент після розділу); «мої» — без сегмента */
 export const SCOPES = ['mine', 'guild', 'public'] as const
-export const GUILD_TABS = ['home', 'members', 'items', 'events', 'requests', 'invites', 'settings'] as const
+export const GUILD_TABS = ['home', 'members', 'items', 'events', 'requests', 'invites', 'settings', 'apply'] as const
 /** вкладки подій (сегмент після /events); «найближчі» — без сегмента */
 export const EVENT_TABS = ['mine', 'guild', 'past'] as const
 
@@ -45,6 +45,8 @@ export function pathOf(v: View, base?: string | null, edit?: boolean, param?: st
     case 'invite': return `/invite/${p}`
     // подія — param (id чи «new»), редагування — sub «edit»; список — вкладка сегментом
     case 'events': return p ? `/events/${p}${sub === 'edit' && param !== 'new' ? '/edit' : ''}` : `/events${sub && (EVENT_TABS as readonly string[]).includes(sub) ? `/${sub}` : ''}`
+    // карта світу: вибране місце — сегментом (id мапи гри), як вкладка тієї самої сторінки
+    case 'world': return sub ? `/world/${encodeURIComponent(sub)}` : '/world'
     // у панелі param — увесь шлях після /admin/ («users», «users/u12…», «game-items/new»), уже закодований
     case 'admin': return param ? `/admin/${param}` : '/admin'
     // невідома адреса лишається такою, як її ввели (сторінка каже «не знайдено»)
@@ -78,6 +80,8 @@ export function fromLocation(): Loc {
   if (seg === 'map' || seg === 'catalog' || seg === 'calculator') return at(seg)
   // «Оновлення даних»: звідки дані гри і що в них змінилось
   if (seg === 'data') return at('data')
+  // давня адреса карти світу: /world/<місце> — App переводить на /map?m=overmap&loc=<місце>
+  if (seg === 'world') return at('world', null, word)
   if (seg === 'login' || seg === 'register' || seg === 'reset') return at('login', seg === 'login' ? null : seg)
   if (seg === 'me' || seg === 'account') return at('account')
   if (seg === 'u' && word) return act === 'settings' ? at('account', word) : at('user', word)

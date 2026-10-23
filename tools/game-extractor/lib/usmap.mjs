@@ -30,7 +30,11 @@ export async function waitFor(check, { timeoutMs, intervalMs = 2000 }) {
   }
 }
 
-export async function makeUsmap({ work, build, image, serverTar, docker = dockerDefault, timeoutMs = 180_000, intervalMs = 2000, log = () => {} }) {
+/**
+ * startMs — скільки після docker run процес сервера може ще не з'явитися (під емуляцією amd64 su й запуск — секунди):
+ * «упав» — лише якщо процес був і зник або так і не з'явився за цей час
+ */
+export async function makeUsmap({ work, build, image, serverTar, docker = dockerDefault, timeoutMs = 180_000, intervalMs = 2000, startMs = 60_000, log = () => {} }) {
   const dir = path.join(work, 'mappings')
   const out = path.join(dir, `DuneSandbox-${build}.usmap`)
   if (fs.existsSync(out)) return out
@@ -46,12 +50,14 @@ export async function makeUsmap({ work, build, image, serverTar, docker = docker
   try {
     await docker(['run', '-d', '--name', name, '--platform', 'linux/amd64', '--network', 'none', '--cap-add', 'SYS_PTRACE',
       '--entrypoint', 'bash', '-w', '/home/dune/server', image, '-c', SERVER_CMD])
-    let dead = false
+    let dead = false, seen = false
+    const started = Date.now()
     const ready = await waitFor(async () => {
       if (await docker(['exec', name, 'grep', '-q', 'Game Engine Initialized', '/tmp/s.log']).then(() => true, () => false)) return true
-      // процес уже завершився (впав без бази, не запустився) — не чекати даремно до кінця таймауту
-      dead = !(await docker(['exec', name, 'pgrep', '-x', 'DuneSandboxServ']).then(() => true, () => false))
-      if (dead) throw new Error('dead')
+      // процес уже завершився (впав без бази, не запустився) — не чекати даремно до кінця таймауту; ще не з'явився — чекаємо
+      const alive = await docker(['exec', name, 'pgrep', '-x', 'DuneSandboxServ']).then(() => true, () => false)
+      if (alive) seen = true
+      else if (seen || Date.now() - started > startMs) { dead = true; throw new Error('dead') }
       return false
     }, { timeoutMs, intervalMs }).catch((e) => { if (e.message === 'dead') return false; throw e })
     if (!ready) {

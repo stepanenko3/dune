@@ -28,3 +28,20 @@ export function normalizeDdLayouts(iniText) {
     },
   }
 }
+
+/**
+ * налаштування номерних розкладок ГП зі списку WorldLayoutSubsystem: пакет вмісту (WorldLayoutDataAsset) і пакет групи
+ * карт тепла ресурсів (HeatMapSettings.ResourceDistributionGroup) — так гра зв'язує розкладку з її картами
+ */
+export function ddLayoutSettings(iniText) {
+  const list = parseIni(iniText)[S + 'WorldLayoutSubsystem']?.m_WorldLayoutsPerWorld?.at(-1) ?? ''
+  const pkg = (p) => 'DuneSandbox/Content' + p.replace(/^\/Game/, '').replace(/\.[^/.]+$/, '')
+  const out = []
+  for (const m of list.matchAll(/\(Content="([^"]*\/DA_DeepDesert_1_Layout_(\d+)\.[^"]*)",HeatMapSettings=\(([^()]*)\)/g)) {
+    const g = /ResourceDistributionGroup="([^"]+)"/.exec(m[3])?.[1]
+    // теги зон розкладки (зони луту, тири) — набір бітових карт
+    const t = /TagsDistributionBitMap="([^"]+)"/.exec(m[3])?.[1]
+    out.push({ layout: Number(m[2]), content: pkg(m[1]), group: g ? pkg(g) : null, ...(t ? { tags: pkg(t) } : {}) })
+  }
+  return out
+}
