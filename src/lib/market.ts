@@ -96,12 +96,12 @@ export interface ListingFull extends ListingRow {
   deals: Deal[]
   myOffer: string | null
 }
-export interface Message { id: string; user: Person | null; text: string; at: number }
 export interface Rating { score: number; text: string; at: number; updated: number }
 export interface DealFull extends Deal {
   role: 'maker' | 'taker' | 'owner' | 'mod'
   listing: { id: string; status: ListingStatus; left: number; expires: number; pay: Pay; price: number | null; barter: Barter[]; minQty: number } | null
-  messages: Message[]
+  /** розмова угоди (спільні розмови сайту, lib/chat) */
+  chat: string | null
   canRate: boolean
   myRating: Rating | null
   theirRating: Rating | null
@@ -151,7 +151,6 @@ export const offerDeal = (listing: string, body: Terms & { text?: string }) => p
 export const amendDeal = (id: string, body: Terms) => patch<DealFull>(`/api/market/deals/${id}`, body)
 /** updated — версія пропозиції, яку людина бачила (прийняти): змінили тим часом — сервер відповість 409 */
 export const dealAction = (id: string, action: 'accept' | 'decline' | 'cancel' | 'done', extra: { reason?: string; updated?: number } = {}) => post<DealFull>(`/api/market/deals/${id}/${action}`, extra)
-export const sendMessage = (id: string, text: string) => post<DealFull>(`/api/market/deals/${id}/messages`, { text })
 export const rateDeal = (id: string, score: number, text: string) => post<DealFull>(`/api/market/deals/${id}/rate`, { score, text })
 export const report = (target: { kind: 'listing' | 'deal' | 'user'; id: string }, reason: Reason, note: string) => post<{ ok: boolean }>('/api/market/reports', { target, reason, note })
 export const listReports = (status: 'open' | 'closed') => get<{ rows: ReportGroup[] }>(`/api/market/reports?status=${status}`)

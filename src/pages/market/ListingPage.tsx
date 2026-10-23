@@ -28,6 +28,7 @@ import { BarterList, CHOICES, Choice, DealCard, go, Good, LISTING_GRID, ListingC
 import { ReportButton } from '@/components/market/ReportDialog'
 import { GoodName } from '@/components/market/names'
 import { mapHref } from '@/components/events/EventMap'
+import { WriteButton } from '@/components/chat/WriteButton'
 
 const EventMap = lazy(() => import('@/components/events/EventMap'))
 const dayWord = (n: number) => word(n, [t('день'), t('дні'), t('днів')])
@@ -121,6 +122,8 @@ export default function ListingPage({ id }: { id: string }) {
               <div className="grid gap-2 text-[13.5px]">
                 {l.contact.site && <p className="flex items-center gap-2"><MessageSquare size={15} className="text-spice" />{t('Пропозиції й листування — тут, на сайті')}</p>}
                 {l.contact.nick && <p><span className="text-muted">{t('Нік у грі:')}</span> <b className="select-all font-mono">{l.contact.nick}</b></p>}
+                {/* особиста розмова з автором (людина-власник чи той, хто розмістив гільдійське) */}
+                {me && !l.rights.edit && (l.item.owner.kind === 'user' ? l.item.owner.id : l.item.by?.id) && <div><WriteButton user={(l.item.owner.kind === 'user' ? l.item.owner.id : l.item.by?.id)!} label={t('Написати автору')} size="sm" /></div>}
                 {l.contact.hidden && <p className="text-muted"><a href={loginHref()} onClick={go(loginHref())} className="font-semibold text-spice hover:underline">{t('Увійди')}</a>, {t('щоб побачити нік у грі')}</p>}
               </div>
             </Section>

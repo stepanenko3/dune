@@ -19,7 +19,7 @@ import { need, wrap } from './auth.mjs'
 const BAN_DAYS = [1, 7, 30, 0]
 const DAY = 86400_000
 
-export function createMarketRoutes({ market, items, content, hub, mapData, db, game, notifications, access, auth }) {
+export function createMarketRoutes({ market, items, content, hub, mapData, db, game, notifications, access, auth, chats = null, chatHooks = null }) {
   const r = express.Router()
   const lock = (id, fn) => withLock(`listing:${id}`, fn)
   const goods = async () => goodsOf(await game.catalog('en'))
@@ -169,8 +169,8 @@ export function createMarketRoutes({ market, items, content, hub, mapData, db, g
   async function dealFull(req, d, role) {
     const uid = req.user.id
     const [view] = await dealsView(req, [d])
-    const msgs = await market.messages(d.id)
-    const ps = await people(msgs.map((m) => m.user))
+    // листування угоди — у спільних розмовах сайту (routes/chats.mjs)
+    const chat = chats ? await chats.ensure('deal', d.id) : null
     const party = role === 'maker' || role === 'taker'
     const other = party ? (role === 'maker' ? d.taker : d.maker) : null
     const it = await items.get('listing', d.listingId)
@@ -178,10 +178,27 @@ export function createMarketRoutes({ market, items, content, hub, mapData, db, g
     return {
       ...view, role,
       listing: l && it && can(req.ctx, it).view ? { id: l.id, status: l.status, left: l.left, expires: l.expires, pay: l.pay, price: l.price, barter: l.barter, minQty: l.minQty } : null,
-      messages: msgs.map((m) => ({ ...m, user: m.user ? ps.get(m.user) || null : null })),
+      chat: chat?.id ?? null,
       canRate: party && d.status === 'done' && !!other,
       myRating: party ? await market.ratingOf(d.id, uid) : null,
       theirRating: party && other ? await market.ratingOf(d.id, other) : null,
+    }
+  }
+
+  // ---------- розмова угоди (routes/chats.mjs): хто читає й пише ----------
+  if (chatHooks) {
+    chatHooks.rmt = rmtHit
+    chatHooks.deal = async (ctx, chat) => {
+      const d = await market.getDeal(chat.ref)
+      if (!d) return { read: false, write: false, members: [] }
+      const it = await items.get('listing', d.listingId)
+      const members = [d.maker, d.taker || (it ? authorOf(it) : null)].filter(Boolean)
+      const deal = { id: d.id, gid: d.gid, status: d.status, qty: d.qty }
+      // панель керування (без людини) — лише читає
+      if (!ctx?.user?.id) return { read: !!ctx?.superuser, write: false, members, deal }
+      const role = await roleIn({ user: ctx.user, ctx }, d)
+      const banned = role && role !== 'mod' ? await market.banOf(ctx.user.id) : null
+      return { read: !!role, write: !!role && role !== 'mod' && !banned, why: banned ? 'тобі заборонено торгувати на біржі' : null, members, deal }
     }
   }
 
@@ -282,7 +299,12 @@ export function createMarketRoutes({ market, items, content, hub, mapData, db, g
       const tm = await terms(l, body)
       const text = messageText(body.text)
       const deal = await market.addDeal(l, { maker: req.user.id, owner: { kind: it.owner_kind, id: it.owner_id }, ...tm, pub: it.visibility === 'public' && !it.hidden })
-      if (text) await market.addMessage(deal.id, req.user.id, text)
+      // розмова угоди: сторони — учасники; перше повідомлення (автор і так отримає сповіщення про пропозицію)
+      if (chats) {
+        const chat = await chats.ensure('deal', deal.id)
+        for (const u of [req.user.id, authorOf(it)]) if (u) await chats.join(chat.id, u)
+        if (text) await chats.add(chat.id, req.user.id, text)
+      }
       if (authorOf(it)) await notify(authorOf(it), 'market.offer', { deal: deal.id, listing: l.id, gid: l.gid })
       return deal
     })
@@ -361,16 +383,6 @@ export function createMarketRoutes({ market, items, content, hub, mapData, db, g
       await emit(d.listingId)
     } else for (const u of await otherSide(deal, role)) await notify(u, 'market.done', { deal: deal.id, gid: deal.gid })
     res.json(await dealFull(req, deal, role))
-  }))
-  r.post('/api/market/deals/:did/messages', need(), wrap(async (req, res) => {
-    await noBan(req)
-    const { d, role } = await loadDeal(req)
-    if (role === 'mod') throw fail('модератор читає листування, але не пише в нього', 403)
-    const text = messageText(req.body?.text)
-    if (!text) throw fail('порожнє повідомлення')
-    await market.addMessage(d.id, req.user.id, text)
-    for (const u of await otherSide(d, role)) if (u !== req.user.id) await notify(u, 'market.message', { deal: d.id, gid: d.gid }, { ref: d.id })
-    res.status(201).json(await dealFull(req, await market.getDeal(d.id), role))
   }))
   r.post('/api/market/deals/:did/rate', need(), wrap(async (req, res) => {
     await noBan(req)

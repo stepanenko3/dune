@@ -52,6 +52,7 @@ export function createAdminRoutes(deps) {
       { key: 'admin', label: 'Вхід у панель керування' }, { key: 'site.moderate', label: 'Бачити сховане модерацією' },
       { key: 'site.settings', label: 'Налаштування сайту' }, { key: 'site.decree', label: 'Указ Ландсрааду' },
       { key: 'site.content', label: 'Вміст від імені сайту' }, { key: 'site.owners', label: 'Віддавати речі будь-кому в панелі' },
+      { key: 'site.chats', label: 'Читати будь-які розмови' },
     ],
   }))
 

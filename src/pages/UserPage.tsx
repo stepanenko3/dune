@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar, GuildTag } from '@/components/access/Access'
 import { ItemGrid } from '@/components/access/ItemCard'
 import { UserMarket } from '@/components/market/UserMarket'
+import { WriteButton } from '@/components/chat/WriteButton'
 import { PageHeader } from '@/components/PageHeader'
 import { Empty, Loading, PageError } from '@/components/states'
 import { plainClick } from '@/lib/urlState'
@@ -59,7 +60,7 @@ export function UserPage() {
               {u.bio && <span className="mt-2 block max-w-[70ch] whitespace-pre-line text-[14px] leading-relaxed text-ink">{u.bio}</span>}
             </>
           }
-          actions={mine && <Button variant="secondary" onClick={() => setView('account', { param: d.user.login })}><Settings size={15} />{t('Налаштування')}</Button>}
+          actions={mine ? <Button variant="secondary" onClick={() => setView('account', { param: d.user.login })}><Settings size={15} />{t('Налаштування')}</Button> : <WriteButton user={u.id} />}
         >
           {d.guilds.length > 0 && (
             <div className="flex flex-wrap gap-2">

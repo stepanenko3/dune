@@ -109,6 +109,7 @@ const CRUMBS: Partial<Record<View, () => Crumb[]>> = {
   invite: () => [{ label: t('Гільдії'), view: 'guilds', value: t('Усі') }, { label: t('Запрошення') }],
   events: () => [{ label: t('Події'), view: 'events' }],
   market: () => [{ label: t('Біржа'), view: 'market' }],
+  chats: () => [{ label: t('Розмови'), view: 'chats' }],
   notfound: () => [{ label: t('Сторінку не знайдено') }],
   // людина: окремого списку людей нема — шлях через її гільдію (сторінка додає сама), без гільдії — одразу з головної
   user: () => [],

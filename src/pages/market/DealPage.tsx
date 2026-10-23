@@ -3,10 +3,11 @@
  * умови, дії за роллю (прийняти / відхилити — тому, хто веде оголошення; «Завершено» — кожній стороні; скасувати),
  * листування сторін і оцінка після завершення. Оновлюється, коли приходить сповіщення (друга сторона щось зробила).
  */
-import { useEffect, useRef, useState } from 'react'
-import { Check, CheckCircle2, CircleDot, Send, Star, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Check, CheckCircle2, CircleDot, Star, X } from 'lucide-react'
 import { toast } from 'sonner'
-import { dealAction, fmtDate, fmtSolari, getDeal, listingHref, rateDeal, sendMessage, type DealFull } from '@/lib/market'
+import { dealAction, fmtDate, fmtSolari, getDeal, listingHref, rateDeal, type DealFull } from '@/lib/market'
+import { ChatView } from '@/components/chat/ChatView'
 import { useAuth } from '@/lib/auth'
 import { t } from '@/lib/i18n'
 import { subscribe } from '@/lib/stream'
@@ -39,8 +40,8 @@ export default function DealPage({ id }: { id: string }) {
     getDeal(id).then((x) => live && setD(x), (e) => live && setErr((e as Error).message))
     return () => { live = false }
   }, [id, ready, me?.id, attempt])
-  // друга сторона щось зробила — прийде сповіщення: перечитати угоду
-  useEffect(() => subscribe('/api/notifications/stream', () => setAttempt((n) => n + 1)), [])
+  // друга сторона щось зробила — прийде сповіщення: перечитати угоду (листування оновлюється само — ChatView)
+  useEffect(() => subscribe('/api/notifications/stream', (ev) => { if ((ev as { op?: string }).op === 'note') setAttempt((n) => n + 1) }), [])
   useCrumb(err ? [] : d ? [{ label: t('Угода') }] : null, { sub: 'deals', value: t('Угоди') })
 
   if (err) return <PageError page message={err}><Button variant="secondary" onClick={() => setView('market', { sub: 'deals' })}>{t('До угод')}</Button></PageError>
@@ -115,7 +116,9 @@ export default function DealPage({ id }: { id: string }) {
             </Section>
             {d.canRate && <RateBox d={d} onDone={setD} />}
           </div>
-          <Chat d={d} onSent={setD} />
+          <Section title={t('Листування')} hint={t('Видно лише сторонам угоди (і модераторам за скаргою). Реальні гроші — заборонено.')}>
+            {d.chat ? <ChatView chatId={d.chat} surface="panel" empty={t('Поки тихо. Напиши, де й коли зручно передати.')} /> : null}
+          </Section>
         </div>
       </div>
     </div>
@@ -126,58 +129,12 @@ export default function DealPage({ id }: { id: string }) {
 function Side({ label, p, rep, pending }: { label: string; p: DealFull['maker']; rep: DealFull['reps']['maker']; pending: string | null }) {
   return (
     <div className="flex flex-wrap items-center gap-2.5">
-      <span className="w-16 text-[12px] font-semibold uppercase tracking-wide text-muted">{label}</span>
+      <span className="w-full text-[12px] font-semibold uppercase tracking-wide text-muted sm:w-28">{label}</span>
       {p ? (
         <a href={`/u/${p.login}`} onClick={go(`/u/${p.login}`)} className="flex items-center gap-2 font-semibold hover:text-spice"><Avatar name={p.name} color={p.color} size={24} />{p.name}</a>
       ) : <span className="text-muted">{pending ? t('{name} — ще не відповів', { name: pending }) : t('Людину видалено')}</span>}
       <RepBadge rep={rep} />
     </div>
-  )
-}
-
-/** листування сторін: найсвіжіше внизу, поле — під ним */
-function Chat({ d, onSent }: { d: DealFull; onSent: (d: DealFull) => void }) {
-  const me = useAuth((s) => s.user)
-  const [text, setText] = useState('')
-  const [busy, setBusy] = useState(false)
-  const end = useRef<HTMLLIElement>(null)
-  const canWrite = d.role !== 'mod'
-  // нове повідомлення — показати його (але не гортати сторінку, щойно її відкрили)
-  const seen = useRef(d.messages.length)
-  useEffect(() => {
-    if (d.messages.length > seen.current) end.current?.scrollIntoView({ block: 'nearest' })
-    seen.current = d.messages.length
-  }, [d.messages.length])
-  const send = async () => {
-    if (!text.trim()) return
-    setBusy(true)
-    try { onSent(await sendMessage(d.id, text)); setText('') } catch (e) { toast.error((e as Error).message) } finally { setBusy(false) }
-  }
-  return (
-    <Section title={t('Листування')} hint={t('Видно лише сторонам угоди (і модераторам за скаргою). Реальні гроші — заборонено.')}>
-      <div className="grid gap-3">
-        <ul className="grid gap-2">
-          {d.messages.map((m) => {
-            const mine = m.user?.id === me?.id
-            return (
-              <li key={m.id} className={cn('grid max-w-[85%] gap-0.5 rounded-xl px-3 py-2 text-[13.5px]', mine ? 'justify-self-end bg-spice/10' : 'justify-self-start bg-panel2')}>
-                <span className="text-[11.5px] text-muted">{m.user?.name ?? t('Людину видалено')} · {fmtDate(m.at)}</span>
-                <span className="whitespace-pre-line break-words">{m.text}</span>
-              </li>
-            )
-          })}
-          {!d.messages.length && <li className="text-[13px] text-muted">{t('Поки тихо. Напиши, де й коли зручно передати.')}</li>}
-          <li ref={end} aria-hidden />
-        </ul>
-        {canWrite && (
-          <div className="grid gap-2">
-            <SnTextarea size="lg" rows={2} maxLength={1000} modelValue={text} placeholder={t('Повідомлення')} accessibilityLabel={t('Повідомлення')} onInput={(e: Event) => setText(valueOf(e))}
-              onKeyDown={(e: KeyboardEvent) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void send() } }} />
-            <Button className="justify-self-end" loading={busy} disabled={!text.trim()} onClick={send}><Send size={14} />{t('Надіслати')}</Button>
-          </div>
-        )}
-      </div>
-    </Section>
   )
 }
 

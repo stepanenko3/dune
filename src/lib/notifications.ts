@@ -32,7 +32,6 @@ export function noteOf(n: Note): { text: string; href: string } {
     case 'market.declined': return { text: t('Твою пропозицію відхилили'), href: deal }
     case 'market.cancelled': return { text: t('Угоду скасовано'), href: deal }
     case 'market.done': return { text: t('Друга сторона завершила угоду — підтверди й ти'), href: deal }
-    case 'market.message': return { text: n.count > 1 ? t('Нові повідомлення в угоді: {n}', { n: n.count }) : t('Нове повідомлення в угоді'), href: deal }
     case 'market.rate': return { text: t('Угоду завершено — оціни другу сторону'), href: deal }
     case 'market.expired': return { text: t('Оголошення закінчилось — продовж його одним кліком'), href: listing }
     case 'market.moderated': return {
@@ -40,6 +39,11 @@ export function noteOf(n: Note): { text: string; href: string } {
       href: listing,
     }
     case 'market.banned': return { text: t('Тобі заборонено торгувати на біржі'), href: '/market' }
+    case 'chat.message': {
+      const c = n.data as { chat?: string; from?: string; kind?: string }
+      const from = c.from || t('Людину видалено')
+      return { text: n.count > 1 ? t('Нові повідомлення від {name}: {n}', { name: from, n: n.count }) : t('Нове повідомлення від {name}', { name: from }), href: c.chat ? `/chats/${c.chat}` : '/chats' }
+    }
     default: return { text: t('Нове сповіщення'), href: '/' }
   }
 }

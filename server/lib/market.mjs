@@ -6,7 +6,8 @@
  * Таблиці: market_listings — документ (JSON) і окремо те, за чим шукають (вид, предмет, розділ довідника, тир, регіон,
  * ключі світу й сервера, ціна за штуку, кількість і залишок, стан, строк, свіжість); market_deals — угода зі знімком
  * умов (сторони бачать її, навіть коли оголошення сховали чи закрили) і прапорцем pub — чи було оголошення публічним
- * (лише такі угоди йдуть в історію цін і медіану); market_messages — листування угоди; market_ratings — оцінки сторін;
+ * (лише такі угоди йдуть в історію цін і медіану); market_ratings — оцінки сторін (листування угоди — у спільних
+ * розмовах сайту, lib/chats.mjs);
  * market_matches — пари оголошень, про збіг яких уже сповіщено; market_reports — скарги; market_bans — заборони біржі.
  *
  * Продається лише те, що гра пускає на свою біржу: не HideFromExchange (прапорець гри), не сама валюта, не вміння, не
@@ -182,8 +183,6 @@ export async function createMarket(db) {
     CREATE INDEX IF NOT EXISTS market_deals_by_maker ON market_deals (maker, updated);
     CREATE INDEX IF NOT EXISTS market_deals_by_taker ON market_deals (taker, updated);
     CREATE INDEX IF NOT EXISTS market_deals_by_item ON market_deals (gid, status, closed);
-    CREATE TABLE IF NOT EXISTS market_messages (id TEXT PRIMARY KEY, deal_id TEXT NOT NULL, user_id TEXT, text TEXT NOT NULL, at BIGINT NOT NULL);
-    CREATE INDEX IF NOT EXISTS market_messages_by_deal ON market_messages (deal_id, at);
     CREATE TABLE IF NOT EXISTS market_ratings (
       deal_id TEXT NOT NULL, from_user TEXT NOT NULL, to_user TEXT NOT NULL, score INTEGER NOT NULL, text TEXT NOT NULL DEFAULT '',
       at BIGINT NOT NULL, updated BIGINT NOT NULL, PRIMARY KEY (deal_id, from_user)
@@ -453,16 +452,6 @@ export async function createMarket(db) {
     },
     /** відкриті угоди людини (заборона): скасувати можна іншій стороні — тут лише список */
     openDealsOf: async (uid) => (await db.all("SELECT * FROM market_deals WHERE (maker = ? OR taker = ?) AND status IN ('offered', 'accepted')", uid, uid)).map(dealRow),
-
-    // ---------- листування ----------
-    async addMessage(dealId, uid, text) {
-      const id = newId('mm')
-      const at = Date.now()
-      await db.run('INSERT INTO market_messages (id, deal_id, user_id, text, at) VALUES (?, ?, ?, ?, ?)', id, String(dealId), uid, text, at)
-      await db.run('UPDATE market_deals SET updated = ? WHERE id = ?', at, String(dealId))
-      return { id, user: uid, text, at }
-    },
-    messages: async (dealId) => (await db.all('SELECT * FROM market_messages WHERE deal_id = ? ORDER BY at, id', String(dealId))).map((m) => ({ id: m.id, user: m.user_id, text: m.text, at: Number(m.at) })),
 
     // ---------- оцінки й репутація ----------
     ratingOf: async (dealId, from) => { const r = await db.get('SELECT * FROM market_ratings WHERE deal_id = ? AND from_user = ?', String(dealId), from); return r ? { score: Number(r.score), text: r.text, at: Number(r.at), updated: Number(r.updated) } : null },

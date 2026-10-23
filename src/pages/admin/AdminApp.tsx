@@ -10,7 +10,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Bell, BrickWall, Calculator, CalendarDays, Castle, Database, Factory, FlaskConical, Gem, GitCompare, History, Inbox, KeyRound, Languages, LayoutDashboard, Library, ListChecks,
   MapPin, Megaphone, Menu, MonitorSmartphone, Package, Route, ScrollText, Settings, Shield, ShieldCheck, SlidersHorizontal, Sparkles, Star, Swords,
-  Ticket, Timer, UserRoundCheck, Users, ArrowLeft, ArrowLeftRight, Home, type LucideIcon, Fingerprint } from 'lucide-react'
+  Ticket, Timer, UserRoundCheck, Users, ArrowLeft, ArrowLeftRight, Home, MessagesSquare, type LucideIcon, Fingerprint } from 'lucide-react'
 import { SnBreadcrumb, SnBreadcrumbItem, SnBreadcrumbLink, SnBreadcrumbList, SnBreadcrumbPage, SnBreadcrumbSeparator, SnSheet } from '@/components/sn'
 import '@/components/sn/admin'
 import { Loading, PageError } from '@/components/states'
@@ -26,6 +26,7 @@ import { ResourceList } from './ResourceList'
 import { ResourceForm } from './ResourceForm'
 import { SiteSettings } from './SiteSettings'
 import { GameDataAdmin } from './GameDataAdmin'
+import { ChatsAdmin } from './ChatsAdmin'
 import { AdminSearch } from './Search'
 import { Translations } from './Translations'
 import { PageHeader } from './ui'
@@ -74,6 +75,7 @@ function Nav({ section, onGo }: { section: string | undefined; onGo?: () => void
         <NavLink to={[]} label={t('Огляд')} icon={LayoutDashboard} active={!section} onGo={onGo} />
         {(hasPerm(perms, 'site.settings') || hasPerm(perms, 'site.decree')) && <NavLink to={['site-settings']} label={t('Налаштування сайту')} icon={Settings} active={section === 'site-settings'} onGo={onGo} />}
         {hasPerm(perms, 'gamedata.manage') && <NavLink to={['gamedata']} label={t('Дані гри')} icon={Database} active={section === 'gamedata'} onGo={onGo} />}
+        {hasPerm(perms, 'site.chats') && <NavLink to={['chats']} label={t('Розмови')} icon={MessagesSquare} active={section === 'chats'} onGo={onGo} />}
       </div>
       {groups.map(({ g, list }) => (
         <div key={g} className="grid gap-0.5">
@@ -170,6 +172,7 @@ export function AdminApp() {
   if (!section) page = <Dashboard />
   else if (section === 'site-settings') page = <SiteSettings />
   else if (section === 'gamedata') page = <GameDataAdmin />
+  else if (section === 'chats') page = <ChatsAdmin key={sub ?? ''} id={sub ?? null} />
   else if (section === 'group') page = <GroupPage group={groupBySlug(sub)} list={(meta.resources ?? []).filter((x) => x.group === groupBySlug(sub))} />
   else if (!r) page = <PageError title={t('Немає такого розділу')} message={t('Можливо, у твоєї ролі нема до нього доступу.')} />
   else if (!sub) page = r.page === 'translations' ? <Translations r={r} /> : <ResourceList key={r.name} r={r} />
@@ -178,6 +181,7 @@ export function AdminApp() {
   const crumbs: { label: string; to?: string[] }[] = [{ label: t('Панель керування'), to: [] }]
   if (section === 'site-settings') crumbs.push({ label: t('Налаштування сайту') })
   else if (section === 'gamedata') crumbs.push({ label: t('Дані гри') })
+  else if (section === 'chats') { crumbs.push({ label: t('Розмови'), to: ['chats'] }); if (sub) crumbs.push({ label: t('Розмова') }) }
   else if (section === 'group') crumbs.push({ label: groupBySlug(sub) ? t(groupBySlug(sub)!) : t('Немає такого розділу') })
   else if (r) {
     // група — на свою сторінку; та, що зветься так само, як розділ («Люди › Люди»), — зайва

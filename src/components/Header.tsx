@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import { Menu } from '@/components/ui/menu'
 import { AccountMenu } from '@/components/AccountMenu'
 import { Notifications } from '@/components/Notifications'
+import { ChatBadge } from '@/components/ChatBadge'
 import { LangMenu } from '@/components/LangMenu'
 import { t } from '@/lib/i18n'
 import { plainClick } from '@/lib/urlState'
@@ -179,6 +180,7 @@ export function Header() {
         <span className="mx-1 h-5 w-px bg-line" aria-hidden />
         <LangMenu />
       </div>
+      <ChatBadge pill={pill} />
       <Notifications pill={pill} />
       <AccountMenu pill={pill} />
     </header>

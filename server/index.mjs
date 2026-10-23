@@ -18,6 +18,8 @@ const host = process.env.HOST || '127.0.0.1'
 if (serveDist && !process.env.APP_URL) console.warn('[api] APP_URL не задано — посилання в листах вестимуть на dune.test')
 if (serveDist && !process.env.MAIL_HOST) console.warn('[api] MAIL_HOST не задано — листи з кодом входу не надсилаються, код пишеться лише в журнал')
 const server = app.listen(port, host, () => console.log(`[api] http://${host}:${port}${serveDist ? ' (з фронтом)' : ''}`))
+// миттєві розмови (WebSocket /api/chats/ws)
+app.locals.attachWs?.(server)
 
 // зупинка під час оновлення: нових з'єднань не беремо, почате дописуємо (збереження бази не обривається), потім
 // закриваємо базу; живі потоки (SSE) самі не закінчаться — через 10 с виходимо все одно

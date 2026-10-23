@@ -269,7 +269,9 @@ describe.each(ENGINES)('%s', (_name, pgCfg) => {
       expect(r.status).toBe(201)
       D.eve = r.body
       expect(r.body).toMatchObject({ status: 'offered', qty: 600, price: 100, role: 'maker' })
-      expect(r.body.messages).toHaveLength(1)
+      // перше повідомлення — у розмові угоди
+      expect(r.body.chat).toBeTruthy()
+      expect((await eve.get(`/api/chats/${r.body.chat}`)).body.messages.map((m) => m.text)).toEqual(['Заберу біля Арракіна'])
       expect((await eve.post(`/api/market/${L.bob.id}/deals`, { qty: 1 })).status).toBe(409)
       expect((await bob.get('/api/notifications')).body.rows[0]).toMatchObject({ kind: 'market.offer', data: { deal: D.eve.id } })
       // сторонній угоди не бачить
@@ -292,11 +294,12 @@ describe.each(ENGINES)('%s', (_name, pgCfg) => {
     })
 
     it('листування — сторонам; оцінка до завершення — 409; обидва «Завершено» — угода done, залишок менше', async () => {
-      expect((await bob.post(`/api/market/deals/${D.main.id}/messages`, { text: 'Завтра о 20:00' })).status).toBe(201)
-      expect((await bob.post(`/api/market/deals/${D.main.id}/messages`, { text: 'або 10$ paypal' })).status).toBe(400)
-      expect((await dave.post(`/api/market/deals/${D.main.id}/messages`, { text: 'привіт' })).status).toBe(404)
-      const n = (await D.who.get('/api/notifications')).body.rows.find((x) => x.kind === 'market.message')
-      expect(n).toMatchObject({ data: { deal: D.main.id } })
+      const chat = (await bob.get(`/api/market/deals/${D.main.id}`)).body.chat
+      expect((await bob.post(`/api/chats/${chat}/messages`, { text: 'Завтра о 20:00' })).status).toBe(201)
+      expect((await bob.post(`/api/chats/${chat}/messages`, { text: 'або 10$ paypal' })).status).toBe(400)
+      expect((await dave.post(`/api/chats/${chat}/messages`, { text: 'привіт' })).status).toBe(404)
+      const n = (await D.who.get('/api/notifications')).body.rows.find((x) => x.kind === 'chat.message')
+      expect(n).toMatchObject({ data: { chat, kind: 'deal' } })
       expect((await D.who.post(`/api/market/deals/${D.main.id}/rate`, { score: 5 })).status).toBe(409)
       const half = await D.who.post(`/api/market/deals/${D.main.id}/done`)
       expect(half.body).toMatchObject({ status: 'accepted' })

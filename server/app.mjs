@@ -49,6 +49,8 @@ import { createMarket } from './lib/market.mjs'
 import { createMarketRoutes } from './routes/market.mjs'
 import { createNotifications } from './lib/notifications.mjs'
 import { createNotificationRoutes } from './routes/notifications.mjs'
+import { createChats } from './lib/chats.mjs'
+import { createChatRoutes } from './routes/chats.mjs'
 import { createGameData } from './lib/gamedata.mjs'
 import { createI18n, langMiddleware, pickLang } from './lib/i18n.mjs'
 import { createAnnouncements } from './lib/announcements.mjs'
@@ -92,6 +94,10 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   const events = await createEvents(db)
   // біржа гравців: оголошення, угоди, оцінки, скарги
   const market = await createMarket(db)
+  // розмови: особисті, угод біржі, гільдій
+  const chats = await createChats(db)
+  /** хто читає й пише розмову угоди — каже біржа (routes/market.mjs) */
+  const chatHooks = {}
   const auth = await createAuth(db, codeGap !== undefined ? { codeGap } : {})
   // паскеї, двофакторна перевірка й одноразові виклики входу
   const security = await createSecurity(db)
@@ -252,6 +258,7 @@ export async function createApp({ dataDir, serveDist = false, background = true,
     await spice.forgetUser(uid)
     await events.forgetUser(uid)
     await market.forgetUser(uid)
+    await chats.forgetUser(uid)
     await notifications.forgetUser(uid)
     await guilds.leaveAll(uid)
     await security.removeUser(uid)
@@ -372,7 +379,11 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   app.use(createDocRoutes({ kind: 'calc', path: 'calcs', store: calcs, clean: cleanCalc, items, content, label: 'розрахунку' }))
   app.use(createDocRoutes({ kind: 'marker', path: 'markers', store: markers, clean: (d) => cleanMarker(d, mapData), items, content, hub: hubs.marker, label: 'позначки' }))
   app.use(createEventRoutes({ events, items, content, hub: hubs.event, mapData, db }))
-  app.use(createMarketRoutes({ market, items, content, hub: hubs.listing, mapData, db, game, notifications, access, auth }))
+  app.use(createMarketRoutes({ market, items, content, hub: hubs.listing, mapData, db, game, notifications, access, auth, chats, chatHooks }))
+  // розмови: HTTP і WebSocket (під'єднує index.mjs — app.locals.attachWs(server))
+  const chatRoutes = createChatRoutes({ db, chats, auth, access, guilds, notifications, roles, hooks: chatHooks })
+  app.use(chatRoutes.router)
+  app.locals.attachWs = chatRoutes.attach
   app.use(createNotificationRoutes({ notifications, hub: hubs.note }))
   app.use(createDecreeRoutes({ decrees, roles }))
   app.use(createPushRoutes({ push }))
@@ -396,7 +407,7 @@ export async function createApp({ dataDir, serveDist = false, background = true,
     app.use('/assets', express.static(path.join(dist, 'assets'), { maxAge: '1y', immutable: true, index: false }), (req, res) => res.status(404).end())
     app.use(express.static(dist, { maxAge: '1d', index: false }))
     // сторінка сайту: відомі розділи — 200; невідома адреса — та сама сторінка (вона скаже «не знайдено»), але з кодом 404
-    const KNOWN = new Set(['', 'bases', 'roadmap', 'map', 'catalog', 'calculator', 'skills', 'builds', 'calcs', 'library', 'login', 'register', 'reset', 'me', 'account', 'u', 'g', 'guilds', 'invite', 'admin', 'plan', 'dd', 'data', 'events', 'world', 'market'])
+    const KNOWN = new Set(['', 'bases', 'roadmap', 'map', 'catalog', 'calculator', 'skills', 'builds', 'calcs', 'library', 'login', 'register', 'reset', 'me', 'account', 'u', 'g', 'guilds', 'invite', 'admin', 'plan', 'dd', 'data', 'events', 'world', 'market', 'chats'])
     // у сторінку — заголовок, опис і картинка того, на що веде адреса (прев'ю посилань у Discord, Telegram)
     const og = createOg({ file: path.join(dist, 'index.html'), db, items, auth, guilds, thumbs, access, events, market, game, catalog })
     app.get('*', (req, res, next) => Promise.resolve().then(async () => {

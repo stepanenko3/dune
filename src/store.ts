@@ -11,14 +11,15 @@
  *   /u/<логін> — людина, /u/<логін>/settings — налаштування свого профілю (давнє /me — туди ж), /guilds — гільдії, /g/<адреса> — гільдія, /invite/<код> — запрошення, /admin/<розділ> — панель,
  *   /events — події спільноти (вкладки /events/mine, /events/guild, /events/past), /events/new — нова, /events/<id> — подія, /events/<id>/edit — редагування,
  *   /market — біржа (вкладки /market/mine, /market/deals, /market/guild, /market/reports), /market/new — нове оголошення,
- *   /market/<id> — оголошення, /market/<id>/edit — редагування, /market/item/<id гри> — предмет, /market/deal/<id> — угода.
+ *   /market/<id> — оголошення, /market/<id>/edit — редагування, /market/item/<id гри> — предмет, /market/deal/<id> — угода,
+ *   /chats — розмови, /chats/<id> — відкрита розмова.
  */
 import { createContext, useContext } from 'react'
 import { create } from 'zustand'
 
 export type View =
   | 'home' | 'bases' | 'roadmap' | 'map' | 'catalog' | 'calculator' | 'skills' | 'builds' | 'calcs'
-  | 'library' | 'login' | 'account' | 'user' | 'guilds' | 'guild' | 'invite' | 'admin' | 'data' | 'events' | 'world' | 'market' | 'notfound'
+  | 'library' | 'login' | 'account' | 'user' | 'guilds' | 'guild' | 'invite' | 'admin' | 'data' | 'events' | 'world' | 'market' | 'chats' | 'notfound'
 
 /** вкладки списків (сегмент після розділу); «мої» — без сегмента */
 export const SCOPES = ['mine', 'guild', 'public'] as const
@@ -54,6 +55,8 @@ export function pathOf(v: View, base?: string | null, edit?: boolean, param?: st
       if (sub === 'item' || sub === 'deal') return `/market/${sub}/${p}`
       if (p) return `/market/${p}${sub === 'edit' && param !== 'new' ? '/edit' : ''}`
       return `/market${sub && (MARKET_TABS as readonly string[]).includes(sub) ? `/${sub}` : ''}`
+    // розмови: відкрита — сегментом
+    case 'chats': return p ? `/chats/${p}` : '/chats'
     // карта світу: вибране місце — сегментом (id мапи гри), як вкладка тієї самої сторінки
     case 'world': return sub ? `/world/${encodeURIComponent(sub)}` : '/world'
     // у панелі param — увесь шлях після /admin/ («users», «users/u12…», «game-items/new»), уже закодований
@@ -104,6 +107,7 @@ export function fromLocation(): Loc {
     if ((EVENT_TABS as readonly string[]).includes(word)) return at('events', null, word)
     return at('events', word, act === 'edit' && word !== 'new' ? 'edit' : null)
   }
+  if (seg === 'chats') return at('chats', word)
   if (seg === 'market') {
     if (!word) return at('market')
     if ((MARKET_TABS as readonly string[]).includes(word)) return at('market', null, word)

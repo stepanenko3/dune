@@ -75,7 +75,7 @@ export default defineConfig({
     allowedHosts: true,
     // xfwd: API бачить адресу, з якою прийшов браузер (X-Forwarded-Host), — Vite переписує Host на адресу API,
     // а перевірка «запит з цього сайту» по http (телефон у локальній мережі) звіряє Origin саме з нею
-    proxy: Object.fromEntries(['/api', '/map-tiles', '/versions', '/catalog-icons', '/catalog-wiki', '/catalog-gt', '/media'].map((p) => [p, { target: API, changeOrigin: true, xfwd: true }])),
+    proxy: Object.fromEntries(['/api', '/map-tiles', '/versions', '/catalog-icons', '/catalog-wiki', '/catalog-gt', '/media'].map((p) => [p, { target: API, changeOrigin: true, xfwd: true, ws: p === '/api' }])),
   },
   resolve: { alias: { '@': '/src' } },
   // межа попередження — щоб помітити, якщо головний шматок знову розростеться

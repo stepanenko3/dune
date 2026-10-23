@@ -16,9 +16,14 @@ function clean(v, depth = 0) {
   return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, SECRET.has(k) ? '•••' : BIG.has(k) ? (Array.isArray(x) ? `[${x.length}]` : '{…}') : clean(x, depth + 1)]))
 }
 
+/** часті дрібниці, які журнал лише засмічували б: «друкує…», «прочитано» */
+const QUIET = /^\/(chats\/[^/]+\/(typing|read)|notifications\/read)$/
+/** особисте листування: текст повідомлень у журнал не пишемо */
+const PRIVATE = /^\/chats\//
+
 export function auditMiddleware(auth) {
   return (req, res, next) => {
-    if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS' || req.path.startsWith('/admin/')) return next()
+    if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS' || req.path.startsWith('/admin/') || QUIET.test(req.path)) return next()
     const t0 = Date.now()
     // id того, що запит створив (нова база, гільдія, людина при реєстрації) — щоб журнал міг на нього послатися
     let made = null
@@ -31,7 +36,7 @@ export function auditMiddleware(auth) {
       const route = req.route?.path ? (req.baseUrl || '') + req.route.path : req.originalUrl.split('?')[0]
       // forget — людина щойно видалила свій обліковий запис: подія лишається, але безіменна й без IP
       const forget = !!res.locals.forgetActor
-      const detail = { status: res.statusCode, ms: Date.now() - t0, ...(forget ? {} : { ip: req.ip }), body: clean(req.body), ...(made != null ? { id: String(made) } : {}) }
+      const detail = { status: res.statusCode, ms: Date.now() - t0, ...(forget ? {} : { ip: req.ip }), body: PRIVATE.test(req.originalUrl.split('?')[0].replace(/^\/api/, '')) && req.body?.text != null ? { ...clean(req.body), text: '•••' } : clean(req.body), ...(made != null ? { id: String(made) } : {}) }
       // вхід, що створив обліковий запис, — окрема подія «Реєстрація», і її автор — нова людина
       const register = route === '/api/auth/verify' && res.statusCode === 201
       // вхід (код, паскей, другий крок) — автор той, хто увійшов

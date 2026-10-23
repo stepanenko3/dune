@@ -23,6 +23,7 @@ import { RoadmapList } from '@/pages/RoadmapList'
 import { PageHeader } from '@/components/PageHeader'
 import { Loading } from '@/components/states'
 import { t } from '@/lib/i18n'
+import { useChatSocket } from '@/lib/chat'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { NotFound } from '@/pages/NotFound'
 
@@ -31,7 +32,7 @@ const TITLE: Partial<Record<string, () => string>> = {
   bases: () => t('Бази'), roadmap: () => t('Роадмапи'), map: () => t('Мапа'), catalog: () => t('Довідник'), calculator: () => t('Розрахунок'),
   skills: () => t('Планувальник'), builds: () => t('Уміння'), calcs: () => t('Калькулятор'), library: () => t('Бібліотека'), login: () => t('Вхід'), account: () => t('Налаштування профілю'), guilds: () => t('Гільдії'),
   guild: () => t('Гільдія'), invite: () => t('Запрошення'), admin: () => t('Панель керування'), data: () => t('Оновлення даних'), notfound: () => t('Такої сторінки нема'),
-  events: () => t('Події'), world: () => t('Карта світу'), market: () => t('Біржа'),
+  events: () => t('Події'), world: () => t('Карта світу'), market: () => t('Біржа'), chats: () => t('Розмови'),
 }
 
 // панель керування — рідко й не всім: окремим шматком
@@ -47,6 +48,8 @@ const DataUpdates = lazy(() => import('@/pages/DataUpdates'))
 const Events = lazy(() => import('@/pages/Events'))
 // біржа: стрічка, оголошення, предмет, угода, черга скарг
 const Market = lazy(() => import('@/pages/Market'))
+// розмови: список і відкрита розмова
+const Chats = lazy(() => import('@/pages/Chats'))
 // карта світу: схема карти поверхні гри й переходи між мапами
 // сторінка бази — рушій баз, three.js і редактор: найважче на сайті, тож теж окремо
 const loadBasePage = () => import('@/pages/BasePage')
@@ -121,6 +124,10 @@ function Page({ r }: { r: Route }) {
           <Suspense fallback={<Fallback label={t('Завантаження біржі…')} title={param ? undefined : t('Біржа')} />}>
             <Market param={param} sub={r.sub} />
           </Suspense>
+        ) : view === 'chats' ? (
+          <Suspense fallback={<Fallback label={t('Завантаження розмов…')} />}>
+            <Chats />
+          </Suspense>
         ) : view === 'world' ? (
           <WorldRedirect place={r.sub} />
         ) : view === 'roadmap' ? (
@@ -174,7 +181,8 @@ export default function App() {
   // екрана й індикатора на всю сторінку; вкладки (sub) — та сама сторінка, тож міняються одразу
   // панель керування — одна сторінка (розділи й записи міняє сама, з бічним меню на місці), тож переходи в ній — не нова сторінка
   // редагування події — своя сторінка (sub «edit»), а не вкладка тієї самої
-  const key = view === 'admin' ? 'admin' : `${view}|${base ?? ''}|${param ?? ''}|${edit || ((view === 'events' || view === 'market') && sub === 'edit') ? 1 : 0}`
+  // розмови — теж одна сторінка (список лишається на місці, міняється відкрита розмова)
+  const key = view === 'admin' ? 'admin' : view === 'chats' ? 'chats' : `${view}|${base ?? ''}|${param ?? ''}|${edit || ((view === 'events' || view === 'market') && sub === 'edit') ? 1 : 0}`
   const route: Route & { key: string } = { view, base, param, edit, sub, key }
   const [{ slots, front }, setSlots] = useState<{ slots: [(Route & { key: string }) | null, (Route & { key: string }) | null]; front: 0 | 1 }>(() => ({ slots: [route, null], front: 0 }))
   const at = slots.findIndex((x) => x?.key === key)
@@ -213,6 +221,8 @@ export default function App() {
     return () => { clearInterval(iv); clearTimeout(cap) }
   }, [holding, key])
   useEffect(() => { useAuth.getState().load() }, [])
+  // розмови: одне WebSocket-з'єднання на вкладку, поки людина увійшла (lib/chat)
+  useChatSocket()
   useEffect(() => { const s = TITLE[view]?.(); document.title = s ? `${s} · Sandwalkers` : 'Sandwalkers · Dune: Awakening' }, [view])
   // база найчастіше відкривається з головної чи списку баз — заздалегідь лише там (на мапі чи в довіднику — ні)
   const nearBases = view === 'home' || view === 'bases'
