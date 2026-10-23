@@ -47,7 +47,8 @@ function QuestionEditor({ q, i, n, set, move, drop }: { q: Question; i: number; 
     <li className="grid gap-2.5 rounded-lg border border-line bg-panel2/30 p-3">
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-mono text-[12.5px] text-muted">{i + 1}.</span>
-        <Seg size="sm" label={t('Вид питання')} value={q.type} onChange={(type) => set({ ...q, type, ...(type === 'choice' && !q.options?.length ? { options: [], multi: false } : {}) })} items={QUESTION_TYPES.map((x) => ({ id: x, label: QUESTION_LABEL[x], tip: QUESTION_HINT[x] }))} />
+        {/* інший вид — інше питання (новий id): давні відповіді іншого виду до нього не прив'яжуться */}
+        <Seg size="sm" label={t('Вид питання')} value={q.type} onChange={(type) => set({ ...q, id: newId(), type, ...(type === 'choice' && !q.options?.length ? { options: [], multi: false } : {}) })} items={QUESTION_TYPES.map((x) => ({ id: x, label: QUESTION_LABEL[x], tip: QUESTION_HINT[x] }))} />
         <div className="ml-auto flex gap-1">
           <Button size="sm" variant="ghost" disabled={i === 0} title={t('Вище')} aria-label={t('Вище')} onClick={() => move(-1)}><ArrowUp size={14} /></Button>
           <Button size="sm" variant="ghost" disabled={i === n - 1} title={t('Нижче')} aria-label={t('Нижче')} onClick={() => move(1)}><ArrowDown size={14} /></Button>
@@ -79,7 +80,7 @@ function FormEditor({ form, onChange }: { form: GuildForm; onChange: (f: GuildFo
       <Field label={t('Вступне слово до анкети')} hint={t('Кандидат побачить його над питаннями')}>
         <SnTextarea size="lg" rows={2} maxLength={1000} modelValue={form.intro} accessibilityLabel={t('Вступне слово до анкети')} onInput={(e: Event) => onChange({ ...form, intro: valueOf(e) })} />
       </Field>
-      {qs.length > 0 && <ol className="grid gap-2">{qs.map((q, i) => <QuestionEditor key={q.id} q={q} i={i} n={qs.length} set={(x) => setQ(i, x)} move={(d) => move(i, d)} drop={() => onChange({ ...form, questions: qs.filter((_, k) => k !== i) })} />)}</ol>}
+      {qs.length > 0 && <ol className="grid gap-2">{qs.map((q, i) => <QuestionEditor key={i} q={q} i={i} n={qs.length} set={(x) => setQ(i, x)} move={(d) => move(i, d)} drop={() => onChange({ ...form, questions: qs.filter((_, k) => k !== i) })} />)}</ol>}
       {qs.length < MAX_QUESTIONS ? (
         <div className="grid gap-1.5">
           <span className="text-[12.5px] font-semibold">{t('Додати питання')}</span>
@@ -103,14 +104,19 @@ export function GuildSettings({ d, reload }: { d: GuildData; reload: () => void 
   const g = d.guild
   const from: Draft = useMemo(() => ({ about: g.about, open: g.open, profile: d.profile }), [d])
   const [x, setX] = useState<Draft>(from)
-  // після збереження сторінка перечитала гільдію — чернетка знову як збережене
-  useEffect(() => setX(from), [from])
+  // герб (зберігається одразу) у чернетці не порівнюємо
+  const plainOf = (v: Draft) => JSON.stringify({ ...v, profile: { ...v.profile, emblem: null } })
+  const dirty = plainOf(x) !== plainOf(from)
+  // сторінка перечитала гільдію: після «Зберегти» чернетка — як збережене; інше перечитування (герб, назва) не стирає
+  // недозбережене
+  const justSaved = useRef(false), dirtyRef = useRef(dirty)
+  dirtyRef.current = dirty
+  useEffect(() => { if (justSaved.current || !dirtyRef.current) setX(from); justSaved.current = false }, [from])
   const [busy, setBusy] = useState(false)
   const [emblem, setEmblem] = useState(d.profile.emblem)
   const file = useRef<HTMLInputElement>(null)
   const p = x.profile
   const setP = (part: Partial<GuildProfile>) => setX({ ...x, profile: { ...p, ...part } })
-  const dirty = JSON.stringify(x) !== JSON.stringify(from)
   const save = async () => {
     setBusy(true)
     try {
@@ -119,6 +125,7 @@ export function GuildSettings({ d, reload }: { d: GuildData; reload: () => void 
       const { emblem: _e, ...profile } = { ...p, form }
       await patch(`/api/guilds/${g.slug}`, { about: x.about, open: x.open, profile })
       toast.success(t('Збережено'))
+      justSaved.current = true
       reload()
     } catch (e) { toast.error((e as Error).message) } finally { setBusy(false) }
   }
@@ -135,7 +142,12 @@ export function GuildSettings({ d, reload }: { d: GuildData; reload: () => void 
     } catch (e) { toast.error((e as Error).message) }
   }
   const dropEmblem = async () => {
-    try { await fetch(`/api/guilds/${g.slug}/emblem`, { method: 'DELETE', credentials: 'same-origin' }); setEmblem(null); reload() } catch (e) { toast.error((e as Error).message) }
+    try {
+      const r = await fetch(`/api/guilds/${g.slug}/emblem`, { method: 'DELETE', credentials: 'same-origin' })
+      if (!r.ok) throw new Error((await r.json().catch(() => null))?.error || t('Не вдалося зберегти'))
+      setEmblem(null)
+      reload()
+    } catch (e) { toast.error((e as Error).message) }
   }
   const mine = myZone()
   // пояси з однаковою назвою й зсувом (Київ і свій пояс, Берлін і Варшава) — одна картка; вибраний — той, що вже є

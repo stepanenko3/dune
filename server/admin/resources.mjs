@@ -585,7 +585,11 @@ export function buildResources(d) {
         { key: 'accept', label: 'Прийняти новобранцем', bulk: true, row: true, run: async (rows) => {
           // як на сайті: з лімітом учасників гільдії (заявка стає прийнятою сама — addMember)
           const cap = await auth.guildCap()
-          for (const r of rows) if ((r.status || 'pending') === 'pending') await guilds.addMember(r.guild_id, r.user_id, 'recruit', { cap })
+          for (const r of rows) {
+            if (!(await guilds.acceptRequest(r.guild_id, r.user_id, { cap }).catch(() => false))) continue
+            const g = await guilds.get(r.guild_id)
+            await guilds.bus?.emit({ type: 'accepted', guild: { id: g.id, slug: g.slug, name: g.name, tag: g.tag }, user: r.user_id, by: null })
+          }
         } },
       ],
     },

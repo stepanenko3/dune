@@ -236,13 +236,17 @@ export async function createGuilds(db) {
     /** повна картка (з видимістю блоків і анкетою); що з неї бачить глядач — profileFor */
     profile: async (gid) => readProfile((await db.get('SELECT profile FROM guilds WHERE id = ?', gid))?.profile),
     /** змінити картку: patch — частина, решта лишається; герб — лише через setEmblem */
-    async setProfile(gid, patch) {
+    /** нова картка з частини patch поверх збереженої — без запису (перевірити до того, як щось міняти) */
+    async nextProfile(gid, patch) {
       const cur = await api.profile(gid)
       const { emblem, ...rest } = patch && typeof patch === 'object' ? patch : {}
       // видимість і посилання — частинами (змінили один блок — решта лишається)
       if (rest.show && typeof rest.show === 'object') rest.show = { ...cur.show, ...rest.show }
       if (rest.links && typeof rest.links === 'object') rest.links = { ...cur.links, ...rest.links }
-      const next = cleanProfile({ ...rest, emblem: cur.emblem }, cur)
+      return cleanProfile({ ...rest, emblem: cur.emblem }, cur)
+    },
+    async setProfile(gid, patch) {
+      const next = await api.nextProfile(gid, patch)
       await db.run('UPDATE guilds SET profile = ? WHERE id = ?', JSON.stringify(next), gid)
       return next
     },
@@ -337,7 +341,7 @@ export async function createGuilds(db) {
       const o = typeof p === 'string' || p == null ? { note: p } : p
       const answers = cleanAnswers((await api.profile(gid)).form, o.answers)
       await db.run(`INSERT INTO requests (guild_id, user_id, note, created, status, answers, tz, reason, decided, decided_by) VALUES (?, ?, ?, ?, 'pending', ?, ?, NULL, NULL, NULL)
-        ON CONFLICT (guild_id, user_id) DO UPDATE SET note = excluded.note, created = excluded.created, status = 'pending', answers = excluded.answers, tz = excluded.tz, reason = NULL, decided = NULL, decided_by = NULL`,
+        ON CONFLICT (guild_id, user_id) DO UPDATE SET note = excluded.note, created = CASE WHEN requests.status = 'pending' THEN requests.created ELSE excluded.created END, status = 'pending', answers = excluded.answers, tz = excluded.tz, reason = NULL, decided = NULL, decided_by = NULL`,
       gid, uid, plain(o.note, 1000, true), Date.now(), JSON.stringify(answers), cleanTz(o.tz))
     },
     /** заявки гільдії: status — 'pending' (черга) чи 'done' (розглянуті); з людиною й тим, хто вирішив */
@@ -351,12 +355,29 @@ export async function createGuilds(db) {
     myRequests: async (uid) => (await db.all('SELECT r.guild_id, r.status, r.reason, r.created, r.decided, g.slug, g.name, g.tag, g.color FROM requests r JOIN guilds g ON g.id = r.guild_id WHERE r.user_id = ? ORDER BY COALESCE(r.decided, r.created) DESC LIMIT 50', uid))
       .map((r) => ({ guild: { id: r.guild_id, slug: r.slug, name: r.name, tag: r.tag, color: r.color }, status: r.status, reason: r.reason || '', created: Number(r.created), decided: r.decided == null ? null : Number(r.decided) })),
     /** кандидат відкликав: чекаюча — 'withdrawn' (true), інакше нічого */
-    dropRequest: async (gid, uid) => (await db.run("UPDATE requests SET status = 'withdrawn', decided = ?, decided_by = ? WHERE guild_id = ? AND user_id = ? AND status = 'pending'", Date.now(), uid, gid, uid)).changes > 0,
-    /** рішення офіцера: відхилити (з причиною) чи закрити; прийняття — через addMember (він ставить 'accepted') */
-    async decide(gid, uid, { status, reason = '', by = null }) {
-      if (!REQUEST_STATUS.includes(status) || status === 'pending') throw fail('невідомий стан заявки')
-      return (await db.run("UPDATE requests SET status = ?, reason = ?, decided = ?, decided_by = ? WHERE guild_id = ? AND user_id = ? AND status = 'pending'", status, plain(reason, 500, true) || null, Date.now(), by, gid, uid)).changes > 0
+    dropRequest: (gid, uid) => withLock(`guild:${gid}`, async () => (await db.run("UPDATE requests SET status = 'withdrawn', decided = ?, decided_by = ? WHERE guild_id = ? AND user_id = ? AND status = 'pending'", Date.now(), uid, gid, uid)).changes > 0),
+    /**
+     * рішення офіцера: відхилити (з причиною) чи закрити; true — заявка й справді чекала. Рішення, відкликання й
+     * прийняття — по черзі в межах гільдії (той самий замок, що й вступ): двоє офіцерів одночасно не приймуть і не відхилять
+     */
+    decide(gid, uid, { status, reason = '', by = null }) {
+      if (!REQUEST_STATUS.includes(status) || status === 'pending' || status === 'accepted') throw fail('невідомий стан заявки')
+      return withLock(`guild:${gid}`, async () => (await db.run("UPDATE requests SET status = ?, reason = ?, decided = ?, decided_by = ? WHERE guild_id = ? AND user_id = ? AND status = 'pending'", status, plain(reason, 500, true) || null, Date.now(), by, gid, uid)).changes > 0)
     },
+    /**
+     * прийняти заявку новобранцем: лише якщо вона ще чекає (інакше false — її вже розглянули чи відкликали). Людина вже
+     * в гільдії деінде — заявка закривається, помилка 409.
+     */
+    acceptRequest: (gid, uid, { cap, by = null } = {}) => withLock(`guild:${gid}`, async () => {
+      const r = await db.get('SELECT status FROM requests WHERE guild_id = ? AND user_id = ?', gid, uid)
+      if ((r?.status || 'pending') !== 'pending' || !r) return false
+      if (await current(uid)) {
+        await db.run("UPDATE requests SET status = 'closed', decided = ?, decided_by = ? WHERE guild_id = ? AND user_id = ? AND status = 'pending'", Date.now(), by, gid, uid)
+        throw fail('ця людина вже в гільдії', 409)
+      }
+      await addMemberNow(gid, uid, 'recruit', { cap, by })
+      return true
+    }),
     /** коментар офіцера до заявки (кандидат не бачить) */
     async comment(gid, uid, by, text) {
       const s = plain(text, 1000, true)

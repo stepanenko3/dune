@@ -103,7 +103,10 @@ export const emptyProfile = () => ({ server: '', region: null, tz: null, langs: 
 export function readProfile(raw) {
   let p = null
   try { p = raw ? JSON.parse(raw) : null } catch { p = null }
-  try { return cleanProfile(p || {}) } catch { return emptyProfile() }
+  try { return cleanProfile(p || {}) } catch { /* збережене вже не проходить нові правила — без посилань і анкети */ }
+  try { return cleanProfile({ ...p, links: {}, form: {} }) } catch { /* зовсім зіпсоване */ }
+  // нічого не розібрати — краще сховати все від чужих, ніж показати те, що гільдія ховала
+  return { ...emptyProfile(), show: Object.fromEntries(BLOCKS.map((b) => [b, 'guild'])) }
 }
 
 /**

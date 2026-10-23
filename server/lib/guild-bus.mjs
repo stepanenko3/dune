@@ -3,11 +3,12 @@
  * (сповіщення на сайті, згодом — бот Discord/Telegram), підписується тут, не чіпаючи маршрутів.
  *
  * Подія: { type, guild: { id, slug, name, tag }, user (кандидат), by (хто зробив; для submitted — сам кандидат),
- * reason?, at }. type: 'submitted' (подано чи подано знову), 'withdrawn' (кандидат відкликав), 'accepted' (прийнято
- * за заявкою), 'rejected' (відхилено з причиною), 'commented' (офіцер прокоментував; кандидат не бачить).
+ * reason?, at }. type: 'submitted' (подано чи подано знову), 'edited' (кандидат змінив чекаючу заявку), 'withdrawn'
+ * (кандидат відкликав), 'accepted' (прийнято за заявкою), 'rejected' (відхилено з причиною), 'commented' (офіцер
+ * прокоментував; кандидат не бачить).
  * Слухач, що впав, не заважає іншим і самому маршруту — помилку лише записуємо в журнал.
  */
-export const GUILD_EVENTS = ['submitted', 'withdrawn', 'accepted', 'rejected', 'commented']
+export const GUILD_EVENTS = ['submitted', 'edited', 'withdrawn', 'accepted', 'rejected', 'commented']
 
 export function createGuildBus({ log = console } = {}) {
   const fns = new Set()

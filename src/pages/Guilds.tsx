@@ -391,7 +391,8 @@ export function GuildPage() {
     { id: 'home' as const, label: t('Головна') },
     { id: 'members' as const, label: t('Учасники · {n} з {cap}', { n: g.members, cap: d.cap }) },
     { id: 'items' as const, label: d.rank ? t('Вміст гільдії') : t('Публічне') },
-    { id: 'events' as const, label: t('Події') },
+    // події гільдії чужим — якщо гільдія їх не сховала
+    ...(d.rank || d.profile.show.events !== 'hidden' ? [{ id: 'events' as const, label: t('Події') }] : []),
     ...(officer ? [{ id: 'requests' as const, label: d.requests.length ? t('Заявки · {n}', { n: d.requests.length }) : t('Заявки') }, { id: 'invites' as const, label: t('Запрошення') }] : []),
     ...(officer ? [{ id: 'settings' as const, label: t('Налаштування') }] : []),
   ]

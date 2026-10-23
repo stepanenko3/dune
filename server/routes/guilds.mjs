@@ -90,7 +90,8 @@ export function createGuildRoutes({ auth, guilds, items, deleteGuild, decrees, d
       invites: rank >= RANK.officer
         ? await Promise.all((await guilds.invites(g.id)).map(async (i) => ({ code: i.code, created: i.created, expires: i.expires, uses: i.uses, maxUses: i.max_uses, role: i.role || 'member', by: i.by_name || null, live: !!(await guilds.inviteInfo(i.code)) })))
         : [],
-      public: await items.views((await items.library({ owner: { kind: 'guild', id: g.id }, limit: 100 })).rows, req.ctx, starred),
+      // публічне гільдії; бази гільдія може сховати від чужих (блок «Публічні бази»), навіть публічні
+      public: await items.views((await items.library({ owner: { kind: 'guild', id: g.id }, limit: 100 })).rows.filter((it) => profile.show.bases !== 'hidden' || it.kind !== 'base'), req.ctx, starred),
     })
   }))
 
@@ -104,6 +105,8 @@ export function createGuildRoutes({ auth, guilds, items, deleteGuild, decrees, d
     if (!may.profile) throw fail('бракує прав у гільдії', 403)
     if (['name', 'tag', 'color', 'house'].some((k) => k in body) && !may.identity) throw fail('назву, тег, колір і дім міняє лідер', 403)
     const core = Object.fromEntries(['name', 'tag', 'color', 'house', 'about', 'open'].filter((k) => k in body).map((k) => [k, body[k]]))
+    // картку перевіряємо до будь-якого запису: хибне посилання не лишить половину змін збереженою
+    if (body.profile && typeof body.profile === 'object') await guilds.nextProfile(g.id, body.profile)
     const out = Object.keys(core).length ? await guilds.update(g.id, core) : g
     const profile = body.profile && typeof body.profile === 'object' ? await guilds.setProfile(g.id, body.profile) : await guilds.profile(g.id)
     res.json({ guild: await guilds.view(out), profile })
@@ -221,11 +224,16 @@ export function createGuildRoutes({ auth, guilds, items, deleteGuild, decrees, d
     const cur = await guilds.current(req.user.id)
     if (cur?.guild_id === g.id) throw fail('ти вже в цій гільдії')
     await guilds.assertFree(req.user.id)
-    if (!g.open) throw fail('гільдія не приймає заявок — потрібне запрошення', 403)
-    await guilds.assertRoom(g.id, await auth.guildCap())
+    // чекаючу заявку можна змінити й тоді, коли набір закрили чи гільдія заповнилась (нову — ні)
+    const editing = (await guilds.requestOf(g.id, req.user.id))?.status === 'pending'
+    if (!editing) {
+      if (!g.open) throw fail('гільдія не приймає заявок — потрібне запрошення', 403)
+      await guilds.assertRoom(g.id, await auth.guildCap())
+    }
     await guilds.request(g.id, req.user.id, { note: req.body?.note, answers: req.body?.answers, tz: req.body?.tz })
-    await emit({ type: 'submitted', guild: brief(g), user: req.user.id, by: req.user.id })
-    res.status(201).json({ ok: true })
+    // змінена заявка — без нових сповіщень (офіцери її вже бачать у черзі)
+    await emit({ type: editing ? 'edited' : 'submitted', guild: brief(g), user: req.user.id, by: req.user.id })
+    res.status(editing ? 200 : 201).json({ ok: true })
   }))
   /** кандидат відкликає свою заявку */
   r.delete('/api/guilds/:slug/requests', need(), wrap(async (req, res) => {
@@ -251,15 +259,14 @@ export function createGuildRoutes({ auth, guilds, items, deleteGuild, decrees, d
     const x = await guilds.requestOf(g.id, uid)
     if (!x) throw fail('немає такої заявки', 404)
     if (x.status !== 'pending') throw fail('цю заявку вже розглянули', 409)
+    // стан перевіряє саме рішення (під замком гільдії): поки думав, заявку могли розглянути чи відкликати
     if (req.body?.accept) {
-      // за цей час людина могла вступити деінде (тоді заявка зайва) чи гільдія — заповнитись
-      if (await guilds.current(uid)) { await guilds.decide(g.id, uid, { status: 'closed', by: req.user.id }); throw fail('ця людина вже в гільдії', 409) }
-      await guilds.addMember(g.id, uid, 'recruit', { cap: await auth.guildCap(), by: req.user.id })
+      if (!(await guilds.acceptRequest(g.id, uid, { cap: await auth.guildCap(), by: req.user.id }))) throw fail('цю заявку вже розглянули', 409)
       await emit({ type: 'accepted', guild: brief(g), user: uid, by: req.user.id })
     } else {
       const reason = String(req.body?.reason ?? '').trim()
       if (!reason) throw fail('напиши причину — її побачить кандидат')
-      await guilds.decide(g.id, uid, { status: 'rejected', reason, by: req.user.id })
+      if (!(await guilds.decide(g.id, uid, { status: 'rejected', reason, by: req.user.id }))) throw fail('цю заявку вже розглянули', 409)
       await emit({ type: 'rejected', guild: brief(g), user: uid, by: req.user.id, reason })
     }
     res.json({ ok: true })

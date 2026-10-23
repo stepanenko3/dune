@@ -9,7 +9,7 @@ import sharp from 'sharp'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { createApp } from './app.mjs'
 import { createGuilds } from './lib/guilds.mjs'
-import { cleanAnswers, cleanProfile, profileFor } from './lib/guild-profile.mjs'
+import { cleanAnswers, cleanProfile, profileFor, readProfile } from './lib/guild-profile.mjs'
 import { createOg } from './lib/og.mjs'
 import { openDb } from './lib/sql.mjs'
 import { fill } from './lib/util.mjs'
@@ -68,6 +68,12 @@ describe('картка гільдії (бібліотека)', () => {
     expect(cleanProfile({ links: { discord: 'https://discord.gg/sandwalk', telegram: 'https://t.me/+AbCdEf' } }).links).toEqual({ discord: 'https://discord.gg/sandwalk', telegram: 'https://t.me/+AbCdEf' })
     // герб — лише адреса зі свого сховища
     expect(cleanProfile({ emblem: 'https://evil.example/x.png' }).emblem).toBeNull()
+  })
+  it('збережене, що вже не проходить правил, — без посилань і анкети; зовсім зіпсоване — усе сховане від чужих', () => {
+    const p = readProfile(JSON.stringify({ rules: 'наші', show: { rules: 'guild' }, links: { discord: 'https://bad.example/x' } }))
+    expect(p).toMatchObject({ rules: 'наші', show: { rules: 'guild' }, links: { discord: '' } })
+    expect(Object.values(readProfile('{не json').show).every((v) => v === 'public' || v === 'guild')).toBe(true)
+    expect(readProfile(JSON.stringify({ form: 'зламано', links: 7, show: { rules: 'guild' } })).show.rules).toBe('guild')
   })
   it('чужий бачить лише блоки «для всіх»; учасник — усе; офіцер — ще й видимість та анкету як є', () => {
     const p = cleanProfile({ rules: 'правила', requirements: 'вимоги', schedule: [{ days: [6], from: '22:00', to: '02:00' }], links: { discord: 'https://discord.gg/abc' }, show: { rules: 'guild', links: 'guild' } })
@@ -172,6 +178,9 @@ describe.each(ENGINES)('%s', (_name, pgCfg) => {
     // частина картки — решта лишається
     expect((await off.patch(`/api/guilds/${g.slug}`, { profile: { show: { links: 'guild' } } })).body.profile.show).toMatchObject({ rules: 'guild', links: 'guild' })
     expect((await off.patch(`/api/guilds/${g.slug}`, { profile: { links: { discord: 'http://discord.gg/x' } } })).status).toBe(400)
+    // хибна картка — і опис поруч не зберігся (усе або нічого)
+    expect((await off.patch(`/api/guilds/${g.slug}`, { about: 'не має зберегтись', profile: { links: { discord: 'http://discord.gg/x' } } })).status).toBe(400)
+    expect((await off.get(`/api/guilds/${g.slug}`)).body.guild.about).toBe('Лиси Арракіса')
   })
 
   it('чужий бачить лише відкрите: у сторінці, у каталозі; склад — лише керівництво', async () => {
@@ -211,6 +220,18 @@ describe.each(ENGINES)('%s', (_name, pgCfg) => {
     expect((await cand.get(`/api/guilds/${g.slug}/requests`)).status).toBe(403)
   })
 
+  it('змінити чекаючу заявку: місце в черзі те саме, нових сповіщень нема, і навіть коли набір закрили', async () => {
+    const before = (await off.get(`/api/guilds/${g.slug}/requests`)).body.rows[0].created
+    const notes = (await lead.notes()).rows.find((n) => n.kind === 'guild.app.new').count
+    await off.patch(`/api/guilds/${g.slug}`, { open: false })
+    expect((await cand.post(`/api/guilds/${g.slug}/requests`, { note: 'Візьміть, будь ласка', tz: 'America/Chicago', answers: { lvl: 72, style: ['PvP'] } })).status).toBe(200)
+    await off.patch(`/api/guilds/${g.slug}`, { open: true })
+    const row = (await off.get(`/api/guilds/${g.slug}/requests`)).body.rows[0]
+    expect(row).toMatchObject({ note: 'Візьміть, будь ласка', created: before })
+    expect(events.at(-1)).toMatchObject({ type: 'edited' })
+    expect((await lead.notes()).rows.find((n) => n.kind === 'guild.app.new').count).toBe(notes)
+  })
+
   it('коментарі офіцерів — лише офіцерам; відхилити — з причиною, кандидат її бачить', async () => {
     expect((await off.post(`/api/guilds/${g.slug}/requests/${cand.id}/comments`, { text: 'Перевірити в грі' })).status).toBe(201)
     expect((await cand.post(`/api/guilds/${g.slug}/requests/${cand.id}/comments`, { text: 'я теж' })).status).toBe(403)
@@ -219,7 +240,12 @@ describe.each(ENGINES)('%s', (_name, pgCfg) => {
 
     expect((await off.post(`/api/guilds/${g.slug}/requests/${cand.id}`, { accept: false, reason: '  ' })).status).toBe(400)
     expect((await off.post(`/api/guilds/${g.slug}/requests/${cand.id}`, { accept: false, reason: 'Спершу 60-й рівень' })).status).toBe(200)
+    // уже відхилену не прийняти й не відхилити вдруге (і жодних подій про це)
+    const seen = events.length
     expect((await off.post(`/api/guilds/${g.slug}/requests/${cand.id}`, { accept: true })).status).toBe(409)
+    expect((await lead.post(`/api/guilds/${g.slug}/requests/${cand.id}`, { accept: false, reason: 'ще раз' })).status).toBe(409)
+    expect(events.length).toBe(seen)
+    expect((await cand.get(`/api/guilds/${g.slug}`)).body.role).toBeNull()
     expect((await cand.get(`/api/guilds/${g.slug}`)).body.request).toMatchObject({ status: 'rejected', reason: 'Спершу 60-й рівень' })
     expect((await cand.notes()).rows.find((n) => n.kind === 'guild.app.rejected')).toMatchObject({ data: { reason: 'Спершу 60-й рівень' } })
     expect(events.at(-1)).toMatchObject({ type: 'rejected', reason: 'Спершу 60-й рівень', by: off.id })
@@ -227,6 +253,15 @@ describe.each(ENGINES)('%s', (_name, pgCfg) => {
     expect(mine.requests).toEqual([])
     expect(mine.myRequests[0]).toMatchObject({ guild: { id: g.id }, status: 'rejected', reason: 'Спершу 60-й рівень' })
     expect((await off.get(`/api/guilds/${g.slug}/requests?show=done`)).body.rows[0]).toMatchObject({ status: 'rejected', decidedBy: expect.any(String) })
+  })
+
+  it('кандидат відкликав, поки офіцер думав, — прийняти вже не можна', async () => {
+    expect((await cand.post(`/api/guilds/${g.slug}/requests`, { answers: { lvl: 61, style: ['Крафт'] } })).status).toBe(201)
+    // одночасно: відкликання й «прийняти» — хтось один, і людина не стає учасником з відкликаною заявкою
+    const [w, a] = await Promise.all([cand.del(`/api/guilds/${g.slug}/requests`), off.post(`/api/guilds/${g.slug}/requests/${cand.id}`, { accept: true })])
+    const st = (await cand.get(`/api/guilds/${g.slug}`)).body
+    if (w.body.ok) { expect(a.status).toBe(409); expect(st.role).toBeNull(); expect(st.request.status).toBe('withdrawn') }
+    else { expect(a.status).toBe(200); expect(st.role).toBe('recruit'); await lead.del(`/api/guilds/${g.slug}/members/${cand.id}`) }
   })
 
   it('подати знову → чекає; прийняти → новобранець, заявка прийнята, сповіщення кандидатові', async () => {
@@ -252,6 +287,17 @@ describe.each(ENGINES)('%s', (_name, pgCfg) => {
     const st = Object.fromEntries((await solo.get('/api/guilds')).body.myRequests.map((x) => [x.guild.slug, x.status]))
     expect(st).toEqual({ sandwalkers: 'closed', [g.slug]: 'accepted' })
     expect((await admin.get('/api/guilds/sandwalkers')).body.requests).toEqual([])
+  })
+
+  it('сховані «Публічні бази» — і з «Публічного» гільдії чужим зникають бази', async () => {
+    const doc = { format: 2, claims: [{ x: -5, y: 0, w: 10, d: 10 }], pieces: [{ id: 'p1', shape: 'Sardaukar_Foundation', x: 0.5, y: 0.5, z: 0, rot: 0 }], ui: { name: 'Лисяча нора' } }
+    const base = await off.post('/api/bases', { doc, owner: { kind: 'guild', id: g.id }, visibility: 'public' })
+    expect(base.status).toBe(201)
+    expect((await anon.get(`/api/guilds/${g.slug}`)).body.public.some((i) => i.kind === 'base')).toBe(true)
+    await off.patch(`/api/guilds/${g.slug}`, { profile: { show: { bases: 'guild' } } })
+    expect((await anon.get(`/api/guilds/${g.slug}`)).body.public.some((i) => i.kind === 'base')).toBe(false)
+    expect((await off.get(`/api/guilds/${g.slug}`)).body.public.some((i) => i.kind === 'base')).toBe(true)
+    await off.patch(`/api/guilds/${g.slug}`, { profile: { show: { bases: 'public' } } })
   })
 
   it('герб: офіцер завантажує зображення — квадрат WebP у сховищі; чуже — 415', async () => {
@@ -280,5 +326,13 @@ describe.each(ENGINES)('%s', (_name, pgCfg) => {
     expect(html).not.toContain('Без токсичності')
     await (await createGuilds(db)).setProfile(g.id, { show: { about: 'guild' } })
     expect(await og.render(req)).not.toContain('Лиси Арракіса')
+  })
+
+  it('сховане «Про гільдію»: чужим — порожньо в сторінці й каталозі, пошук за ним її не знаходить; учасникам — є', async () => {
+    expect((await anon.get(`/api/guilds/${g.slug}`)).body.guild.about).toBe('')
+    expect((await off.get(`/api/guilds/${g.slug}`)).body.guild.about).toBe('Лиси Арракіса')
+    expect((await anon.get('/api/guilds')).body.list.find((x) => x.id === g.id).about).toBe('')
+    expect((await anon.get(`/api/guilds?q=${encodeURIComponent('арракіса')}`)).body.list).toEqual([])
+    expect((await anon.get(`/api/guilds?q=${encodeURIComponent('лиси')}`)).body.list.map((x) => x.id)).toEqual([g.id])
   })
 })

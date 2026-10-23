@@ -122,7 +122,7 @@ export async function createApp({ dataDir, serveDist = false, background = true,
     const guild = async (id) => guilds.get(id)
     track(guilds, 'guilds', revisions, { create: { action: 'create', id: (a, r) => r?.id, read: guild }, update: { action: 'update', pre: true, id: (a) => a[0], read: guild }, setProfile: { action: 'update', pre: true, id: (a) => a[0], read: guild }, setEmblem: { action: 'update', pre: true, id: (a) => a[0], read: guild }, remove: { action: 'delete', pre: true, id: (a) => a[0], read: guild } })
     const member = async ([g, u]) => (await guilds.members(g)).find((m) => m.id === u) ?? null
-    track(guilds, 'members', revisions, { addMember: { action: 'create', id: (a) => [a[0], a[1]], read: member }, setRole: { action: 'update', pre: true, id: (a) => [a[0], a[1]], read: member }, removeMember: { action: 'delete', pre: true, id: (a) => [a[0], a[1]], read: member } })
+    track(guilds, 'members', revisions, { addMember: { action: 'create', id: (a) => [a[0], a[1]], read: member }, acceptRequest: { action: 'create', id: (a, r) => (r ? [a[0], a[1]] : null), read: member }, setRole: { action: 'update', pre: true, id: (a) => [a[0], a[1]], read: member }, removeMember: { action: 'delete', pre: true, id: (a) => [a[0], a[1]], read: member } })
     const item = async ([k, i]) => items.get(k, i)
     track(items, 'items', revisions, { setAccess: { action: 'access', pre: true, id: (a) => [a[0], String(a[1])], read: item }, moderate: { action: 'moderate', pre: true, id: (a) => [a[0], String(a[1])], read: item }, remove: { action: 'delete', pre: true, id: (a) => [a[0], String(a[1])], read: item } })
   }
@@ -165,6 +165,8 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   const notifications = await createNotifications(db, { push: (uid, ev) => hubs.note.emitWhere(ev, (ctx) => ctx.user?.id === uid) })
   // набір у гільдії: що сталося з заявками — в одному місці (сповіщення нижче, згодом — бот)
   const guildBus = createGuildBus({ log })
+  // панель керування теж приймає заявки — їй шина через guilds
+  guilds.bus = guildBus
   guildBus.on(async (e) => {
     const data = { guild: e.guild.id, slug: e.guild.slug, name: e.guild.name, tag: e.guild.tag }
     if (e.type === 'submitted') {

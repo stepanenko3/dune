@@ -26,9 +26,11 @@ import type { GuildData } from './types'
 
 const when = (ms: number) => new Date(ms).toLocaleString(locale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 
+/** відповідь за видом питання; не того виду (питання змінили після подачі) — як текст, щоб черга не падала */
 function AnswerView({ q, v, tz }: { q: Question; v: Answer; tz: string | null }) {
-  if (q.type === 'hours') return <ScheduleView compact slots={v as Slot[]} tz={tz} />
-  if (q.type === 'choice') return <span>{(v as string[]).join(', ')}</span>
+  const slots = Array.isArray(v) && v.every((s) => typeof s === 'object' && s && Array.isArray((s as Slot).days)) ? (v as Slot[]) : null
+  if (q.type === 'hours' && slots) return <ScheduleView compact slots={slots} tz={tz} />
+  if (Array.isArray(v)) return <span className="break-words">{slots ? '' : (v as string[]).join(', ')}</span>
   return <span className="whitespace-pre-line break-words">{String(v)}</span>
 }
 
@@ -132,7 +134,7 @@ export function Queue({ d, onChange }: { d: GuildData; onChange: () => void }) {
               <Empty framed={false} title={show === 'done' ? t('Тут будуть прийняті й відхилені заявки') : t('Нових заявок поки нема')} />
             </Section>
           ) : (
-            <ul className="grid grid-cols-[minmax(0,1fr)] gap-2.5 xl:grid-cols-2">
+            <ul className="grid grid-cols-[minmax(0,1fr)] items-start gap-2.5 xl:grid-cols-2">
               {data.rows.map((a) => <AppCard key={a.id} a={a} form={data.form} slug={slug} full={full} reload={() => { void load(); onChange() }} />)}
             </ul>
           )}
