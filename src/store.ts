@@ -9,6 +9,7 @@
  *   /calcs/public (mine — без сегмента), вкладка гільдії /g/<адреса>/items (головна гільдії — без сегмента); давні ?show=,
  *   ?kind=, ?tab= — переписуються на них; /guilds/open — гільдії, що приймають заявки. У параметрах лишаються фільтри й дані (пошук, порядок, код білду, цілі), /login — вхід поштою (давні /register і /reset — туди ж), /me — налаштування профілю,
  *   /u/<логін> — людина, /u/<логін>/settings — налаштування свого профілю (давнє /me — туди ж), /guilds — гільдії, /g/<адреса> — гільдія, /invite/<код> — запрошення, /admin/<розділ> — панель,
+ *   /patches — що змінилось у патчах гри, /patches/<збірка> — один патч, /notify — сповіщення в Discord і Telegram,
  *   /events — події спільноти (вкладки /events/mine, /events/guild, /events/past), /events/new — нова, /events/<id> — подія, /events/<id>/edit — редагування.
  */
 import { createContext, useContext } from 'react'
@@ -16,7 +17,7 @@ import { create } from 'zustand'
 
 export type View =
   | 'home' | 'bases' | 'roadmap' | 'map' | 'catalog' | 'calculator' | 'skills' | 'builds' | 'calcs'
-  | 'library' | 'login' | 'account' | 'user' | 'guilds' | 'guild' | 'invite' | 'admin' | 'data' | 'events' | 'world' | 'notfound'
+  | 'library' | 'login' | 'account' | 'user' | 'guilds' | 'guild' | 'invite' | 'admin' | 'data' | 'events' | 'world' | 'patches' | 'notify' | 'notfound'
 
 /** вкладки списків (сегмент після розділу); «мої» — без сегмента */
 export const SCOPES = ['mine', 'guild', 'public'] as const
@@ -47,6 +48,8 @@ export function pathOf(v: View, base?: string | null, edit?: boolean, param?: st
     case 'events': return p ? `/events/${p}${sub === 'edit' && param !== 'new' ? '/edit' : ''}` : `/events${sub && (EVENT_TABS as readonly string[]).includes(sub) ? `/${sub}` : ''}`
     // карта світу: вибране місце — сегментом (id мапи гри), як вкладка тієї самої сторінки
     case 'world': return sub ? `/world/${encodeURIComponent(sub)}` : '/world'
+    // патч гри — сегментом (номер збірки)
+    case 'patches': return p ? `/patches/${p}` : '/patches'
     // у панелі param — увесь шлях після /admin/ («users», «users/u12…», «game-items/new»), уже закодований
     case 'admin': return param ? `/admin/${param}` : '/admin'
     // невідома адреса лишається такою, як її ввели (сторінка каже «не знайдено»)
@@ -80,6 +83,10 @@ export function fromLocation(): Loc {
   if (seg === 'map' || seg === 'catalog' || seg === 'calculator') return at(seg)
   // «Оновлення даних»: звідки дані гри і що в них змінилось
   if (seg === 'data') return at('data')
+  // «Що змінилось у патчі»: стрічка й один патч (номер збірки)
+  if (seg === 'patches') return at('patches', word && /^\d{1,12}$/.test(word) ? word : null)
+  // сповіщення в Discord і Telegram
+  if (seg === 'notify') return at('notify')
   // давня адреса карти світу: /world/<місце> — App переводить на /map?m=overmap&loc=<місце>
   if (seg === 'world') return at('world', null, word)
   if (seg === 'login' || seg === 'register' || seg === 'reset') return at('login', seg === 'login' ? null : seg)

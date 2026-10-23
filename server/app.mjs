@@ -58,6 +58,11 @@ import { createWorldRoutes } from './routes/world.mjs'
 import { createWorld } from './lib/world.mjs'
 import { createStorage, mediaRoute } from './lib/storage.mjs'
 import { createMedia } from './lib/media.mjs'
+import { createPatches } from './lib/patches.mjs'
+import { createPatchRoutes } from './routes/patches.mjs'
+import { createNotify } from './lib/notify/index.mjs'
+import { notifyEventsSoon } from './lib/notify/topics.mjs'
+import { createNotifyRoutes } from './routes/notify.mjs'
 import { fail, withLock } from './lib/util.mjs'
 import { auditMiddleware, dropLegacyDuplicates } from './lib/audit.mjs'
 
@@ -164,6 +169,9 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   // мапа з файлів гри (план 5b): точки, типи міток і розклад ГП застосовує реєстр, мапа сайту бере їх після перемикання
   const gamemap = await createGameMap({ db, mapData, dataDir, t: (lang, k) => i18n.t(lang, k) })
   const gamedata = await createGameDataSources({ db, dataDir, game, mapData, spice, gamemap, log })
+  // сповіщення в Discord / Telegram (теми — notify/index.mjs) і «що змінилось у патчі» (новий патч — тема patch.new)
+  const notify = await createNotify({ db, i18n, guilds, log })
+  const patches = await createPatches({ db, log, onNew: (p) => notify.emit('patch.new', p, { visibility: 'public' }) })
 
   // ---------- давні дані: з SQLite у щойно підключений Postgres (раз), потім — початковий вміст порожньої бази ----------
   if (!given) await importSqlite(db, path.join(dataDir, 'app.db'), log)
@@ -220,6 +228,7 @@ export async function createApp({ dataDir, serveDist = false, background = true,
     if (leader) await content.transferOwned({ kind: 'guild', id: gid }, { kind: 'user', id: leader.id })
     else await content.purgeOwned({ kind: 'guild', id: gid })
     for (const m of members) { const u = await auth.get(m.id); if (u?.main_guild === gid) await auth.setMainGuild(u.id, null) }
+    await notify.forgetOwner({ kind: 'guild', id: gid })
     await guilds.remove(gid)
   }
   /**
@@ -232,13 +241,14 @@ export async function createApp({ dataDir, serveDist = false, background = true,
       const next = (await guilds.members(g.id)).filter((m) => m.id !== uid)
       const heir = next.find((m) => m.role === 'officer') || next.find((m) => m.role === 'member') || next[0]
       if (heir) await guilds.setRole(g.id, heir.id, 'leader')
-      else { await content.purgeOwned({ kind: 'guild', id: g.id }); await guilds.remove(g.id) }
+      else { await content.purgeOwned({ kind: 'guild', id: g.id }); await notify.forgetOwner({ kind: 'guild', id: g.id }); await guilds.remove(g.id) }
     }
     const u = await auth.get(uid)
     await content.purgeOwned({ kind: 'user', id: uid })
     await items.dropStarsOf(uid)
     await progress.forgetUser(uid)
     await push.forgetUser(uid)
+    await notify.forgetOwner({ kind: 'user', id: uid })
     await spice.forgetUser(uid)
     await events.forgetUser(uid)
     await guilds.leaveAll(uid)
@@ -343,6 +353,8 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   app.use(createCatalogRoutes({ catalog, game, media }))
   app.use(createSkillsRoutes({ skills }))
   app.use(createGameDataRoutes({ sources: gamedata, roles, game }))
+  app.use(createPatchRoutes({ patches, roles }))
+  app.use(createNotifyRoutes({ notify, guilds }))
   // карта світу: місця карти поверхні гри й переходи між мапами (data/world.json — з файлів гри)
   const world = createWorld({ storage, log })
   app.use(createWorldRoutes({ world }))
@@ -351,7 +363,7 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   app.use(createDocRoutes({ kind: 'build', path: 'builds', store: builds, clean: cleanBuild, items, content, label: 'білду' }))
   app.use(createDocRoutes({ kind: 'calc', path: 'calcs', store: calcs, clean: cleanCalc, items, content, label: 'розрахунку' }))
   app.use(createDocRoutes({ kind: 'marker', path: 'markers', store: markers, clean: (d) => cleanMarker(d, mapData), items, content, hub: hubs.marker, label: 'позначки' }))
-  app.use(createEventRoutes({ events, items, content, hub: hubs.event, mapData, db }))
+  app.use(createEventRoutes({ events, items, content, hub: hubs.event, mapData, db, notify }))
   app.use(createDecreeRoutes({ decrees, roles }))
   app.use(createPushRoutes({ push }))
   app.use('/versions', express.static(path.join(root, 'versions'), { maxAge: '1d' }))
@@ -374,7 +386,7 @@ export async function createApp({ dataDir, serveDist = false, background = true,
     app.use('/assets', express.static(path.join(dist, 'assets'), { maxAge: '1y', immutable: true, index: false }), (req, res) => res.status(404).end())
     app.use(express.static(dist, { maxAge: '1d', index: false }))
     // сторінка сайту: відомі розділи — 200; невідома адреса — та сама сторінка (вона скаже «не знайдено»), але з кодом 404
-    const KNOWN = new Set(['', 'bases', 'roadmap', 'map', 'catalog', 'calculator', 'skills', 'builds', 'calcs', 'library', 'login', 'register', 'reset', 'me', 'account', 'u', 'g', 'guilds', 'invite', 'admin', 'plan', 'dd', 'data', 'events', 'world'])
+    const KNOWN = new Set(['', 'bases', 'roadmap', 'map', 'catalog', 'calculator', 'skills', 'builds', 'calcs', 'library', 'login', 'register', 'reset', 'me', 'account', 'u', 'g', 'guilds', 'invite', 'admin', 'plan', 'dd', 'data', 'events', 'world', 'patches', 'notify'])
     // у сторінку — заголовок, опис і картинка того, на що веде адреса (прев'ю посилань у Discord, Telegram)
     const og = createOg({ file: path.join(dist, 'index.html'), db, items, auth, guilds, thumbs, access, events })
     app.get('*', (req, res, next) => Promise.resolve().then(async () => {
@@ -426,6 +438,10 @@ export async function createApp({ dataDir, serveDist = false, background = true,
       const ch = r.filter((x) => x.status === 'changed').map((x) => x.section)
       say(ch.length ? `змінено: ${ch.join(', ')}` : 'без змін')
     } })
+  await cron.register('patches-scan', { name: 'Патчі гри', description: 'Рахує «що змінилось у патчі» для нових збірок гри (пакети видобувача) і сповіщає про свіжий патч', schedule: '*/10 * * * *',
+    run: async (say) => { const made = await patches.scan(); say(made.length ? `нові патчі: ${made.join(', ')}` : 'нових збірок нема') } })
+  await cron.register('notify-send', { name: 'Сповіщення: Discord і Telegram', description: 'Надсилає чергу сповіщень (повтори після збоїв) і «подія скоро почнеться»', schedule: '* * * * *',
+    run: async (say) => { const soon = await notifyEventsSoon({ db, items, notify }); const sent = await notify.deliver(); if (soon || sent) say(`подій скоро: ${soon}, надіслано: ${sent}`) } })
   await cron.register('cleanup', { name: 'Прибирання', description: 'Прострочені сеанси, коди входу й запрошення, давні заявки до гільдій, старий журнал дій та історія змін (скільки днів зберігати — у налаштуваннях сайту)', schedule: '15 * * * *',
     run: async (say) => {
       const now = Date.now()
@@ -448,10 +464,13 @@ export async function createApp({ dataDir, serveDist = false, background = true,
     setTimeout(() => thumbs.warm().catch(() => {}), 3000).unref?.()
     // картинка карти поверхні — у сховище, якщо її там ще нема
     world.warm().catch((e) => log.warn?.(`[world] картинка карти: ${e.message}`))
+    // патчі збірок, яких ще нема в базі, і бот Telegram (довге опитування — лише з токеном)
+    setTimeout(() => patches.scan().catch(() => {}), 5000).unref?.()
+    notify.start()
   }
 
   app.locals.spice = spice
   app.locals.storage = storage
-  app.locals.close = async () => { cron.stop(); push.close(); if (!given) await db.close() }
+  app.locals.close = async () => { cron.stop(); push.close(); notify.stop(); if (!given) await db.close() }
   return app
 }

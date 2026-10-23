@@ -3,7 +3,7 @@
  * моя гільдія (одна) чи пошук гільдії, усі гільдії, панель керування (модераторам і адміністраторам), вихід.
  */
 import { useCallback, useRef, useState } from 'react'
-import { LayoutDashboard, LogIn, LogOut, Settings, User as UserIcon, Users, LibraryBig } from 'lucide-react'
+import { BellRing, LayoutDashboard, LogIn, LogOut, Settings, User as UserIcon, Users, LibraryBig } from 'lucide-react'
 import { roleWithRank, loginHref, useAuth, roleLabel, canAdmin } from '@/lib/auth'
 import { useStore, type View } from '@/store'
 import { Avatar, GuildTag } from '@/components/access/Access'
@@ -51,6 +51,7 @@ export function AccountMenu({ pill }: { pill: string }) {
           <div className="my-1 h-px bg-line" />
           {/* бібліотека — тут і вкладкою «Публічні» в кожному розділі (у верхньому меню її нема) */}
           <button role="menuitem" className={item} onClick={() => go('library')}><LibraryBig size={15} className="text-muted" />{t('Бібліотека')}</button>
+          <button role="menuitem" className={item} onClick={() => go('notify')}><BellRing size={15} className="text-muted" />{t('Сповіщення в Discord і Telegram')}</button>
           <div className="my-1 h-px bg-line" />
           {guild && (
             <button role="menuitem" className={item} onClick={() => go('guild', guild.slug)}>

@@ -10,6 +10,7 @@
  */
 import fs from 'node:fs'
 import path from 'node:path'
+import { createHash } from 'node:crypto'
 import zlib from 'node:zlib'
 import { pathToFileURL } from 'node:url'
 import { check, fetchServer } from '../lib/steam.mjs'
@@ -20,6 +21,17 @@ import { prune, writeBundle } from '../lib/bundle.mjs'
 import { readState, writeState } from '../lib/state.mjs'
 
 export const EXTRACTOR_VERSION = '1'
+/**
+ * відбиток коду видобувача (normalize/ і lib/): той самий — різниця двох пакетів є патчем гри, а не нашим покращенням
+ * видобувача (сайт рахує «що змінилось у патчі» на мапі лише тоді — server/lib/patches.mjs)
+ */
+export function extractorCode(root = path.join(import.meta.dirname, '..')) {
+  const h = createHash('sha256')
+  for (const d of ['normalize', 'lib']) {
+    for (const f of fs.readdirSync(path.join(root, d)).filter((x) => x.endsWith('.mjs')).sort()) h.update(d + '/' + f + '\0').update(fs.readFileSync(path.join(root, d, f)))
+  }
+  return h.digest('hex').slice(0, 16)
+}
 const STEPS = ['check', 'fetch', 'unpack', 'usmap', 'export', 'normalize', 'bundle']
 const DEFAULT_WORK = '/Users/stepanenko/Sites/DuneAwakening/gamefiles'
 
@@ -126,7 +138,7 @@ async function pipeline(o, d, until) {
   for (const [k, v] of Object.entries(sections)) if (v instanceof Error) d.log(`розділ ${k}: ${v.message}`)
   if (!at('bundle')) return save(), 0
   d.step('bundle')
-  const dir = await d.writeBundle({ work: o.work, build: info.build, version: info.version, manifestId: r.manifestId, sections, extractor: { version: EXTRACTOR_VERSION } })
+  const dir = await d.writeBundle({ work: o.work, build: info.build, version: info.version, manifestId: r.manifestId, sections, extractor: { version: EXTRACTOR_VERSION, code: extractorCode() } })
   d.log(`пакет: ${dir}`)
   save({ builds: { ...(state.builds ?? {}), [info.build]: { sha: r.serverTarSha, bundled: Date.now() } } })
   if (until === 'all') { try { d.prune(o.work, 2) } catch (e) { d.log(`prune не вдався: ${e?.message || e}`) } }

@@ -31,7 +31,7 @@ const TITLE: Partial<Record<string, () => string>> = {
   bases: () => t('Бази'), roadmap: () => t('Роадмапи'), map: () => t('Мапа'), catalog: () => t('Довідник'), calculator: () => t('Розрахунок'),
   skills: () => t('Планувальник'), builds: () => t('Уміння'), calcs: () => t('Калькулятор'), library: () => t('Бібліотека'), login: () => t('Вхід'), account: () => t('Налаштування профілю'), guilds: () => t('Гільдії'),
   guild: () => t('Гільдія'), invite: () => t('Запрошення'), admin: () => t('Панель керування'), data: () => t('Оновлення даних'), notfound: () => t('Такої сторінки нема'),
-  events: () => t('Події'), world: () => t('Карта світу'),
+  events: () => t('Події'), world: () => t('Карта світу'), patches: () => t('Патчі гри'), notify: () => t('Сповіщення'),
 }
 
 // панель керування — рідко й не всім: окремим шматком
@@ -43,6 +43,9 @@ const Catalog = lazy(() => import('@/pages/Catalog'))
 const CalcPage = lazy(() => import('@/pages/CalcPage'))
 const SkillsPage = lazy(() => import('@/pages/SkillsPage'))
 const DataUpdates = lazy(() => import('@/pages/DataUpdates'))
+// «що змінилось у патчі» й сповіщення в Discord / Telegram
+const Patches = lazy(() => import('@/pages/Patches'))
+const Notify = lazy(() => import('@/pages/Notify'))
 // події: список, сторінка й редактор (з мапою для точок — Leaflet своїм шматком)
 const Events = lazy(() => import('@/pages/Events'))
 // карта світу: схема карти поверхні гри й переходи між мапами
@@ -110,6 +113,14 @@ function Page({ r }: { r: Route }) {
         ) : view === 'data' ? (
           <Suspense fallback={<Fallback label={t('Завантаження…')} title={t('Оновлення даних')} />}>
             <DataUpdates />
+          </Suspense>
+        ) : view === 'patches' ? (
+          <Suspense fallback={<Fallback label={t('Завантаження…')} title={param ? undefined : t('Патчі гри')} />}>
+            <Patches build={param} />
+          </Suspense>
+        ) : view === 'notify' ? (
+          <Suspense fallback={<Fallback label={t('Завантаження…')} title={t('Сповіщення')} />}>
+            <Notify />
           </Suspense>
         ) : view === 'events' ? (
           <Suspense fallback={<Fallback label={t('Завантаження подій…')} title={param ? undefined : t('Події спільноти')} />}>

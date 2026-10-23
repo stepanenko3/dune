@@ -13,9 +13,10 @@ import { can } from '../lib/items.mjs'
 import { rightsOf } from '../lib/roadmap-access.mjs'
 import { cleanEvent, cleanMembers, endsOf, EVENT_TYPE_L, formatOf, icsOf, regState, TEAM_STATUS } from '../lib/events.mjs'
 import { fail, plain, withLock } from '../lib/util.mjs'
+import { eventData, scopeOf } from '../lib/notify/topics.mjs'
 import { need, wrap } from './auth.mjs'
 
-export function createEventRoutes({ events, items, content, hub, mapData, db }) {
+export function createEventRoutes({ events, items, content, hub, mapData, db, notify = null }) {
   const r = express.Router()
   const lock = (id, fn) => withLock(`event:${id}`, fn)
 
@@ -141,6 +142,9 @@ export function createEventRoutes({ events, items, content, hub, mapData, db }) 
     const ev = await events.get(await content.H.event.create(doc))
     const it = await items.add('event', ev.id, { owner: o, visibility, by: req.user.id, ...meta(doc) })
     await hub?.emit({ op: 'put', kind: 'event', id: ev.id }, it)
+    // сповіщення в Discord / Telegram — у фоні (служби не затримують відповідь)
+    const scope = notify && scopeOf(it)
+    if (scope) notify.emit('event.new', eventData(ev), scope).catch(() => {})
     const rt = rightsOf(req.ctx, it)
     res.status(201).json(await full(req, ev, it, rt.edit, can(req.ctx, it).manage))
   }))

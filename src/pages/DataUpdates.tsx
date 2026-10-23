@@ -47,6 +47,8 @@ export default function DataUpdates() {
           <p className="text-[13px] text-muted">
             {version ? t('Версія гри: {version}', { version }) : t('версія гри ще невідома')}
             {status?.updatedAt ? <> · {t('остання зміна {date}', { date: fmt(status.updatedAt) })}</> : null}
+            {' · '}
+            <a className="underline hover:text-spice" href="/patches" onClick={(e) => { if (!plainClick(e)) return; e.preventDefault(); useStore.getState().setView('patches') }}>{t('Що змінилось у грі')}</a>
             {manage && (
               <> · <a className="underline hover:text-spice" href="/admin/gamedata" onClick={(e) => { if (!plainClick(e)) return; e.preventDefault(); useStore.getState().setView('admin', { param: 'gamedata' }) }}>{t('Керувати джерелами')}</a></>
             )}
