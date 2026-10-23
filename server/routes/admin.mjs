@@ -1,9 +1,12 @@
 /*
  * Панель керування: усі таблиці сайту як ресурси (../admin/resources.mjs, рушій — ../admin/engine.mjs), огляд,
- * масове створення оголошень, тексти гри мовами (імпорт з gaming.tools іде з браузера адміністратора), налаштування.
+ * масове створення оголошень, тексти гри мовами, налаштування, кількість записів (заголовки, вкладки, групи),
+ * завантаження зображень у сховище (/media/…), фото бази (знімок чи своє), журнал фонової задачі наживо (SSE).
  * Модератор бачить людей, гільдії, вміст, гру, журнал і веде оголошення; решта — адміністратор. Кожна зміна — у журнал.
  */
+import crypto from 'node:crypto'
 import express from 'express'
+import sharp from 'sharp'
 import { DEFAULT_LIMITS } from '../lib/content.mjs'
 import { createEngine } from '../admin/engine.mjs'
 import { buildResources } from '../admin/resources.mjs'
@@ -28,7 +31,7 @@ export const SITE_SETTINGS = {
 }
 
 export function createAdminRoutes(deps) {
-  const { db, auth, items, game, i18n, announcements, roles, revisions, cron } = deps
+  const { db, auth, items, game, i18n, announcements, roles, revisions, cron, bases, thumbs, storage } = deps
   const engine = createEngine({ db, auth, roles, revisions, resources: buildResources(deps) })
   const r = express.Router()
   /** доступ до панелі й окремих можливостей — за дозволами ролі (server/lib/roles.mjs) */
@@ -125,7 +128,7 @@ export function createAdminRoutes(deps) {
     try { filters = req.query.f ? JSON.parse(String(req.query.f)) : {} } catch { throw fail('хибні фільтри') }
     let fixed = {}
     try { fixed = req.query.fixed ? JSON.parse(String(req.query.fixed)) : {} } catch { throw fail('хибні фільтри') }
-    return { page: req.query.page, size: req.query.size, search: req.query.search, sort: req.query.sort, desc: req.query.desc === '1' || req.query.desc === 'true', filters, fixed }
+    return { page: req.query.page, size: req.query.size, search: req.query.search, sort: req.query.sort, desc: req.query.desc === '1' || req.query.desc === 'true', filters, fixed, lang: req.lang }
   }
   r.get('/api/admin/r/:res', mod, wrap(async (req, res) => res.json(await engine.list(req.params.res, req.user, q(req)))))
   /** список як є (той самий пошук і фільтри) — файлом CSV для таблиць; назви стовпців і значення — мовою людини */
@@ -157,10 +160,107 @@ export function createAdminRoutes(deps) {
   }))
   /** пошук по всій панелі (Ctrl/⌘+K): записи всіх розділів, які людина бачить */
   r.get('/api/admin/search', mod, wrap(async (req, res) => res.json({ rows: await engine.search(req.user, String(req.query.q || '').slice(0, 100)) })))
-  r.get('/api/admin/r/:res/options', mod, wrap(async (req, res) => res.json(await engine.options(req.params.res, req.user, req.query.q, req.query.ids ? String(req.query.ids).split(',').filter(Boolean).slice(0, 50) : []))))
-  r.get('/api/admin/r/:res/one', mod, wrap(async (req, res) => res.json(await engine.get(req.params.res, req.user, String(req.query.id)))))
-  r.post('/api/admin/r/:res', mod, wrap(async (req, res) => res.json(await engine.create(req.params.res, req.user, req.body || {}))))
-  r.patch('/api/admin/r/:res/one', mod, wrap(async (req, res) => res.json(await engine.update(req.params.res, req.user, String(req.query.id), req.body || {}))))
+  r.get('/api/admin/r/:res/options', mod, wrap(async (req, res) => res.json(await engine.options(req.params.res, req.user, req.query.q, req.query.ids ? String(req.query.ids).split(',').filter(Boolean).slice(0, 100) : [], req.lang))))
+  r.get('/api/admin/r/:res/one', mod, wrap(async (req, res) => res.json(await engine.get(req.params.res, req.user, String(req.query.id), req.lang))))
+  r.post('/api/admin/r/:res', mod, wrap(async (req, res) => res.json(await engine.create(req.params.res, req.user, { ...(req.body || {}), _lang: req.lang }))))
+  r.patch('/api/admin/r/:res/one', mod, wrap(async (req, res) => res.json(await engine.update(req.params.res, req.user, String(req.query.id), { ...(req.body || {}), _lang: req.lang }))))
+  /**
+   * скільки записів: q — [[розділ, fixed?], …] (fixed — закріплені умови вкладки картки) → { counts: [n | null] }
+   * (null — розділу людині не видно); до 40 за раз
+   */
+  r.get('/api/admin/counts', mod, wrap(async (req, res) => {
+    let list = []
+    try { list = JSON.parse(String(req.query.q || '[]')) } catch { throw fail('хибний запит') }
+    if (!Array.isArray(list)) throw fail('хибний запит')
+    const counts = await Promise.all(list.slice(0, 40).map(([name, fixed]) => engine.count(String(name), req.user, fixed && typeof fixed === 'object' ? fixed : {}).catch(() => null)))
+    res.json({ counts })
+  }))
+
+  // ---------- зображення: у сховище (/media/…) ----------
+  /** будь-яке зображення до 12 МБ; тіло запиту — сам файл */
+  const rawImage = express.raw({ type: ['image/*', 'application/octet-stream'], limit: '12mb' })
+  const imageBody = (req) => {
+    if (!Buffer.isBuffer(req.body) || !req.body.length) throw fail('порожній файл — вибери зображення')
+    return req.body
+  }
+  /** завантажити зображення для поля розділу (іконка предмета…): WebP до 1024 px → { url } (/media/uploads/<відбиток>.webp) */
+  r.post('/api/admin/upload', mod, rawImage, wrap(async (req, res) => {
+    const name = String(req.query.res || '')
+    if (!(await engine.allowed(req.user, name, 'edit')) && !(await engine.allowed(req.user, name, 'create'))) throw fail('бракує прав', 403)
+    if (!storage) throw fail('сховище файлів зараз недоступне', 503)
+    let out
+    try {
+      out = await sharp(imageBody(req), { limitInputPixels: 64e6 }).rotate().resize(1024, 1024, { fit: 'inside', withoutEnlargement: true }).webp({ quality: 90 }).toBuffer()
+    } catch (e) { if (e.status) throw e; throw fail('це не зображення — підійде PNG, JPEG, WebP, GIF чи AVIF', 415) }
+    // ключ — з вмісту: той самий файл двічі — одна адреса, нове — нова (адреси кешуються назавжди)
+    const key = `uploads/${crypto.createHash('sha256').update(out).digest('hex').slice(0, 24)}.webp`
+    if (!(await storage.has(key))) await storage.put(key, out, 'image/webp')
+    await auth.log(req.user.id, 'admin.upload', name, key)
+    res.json({ url: storage.url(key) })
+  }))
+
+  // ---------- фото бази: знімок 3D (малює сервер) чи своє ----------
+  const baseOf = async (req) => {
+    const b = await bases.head(String(req.params.id))
+    if (!b) throw fail('немає такої бази', 404)
+    return b
+  }
+  r.get('/api/admin/bases/:id/photo', allow('bases.view'), wrap(async (req, res) => {
+    const b = await baseOf(req)
+    res.json(thumbs.photo(String(req.params.id), b.version))
+  }))
+  /** своє фото замість знімка — його покаже весь сайт (список баз, головна, прев'ю посилань) */
+  r.post('/api/admin/bases/:id/photo', allow('bases.edit'), rawImage, wrap(async (req, res) => {
+    const id = String(req.params.id), b = await baseOf(req)
+    const before = thumbs.photo(id, b.version).custom
+    try { await thumbs.setCustom(id, imageBody(req)) } catch (e) { if (e.status) throw e; throw fail('це не зображення — підійде PNG, JPEG, WebP, GIF чи AVIF', 415) }
+    await auth.log(req.user.id, 'admin.base-photo', `bases/${id}`, 'своє фото')
+    await revisions.record('bases', id, 'update', { photo: before ? 'Своє фото' : 'Знімок 3D' }, { photo: 'Своє фото (нове)' }, req.user.id, 'Фото бази')
+    res.json(thumbs.photo(id, b.version))
+  }))
+  r.delete('/api/admin/bases/:id/photo', allow('bases.edit'), wrap(async (req, res) => {
+    const id = String(req.params.id), b = await baseOf(req)
+    if (thumbs.photo(id, b.version).custom) {
+      thumbs.dropCustom(id)
+      await auth.log(req.user.id, 'admin.base-photo', `bases/${id}`, 'знімок')
+      await revisions.record('bases', id, 'update', { photo: 'Своє фото' }, { photo: 'Знімок 3D' }, req.user.id, 'Фото бази')
+    }
+    res.json(thumbs.photo(id, b.version))
+  }))
+  /** намалювати знімок 3D заново (буває до півтори хвилини) */
+  r.post('/api/admin/bases/:id/photo/redraw', allow('bases.edit'), wrap(async (req, res) => {
+    const id = String(req.params.id), b = await baseOf(req)
+    try { await thumbs.redraw(id) } catch (e) { throw fail('знімок не вдався: {error}', 500, { error: String(e?.message || e).split('\n')[0] }) }
+    await auth.log(req.user.id, 'admin.base-photo', `bases/${id}`, 'знімок заново')
+    res.json(thumbs.photo(id, b.version))
+  }))
+
+  // ---------- журнал запуску фонової задачі наживо (SSE) ----------
+  /**
+   * події: lines (усе, що вже є: [рядок]), line (новий рядок), done ({ status, ms } — запуск скінчився), gone (нема
+   * такого запуску). Запуск, що вже не йде, — одразу lines із бази й done.
+   */
+  r.get('/api/admin/cron-runs/:id/stream', allow('cron-runs.view'), async (req, res) => {
+    const id = Number(req.params.id)
+    res.set({ 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'no-store', connection: 'keep-alive', 'x-accel-buffering': 'no' })
+    res.flushHeaders()
+    const send = (event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+    let ping = null, w = null, ended = false
+    const finish = () => { if (ended) return; ended = true; clearInterval(ping); w?.stop(); res.end() }
+    w = Number.isInteger(id) ? cron.watch(id, (m) => { if (ended) return; if (m.done) { send('done', { status: m.status, ms: m.ms }); finish() } else send('line', m.line) }) : null
+    if (w) {
+      send('lines', w.lines)
+      ping = setInterval(() => res.write(': ping\n\n'), 20_000)
+      req.on('close', finish)
+      return
+    }
+    try {
+      const row = Number.isInteger(id) ? await db.get('SELECT status, ms, log FROM cron_runs WHERE id = ?', id) : null
+      if (!row) send('gone', {})
+      else { send('lines', row.log ? String(row.log).split('\n') : []); send('done', { status: row.status, ms: row.ms }) }
+    } catch { send('gone', {}) }
+    finish()
+  })
   r.post('/api/admin/r/:res/delete', mod, wrap(async (req, res) => res.json(await engine.remove(req.params.res, req.user, (req.body?.ids || []).map(String)))))
   r.post('/api/admin/r/:res/action/:key', mod, wrap(async (req, res) => res.json(await engine.action(req.params.res, req.user, req.params.key, (req.body?.ids || []).map(String), req.body?.input || {}))))
 

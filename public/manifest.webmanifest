@@ -1,14 +1,25 @@
 {
+  "id": "/",
   "name": "Sandwalkers · Dune: Awakening",
   "short_name": "Sandwalkers",
+  "description": "Гільдійський помічник для Dune: Awakening: бази в 3D, роадмапи, мапа з ресурсами, довідник, калькулятор і вміння.",
+  "lang": "uk",
+  "dir": "ltr",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "orientation": "any",
+  "categories": ["games", "utilities"],
   "background_color": "#1c1a18",
   "theme_color": "#1c1a18",
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Мапа", "short_name": "Мапа", "description": "Мапа з ресурсами, позначками й полями меланжу", "url": "/map", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Бази", "short_name": "Бази", "description": "Бази гільдії в 3D", "url": "/bases", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Довідник", "short_name": "Довідник", "description": "Предмети, рецепти й ресурси гри", "url": "/catalog", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }] }
   ]
 }

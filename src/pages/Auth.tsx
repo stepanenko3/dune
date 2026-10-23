@@ -11,7 +11,7 @@ import { toast } from 'sonner'
 import { ApiError } from '@/lib/api'
 import { ArrowLeft, Fingerprint, KeyRound, LogIn, Mail } from 'lucide-react'
 import { finishSignIn, offerPasskey, skipPasskeyOffer, useAuth, type SignedIn } from '@/lib/auth'
-import { cancelled, conditionalAvailable, createPasskey, passkeyError, passkeysHere } from '@/lib/webauthn'
+import { cancelled, conditionalAvailable, createPasskey, passkeyError, passkeysHere, passkeysWhyNot } from '@/lib/webauthn'
 import { t, T } from '@/lib/i18n'
 import { Button } from '@/components/ui/button'
 import { SnField, SnFieldDescription, SnFieldLabel, SnInput, SnInputOtp, valueOf } from '@/components/sn'
@@ -210,6 +210,14 @@ export function AuthPage() {
                   </Button>
                 </form>
                 {can && !usual && <><Divider>{t('або')}</Divider>{passkeyBtn(false)}</>}
+                {/* тут паскеї недоступні (сайт за IP чи по http) — кнопку все одно видно, з причиною під нею */}
+                {!can && (
+                  <>
+                    <Divider>{t('або')}</Divider>
+                    <Button variant="outline" disabled className="w-full"><Fingerprint size={16} />{t('Увійти з паскеєм')}</Button>
+                    <p className="-mt-1.5 text-[12.5px] leading-snug text-muted">{passkeysWhyNot()}</p>
+                  </>
+                )}
               </div>
             </>
           ) : step === 'code' ? (

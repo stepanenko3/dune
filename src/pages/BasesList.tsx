@@ -29,6 +29,7 @@ import { Empty, Loading, PageError } from '@/components/states'
 import { ImportBase } from '@/components/base/ImportBase'
 import { locale, t } from '@/lib/i18n'
 import { cn, word } from '@/lib/utils'
+import { Img } from '@/components/ui/img'
 
 const IMG = 'h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]'
 
@@ -39,7 +40,7 @@ const narrow = () => typeof matchMedia !== 'undefined' && matchMedia('(max-width
 function Thumb3D({ name, src }: { name: string; src: string | null }) {
   const [failed, setFailed] = useState(false)
   if (failed || !src) return <div className="grid h-full w-full place-items-center text-[12px] text-muted">{t('Знімок недоступний')}</div>
-  return <img src={src} alt={t('{name}, 3D', { name })} loading="lazy" decoding="async" onError={() => setFailed(true)} className={IMG} />
+  return <Img src={src} alt={t('{name}, 3D', { name })} onError={() => setFailed(true)} className={IMG} />
 }
 
 function NewBase({ list, open, onOpenChange }: { list: BaseSummary[]; open: boolean; onOpenChange: (v: boolean) => void }) {
@@ -119,17 +120,33 @@ export function BasesList() {
   const live = (list || []).filter((b) => !b.deleted)
   const gone = (list || []).filter((b) => b.deleted)
   const sc = useScope()
+  // у своїй гільдії людина створює, лише якщо вона там щонайменше учасник
+  const guildMaker = !!sc.guild && creatorGuilds(guilds).some((g) => g.id === sc.guild!.id)
   // вкладка: мої — особисті, гільдія — бази моєї гільдії (видалені — у своїй вкладці так само)
   const inTab = (b: BaseSummary) => (sc.scope === 'guild' ? b.item.owner.kind === 'guild' && b.item.owner.id === sc.guild?.id : b.item.owner.kind === 'user' && b.item.owner.id === user?.id)
   const shown = live.filter(inTab)
   const goneHere = gone.filter(inTab)
   const groups = byOwner(shown.map((b) => b.item), user?.id).map((g) => ({ ...g, bases: g.items.map((it) => shown.find((b) => b.id === it.id)!).filter(Boolean) }))
 
+  /**
+   * куди копіювати базу: тому ж власнику (гільдії), якщо в ній можна створювати й власник дозволив копії в гільдію;
+   * інакше — собі, якщо дозволено в особисте; null — копіювати не можна (кнопки нема)
+   */
+  const copyTarget = (b: BaseSummary): { kind: 'guild'; id: string } | 'user' | null => {
+    const c = b.item.can
+    if (!user || c?.copy === false) return null
+    const to = c?.copyTo ?? ['user', 'guild']
+    const o = b.item.owner
+    const here = o.kind === 'guild' ? creatorGuilds(guilds).find((g) => g.id === o.id) : undefined
+    if (here && to.includes('guild')) return { kind: 'guild', id: here.id }
+    if (to.includes('user')) return 'user'
+    const any = to.includes('guild') ? creatorGuilds(guilds)[0] : undefined
+    return any ? { kind: 'guild', id: any.id } : null
+  }
   const copy = async (b: BaseSummary, name: string) => {
     try {
-      // копія — тому ж власнику, якщо в ньому можна створювати; інакше — собі
-      const o = b.item.owner
-      const owner = o.kind === 'guild' && creatorGuilds(guilds).some((g) => g.id === o.id) ? { kind: 'guild' as const, id: o.id } : undefined
+      const to = copyTarget(b)
+      const owner = to && to !== 'user' ? to : undefined
       const nb = await copyBase(b.id, name, owner, owner ? 'guild' : 'private')
       toast.success(t('Створено «{name}»', { name }))
       setView('bases', narrow() ? { base: nb.id } : { base: nb.id, edit: true })
@@ -160,10 +177,13 @@ export function BasesList() {
           ? <PageError title={t('Бази не завантажились')} message={t('Бази зараз не завантажились. Онови сторінку трохи згодом.')} onRetry={() => useBases.getState().loadList()} />
           : <Loading label={t('Завантаження баз…')} />)}
         {list && !shown.length && (
-          <Empty icon={Building2} title={sc.scope === 'guild' ? t('У гільдії баз поки нема') : t('Баз поки нема')} description={t('Створи першу — особисту чи для гільдії, імпортуй з файлу або скопіюй собі з бібліотеки.')}>
-            <Button onClick={() => setCreating(true)}><Plus size={15} /> {t('Нова база')}</Button>
-            <Button variant="secondary" onClick={() => setView('bases', { param: 'generate' })}><Sparkles size={15} /> {t('Згенерувати')}</Button>
-            <Button variant="secondary" onClick={() => setImporting(true)}><Upload size={15} /> {t('Імпортувати')}</Button>
+          <Empty icon={Building2} title={sc.scope === 'guild' ? t('У гільдії баз поки нема') : t('Баз поки нема')}
+            description={sc.scope === 'guild' && !guildMaker ? t('Створювати бази гільдії можуть її учасники; новобранець лише дивиться.') : t('Створи першу — особисту чи для гільдії, імпортуй з файлу або скопіюй собі з бібліотеки.')}>
+            {(sc.scope !== 'guild' || guildMaker) && <>
+              <Button onClick={() => setCreating(true)}><Plus size={15} /> {t('Нова база')}</Button>
+              <Button variant="secondary" onClick={() => setView('bases', { param: 'generate' })}><Sparkles size={15} /> {t('Згенерувати')}</Button>
+              <Button variant="secondary" onClick={() => setImporting(true)}><Upload size={15} /> {t('Імпортувати')}</Button>
+            </>}
             <Button variant="ghost" onClick={() => sc.set('public')}><Library size={15} />{t('Подивитись публічні')}</Button>
           </Empty>
         )}
@@ -207,7 +227,7 @@ export function BasesList() {
                         <PencilRuler size={14} />
                       </Button>
                     )}
-                    {user && (
+                    {copyTarget(b) && (
                       <Button variant="secondary" size="icon" title={t('Копіювати як нову базу')} aria-label={t('Копіювати «{name}»', { name: b.name })} onClick={() => setAsk({ act: 'copy', b })}>
                         <Copy size={14} />
                       </Button>

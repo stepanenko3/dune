@@ -43,10 +43,17 @@ export function createMapRoutes({ mapData, game = null, gamemap = null }) {
   r.get('/api/map/index/:map', wrap(async (req, res) => {
     const P = await pointsOf(req.params.map, layoutOf(req), req.lang)
     if (!P) return res.status(404).json({ error: req.t('немає такої мапи або розкладки') })
-    const counts = {}, named = []
+    // shares — у типів руди з часткою: скільки місць з часткою в кожному кроці 5 % (0–4, 5–9 … 100) — лічильник шару
+    // для порогу повзунка «шанс появи»
+    // picks — так само, але лише місця, де жереб місця випав на цю руду (вид «очікувана кількість»)
+    const counts = {}, shares = {}, picks = {}, named = []
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
     for (const [type, T] of Object.entries(P.types)) {
       counts[type] = T.pts.length / 3
+      if (T.share) {
+        const h = (shares[type] = new Array(21).fill(0)), hp = (picks[type] = new Array(21).fill(0))
+        T.share.forEach((p, i) => { const b = Math.min(20, Math.floor(p / 5)); h[b]++; if (!T.pick || T.pick[i]) hp[b]++ })
+      }
       for (const [i, [name, , en]] of Object.entries(T.info)) if (name) named.push([type, +i, name, en, T.pts[i * 3], T.pts[i * 3 + 1]])
       for (let i = 0; i < T.pts.length; i += 3) {
         x0 = Math.min(x0, T.pts[i]); x1 = Math.max(x1, T.pts[i])
@@ -54,7 +61,7 @@ export function createMapRoutes({ mapData, game = null, gamemap = null }) {
       }
     }
     const bbox = x0 <= x1 ? [[x0, y0], [x1, y1]] : null
-    byLang(res).set('cache-control', 'max-age=300').json({ map: P.map, layout: P.layout, counts, named, bbox })
+    byLang(res).set('cache-control', 'max-age=300').json({ map: P.map, layout: P.layout, counts, ...(Object.keys(shares).length ? { shares, picks } : {}), named, bbox })
   }))
 
   // «що тут є» для кожної локації: лут контейнерів поблизу і руда / рослини довкола
@@ -70,7 +77,8 @@ export function createMapRoutes({ mapData, game = null, gamemap = null }) {
     if (!T) return res.json({ pts: [], info: {} })
     const info = {}
     for (const [i, [name, desc, en]] of Object.entries(T.info)) info[i] = [name, desc, en]
-    byLang(res).set('cache-control', 'max-age=300').json({ pts: T.pts, info })
+    // share — частка руди в кожній точці, % (вузли ресурсів з файлів гри: блідші й фільтр «лише ймовірні»)
+    byLang(res).set('cache-control', 'max-age=300').json({ pts: T.pts, info, ...(T.share ? { share: T.share } : {}), ...(T.pick ? { pick: T.pick } : {}) })
   }))
 
   // точка гри за стабільним ключем (id TH.GL без координат): посилання «показати на мапі» з указу Ландсрааду
@@ -90,19 +98,39 @@ export function createMapRoutes({ mapData, game = null, gamemap = null }) {
     const q = String(req.query.q || '').trim().toLowerCase().slice(0, 120)
     const P = await pointsOf(req.params.map, layoutOf(req), req.lang)
     if (!P || q.length < 3) return res.json({ hits: [], places: [] })
+    byLang(res).json(lootIn(P, q, await groupsNow()))
+  }))
+  function lootIn(P, q, groups) {
     let memo = lootMemo.get(P)
     if (!memo) lootMemo.set(P, (memo = new Map()))
     let out = memo.get(q)
     if (!out) {
-      out = findLoot(P, q, await groupsNow())
+      out = findLoot(P, q, groups)
       memo.set(q, out)
       if (memo.size > 50) memo.delete(memo.keys().next().value)
     }
-    byLang(res).json(out)
+    return out
+  }
+  // предмет із довідника: на яких мапах випадає (Глибока пустеля — вибрана розкладка, нема — поточна) — скринь і
+  // найбільший шанс; більший шанс — вище. Файли гри — з рядків луту (точки всіх мап не вантажимо)
+  r.get('/api/map/loot-maps', wrap(async (req, res) => {
+    const q = String(req.query.q || '').trim().toLowerCase().slice(0, 120)
+    if (q.length < 3) return res.json({ maps: [] })
+    if (await fromGame()) return byLang(res).set('cache-control', 'max-age=300').json({ maps: await gamemap.lootMaps(q, req.lang, layoutOf(req)) })
+    const groups = await groupsNow()
+    const maps = []
+    for (const m of mapData.source?.maps ?? []) {
+      const P = await pointsOf(m.id, m.id === 'deepdesert_1' ? layoutOf(req) : undefined, req.lang)
+      const hits = P ? lootIn(P, q, groups).hits : []
+      if (hits.length) maps.push({ map: m.id, layout: P.layout ?? null, n: hits.length, best: hits.reduce((b, h) => Math.max(b, h.chance ?? 0), 0) })
+    }
+    maps.sort((a, b) => b.best - a.best || b.n - a.n)
+    byLang(res).set('cache-control', 'max-age=300').json({ maps })
   }))
   function findLoot(P, q, groups) {
     const lines = (d) => (d ? d.split(/<br\s*\/?>/i) : [])
-    const find = (ls) => ls.findIndex((l) => l.toLowerCase().includes(q))
+    // рядок луту — «предмет (шанс %)»; перелік руд вузла («Титанова руда — 40 %») — не лут
+    const find = (ls) => ls.findIndex((l) => l.toLowerCase().includes(q) && /\(\d+(?:[.,]\d+)?%\)/.test(l))
     const hits = []
     scan: for (const [type, T] of Object.entries(P.types)) {
       for (const [i, [name, desc, , descEn]] of Object.entries(T.info)) {

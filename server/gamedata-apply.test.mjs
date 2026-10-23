@@ -103,3 +103,18 @@ describe('застосування файлів гри', () => {
     expect((await db.get("SELECT gone FROM game_buildables WHERE key = 'structures/dune man|wall'")).gone).not.toBeNull()
   })
 })
+
+describe('ресурси Глибокої пустелі', () => {
+  it('розділ сам по собі (не в групі «Мапа»: TH.GL його не має); застосування — файли розкладок у мапу гри', async () => {
+    const { SECTIONS, groupOf } = await import('./lib/gamedata/sections.mjs')
+    const { createAppliers: make, APPLIED: A } = await import('./lib/gamedata/apply.mjs')
+    expect(SECTIONS).toContain('ddResources')
+    expect(groupOf('ddResources')).toBeNull()
+    expect(A).toContain('ddResources')
+    const calls = []
+    const files = (k) => `gz${k}`
+    const data = Object.defineProperty({ blob: { layouts: { 11: { count: 1, hash: 'h' } } } }, 'files', { value: files })
+    await make({ game: null, spice: null, gamemap: { setDdResources: async (b, f) => calls.push([b, f('11')]) } }).ddResources(data)
+    expect(calls).toEqual([[{ layouts: { 11: { count: 1, hash: 'h' } } }, 'gz11']])
+  })
+})

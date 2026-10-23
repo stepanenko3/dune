@@ -4,8 +4,11 @@
  * спливним блоком над картками), потім розділи з одним джерелом і відповідність будівель. Стан кожного розділу —
  * людськими словами: чи відповідає джерело, коли перевірено, коли дані востаннє змінились. Перемикання — з
  * підтвердженням; «Порівняти джерела» показує, що додасться, зникне, зміниться; підозріло менші дані — «Прийняти».
+ * «Версія гри» — оновлення до нової версії: перевірити Steam, запустити видобувач і бачити його кроки, завантаження у
+ * відсотках і журнал; сайт бере новий пакет сам, щойно прогін скінчився.
  */
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { Check, CircleAlert, LoaderCircle } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 import { SnButton } from '@/components/sn'
@@ -199,6 +202,140 @@ function GroupHead({ title, about }: { title: string; about: string }) {
   )
 }
 
+interface UpdJob {
+  kind: 'all' | 'check'; startedAt: number; finishedAt: number | null; running: boolean; step: string | null; pct: number | null
+  result: 'updated' | 'same' | null; ok: boolean; stopped: boolean; error: string | null; applied: number | null; build: string | null; version: string | null; lines: string[]
+}
+interface Upd { enabled: boolean; steps?: string[]; steam?: { manifestId: string; date: string; at: string | null; fresh: boolean } | null; job?: UpdJob | null }
+
+const STEP_LABEL: Record<string, string> = {
+  check: t('Перевірка Steam'), fetch: t('Завантаження сервера гри'), unpack: t('Розпакування'), usmap: t('Схема типів гри'),
+  export: t('Видобування таблиць'), normalize: t('Обробка даних'), bundle: t('Пакет для сайту'), apply: t('Сайт бере нові дані'),
+}
+const minutes = (ms: number) => (ms < 60_000 ? t('{n} с', { n: Math.max(1, Math.round(ms / 1000)) }) : t('{n} хв', { n: Math.round(ms / 60_000) }))
+
+/**
+ * Версія гри: що в пакеті, що зараз у Steam, кнопки «Оновити дані гри» й «Перевірити Steam». Поки прогін іде — кроки з
+ * галочками, поточний з колом, відсоток завантаження й час; наприкінці — що вийшло людськими словами. Стан живе на
+ * сервері (у файлах видобувача), тож сторінку можна закрити й повернутись.
+ */
+function GameUpdate({ bundle, onDone }: { bundle: Report['bundle']; onDone: () => void }) {
+  const [u, setU] = useState<Upd | null>(null)
+  const [busy, setBusy] = useState<string | null>(null)
+  const was = useRef(false)
+  const load = () => get<Upd>('/api/admin/gamedata/update').then((x) => {
+    setU(x)
+    // прогін щойно скінчився — розділи нижче могли змінитись
+    if (was.current && !x.job?.running) onDone()
+    was.current = !!x.job?.running
+  }).catch(() => {})
+  useEffect(() => { void load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const running = !!u?.job?.running
+  useEffect(() => {
+    if (!running) return
+    const h = setInterval(() => void load(), 2000)
+    return () => clearInterval(h)
+  }, [running]) // eslint-disable-line react-hooks/exhaustive-deps
+  const go = async (key: string, url: string, body?: unknown) => {
+    setBusy(key)
+    try { setU(await post<Upd>(url, body)); was.current = true } catch (e) { toast.error((e as Error).message) } finally { setBusy(null) }
+  }
+  const start = async () => {
+    const ok = await confirmAsk(t('Оновити дані гри?'), {
+      description: t('Сайт завантажить сервер гри зі Steam (близько 4,5 ГБ), розбере його файли й візьме нові дані. Перший раз це до години, далі — лише коли в Steam нова збірка. Сайт тим часом працює як завжди.'),
+      confirm: t('Оновити'),
+    })
+    if (ok) await go('all', '/api/admin/gamedata/update', {})
+  }
+  const stop = async () => {
+    if (await confirmAsk(t('Зупинити оновлення?'), { description: t('Уже завантажене лишиться — наступний запуск продовжить звідти.'), destructive: true, confirm: t('Зупинити') })) await go('stop', '/api/admin/gamedata/update/stop')
+  }
+  const job = u?.job ?? null
+  const steps = u?.steps ?? []
+  const at = job?.step ? steps.indexOf(job.step) : -1
+  /** стан кроку в поточному (чи останньому) прогоні */
+  const stateOf = (i: number): 'done' | 'now' | 'wait' | 'fail' | 'skip' => {
+    if (!job || job.kind !== 'all') return 'wait'
+    if (job.running) return i < at ? 'done' : i === at ? 'now' : 'wait'
+    if (job.ok && job.result === 'updated') return job.applied || i < steps.length - 1 ? 'done' : 'now'
+    if (job.ok && job.result === 'same') return i === 0 ? 'done' : 'skip'
+    return i < at ? 'done' : i === at ? (job.stopped ? 'wait' : 'fail') : 'wait'
+  }
+  const steam = u?.steam
+  const summary = !job ? null
+    : job.running ? (job.kind === 'check' ? t('Перевіряю Steam…') : t('Іде вже {time} · {step}', { time: minutes(Date.now() - job.startedAt), step: STEP_LABEL[job.step ?? ''] ?? t('запуск') }))
+      : job.stopped ? t('Оновлення зупинено {date}', { date: when(job.finishedAt) })
+        : !job.ok ? t('Не вдалося: {error}', { error: job.error ?? t('невідома помилка') })
+          : job.kind === 'check' ? (steam?.fresh ? t('Є нова збірка — натисни «Оновити дані гри»') : t('Нової збірки нема'))
+            : job.result === 'same' ? t('Нової збірки нема — на сайті вже остання')
+              : job.applied ? t('Готово: збірка {build}, версія {version} · {time}. Сайт уже бере нові дані.', { build: job.build ?? '—', version: job.version ?? '—', time: minutes((job.finishedAt ?? Date.now()) - job.startedAt) })
+                : t('Пакет готовий — сайт зараз бере нові дані…')
+  return (
+    <Panel title={t('Версія гри')} description={t('Дані сайту — з файлів сервера гри. Коли гра оновилась, натисни «Оновити дані гри»: сайт сам завантажить нову збірку й візьме з неї дані.')}>
+      <div className="grid gap-3 text-[13.5px]">
+        <div className="grid gap-1">
+          <p>
+            {bundle
+              ? t('На сайті: версія гри {version} · збірка {build} · видобуто {date}', { build: bundle.build ?? '—', version: bundle.version ?? '—', date: when(bundle.extractedAt) })
+              : t('Пакета файлів гри ще нема — розділи без винятків порожні.')}
+          </p>
+          {steam && (
+            <p className={cn('flex flex-wrap items-baseline gap-x-2', steam.fresh ? 'font-semibold text-spice' : 'text-muted')}>
+              {steam.fresh ? t('У Steam нова збірка від {date} — її ще нема на сайті', { date: Number.isNaN(Date.parse(steam.date)) ? steam.date : when(Date.parse(steam.date)) }) : t('У Steam та сама збірка, що й на сайті')}
+              {steam.at && <span className="text-[12.5px] font-normal text-muted">{t('перевірено {date}', { date: when(steam.at) })}</span>}
+            </p>
+          )}
+        </div>
+
+        {u && !u.enabled ? (
+          <p className="text-muted">{t('Оновлення з панелі вимкнено: на сервері не задано робочої теки видобувача (GD_WORK).')}</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {running ? (
+              <SnButton variant="destructive" size="sm" loading={busy === 'stop'} onClick={() => void stop()}>{t('Зупинити')}</SnButton>
+            ) : (
+              <>
+                <SnButton variant="primary" size="sm" loading={busy === 'all'} disabled={!u} onClick={() => void start()}>{t('Оновити дані гри')}</SnButton>
+                <SnButton variant="outline" size="sm" loading={busy === 'check'} disabled={!u} title={t('Лише дізнатись, чи вийшла нова збірка (без завантаження)')} onClick={() => void go('check', '/api/admin/gamedata/update/check')}>{t('Перевірити Steam')}</SnButton>
+              </>
+            )}
+          </div>
+        )}
+
+        {job && job.kind === 'all' && (
+          <ol className="grid grid-cols-[minmax(0,1fr)] gap-1.5 sm:grid-cols-2 lg:grid-cols-4" aria-label={t('Кроки оновлення')}>
+            {steps.map((id, i) => {
+              const st = stateOf(i)
+              return (
+                <li key={id} className={cn('flex items-center gap-2 rounded-md border px-2 py-1.5 text-[12.5px]', st === 'now' ? 'border-spice/60 bg-spice/10' : st === 'fail' ? 'border-bad/50 bg-bad/10' : 'border-line', (st === 'wait' || st === 'skip') && 'text-muted')}>
+                  <span aria-hidden className="grid size-4 shrink-0 place-items-center">
+                    {st === 'done' ? <Check size={14} className="text-ok" /> : st === 'now' ? <LoaderCircle size={14} className="animate-spin text-spice" /> : st === 'fail' ? <CircleAlert size={14} className="text-bad" /> : <span className="size-1.5 rounded-full bg-line" />}
+                  </span>
+                  <span className="min-w-0 flex-1 break-words">{STEP_LABEL[id] ?? id}</span>
+                  {st === 'now' && id === 'fetch' && job.pct != null && <span className="font-mono text-[12px] tabular-nums">{Math.floor(job.pct)}%</span>}
+                </li>
+              )
+            })}
+          </ol>
+        )}
+        {job?.running && job.step === 'fetch' && job.pct != null && (
+          <div className="h-1.5 overflow-hidden rounded-full bg-panel2" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(job.pct)} aria-label={t('Завантаження сервера гри')}>
+            <div className="h-full rounded-full bg-spice transition-[width] duration-700" style={{ width: `${job.pct}%` }} />
+          </div>
+        )}
+
+        {summary && <p className={cn('text-[13px]', job!.running || job!.stopped ? 'text-muted' : job!.ok ? 'text-ok' : 'text-bad')}>{summary}</p>}
+        {job && job.lines.length > 0 && (
+          <details>
+            <summary className="cursor-pointer text-[12.5px] text-muted hover:text-ink">{t('Журнал видобувача')}</summary>
+            <pre className="mt-1.5 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border border-line bg-panel2/50 p-2 font-mono text-[11.5px] leading-relaxed">{job.lines.join('\n')}</pre>
+          </details>
+        )}
+      </div>
+    </Panel>
+  )
+}
+
 const recordsOf = (s: Sec) => (s.count != null ? <span className="font-mono text-[12.5px] text-muted">{t('записів: {n}', { n: s.count })}</span> : null)
 
 export function GameDataAdmin() {
@@ -287,13 +424,7 @@ export function GameDataAdmin() {
         )}
       />
 
-      <Panel title={t('Файли гри')} description={t('Пакет, який видобувач розібрав із файлів сервера гри.')}>
-        <p className="text-[13.5px]">
-          {rep.bundle
-            ? t('Версія гри {version} · збірка {build} · видобуто {date}', { build: rep.bundle.build ?? '—', version: rep.bundle.version ?? '—', date: when(rep.bundle.extractedAt) })
-            : t('Пакета файлів гри ще нема — розділи без винятків порожні.')}
-        </p>
-      </Panel>
+      <GameUpdate bundle={rep.bundle} onDone={() => void load()} />
 
       {groups.length > 0 && (
         <section className="grid gap-3">

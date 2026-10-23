@@ -2,8 +2,8 @@
  * Головна. Палітра hero — нічна пустеля, сталa в обох темах (це «вікно» на Арракіс):
  *   умбра #1c130c — тінь дюн, вохра #c68b4e — пісок під місяцем, пил #ebdcc4 — текст,
  *   спайс — акцент застосунку, ібад #5b97d6 — лише позначка «зараз».
- * Єдина анімація сторінки — «скан орнітоптера»: смуга проходить мапою згори вниз і проявляє точки
- * (полотно, src/pages/DesertScan.tsx).
+ * Головна анімація сторінки — «скан орнітоптера»: смуга проходить мапою згори вниз і проявляє точки
+ * (полотно, src/pages/DesertScan.tsx); активні поля меланжу (позначки гравців) пульсують, як на мапі.
  */
 .home-hero {
   --umber: 28 19 12;
@@ -75,6 +75,18 @@
   background: rgb(var(--ibad) / 0.7);
   animation: home-pulse 2.4s ease-out infinite;
 }
+/* активне поле меланжу: спайсова крапка й коло (і поза hero — кольори свої, не змінні hero) */
+.home-now.is-spice {
+  background: #ee8a2c;
+}
+.home-now.is-spice::after {
+  background: rgb(238 138 44 / 0.7);
+}
+.home-field-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: home-pulse 2.4s ease-out infinite;
+}
 @keyframes home-pulse {
   70%,
   100% {
@@ -87,7 +99,8 @@
   .home-late {
     transition: none;
   }
-  .home-now::after {
+  .home-now::after,
+  .home-field-ring {
     animation: none;
     opacity: 0;
   }

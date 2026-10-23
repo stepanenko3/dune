@@ -20,6 +20,7 @@ const LANG_MIN = 0.5
 /** причина, чому розділ не годиться (null — годиться) */
 function problem(id, data) {
   if (data instanceof Error) return data.message || String(data)
+  if (id === 'ddResources') return Object.keys(data?.blob?.layouts ?? {}).length ? null : 'нема жодної розкладки з ресурсами'
   if (id === 'config') {
     const b = data?.blob
     if (!b?.spice || !Object.keys(b.spice.maps ?? {}).length) return 'нема лімітів полів меланжу'
@@ -49,6 +50,15 @@ export async function writeBundle({ work, build, version, manifestId, sections, 
   const dir = path.join(root, String(build))
   const tmp = dir + '.tmp'
   const out = {}
+  // розділ з файлами (ресурси ГП: файл на розкладку, уже стиснений) — у переліку розділу шлях кожного файлу; хеш розділу
+  // — з переліку (у ньому хеш кожного файлу), самі файли — поруч
+  const extra = {}
+  for (const [id, data] of Object.entries(sections)) {
+    if (data instanceof Error || !data?.files) continue
+    const layouts = { ...data.blob.layouts }
+    for (const k of Object.keys(data.files)) { const file = `sections/${id}-${k}.json.gz`; layouts[k] = { ...layouts[k], file }; extra[file] = data.files[k] }
+    sections = { ...sections, [id]: { blob: { ...data.blob, layouts } } }
+  }
   for (const [id, data] of Object.entries(sections)) {
     const p = problem(id, data)
     out[id] = p ? { error: p } : { file: `sections/${id}.json.gz`, schema: 1, hash: sectionHash(data), count: normalizeSection(data).count }
@@ -59,6 +69,7 @@ export async function writeBundle({ work, build, version, manifestId, sections, 
   fs.rmSync(tmp, { recursive: true, force: true })
   fs.mkdirSync(path.join(tmp, 'sections'), { recursive: true })
   for (const [id, s] of Object.entries(out)) if (!s.error) fs.writeFileSync(path.join(tmp, s.file), zlib.gzipSync(JSON.stringify(sections[id])))
+  for (const [file, gz] of Object.entries(extra)) if (!out[file.slice(9).split('-')[0]]?.error) fs.writeFileSync(path.join(tmp, file), gz)
   fs.writeFileSync(path.join(tmp, 'manifest.json'), JSON.stringify({
     schema: 1, game: { build: String(build), version: version ?? null, manifestId: manifestId ?? null, depot: DEPOT },
     extractedAt: new Date().toISOString(), extractor, sections: out,

@@ -46,7 +46,20 @@ export function sessionMiddleware({ auth, access }) {
   }
 }
 
-/** підробка запитів з чужих сайтів: зміни приймаємо лише з того самого сайту */
+/**
+ * адреси, з якими браузер міг прийти до нас: Host, а за проксі (dune.test → Vite → API, LAN-доступ з телефона) —
+ * X-Forwarded-Host, бо Vite переписує Host на адресу API; плюс APP_URL
+ */
+export function ourHosts(req) {
+  const list = [req.get('host'), ...String(req.get('x-forwarded-host') || '').split(',')]
+  try { list.push(new URL(process.env.APP_URL || 'https://dune.test').host) } catch { /* хибний APP_URL */ }
+  return list.map((h) => String(h || '').trim().toLowerCase()).filter(Boolean)
+}
+
+/**
+ * підробка запитів з чужих сайтів: зміни приймаємо лише з того самого сайту. Sec-Fetch-Site браузер шле лише на
+ * https (і localhost) — по http з телефона в локальній мережі лишається Origin, і його звіряємо з ourHosts
+ */
 export function sameSite() {
   return (req, res, next) => {
     if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return next()
@@ -55,8 +68,8 @@ export function sameSite() {
     const origin = req.get('origin')
     if (origin) {
       let host = ''
-      try { host = new URL(origin).host } catch { /* хибний Origin */ }
-      if (host !== req.get('host')) return next(fail('запит не з цього сайту', 403))
+      try { host = new URL(origin).host.toLowerCase() } catch { /* хибний Origin */ }
+      if (!host || !ourHosts(req).includes(host)) return next(fail('запит не з цього сайту', 403))
     }
     next()
   }

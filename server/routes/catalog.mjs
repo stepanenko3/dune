@@ -1,6 +1,6 @@
 /*
- * Довідник: увесь каталог одним JSON, деталі предмета на вимогу (опис, характеристики з questlog),
- * іконки — через нас із кешем на диску (questlog CDN і медіа вікі), щоб працювало й без мережі.
+ * Довідник: увесь каталог одним JSON (адреси картинок — наші, lib/catalog.mjs), деталі предмета на вимогу (опис,
+ * характеристики), картинки за давніми адресами проксі — з медіатеки у сховищі (lib/media.mjs).
  * Каталог (~1,4 МБ) серіалізуємо й стискаємо раз на версію даних і мову, а не на кожен запит.
  */
 import fs from 'node:fs'
@@ -8,15 +8,10 @@ import path from 'node:path'
 import zlib from 'node:zlib'
 import express from 'express'
 import { LANGS } from '../lib/gamedata.mjs'
+import { iconSource, srcOf } from '../lib/media.mjs'
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Sandwalkers/2'
-const QL_ICON = 'https://cdn.questlog.gg/dune-awakening/'
-const WIKI_MEDIA = 'https://media.awakening.wiki/'
-const SAFE_ICON = /^assets\/Dune\/[\w/.-]+$/
-const SAFE_WIKI = /^wiki\/[0-9a-f]\/[0-9a-f]{2}\/[\w.%()'-]+\.(png|jpg|webp)$/i
 const SAFE_ID = /^[\w-]{1,120}$/
-/** шлях без «..» і «.»: інакше /catalog-icons/assets/Dune/../../… читав би й писав файли поза текою кешу */
-const plainPath = (p) => !p.split('/').some((s) => s === '..' || s === '.' || s === '')
 /** деталі, яких questlog не дав, не перепитуємо годину */
 const MISS_MS = 60 * 60_000
 
@@ -30,10 +25,9 @@ async function cachedFetch(file, url) {
   return buf
 }
 
-export function createCatalogRoutes({ catalog, game }) {
+export function createCatalogRoutes({ catalog, game, media = null }) {
   const r = express.Router()
   const wrap = (fn) => (req, res, next) => fn(req, res).catch(next)
-  const missing = new Set()
   /** деталі, яких questlog не дав: `${kind}:${id}` → коли */
   const noDetail = new Map()
   /** готове тіло відповіді для каталогу (поки він той самий об'єкт — та сама версія даних і мова) */
@@ -103,42 +97,23 @@ export function createCatalogRoutes({ catalog, game }) {
     }
   }))
 
-  const icon = async (p) => {
-    if (missing.has(p)) { const e = new Error('нема'); e.status = 404; throw e }
-    try {
-      return await cachedFetch(path.join(catalog.dir, 'icons', p + '.webp'), QL_ICON + p + '.webp')
-    } catch (e) {
-      // «нема на CDN» пам'ятаємо, але не безмежно
-      if (e.status === 404 || e.status === 403) { if (missing.size > 5000) missing.clear(); missing.add(p) }
-      throw e
-    }
-  }
+  // картинки за давніми адресами проксі (їх складає сайт і вони лежать у збережених документах): з медіатеки
+  // (lib/media.mjs) — у сховищі; ще нема — сервер дотягне з джерела один раз. Джерело недоступне — 404, а не збій
+  // express уже розкодував шлях — кодуємо сегменти назад, як у даних (encodeURIComponent імені файлу)
+  const serve = (pick) => wrap(async (req, res) => {
+    const want = pick(req.params[0].split('/').map(encodeURIComponent).join('/'))
+    if (!want?.src) return res.status(404).end()
+    let f = null
+    try { f = media ? await media.open(want.src, { alt: want.alt ?? [] }) : null } catch { f = null }
+    if (!f) return res.status(404).end()
+    res.type(f.type).set('cache-control', 'public, max-age=604800, immutable').send(f.buf)
+  })
   // сайт спершу просить кольоровий рендер (…R_D); його нема (у кожної четвертої) — віддаємо базову …_D, а не 404:
   // браузер не робить другого запиту й не пише помилку в консоль
-  r.get(/^\/catalog-icons\/(.+)\.webp$/, wrap(async (req, res) => {
-    const p = req.params[0]
-    if (!SAFE_ICON.test(p) || !plainPath(p)) return res.status(404).end()
-    try {
-      let buf
-      try { buf = await icon(p) } catch (e) { if (!/R_D$/.test(p) || e.status !== 404 && e.status !== 403) throw e; buf = await icon(p.replace(/R_D$/, '_D')) }
-      res.type('image/webp').set('cache-control', 'public, max-age=604800, immutable').send(buf)
-    } catch {
-      res.status(404).end()
-    }
-  }))
-
-  r.get(/^\/catalog-wiki\/(.+)$/, wrap(async (req, res) => {
-    const p = req.params[0]
-    if (!SAFE_WIKI.test(p) || !plainPath(p) || missing.has(p)) return res.status(404).end()
-    try {
-      const buf = await cachedFetch(path.join(catalog.dir, 'wiki', p), WIKI_MEDIA + p)
-      res.type(path.extname(p)).set('cache-control', 'public, max-age=604800, immutable').send(buf)
-    } catch (e) {
-      // «нема на CDN» пам'ятаємо, але не безмежно
-      if (e.status === 404 || e.status === 403) { if (missing.size > 5000) missing.clear(); missing.add(p) }
-      res.status(404).end()
-    }
-  }))
+  r.get(/^\/catalog-icons\/(.+)\.webp$/, serve((p) => (srcOf('ql', `${p}.webp`) ? iconSource(p, { color: false }) : null)))
+  r.get(/^\/catalog-wiki\/(.+)$/, serve((p) => ({ src: srcOf('wiki', p) })))
+  // іконки спеціалізацій і картинки в текстах роадмапів
+  r.get(/^\/catalog-gt\/(.+)$/, serve((p) => ({ src: srcOf('gt', p) })))
 
   return r
 }

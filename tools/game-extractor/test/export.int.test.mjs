@@ -1,4 +1,4 @@
-// Експортер (Docker-образ sandwalkers/gd-export:2) на справжніх паках сервера. Лише з GD_INT=1 і наявними паками в
+// Експортер (Docker-образ sandwalkers/gd-export:3) на справжніх паках сервера. Лише з GD_INT=1 і наявними паками в
 // GD_WORK (за замовчуванням …/DuneAwakening/gamefiles) — звичайний npm test його пропускає.
 import fs from 'node:fs'
 import os from 'node:os'
@@ -13,7 +13,7 @@ const on = process.env.GD_INT === '1' && fs.existsSync(PAKS) && fs.existsSync(US
 
 describe.skipIf(!on)('експортер CUE4Parse', () => {
   let out
-  const gdx = (...args) => execFileSync('docker', ['run', '--rm', '-v', `${PAKS}:/paks:ro`, '-v', `${USMAP}:/map.usmap:ro`, '-v', `${out}:/out`, 'sandwalkers/gd-export:2', ...args], { stdio: 'pipe', maxBuffer: 1 << 26 })
+  const gdx = (...args) => execFileSync('docker', ['run', '--rm', '-v', `${PAKS}:/paks:ro`, '-v', `${USMAP}:/map.usmap:ro`, '-v', `${out}:/out`, 'sandwalkers/gd-export:3', ...args], { stdio: 'pipe', maxBuffer: 1 << 26 })
   const rows = (name) => {
     const d = JSON.parse(fs.readFileSync(path.join(out, 'tables', name + '.json'), 'utf8'))
     return Object.assign({}, ...d.filter((e) => e.Rows).map((e) => e.Rows))

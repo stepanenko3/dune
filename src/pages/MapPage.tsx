@@ -1,7 +1,7 @@
 /**
  * Мапа — як «Карта» в Satisfactory: тайли гри, усі точки з гри шарами з фільтром
  * за групами й типами, наведення і клік по точці («що тут є» — лут і руда поруч, як у грі),
- * позначки «зібрано», пошук місць — і поверх усе від гравців: позначки й записи ресурсів.
+ * пошук місць — і поверх усе від гравців: позначки й записи ресурсів.
  *
  * Бічна панель — дві сторінки, що гортаються всередині неї (?side=): «Гра» — шари з гри, «Позначки» — від гравців
  * (мої, гільдії й увімкнене людиною чуже публічне, див. MarksPanel).
@@ -17,13 +17,16 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Boxes, ChevronDown, CloudLightning, Crosshair, Filter, Layers, Map as MapIcon, MapPinned, Maximize2, Minus, Plus, RefreshCw, Star, Wind, X } from 'lucide-react'
 import { toast } from 'sonner'
-import { useAuth } from '@/lib/auth'
+import { loginHref, useAuth } from '@/lib/auth'
 import {
-  HIDDEN_MAPS, labelOf, loadIndex, loadLoot, loadPoints, loadSource, loadSpot, loadSummary, MAP_ORDER, mapName, OPEN_MAPS, reloadSource, safeDesc,
-  type LocSummary, type Loot, type MapDef, type MapIndex, type SourceResp, type Summaries, type TypeDef, type TypePoints,
+  HIDDEN_MAPS, labelOf, loadIndex, loadLoot, loadLootMaps, loadPoints, loadSource, loadSpot, loadSummary, MAP_ORDER, mapName, OPEN_MAPS, reloadSource, safeDesc,
+  type LocSummary, type Loot, type LootMap, type MapDef, type MapIndex, type SourceResp, type Summaries, type TypeDef, type TypePoints,
 } from '@/lib/map/data'
 import { MARK_GROUP, PointsLayer, SPICE, gridOf, iconColors, sectorOf, smoothWheel, type Batch, type Hit, type Mark } from '@/lib/map/layer'
-import { defaultOn, doneKey, enabledFor, loadDone, loadDoneAt, mapUrl, okMap, okWeek, pointKey, readUrl, respawnMin, saveDone, saveDoneAt, saveEnabled, setRespawnMin, writeUrl } from '@/lib/map/settings'
+import { bestCells, finderLayers, type BestCell } from '@/lib/map/best'
+import { tileLayer } from '@/lib/map/tiles'
+import { bestSpot } from '@/lib/map/spot.mjs'
+import { countFromShare, defaultOn, enabledFor, FIND_MIN, findable, knownLayers, mapUrl, orderGroups, shareAlpha, okMap, okWeek, readUrl, saveEnabled, writeUrl } from '@/lib/map/settings'
 import { useMapUi } from '@/lib/map/ui'
 import { livePlaces, usePlaces, type Place } from '@/lib/places'
 import { isMarker, isPlace, usePubMarks, type PubRow } from '@/lib/map/marks'
@@ -31,7 +34,7 @@ import { prefGet, prefSet } from '@/lib/prefs'
 import { goUrl, plainClick, useUrlParam } from '@/lib/urlState'
 import { useStore } from '@/store'
 import { cn, fmtN, plural, splitEn } from '@/lib/utils'
-import { locale, t, T } from '@/lib/i18n'
+import { locale, t } from '@/lib/i18n'
 import { SnInput, valueOf } from '@/components/sn'
 import { Button } from '@/components/ui/button'
 import { ErrorAlert, Loading, PageError } from '@/components/states'
@@ -43,10 +46,11 @@ import { MarksPanel, scopeOf, useMarksScope, type Scope } from '@/components/map
 import { DDTimer, useStale, useStorm } from '@/components/DDTimer'
 import { fmtLeft } from '@/lib/ddReset'
 import { liveMarkers, markerKind, useMarkers } from '@/lib/markers'
-import { clockOf, fieldKey, liveSpice, namesText, SIZE_OF, spanText, TYPE_OF, useSpice } from '@/lib/map/spice'
-import { SpiceActive, spiceVisNow } from '@/components/map/SpiceActive'
+import { clockOf, fieldKey, liveSpice, namesText, SIZE_OF, spanText, spiceTypesOf, useSpice } from '@/lib/map/spice'
+import { SpiceActive } from '@/components/map/SpiceActive'
 import '@/components/map/map.css'
 import { DataStamp } from '@/components/DataStamp'
+import { WORLD_MAP, WorldMapView } from '@/components/world/WorldMapView'
 
 type Focus = { type: string; i: number; x: number; y: number } | null
 /** лут запису: шукається, знайдено чи пошук не вдався (тоді — «Спробувати ще», а не «тут не випадає») */
@@ -56,6 +60,31 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(locale(), { da
 const narrow = () => matchMedia('(max-width: 1023.98px)').matches
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
 /** рослини довкола є майже всюди — у «що тут є» вони останні */
+/**
+ * Частка руди в точках (вузли з файлів гри: руда місця вибирається з кількох можливих за вагою) → непрозорість (повна
+ * лише на чистих острівцях, 100 %) і множина місць, що малюються: шанс від min % (повзунок), а у виді «очікувана кількість» —
+ * ще й лише ті, де жереб місця випав на цю руду (pick). За масивом і порогом — раз: той самий об'єкт множини тримає кеш груп шару.
+ */
+const shareCache = new WeakMap<number[], Map<string, { alpha: number[]; likely: Set<number> }>>()
+function shareOf(share: number[], min: number, pick?: number[]) {
+  let m = shareCache.get(share)
+  if (!m) shareCache.set(share, (m = new Map()))
+  const key = `${min}|${pick ? 1 : 0}`
+  let v = m.get(key)
+  if (!v) {
+    const likely = new Set<number>()
+    share.forEach((p, i) => { if (p >= min && (!pick || pick[i])) likely.add(i) })
+    v = { alpha: share.map(shareAlpha), likely }
+    m.set(key, v)
+  }
+  return v
+}
+/** типовий поріг шансу руди: у виді «очікувана кількість» він не потрібен — малюється стільки, скільки в грі */
+const MIN_SHARE = 0
+/** вид руди: очікувана кількість (у кожному місці — одна руда за жеребом з вагами) чи всі можливі місця */
+type OreMode = 'expected' | 'all'
+
+/** рослини (у «що тут є» — після руди): TH.GL — ці id; файли гри — типи групи «Рослини» (додаються з даних мапи) */
 const PLANTS = new Set(['primrose_field', 'fiber_plant', 'agave_seeds'])
 const lootKeyOf = (map: string, layout: number | null, q: string) => `${map}|${layout}|${q.toLowerCase()}`
 /** свої й гільдійські + чуже (без повторів): що малювати на мапі */
@@ -65,7 +94,25 @@ const withPub = <T extends { id: string },>(own: T[], pub: T[]) => {
 }
 type Side = 'game' | 'marks'
 
+/**
+ * Розділ «Мапа»: мапи гри (Leaflet із тайлами й точками — GameMap) і карта світу (карта поверхні з переходами між
+ * мапами — WorldMapView). Яка — ?m= (без нього — та, що була відкрита востаннє); перемикач мап однаковий в обох.
+ */
 export default function MapPage() {
+  const [mapId] = useUrlParam<string>('m', prefGet('map:map', 'survival_1'), okMap, { always: true })
+  const [resp, setResp] = useState<SourceResp | null>(null)
+  const world = mapId === WORLD_MAP
+  useEffect(() => {
+    if (!world) return
+    prefSet('map:map', WORLD_MAP)
+    if (new URLSearchParams(location.search).get('m') !== WORLD_MAP) goUrl(mapUrl({ m: WORLD_MAP }), true)
+    loadSource().then(setResp).catch(() => {})
+  }, [world])
+  if (!world) return <GameMap />
+  return <WorldMapView picker={resp ? <MapBlock resp={resp} layout={null} onPick={(m) => m !== WORLD_MAP && goUrl(mapUrl({ m, loc: null, q: null, k: null }))} onWeek={() => {}} /> : null} />
+}
+
+function GameMap() {
   const url0 = useRef(readUrl())
   // позначка й запис за посиланням (?marker=, ?r=) — поки їх не знайдено й не вибрано
   const markerParam = useRef(url0.current.marker ?? null)
@@ -91,15 +138,17 @@ export default function MapPage() {
   const [pts, setPts] = useState<Record<string, TypePoints>>({})
   const [sprite, setSprite] = useState<HTMLImageElement | null>(null)
   const [colors, setColors] = useState<Record<string, string>>({})
-  const [done, setDone] = useState<Record<string, string[]>>({})
-  /** коли вузли руди позначено «зібрано» — для таймера відновлення («тип|x,y» → мс) */
-  const [doneAt, setDoneAt] = useState<Record<string, number>>({})
-  const [respawn, setRespawn] = useState(respawnMin)
-  const [now, setNow] = useState(Date.now)
   const [focus, setFocus] = useState<Focus>(null)
   const [zoom, setZoom] = useState(0)
   const [loots, setLoots] = useState<Record<string, LootState>>({})
   const [group, setGroup] = useState<boolean>(() => prefGet('map:cluster', true))
+  // вузли руди з файлів гри: руда в місці вибирається з кількох — малоймовірні місця (< 20 %) сховано, решта блідіша за часткою
+  // поріг шансу появи руди / рослини в місці, % (0 — усі можливі місця). Ключ — новий: давні збережені пороги (поки
+  // вид був «усі місця» з фільтром від 20 %) не переносимо — типово вид «очікувана кількість» і всі місця
+  // «де найкраще» для шару: підсвічені сектори / ділянки; auto — шари, які ввімкнув сам пошук (наступний їх вимкне)
+  const [best, setBest] = useState<{ type: string; cells: BestCell[]; spot?: { x: number; y: number; n: number; large: number; radius: number }; auto: string[] } | null>(null)
+  const [oreMode, setOreMode] = useState<OreMode>(() => (prefGet<string>('map:oreMode', 'expected') === 'all' ? 'all' : 'expected'))
+  const [minShare, setMinShare] = useState<number>(() => { const v = Number(prefGet('map:minShare2', MIN_SHARE)); return Number.isFinite(v) ? Math.max(0, Math.min(100, v)) : MIN_SHARE })
   // предмет із довідника (?loot=…): поводиться як тимчасовий запис «Наших ресурсів» лише з лутом
   const [lootQ, setLootQ] = useState<string | null>(url0.current.loot ?? null)
   const places = usePlaces((s) => s.rows)
@@ -112,7 +161,6 @@ export default function MapPage() {
   const spiceFields = useSpice((s) => s.fields)
   const spiceSpots = useSpice((s) => s.spots)
   const spiceByKey = useSpice((s) => s.byKey)
-  const spicePicking = useSpice((s) => s.picking)
   const authUser = useAuth((s) => s.user)
   // чуже публічне: ввімкнене людиною і те, що розгорнули «подивитись» (чи відкрили за посиланням)
   const pubRows = usePubMarks((s) => s.rows)
@@ -140,52 +188,10 @@ export default function MapPage() {
     for (const g of resp?.source.groups ?? []) for (const t of g.types) m.set(t.id, { ...t, group: g.id })
     return m
   }, [resp])
+  // типи полів меланжу в цих даних (TH.GL чи файли гри)
+  const spiceType = useMemo(() => spiceTypesOf(types.keys()), [types])
+  useEffect(() => { for (const [id, t] of types) if (t.group === 'plants') PLANTS.add(id) }, [types])
   const grid = useMemo(() => (def ? gridOf(def) : null), [def])
-
-  // ---------- відновлення вузлів ----------
-  /** руда й місця збору відновлюються; поля меланжу — ні (з'являються подіями) */
-  const respawnable = (t: string) => {
-    const g = types.get(t)?.group
-    return (g === 'resources' || g === 'resources_pickup') && !/_field/.test(t)
-  }
-  const respawnMs = respawn * 60_000
-  // поки щось відновлюється — «зараз» тікає раз на 20 с: дуги ростуть, відновлені позначки знімаються
-  const anyRespawn = Object.keys(doneAt).length > 0
-  useEffect(() => {
-    if (!anyRespawn) return
-    setNow(Date.now())
-    const id = setInterval(() => setNow(Date.now()), 20_000)
-    return () => clearInterval(id)
-  }, [anyRespawn])
-  useEffect(() => {
-    if (!def) return
-    const gone = Object.entries(doneAt).filter(([, at]) => now - at >= respawnMs).map(([k]) => k)
-    if (!gone.length) return
-    const nextAt = { ...doneAt }
-    const nextDone = { ...done }
-    for (const k of gone) {
-      delete nextAt[k]
-      const [t, key] = k.split('|')
-      if (nextDone[t]) nextDone[t] = nextDone[t].filter((x) => x !== key)
-    }
-    setDoneAt(nextAt)
-    setDone(nextDone)
-    saveDoneAt(doneKey(def.id, layout), nextAt)
-    saveDone(doneKey(def.id, layout), nextDone)
-  }, [now, respawnMs]) // eslint-disable-line react-hooks/exhaustive-deps
-  /** частка відновлення зібраних вузлів типу: ключ «x,y» → 0…1 */
-  const progressOf = (t: string, keys: string[]) => {
-    const m = new Map<string, number>()
-    for (const k of keys) {
-      const at = doneAt[`${t}|${k}`]
-      if (at) m.set(k, (now - at) / respawnMs)
-    }
-    return m.size ? m : undefined
-  }
-  const respawning = useMemo(() => {
-    const left = Object.values(doneAt).map((at) => at + respawnMs - now).filter((ms) => ms > 0)
-    return { n: left.length, soonest: left.length ? Math.min(...left) : 0 }
-  }, [doneAt, now, respawnMs])
 
   // ---------- завантаження ----------
   const fetchSource = useCallback(() => {
@@ -196,7 +202,7 @@ export default function MapPage() {
   // відкрили — без перезавантаження сторінки, тож відкрита чернетка позначки не губиться (а нові позначки отримують
   // нову розкладку, якщо людина не вибрала іншу сама)
   useEffect(() => {
-    const check = () => { if (document.visibilityState === 'visible') reloadSource().then(({ resp: r, changed }) => { if (changed) { setResp(r); toast.info(t('Мапу оновлено — вийшли свіжі дані TH.GL')) } }).catch(() => {}) }
+    const check = () => { if (document.visibilityState === 'visible') reloadSource().then(({ resp: r, changed }) => { if (changed) { setResp(r); toast.info(t('Мапу оновлено')) } }).catch(() => {}) }
     const h = setInterval(check, 15 * 60_000)
     document.addEventListener('visibilitychange', check)
     return () => { clearInterval(h); document.removeEventListener('visibilitychange', check) }
@@ -211,7 +217,7 @@ export default function MapPage() {
     const offM = liveMarkers()
     const offP = livePlaces()
     const offS = liveSpice()
-    return () => { offM(); offP(); offS(); useMapUi.getState().edit(null); useSpice.getState().setPicking(false) }
+    return () => { offM(); offP(); offS(); useMapUi.getState().edit(null) }
   }, [select, fetchSource])
 
   useEffect(() => {
@@ -223,13 +229,14 @@ export default function MapPage() {
 
   // мапа з адреси могла зникнути з TH.GL або бути прихованою — тоді Хагга
   useEffect(() => {
-    if (resp && !def) goUrl(mapUrl({ m: 'survival_1', w: null }), true)
+    if (resp && !def && mapId !== WORLD_MAP) goUrl(mapUrl({ m: 'survival_1', w: null }), true)
   }, [resp, def])
 
   useEffect(() => {
     if (!resp || !def) return
     const u = url0.current
-    const fromUrl = u.m === def.id && u.l ? u.l : null
+    // шари з адреси — лише відомі цій мапі (посилання з іншого джерела даних не гасить усю мапу)
+    const fromUrl = u.m === def.id && u.l ? knownLayers(u.l, resp.source.groups) : null
     url0.current = {}
     const small = !OPEN_MAPS.has(def.id)
     setEnabled(fromUrl ?? enabledFor(def.id, resp.source.groups, small))
@@ -244,9 +251,9 @@ export default function MapPage() {
     setIndex(null)
     setSummary(null)
     setPts({})
+    setLoots({})
+    setBest(null)
     setFocus(null)
-    setDone(loadDone(doneKey(def.id, layout)))
-    setDoneAt(loadDoneAt(doneKey(def.id, layout)))
     setIndexFailed(false)
     setPtsFailed([])
     let live = true
@@ -308,6 +315,24 @@ export default function MapPage() {
     }
   }, [lootWanted, def, layout, loots, allPlaces])
   const lootOf = (p: Place | null) => (p?.loot && def ? loots[lootKeyOf(def.id, layout, p.loot)] ?? null : null)
+  // лут із довідника: на яких мапах випадає; прийшли з довідника, а тут не випадає — одразу на мапу з найбільшим шансом
+  const [lootMaps, setLootMaps] = useState<LootMap[] | null>(null)
+  useEffect(() => {
+    setLootMaps(null)
+    if (!lootQ) return
+    let on = true
+    loadLootMaps(lootQ, isDD ? layout : null)
+      .then((m) => on && setLootMaps(m.filter((x) => !HIDDEN_MAPS.has(x.map))))
+      .catch(() => on && setLootMaps([]))
+    return () => { on = false }
+  }, [lootQ, isDD, layout])
+  const lootHere = lootOf(lootPlace)
+  const lootJumped = useRef(false)
+  useEffect(() => {
+    if (lootJumped.current || !lootHere || lootHere.loading || lootHere.failed || !lootMaps) return
+    lootJumped.current = true
+    if (!lootHere.hits.length && lootMaps.length && def && lootMaps[0].map !== def.id) switchMap(lootMaps[0].map, undefined, true)
+  }, [lootHere, lootMaps]) // eslint-disable-line react-hooks/exhaustive-deps
   /** шукати лут вибраного запису ще раз */
   const retryLoot = () => {
     if (!place?.loot || !def) return
@@ -349,6 +374,14 @@ export default function MapPage() {
     }
     return () => { live = false }
   }, [needed, def, layout, index, pts, ptsFailed])
+  // картка точки, чий шар не малюється (скриня з лутом із довідника): її опис — з точок її типу
+  useEffect(() => {
+    if (!def || !focus || focus.i < 0 || pts[focus.type]) return
+    let live = true
+    const ty = focus.type
+    loadPoints(def.id, layout, ty).then((p) => live && setPts((cur) => (cur[ty] ? cur : { ...cur, [ty]: p }))).catch(() => {})
+    return () => { live = false }
+  }, [focus, def, layout, pts])
 
   // сторінка панелі, яку зараз не видно, — поза фокусом клавіатури й читачів екрана
   const gamePage = useRef<HTMLDivElement>(null)
@@ -367,6 +400,8 @@ export default function MapPage() {
   const pulseRef = useRef<L.LayerGroup | null>(null)
   const fitted = useRef<string | null>(null)
   const handlers = useRef<{ move: (e: L.LeafletMouseEvent) => void; click: (e: L.LeafletMouseEvent) => void }>()
+  /** останнім мапи торкнулися пальцем (чи пером), а не мишею */
+  const touched = useRef(false)
 
   useEffect(() => {
     if (!def || !tilesDir || !divRef.current) return
@@ -386,7 +421,7 @@ export default function MapPage() {
       maxBounds: bounds,
     })
     map.attributionControl.setPrefix(false)
-    L.tileLayer(`/map-tiles/${tilesDir}/{z}/{y}/{x}.webp`, {
+    tileLayer(`/map-tiles/${tilesDir}/{z}/{y}/{x}.webp`, {
       tileSize: def.tileSize,
       // у TileLayer типово minZoom 0, а ціла мапа влазить лише на від'ємному масштабі
       minZoom: -6,
@@ -395,7 +430,6 @@ export default function MapPage() {
       bounds,
       noWrap: true,
       keepBuffer: 4,
-      attribution: '<a href="https://duneawakening.th.gl" target="_blank" rel="noopener">TH.GL</a>',
     }).addTo(map)
     map.fitBounds(bounds, { animate: false })
     map.setMinZoom(map.getZoom())
@@ -417,6 +451,13 @@ export default function MapPage() {
     fitted.current = null
 
     let raf = 0
+    // дотик (телефон): браузер після нього ще й імітує рух миші — тоді підказка наведення спливала разом із карткою
+    // точки, і після одного дотику на екрані було два вікна. Тож після дотику підказки наведення не показуємо (лише
+    // координати), доки не поворухнеться справжня миша
+    const box = divRef.current
+    const ptr = (e: PointerEvent) => { touched.current = e.pointerType !== 'mouse' }
+    box.addEventListener('pointerdown', ptr, true)
+    box.addEventListener('pointermove', ptr, true)
     map.on('mousemove', (e: L.LeafletMouseEvent) => {
       cancelAnimationFrame(raf)
       raf = requestAnimationFrame(() => handlers.current?.move(e))
@@ -426,6 +467,8 @@ export default function MapPage() {
     map.on('click', (e: L.LeafletMouseEvent) => handlers.current?.click(e))
     return () => {
       cancelAnimationFrame(raf)
+      box.removeEventListener('pointerdown', ptr, true)
+      box.removeEventListener('pointermove', ptr, true)
       unwheel()
       ro.disconnect()
       map.remove()
@@ -441,7 +484,7 @@ export default function MapPage() {
     if (!g) return
     g.clearLayers()
     for (const f of spiceFields) {
-      const d = f.size === 'large' ? 46 : f.size === 'medium' ? 36 : 28
+      const d = f.size === 'large' ? 52 : f.size === 'medium' ? 42 : 34
       L.marker([f.x, f.y], { interactive: false, keyboard: false, icon: L.divIcon({ className: `spice-pulse spice-pulse--${f.size}`, iconSize: [d, d], html: '<i></i><i></i>' }) }).addTo(g)
     }
   }, [spiceFields, def, tilesDir])
@@ -468,37 +511,39 @@ export default function MapPage() {
       const p = pts[t]
       const td = types.get(t)
       if (!p) continue
+      const lootOnly = !gameOn.includes(t) && !linked.full.has(t) ? linked.only.get(t) : undefined
+      const sh = p.share ? shareOf(p.share, minShare, oreMode === 'expected' ? p.pick : undefined) : null
       out.push({
         type: t,
         pts: p.pts,
         icon: td?.icon ?? null,
         size: td?.size ?? 2,
         color: colors[t] || '#d9c7a3',
-        done: done[t]?.length ? new Set(done[t]) : undefined,
-        respawn: respawnable(t) && done[t]?.length ? progressOf(t, done[t]) : undefined,
-        // з лутом записів, а шар не ввімкнено — лише ті точки, де він є
-        only: !gameOn.includes(t) && !linked.full.has(t) ? linked.only.get(t) : undefined,
+        // з лутом записів, а шар не ввімкнено — лише ті точки, де він є; руда — лише ймовірні місця (якщо так вибрано)
+        only: lootOnly ?? (sh && (minShare > 0 || oreMode === 'expected') ? sh.likely : undefined),
+        alpha: sh?.alpha,
       })
     }
-    // місця великих полів (відомі й з позначок гравців) — завжди, хоч би шар і вимкнули: TH.GL їх не має
-    if (spiceSpots.length && !filtering) {
-      const LG = TYPE_OF.large
+    // місця великих полів (відомі й з позначок гравців) — лише з увімкненим шаром «Велике поле», як і решта шарів
+    const LG = spiceType.large
+    const lgOn = gameOn.includes(LG)
+    if (spiceSpots.length && lgOn) {
       const extra = spiceSpots.flatMap((p) => [p.x, p.y, 0])
       const have = out.find((b) => b.type === LG)
       if (have) have.pts = [...have.pts, ...extra]
       else out.push({ type: LG, pts: extra, icon: types.get(LG)?.icon ?? null, size: types.get(LG)?.size ?? 2, color: colors[LG] || '#d9481f' })
     }
-    // активні поля видно й тоді, коли шар їхньої величини вимкнено
+    // активні поля видно й тоді, коли шар їхньої величини вимкнено (велике з увімкненим шаром уже є серед місць)
     for (const f of spiceFields) {
-      const ty = TYPE_OF[f.size]
-      if (f.size === 'large' || needed.includes(ty)) continue
+      const ty = spiceType[f.size]
+      if (f.size === 'large' ? lgOn && spiceSpots.length > 0 : needed.includes(ty)) continue
       const have = out.find((b) => b.type === ty)
       if (have) have.pts = [...have.pts, f.x, f.y, 0]
       else out.push({ type: ty, pts: [f.x, f.y, 0], icon: types.get(ty)?.icon ?? null, size: types.get(ty)?.size ?? 2, color: colors[ty] || '#ee8a2c' })
     }
     // густі шари (руда, рослини) — знизу, місця й люди — зверху
     return out.sort((a, b) => b.pts.length - a.pts.length)
-  }, [needed, pts, types, colors, done, filtering, gameOn, linked, doneAt, now, respawnMs, spiceSpots, spiceFields]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [needed, pts, types, colors, filtering, gameOn, linked, spiceSpots, spiceFields, spiceType, minShare, oreMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const marks: Mark[] = useMemo(() => {
     if (!def) return []
@@ -540,6 +585,25 @@ export default function MapPage() {
   // на малих мапах (міста, підземелля) точок небагато — показуємо кожну, без групування
   const cluster = group && !!def && OPEN_MAPS.has(def.id)
   useEffect(() => { layerRef.current?.set({ batches, marks, ringTypes, sprite, grid, cluster }) }, [batches, marks, ringTypes, sprite, grid, cluster, def])
+  // «де найкраще»: рамки підсвічених секторів / ділянок з підписом (сектор · скільки)
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !best) return
+    const g = L.layerGroup(best.cells.map((c) => L.rectangle([[c.x0, c.y0], [c.x1, c.y1]], { color: '#e8833a', weight: 3, fillOpacity: 0.08, interactive: false })
+      .bindTooltip(`${c.label} · ${fmtN(c.n)}`, { permanent: true, direction: 'center', className: 'best-tip' }))).addTo(map)
+    // меланж — коло навколо найкращої точки (многокутником: координати мапи — одиниці гри)
+    const s = best.spot
+    if (s) {
+      const ring = Array.from({ length: 64 }, (_, k) => [s.x + s.radius * Math.cos((k / 64) * 2 * Math.PI), s.y + s.radius * Math.sin((k / 64) * 2 * Math.PI)] as [number, number])
+      L.polygon(ring, { color: '#e8833a', weight: 3, dashArray: '8 6', fillOpacity: 0.08, interactive: false })
+        .bindTooltip(plural(s.n, [t('поле'), t('поля'), t('полів')]), { permanent: true, direction: 'center', className: 'best-tip' })
+        .addTo(g)
+      L.circleMarker([s.x, s.y], { radius: 5, color: '#e8833a', weight: 2, fillOpacity: 1, interactive: false }).addTo(g)
+    }
+    return () => { g.remove() }
+  }, [best, def])
+  // підсвітка живе, поки її шар увімкнений у панелі: зняв галочку — сектори й коло зникають
+  useEffect(() => { if (best && enabled && !enabled.includes(best.type)) setBest(null) }, [enabled, best])
 
   // підпис точки: назва з TH.GL або тип; для локацій — «що тут є»
   const pointInfo = useCallback(
@@ -591,7 +655,7 @@ export default function MapPage() {
       if (!map || !layer || !tip) return
       const { lat: x, lng: y } = e.latlng
       showCoords(x, y)
-      if (picking || useMarkers.getState().picking || useSpice.getState().picking) { tip.hidden = true; return }
+      if (touched.current || picking || useMarkers.getState().picking) { tip.hidden = true; return }
       const h = layer.hit(e.containerPoint)
       if (!h) { tip.hidden = true; return }
       tip.innerHTML = tipHtml(h)
@@ -605,12 +669,6 @@ export default function MapPage() {
       if (!def) return
       const { lat: x, lng: y } = e.latlng
       showCoords(x, y)
-      if (useSpice.getState().picking) {
-        // велике поле там, де клацнули (сервер «прилипить» його до відомого місця поруч)
-        useSpice.getState().setPicking(false)
-        void markLargeAt(x, y)
-        return
-      }
       const mk = useMarkers.getState()
       if (mk.picking) {
         // точка нової (чи переміщеної) позначки; перенесли з пустелі на іншу мапу — без розкладки
@@ -633,10 +691,13 @@ export default function MapPage() {
         return
       }
       const h = layerRef.current?.hit(e.containerPoint)
+      if (tipRef.current) tipRef.current.hidden = true
       if (!h) { setFocus(null); return }
       if (h.kind === 'mark') {
-        if (h.mark.kind === 'pin' && h.mark.placeId) { select(h.mark.placeId); reveal(scopeOfPlace(h.mark.placeId)) }
-        else if (h.mark.kind === 'marker' && h.mark.markerId) { useMarkers.getState().select(h.mark.markerId); reveal(scopeOfMarker(h.mark.markerId)) }
+        // запис чи позначка відкриваються в панелі (на телефоні — листом знизу): картку точки гри закриваємо, щоб не
+        // було двох вікон разом
+        if (h.mark.kind === 'pin' && h.mark.placeId) { setFocus(null); select(h.mark.placeId); reveal(scopeOfPlace(h.mark.placeId)) }
+        else if (h.mark.kind === 'marker' && h.mark.markerId) { setFocus(null); useMarkers.getState().select(h.mark.markerId); reveal(scopeOfMarker(h.mark.markerId)) }
         else if (h.mark.kind === 'loot') {
           for (const l of Object.values(loots)) {
             const hit = l.hits.find((v) => v.x === h.mark.x && v.y === h.mark.y)
@@ -657,24 +718,14 @@ export default function MapPage() {
     },
   }
 
-  async function markLargeAt(x: number, y: number) {
-    if (!def) return
-    try {
-      const f = await useSpice.getState().mark({ map: def.id, layout: isDD ? layout : null, size: 'large', x: Math.round(x), y: Math.round(y), visibility: spiceVisNow() })
-      if (f) setFocus({ type: TYPE_OF.large, i: -1, x: f.x, y: f.y })
-    } catch (e) { toast.error((e as Error).message) }
-  }
-
   /** активне поле під точкою: рядки для підказки */
   function spiceTip(type: string, x: number, y: number) {
     const size = SIZE_OF[type]
     if (!size) return ''
     const f = spiceByKey.get(fieldKey(size, x, y))
-    const spot = size === 'large' ? spiceSpots.find((p) => p.x === Math.round(x) && p.y === Math.round(y)) : null
-    const src = spot ? `<div class="mt">${esc(spot.src === 'known' ? t('можливе місце великого поля') : t('місце з позначок гравців'))}</div>` : ''
-    if (!f) return src + (authUser ? `<div class="mt">${esc(t('клік — позначити активним'))}</div>` : '')
+    if (!f) return authUser ? `<div class="mt">${esc(t('клік — позначити активним'))}</div>` : ''
     const now = Date.now() + useSpice.getState().skew
-    return src + `<div class="sp-act"><b>${esc(t('Активне'))}</b> · ${esc(t('з {time} ({ago} тому)', { time: clockOf(f.first), ago: spanText(now - f.first) }))}</div>`
+    return `<div class="sp-act"><b>${esc(t('Активне'))}</b> · ${esc(t('з {time} ({ago} тому)', { time: clockOf(f.first), ago: spanText(now - f.first) }))}</div>`
       + `<div class="mt">${esc(t('Позначили {n}: {names}', { n: f.n, names: namesText(f) }))}</div>`
   }
 
@@ -713,7 +764,7 @@ export default function MapPage() {
   }
 
   // класом, а не через className: Leaflet сам додає класи контейнеру, і React їх затер би
-  useEffect(() => { divRef.current?.classList.toggle('picking', picking || markerPicking || spicePicking) }, [picking, markerPicking, spicePicking, def])
+  useEffect(() => { divRef.current?.classList.toggle('picking', picking || markerPicking) }, [picking, markerPicking, def])
 
   // вибір точки на телефоні: лист панелі закриває мапу (і підказку «Клацни на мапі») — ховаємо його, поки людина
   // клацає, і повертаємо, щойно точку вибрано чи вибір скасовано
@@ -728,7 +779,6 @@ export default function MapPage() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
       if (useMapUi.getState().picking) setPicking(false)
-      else if (useSpice.getState().picking) useSpice.getState().setPicking(false)
       else if (useMarkers.getState().picking) useMarkers.getState().setPicking(false)
       else setFocus(null)
     }
@@ -871,7 +921,7 @@ export default function MapPage() {
 
   /** інша мапа — новий крок історії (з поточною розкладкою); replace — без кроку (перехід за посиланням) */
   const switchMap = (m: string, sel?: string, replace = false) => {
-    goUrl(mapUrl({ m, w: null, r: sel ?? null, marker: null, pt: null }), replace)
+    goUrl(mapUrl({ m, w: null, r: sel ?? null, marker: null, pt: null, ...(m === WORLD_MAP ? { l: null, side: null } : {}) }), replace)
     select(sel ?? null)
     setFocus(null)
     setPt(null)
@@ -888,28 +938,9 @@ export default function MapPage() {
     pickWeek(w)
   }
 
-  const toggleDone = (f: NonNullable<Focus>) => {
-    if (!def) return
-    const k = pointKey(f.x, f.y)
-    const cur = done[f.type] || []
-    const was = cur.includes(k)
-    const next = { ...done, [f.type]: was ? cur.filter((x) => x !== k) : [...cur, k] }
-    setDone(next)
-    saveDone(doneKey(def.id, layout), next)
-    // вузол руди: запам'ятати, коли зібрали, — від цього рахується відновлення
-    if (respawnable(f.type) || doneAt[`${f.type}|${k}`]) {
-      const at = { ...doneAt }
-      if (was) delete at[`${f.type}|${k}`]
-      else at[`${f.type}|${k}`] = Date.now()
-      setDoneAt(at)
-      saveDoneAt(doneKey(def.id, layout), at)
-      setNow(Date.now())
-    }
-  }
-
   /** точку з мапи — у запис: у відкриту чернетку, в існуючий запис або новий запис */
   const attach = async (f: NonNullable<Focus>, to: 'draft' | 'new' | string) => {
-    if (!def) return
+    if (!def || !useAuth.getState().user) return
     const inf = pointInfo(f.type, f.i)
     const pin = { map: def.id, x: f.x, y: f.y, ...(isDD && layout != null ? { layout } : {}), label: inf.name || inf.typeLabel }
     if (to === 'draft') { addPin(pin); toast.success(t('Точку додано до чернетки')); return }
@@ -928,7 +959,55 @@ export default function MapPage() {
 
   // + скрині з потрібним лутом, що не належать жодній локації: вони малюються окремими мітками
   const lootMarks = marks.filter((m) => m.kind === 'loot').length
-  const shown = needed.reduce((n, t) => n + (linked.only.has(t) && !gameOn.includes(t) && !linked.full.has(t) ? linked.only.get(t)!.size : index?.counts[t] || 0), 0) + lootMarks
+  /**
+   * «де найкраще» для шару: у Глибокій пустелі — сектори (усі чисті острівці руди чи найкращі), на інших мапах — ділянки
+   * сітки 10 × 10; шар вмикається, мапа летить до підсвіченого
+   */
+  async function findBest(type: string) {
+    if (!def) return
+    const p = pts[type] ?? (await loadPoints(def.id, layout, type).catch(() => null))
+    if (!p) return
+    const box = grid ?? (!OPEN_MAPS.has(def.id) && index?.bbox ? { x0: index.bbox[0][0], x1: index.bbox[1][0], y0: index.bbox[0][1], y1: index.bbox[1][1], n: 10 } : { x0: def.bounds[0][0], x1: def.bounds[1][0], y0: def.bounds[0][1], y1: def.bounds[1][1], n: 10 })
+    const cells = bestCells(p.pts, { share: p.share, pick: oreMode === 'expected' ? p.pick : undefined, grid: box, sectors: !!grid })
+    setBest({ type, cells, auto: finderOn(type) })
+    if (cells.length && mapRef.current) mapRef.current.flyToBounds(L.latLngBounds(cells.map((c) => [[c.x0, c.y0], [c.x1, c.y1]] as L.LatLngBoundsLiteral).flat()).pad(0.15), { duration: 0.6 })
+    if (narrow()) setSheet(null)
+  }
+  /** шукане вмикається в панелі; шар, що його ввімкнув попередній пошук, вимикається → шари цього пошуку */
+  function finderOn(type: string): string[] {
+    if (!enabled) return []
+    const r = finderLayers(enabled, best?.auto ?? [], [type])
+    if (r.enabled.length !== enabled.length || r.enabled.some((t) => !enabled.includes(t))) setTypes(r.enabled)
+    return r.auto
+  }
+  /** зняти підсвітку: шари, які ввімкнув лише пошук, вимикаються */
+  function clearBest() {
+    if (best?.auto.length && enabled) setTypes(enabled.filter((t) => !best.auto.includes(t)))
+    setBest(null)
+  }
+  /**
+   * поля меланжу однієї величини: найкраща точка — звідки в межах радіуса (¾ сектора; на інших мапах — 1/12 мапи)
+   * найбільше полів цієї величини (великі — і з позначками гравців); шар полів вмикається
+   */
+  async function findSpiceSpot(type: string) {
+    if (!def) return
+    const size = SIZE_OF[type]
+    const fields: [number, number, 'small' | 'medium' | 'large'][] = []
+    const p = index?.counts[type] ? pts[type] ?? (await loadPoints(def.id, layout, type).catch(() => null)) : null
+    for (let i = 0; p && i < p.pts.length; i += 3) fields.push([p.pts[i], p.pts[i + 1], size])
+    if (size === 'large') for (const s of spiceSpots) if (!fields.some((f) => Math.abs(f[0] - s.x) < 300 && Math.abs(f[1] - s.y) < 300)) fields.push([s.x, s.y, 'large'])
+    const radius = grid ? ((grid.x1 - grid.x0) / grid.n) * 0.75 : (def.bounds[1][0] - def.bounds[0][0]) / 12
+    const s = bestSpot(fields, radius)
+    setBest({ type, cells: [], spot: s ? { ...s, radius } : undefined, auto: finderOn(type) })
+    if (s && mapRef.current) mapRef.current.flyToBounds(L.latLngBounds([[s.x - radius, s.y - radius], [s.x + radius, s.y + radius]]).pad(0.2), { duration: 0.6 })
+    if (narrow()) setSheet(null)
+  }
+  /** точок типу на мапі: з фільтром «лише ймовірні» — лише ймовірні місця руди */
+  const countOf = (id: string) => {
+    const h = oreMode === 'expected' ? index?.picks?.[id] ?? index?.shares?.[id] : index?.shares?.[id]
+    return h ? countFromShare(h, minShare) : index?.counts[id] || 0
+  }
+  const shown = needed.reduce((n, t) => n + (linked.only.has(t) && !gameOn.includes(t) && !linked.full.has(t) ? linked.only.get(t)!.size : countOf(t)), 0) + lootMarks
 
   if (failed) return <PageError page title={t('Мапа зараз не завантажилась')} message={t('Онови сторінку за хвилину.')} onRetry={fetchSource} />
   if (!resp || !def) return <Loading page label={t('Завантаження мапи…')} />
@@ -966,7 +1045,7 @@ export default function MapPage() {
                 tip: t('Від гравців: позначки й записи ресурсів — свої, гільдії, публічні'),
               },
             ]}
-            className={cn('grid w-full grid-cols-2 border-0 bg-transparent [&>*]:gap-1.5', TOUCH_SEG)}
+            className={cn('grid w-full grid-cols-2 border-0 [&>*]:gap-1.5', TOUCH_SEG)}
           />
         </div>
         {/* дві сторінки панелі поруч: перемикач угорі «гортає» їх усередині панелі; на широкому кожна тримає свою прокрутку,
@@ -975,51 +1054,34 @@ export default function MapPage() {
           <div className={cn('flex w-[200%] items-start transition-transform duration-300 ease-out motion-reduce:transition-none lg:absolute lg:inset-y-0 lg:left-0 lg:items-stretch', side === 'marks' && '-translate-x-1/2')}>
             <div ref={gamePage} data-scroller className={cn('relative w-1/2 overflow-x-hidden lg:h-full lg:overflow-y-auto', side !== 'game' && 'max-lg:h-0')}>
               <div className="flex flex-col gap-2 border-b border-line p-2.5">
-                {respawning.n > 0 && (
-                  <div className="grid gap-1.5 rounded-md border border-line bg-panel2/40 px-2 py-1.5 text-[12px]">
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-3 w-3 shrink-0 rounded-full border-2 border-[#f0a54a] border-r-transparent" aria-hidden />
-                      <span className="min-w-0 flex-1">
-                        <T text="Відновлюються {n} · найближчий через {time}" n={<b>{respawning.n}</b>} time={<b className="font-mono">{t('{n} хв', { n: Math.max(1, Math.ceil(respawning.soonest / 60_000)) })}</b>} />
-                      </span>
-                    </span>
-                    {/* скільки відновлюється вузол — усі варіанти поруч */}
-                    <Seg<string>
-                      label={t('Скільки відновлюється вузол')}
-                      size="sm"
-                      value={String(respawn)}
-                      onChange={(v) => { setRespawn(Number(v)); setRespawnMin(Number(v)) }}
-                      items={[15, 30, 45, 60, 90, 120].map((m) => ({ id: String(m), label: t('{n} хв', { n: m }) }))}
-                      className={cn('grid w-full grid-cols-6 [&>*]:px-0', TOUCH_SEG)}
-                    />
-                  </div>
-                )}
                 <MapSearch index={index} resp={resp} onFly={(x, y, f) => { fly(x, y); if (f) setFocus(f) }} onType={(t) => enabled && !enabled.includes(t) && setTypes([...enabled, t])} />
               </div>
               <SpiceSection
                 types={types}
-                counts={spiceSpots.length ? { ...index?.counts, [TYPE_OF.large]: (index?.counts?.[TYPE_OF.large] || 0) + spiceSpots.length } : index?.counts ?? {}}
+                dims={dims}
+                ids={Object.values(spiceType)}
+                counts={spiceSpots.length ? { ...index?.counts, [spiceType.large]: (index?.counts?.[spiceType.large] || 0) + spiceSpots.length } : index?.counts ?? {}}
                 enabled={enabled ?? []}
                 ring={ringTypes}
                 onToggle={toggleType}
-                onAll={(all) => enabled && setTypes(all ? [...new Set([...enabled, ...SPICE_IDS])] : enabled.filter((x) => !SPICE_IDS.includes(x)))}
+                onAll={(all) => { const ids = Object.values(spiceType); if (enabled) setTypes(all ? [...new Set([...enabled, ...ids])] : enabled.filter((x) => !ids.includes(x))) }}
                 active={spiceFields.length}
-                onPickLarge={isDD && authUser ? () => { useSpice.getState().setPicking(true); if (narrow()) setSheet(null) } : undefined}
+                onFind={(t) => void findSpiceSpot(t)}
               />
               {!index && !indexFailed && <Loading lines={7} className="p-3" />}
-              {resp.source.groups.map((g) => {
+              {orderGroups(resp.source.groups).map((g) => {
                 // поля меланжу — окремим розділом вище
                 const list = g.types.filter((t) => index?.counts[t.id] && !SPICE[t.id])
                 if (!list.length) return null
                 const on = list.filter((t) => enabled?.includes(t.id))
-                const total = list.reduce((n, t) => n + index!.counts[t.id], 0)
+                const total = list.reduce((n, t) => n + countOf(t.id), 0)
                 return (
                   <Section
                     key={g.id}
                     id={'g:' + g.id}
                     title={labelOf(resp.labels, g.id)}
                     count={`${on.length}/${list.length} · ${fmtN(total)}`}
-                    defaultOpen={g.id === 'locations' || g.id === 'resources'}
+                    defaultOpen={g.id === 'locations' || g.id === 'resources' || /Map_Legend_Category_Location$/.test(g.id)}
                     allOn={on.length === list.length}
                     onAll={(all) => enabled && setTypes(all ? [...new Set([...enabled, ...list.map((t) => t.id)])] : enabled.filter((x) => !list.some((t) => t.id === x)))}
                   >
@@ -1029,16 +1091,54 @@ export default function MapPage() {
                         icon={t.icon}
                         dims={dims}
                         label={labelOf(resp.labels, t.id)}
-                        count={index!.counts[t.id]}
+                        count={countOf(t.id)}
                         on={!!enabled?.includes(t.id)}
                         ring={ringTypes.has(t.id)}
-                        swatch={SPICE[t.id] ? <SpiceDot type={t.id} /> : undefined}
+                        swatch={SPICE[t.id] ? <SpiceDot type={t.id} icon={t.icon} dims={dims} /> : undefined}
                         onToggle={() => toggleType(t.id)}
+                        onFind={findable(g.id, countOf(t.id)) ? () => void findBest(t.id) : undefined}
                       />
                     ))}
                   </Section>
                 )
               })}
+              {index?.shares && (
+                <Section id="g:settings" title={t('Налаштування')} defaultOpen={false}>
+                  <div className="flex flex-col gap-2 px-3 pb-2 pt-1 text-[12px] text-muted">
+                    <div className="flex flex-col gap-1">
+                      <span>{t('Руда й рослини на мапі')}</span>
+                      <Seg<OreMode>
+                        className="self-start"
+                        size="sm"
+                        label={t('Руда й рослини на мапі')}
+                        value={oreMode}
+                        onChange={(v) => { setOreMode(v); prefSet('map:oreMode', v) }}
+                        items={[
+                          { id: 'expected', label: t('Очікувана кількість'), tip: t('Скільки руди в середньому з’являється в грі: у кожному місці — одна руда за її шансом. Окрема точка умовна — гра обирає руду при кожній появі вузла.') },
+                          { id: 'all', label: t('Усі можливі місця'), tip: t('Кожне місце, де руда може з’явитися; яскравість — шанс') },
+                        ]}
+                      />
+                    </div>
+                    <label className="flex flex-col gap-1">
+                      <span className="flex items-baseline justify-between gap-2" data-tip={t('Руда в місці вибирається з кількох можливих; частка — у картці точки')}>
+                        <span>{t('Шанс появи руди й рослин у місці')}</span>
+                        <b className="font-mono text-ink">{minShare > 0 ? t('від {n} %', { n: minShare }) : t('усі місця')}</b>
+                      </span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        step={5}
+                        value={minShare}
+                        className="w-full accent-spice"
+                        aria-label={t('Шанс появи руди й рослин у місці')}
+                        onChange={(e) => { const v = Number(e.target.value); setMinShare(v); prefSet('map:minShare2', v) }}
+                      />
+                      <span className="text-[11px] leading-snug">{t('100 % — лише чисті острівці, де руда завжди одна; 50 % — і місця, де вона одна з двох; нижче — і змішані острівці. Що яскравіша точка — то певніша руда.')}</span>
+                    </label>
+                  </div>
+                </Section>
+              )}
               <SourceNote resp={resp} onFresh={setResp} />
             </div>
             <div ref={marksPage} data-scroller className={cn('relative w-1/2 overflow-x-hidden lg:h-full lg:overflow-y-auto', side !== 'marks' && 'max-lg:h-0')}>
@@ -1079,19 +1179,38 @@ export default function MapPage() {
                 </button>
               </div>
             )}
+            {/* «де найкраще» для шару: що підсвічено (чисті острівці — позначкою), зняти */}
+            {best && (
+              <div className="pointer-events-auto flex max-w-[min(520px,100%)] items-center gap-2 rounded-md border border-spice/60 bg-panel/95 py-1 pl-3 pr-1 text-[12px] shadow backdrop-blur">
+                <Crosshair size={13} className="shrink-0 text-spice" />
+                <span className="min-w-0">
+                  {t('Де найкраще: {name}', { name: SPICE[best.type] ? SPICE[best.type].label : labelOf(resp.labels, best.type) })}
+                  {' — '}
+                  {best.spot
+                    ? t('{fields} поруч{sector}', { fields: plural(best.spot.n, [t('поле'), t('поля'), t('полів')]), sector: grid ? ` · ${sectorOf(grid, best.spot.x, best.spot.y) ?? ''}` : '' })
+                    : best.cells.length ? best.cells.map((c) => `${c.label}${c.island ? ' ◆' : ''}`).join(', ') : t('немає точок')}
+                </span>
+                <button type="button" className={cn('grid h-7 w-7 shrink-0 place-items-center rounded text-muted hover:text-ink', TOUCH)} onClick={clearBest} aria-label={t('Зняти підсвітку')}>
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+            {/* де ще випадає: тут не випадає — інші мапи (більший шанс — перша) */}
+            {lootPlace && lootHere && !lootHere.loading && !lootHere.failed && !lootHere.hits.length && (
+              <div className="pointer-events-auto flex max-w-[min(520px,100%)] flex-wrap items-center gap-1.5 rounded-md border border-line bg-panel/95 px-3 py-1.5 text-[12px] shadow backdrop-blur">
+                <span className="text-muted">{lootMaps == null ? t('шукаю…') : lootMaps.length ? t('Тут не випадає. Випадає:') : t('Не випадає на жодній мапі')}</span>
+                {lootMaps?.filter((m) => m.map !== def.id).map((m) => (
+                  <button key={m.map} type="button" onClick={() => switchMap(m.map)} className={cn('rounded-full border border-spice/50 px-2 py-0.5 hover:bg-spice/10', TOUCH)}>
+                    {mapName(resp.labels, m.map)} · {m.best ? t('{boxes}, до {best}%', { boxes: boxes(m.n), best: m.best }) : boxes(m.n)}
+                  </button>
+                ))}
+              </div>
+            )}
             {pointsFailed && <IndexError onRetry={retryPoints} className="pointer-events-auto max-w-[min(420px,100%)] shadow-lg" />}
             {picking && (
               <div className="pointer-events-auto flex items-center gap-2 rounded-md border border-spice bg-panel/95 py-1 pl-3 pr-1 text-[12px] shadow backdrop-blur">
                 <Crosshair size={14} className="shrink-0 text-spice" /> {t('Клацни на мапі — додати точку')}
                 <button type="button" className={cn('grid h-7 w-7 shrink-0 place-items-center rounded text-muted hover:text-ink', TOUCH)} onClick={() => setPicking(false)} aria-label={t('Досить точок')}>
-                  <X size={14} />
-                </button>
-              </div>
-            )}
-            {spicePicking && (
-              <div className="pointer-events-auto flex items-center gap-2 rounded-md border border-spice bg-panel/95 py-1 pl-3 pr-1 text-[12px] shadow backdrop-blur">
-                <Crosshair size={14} className="shrink-0 text-spice" /> {t('Клацни на мапі, де зараз велике поле')}
-                <button type="button" className={cn('grid h-7 w-7 shrink-0 place-items-center rounded text-muted hover:text-ink', TOUCH)} onClick={() => useSpice.getState().setPicking(false)} aria-label={t('Скасувати')}>
                   <X size={14} />
                 </button>
               </div>
@@ -1123,6 +1242,7 @@ export default function MapPage() {
                 <Boxes size={14} />
               </MapBtn>
             )}
+            <Compass />
           </div>
         </div>
         {focus && (
@@ -1133,9 +1253,6 @@ export default function MapPage() {
             dims={dims}
             types={types}
             resp={resp}
-            done={!!done[focus.type]?.includes(pointKey(focus.x, focus.y))}
-            respawnLeft={doneAt[`${focus.type}|${pointKey(focus.x, focus.y)}`] ? doneAt[`${focus.type}|${pointKey(focus.x, focus.y)}`] + respawnMs - now : null}
-            onDone={() => toggleDone(focus)}
             onClose={() => setFocus(null)}
             z={pts[focus.type]?.pts[focus.i * 3 + 2]}
             sector={grid ? sectorOf(grid, focus.x, focus.y) : null}
@@ -1213,23 +1330,28 @@ function flyWithin(map: L.Map, b: L.LatLngBounds, maxZoom: number) {
   map.flyTo(c, Math.max(z, map.getMinZoom()), { duration: 0.7 })
 }
 
-const SPICE_IDS = Object.keys(SPICE)
-
 /**
  * Поля меланжу окремим розділом: малі, середні й великі — кожне своєю галочкою, навіть якщо
  * на цій мапі (чи цього тижня в Глибокій пустелі) таких зараз немає — тоді лічильник 0.
  */
 function SpiceSection({
+  ids,
   types,
+  dims,
   counts,
   enabled,
   ring,
   onToggle,
   onAll,
   active,
-  onPickLarge,
+  onFind,
 }: {
+  /** «де найкраще» для полів цієї величини: точка, звідки в межах радіуса їх найбільше */
+  onFind?: (type: string) => void
+  /** id типів полів (мале, середнє, велике) у даних мапи — TH.GL чи файли гри */
+  ids: string[]
   types: Map<string, TypeDef & { group: string }>
+  dims: [number, number] | null
   counts: Record<string, number>
   enabled: string[]
   ring: Set<string>
@@ -1237,16 +1359,14 @@ function SpiceSection({
   onAll: (all: boolean) => void
   /** скільки полів зараз позначено активними */
   active: number
-  /** позначити велике поле там, де клацнуть (Глибока пустеля, після входу) */
-  onPickLarge?: () => void
 }) {
-  const on = SPICE_IDS.filter((t) => enabled.includes(t))
-  const total = SPICE_IDS.reduce((n, t) => n + (counts[t] || 0), 0)
+  const on = ids.filter((t) => enabled.includes(t))
+  const total = ids.reduce((n, t) => n + (counts[t] || 0), 0)
   // мапи без полів меланжу (міста, підземелля) — без цього блоку
-  if (!total && !onPickLarge && !active) return null
+  if (!total && !active) return null
   return (
-    <Section id="g:spice" title={t('Поля меланжу')} count={`${on.length}/3 · ${fmtN(total)}`} allOn={on.length === SPICE_IDS.length} onAll={onAll}>
-      {SPICE_IDS.map((t) => (
+    <Section id="g:spice" title={t('Поля меланжу')} count={`${on.length}/3 · ${fmtN(total)}`} allOn={on.length === ids.length} onAll={onAll}>
+      {ids.map((t) => (
         <TypeRow
           key={t}
           icon={types.get(t)?.icon ?? null}
@@ -1255,33 +1375,34 @@ function SpiceSection({
           count={counts[t] || 0}
           on={enabled.includes(t)}
           ring={ring.has(t)}
-          swatch={<SpiceDot type={t} />}
+          swatch={<SpiceDot type={t} icon={types.get(t)?.icon ?? null} dims={dims} />}
           onToggle={() => onToggle(t)}
+          onFind={onFind && (counts[t] || 0) >= FIND_MIN ? () => onFind(t) : undefined}
         />
       ))}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-3 pb-2 pt-1 text-[11.5px] text-muted">
         <span className="inline-flex items-center gap-1.5">{active > 0 && <span className="spice-dot" aria-hidden />}{active ? plural(active, [t('активне поле'), t('активні поля'), t('активних полів')]) : t('Активних полів ніхто не позначив')}</span>
-        {onPickLarge && (
-          <button type="button" onClick={onPickLarge} className="ml-auto inline-flex min-h-7 items-center gap-1 rounded-md border border-spice/50 px-2 text-[11.5px] font-medium text-spice hover:bg-spice/10 [@media(pointer:coarse)]:min-h-9">
-            <Crosshair size={12} aria-hidden /> {t('Велике поле тут…')}
-          </button>
-        )}
       </div>
     </Section>
   )
 }
 
-/** Кружечок поля меланжу для панелі — як на мапі: розмір і колір за величиною поля. */
-function SpiceDot({ type }: { type: string }) {
+/** Поле меланжу для панелі — як на мапі: іконка гри в ромбі кольору величини, розмір за величиною поля. */
+function SpiceDot({ type, icon, dims }: { type: string; icon: [number, number, number, number] | null; dims: [number, number] | null }) {
   const sp = SPICE[type]
-  const d = Math.round(sp.r * 1.5)
+  const px = Math.round(sp.r * 1.2)
+  const d = px + 7
+  if (!icon || !dims) {
+    return (
+      <span className="flex items-center justify-center rounded-full border border-black/70 text-[8px] font-bold text-black/80" style={{ width: d - 4, height: d - 4, background: sp.color }} data-tip={t('Поле меланжу: {name}', { name: sp.name })}>
+        {sp.letter}
+      </span>
+    )
+  }
   return (
-    <span
-      className="flex items-center justify-center rounded-full border border-black/70 text-[8px] font-bold text-black/80"
-      style={{ width: d, height: d, background: sp.color }}
-      data-tip={t('Поле меланжу: {name}', { name: sp.name })}
-    >
-      {d >= 12 ? sp.letter : ''}
+    <span className="relative grid place-items-center" style={{ width: d, height: d }} data-tip={t('Поле меланжу: {name}', { name: sp.name })}>
+      <span aria-hidden className="absolute inset-0 border border-black/70" style={{ background: sp.color, clipPath: 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)' }} />
+      <SpriteIcon icon={icon} dims={dims} px={px} className="relative" />
     </span>
   )
 }
@@ -1298,6 +1419,29 @@ function MapBtn({ children, tip, onClick, on }: { children: React.ReactNode; tip
     >
       {children}
     </button>
+  )
+}
+
+/**
+ * Компас: мапи гри (і на сайті, і в самій грі) завжди північчю догори — стрілка показує, де північ, а риски — сторони
+ * світу, щоб «на північ від…» в описах і позначках читалось з мапи.
+ */
+function Compass() {
+  return (
+    <div
+      role="img"
+      aria-label={t('Компас: північ угорі')}
+      data-tip={t('Північ угорі — як на мапі в грі')}
+      className="mt-1 h-10 w-10 rounded-full border border-line bg-panel/95 shadow backdrop-blur"
+    >
+      <svg viewBox="0 0 40 40" className="h-full w-full" aria-hidden>
+        {[90, 180, 270].map((a) => <line key={a} x1="20" y1="3.5" x2="20" y2="6.5" strokeWidth="1.5" className="stroke-muted" transform={`rotate(${a} 20 20)`} />)}
+        <text x="20" y="10.5" textAnchor="middle" className="fill-spice font-display" style={{ fontSize: 7.5, fontWeight: 700 }}>{t('Пн')}</text>
+        <path d="M20 12.5 23.5 21h-7z" className="fill-spice" />
+        <path d="M20 31 23.5 21h-7z" className="fill-muted" opacity=".55" />
+        <circle cx="20" cy="21" r="1.6" className="fill-panel" />
+      </svg>
+    </div>
   )
 }
 
@@ -1325,17 +1469,19 @@ function StormShort() {
  * відліком до бурі); розгорнуто — великі мапи, печери й підземелля і розкладки з таймером, усе відкрито (згортати
  * всередині вже нема чого). Розгорнуте лишається між відвідинами.
  */
-function MapBlock({ resp, def, layout, onPick, onWeek }: { resp: SourceResp; def: MapDef; layout: number | null; onPick: (m: string) => void; onWeek: (w: number) => void }) {
+function MapBlock({ resp, def, layout, onPick, onWeek }: { resp: SourceResp; def?: MapDef; layout: number | null; onPick: (m: string) => void; onWeek: (w: number) => void }) {
   const all = resp.source.maps.filter((m) => !HIDDEN_MAPS.has(m.id))
-  const main = MAP_ORDER.filter((id) => all.some((m) => m.id === id))
+  // карта світу — п'ятою, після великих мап і міст (її дані — з файлів гри, не з джерела мапи)
+  const main = [...MAP_ORDER.filter((id) => all.some((m) => m.id === id)), WORLD_MAP]
+  const nameOf = (id: string) => (id === WORLD_MAP ? t('Карта світу') : mapName(resp.labels, id))
   const small = all.filter((m) => !MAP_ORDER.includes(m.id)).sort((a, b) => mapName(resp.labels, a.id).localeCompare(mapName(resp.labels, b.id), locale()))
-  const current = def.id
+  const current = def?.id ?? WORLD_MAP
   const inSmall = small.some((m) => m.id === current)
   const [open, setOpen] = useState(() => prefGet('map:pickOpen', false))
   const toggle = () => { setOpen(!open); prefSet('map:pickOpen', !open) }
   const href = (m: string) => `/map?m=${encodeURIComponent(m)}`
   // Глибока пустеля: розкладка цього тижня, коли її бачили, і чи мапа ще показує минулий тиждень
-  const dd = layout != null
+  const dd = layout != null && !!def
   const seen = dd ? [...resp.ddHistory].reverse().find((h) => h.layout === def.layout) : undefined
   const stale = useStale(seen?.seenAt) && dd && layout === def.layout
   const cur = dd ? def.layouts.find((l) => l.id === layout) : undefined
@@ -1347,15 +1493,15 @@ function MapBlock({ resp, def, layout, onPick, onWeek }: { resp: SourceResp; def
       <button type="button" aria-expanded={open} onClick={toggle} className="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-panel2/50 [@media(pointer:coarse)]:min-h-12">
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-spice/10 text-spice"><MapIcon size={16} aria-hidden /></span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[13.5px] font-semibold">{mapName(resp.labels, current)}</span>
+          <span className="block truncate text-[13.5px] font-semibold">{nameOf(current)}</span>
           {dd
             ? (
               <span className="flex min-w-0 items-center gap-2 text-[11.5px] text-muted">
-                <span className={cn('shrink-0 font-medium', layout !== def.layout ? 'text-spice' : 'text-ink/85')} title={cur && !cur.resources ? t('{name} (без руди)', { name: layoutLabel }) : undefined}>{layoutLabel}{cur && !cur.resources && ' *'}</span>
+                <span className={cn('shrink-0 font-medium', layout !== def!.layout ? 'text-spice' : 'text-ink/85')} title={cur && !cur.resources ? t('{name} (без руди)', { name: layoutLabel }) : undefined}>{layoutLabel}{cur && !cur.resources && ' *'}</span>
                 <StormShort />
               </span>
             )
-            : <span className="block truncate text-[11.5px] text-muted">{inSmall ? t('Печери й підземелля') : t('Мапа')}</span>}
+            : <span className="block truncate text-[11.5px] text-muted">{inSmall ? t('Печери й підземелля') : current === WORLD_MAP ? t('Регіони, поселення й переходи між ними') : t('Мапа')}</span>}
         </span>
         <ChevronDown size={16} className={cn('shrink-0 text-muted transition-transform', open && 'rotate-180')} aria-hidden />
       </button>
@@ -1371,11 +1517,11 @@ function MapBlock({ resp, def, layout, onPick, onWeek }: { resp: SourceResp; def
                   key={id}
                   href={href(id)}
                   aria-current={id === current ? 'page' : undefined}
-                  data-tip={labelOf(resp.labels, id)}
+                  data-tip={id === WORLD_MAP ? t('Карта поверхні Арракіса: регіони, поселення, підземелля й переходи між ними') : labelOf(resp.labels, id)}
                   onClick={(e) => { if (!plainClick(e)) return; e.preventDefault(); onPick(id) }}
                   className={cn(TILE, id === current ? TILE_ON : TILE_OFF)}
                 >
-                  {mapName(resp.labels, id)}
+                  {nameOf(id)}
                 </a>
               ))}
             </div>
@@ -1524,9 +1670,6 @@ function PointCard({
   dims,
   types,
   resp,
-  done,
-  respawnLeft,
-  onDone,
   onClose,
   z,
   sector,
@@ -1541,10 +1684,6 @@ function PointCard({
   dims: [number, number] | null
   types: Map<string, TypeDef & { group: string }>
   resp: SourceResp
-  done: boolean
-  /** вузол руди відновлюється: скільки ще, мс; null — не відновлюється */
-  respawnLeft: number | null
-  onDone: () => void
   onClose: () => void
   z?: number
   sector: string | null
@@ -1559,6 +1698,8 @@ function PointCard({
   const btn = 'h-7 rounded-md border px-2.5 text-[11.5px] font-medium [@media(pointer:coarse)]:h-10'
   // «+ до запису»: усі записи цієї мапи списком (а не випадним меню)
   const [pick, setPick] = useState(false)
+  // записи ресурсів — лише після входу (сервер без входу їх і не прийме): гостю замість кнопок — «Увійди, щоб…»
+  const user = useAuth((s) => s.user)
   useEffect(() => setPick(false), [focus.type, focus.i])
   return (
     <div className="absolute bottom-11 right-2.5 z-[650] flex max-h-[calc(100%-110px)] w-[min(330px,calc(100%-20px))] flex-col rounded-xl border border-line bg-panel/95 p-3 text-[12px] shadow-2xl backdrop-blur">
@@ -1566,7 +1707,7 @@ function PointCard({
         <SpriteIcon icon={icon} dims={dims} px={30} />
         <div className="min-w-0 flex-1">
           <div className="font-semibold leading-tight">{info.name || info.typeLabel}</div>
-          <div className="text-[11px] text-muted">{[info.name ? info.typeLabel : null, info.en && info.en !== info.name ? info.en : null].filter(Boolean).join(' · ')}</div>
+          <div className="text-[11px] text-muted">{info.name ? info.typeLabel : null}</div>
         </div>
         <button type="button" onClick={onClose} aria-label={t('Закрити')} className={cn('-m-1 grid h-8 w-8 shrink-0 place-items-center rounded-md text-muted hover:bg-panel2 hover:text-ink', TOUCH)}><X size={15} /></button>
       </div>
@@ -1609,10 +1750,7 @@ function PointCard({
       <div className="mt-2 font-mono text-[10.5px] text-muted">
         {sector && <b className="mr-1 text-ink">{sector}</b>}X {fmtC(focus.x)} · Y {fmtC(focus.y)}{z != null ? ` · Z ${fmtC(z)}` : ''}
       </div>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        <button type="button" onClick={onDone} className={cn(btn, done ? 'border-ok/50 bg-ok/15 text-ok' : 'border-line hover:bg-panel2')}>
-          {done ? (respawnLeft != null ? t('✓ Зібрано · відновиться через {n} хв', { n: Math.max(1, Math.ceil(respawnLeft / 60_000)) }) : t('✓ Зібрано')) : t('Зібрано')}
-        </button>
+      {user && <div className="mt-2 flex flex-wrap gap-1.5">
         {hasDraft ? (
           <button type="button" onClick={() => onAttach('draft')} className={cn(btn, 'border-spice/50 text-spice hover:bg-spice/10')}>
             {t('+ до чернетки')}
@@ -1629,8 +1767,13 @@ function PointCard({
             )}
           </>
         )}
-      </div>
-      {pick && !hasDraft && (
+      </div>}
+      {!user && (
+        <div className="mt-2 text-[11.5px] text-muted">
+          <a href={loginHref()} onClick={(e) => { if (!plainClick(e)) return; e.preventDefault(); useStore.getState().setView('login', { search: `?next=${encodeURIComponent(location.pathname + location.search)}` }) }} className="text-spice underline-offset-2 hover:underline">{t('Увійди')}</a>, {t('щоб записати цю точку як свій ресурс чи додати її до запису.')}
+        </div>
+      )}
+      {pick && !hasDraft && user && (
         <ul aria-label={t('Додати точку до запису')} className="mt-1.5 grid max-h-40 grid-cols-[minmax(0,1fr)] gap-0.5 overflow-y-auto rounded-md border border-line p-0.5">
           {records.map((r) => (
             <li key={r.id}>
@@ -1655,11 +1798,10 @@ function SourceNote({ resp, onFresh }: { resp: SourceResp; onFresh: (r: SourceRe
   const user = useAuth((s) => s.user)
   return (
     <div className="flex items-center gap-2 border-t border-line px-3 py-2 text-[10.5px] text-muted">
-      {/* дата — коли сервер востаннє звірявся з TH.GL, а не коли вийшла розкладка */}
+      {/* дата — коли сервер востаннє звірявся з джерелом даних, а не коли вийшла розкладка; сторонніх джерел у тексті не
+          називаємо (просить користувач) */}
       <span className="min-w-0 flex-1">
-        {/* точки з файлів гри (у даних є власний спрайт) — так і кажемо; тайли мапи — завжди TH.GL */}
-        {resp.source.sprite && <>{t('Точки — з файлів гри, мапа — з')} </>}
-        <a className="underline" href="https://duneawakening.th.gl" target="_blank" rel="noopener">TH.GL</a> · {t('перевірено {date}', { date: fmtDate(resp.source.syncedAt) })}
+        {t('Мапа')} · {t('перевірено {date}', { date: fmtDate(resp.source.syncedAt) })}
         <DataStamp sep sections={['markers', 'ddLayouts']} />
       </span>
       {user && <button

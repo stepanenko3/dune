@@ -6,8 +6,15 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <!-- «Додати на головний екран»: без маніфесту нагадування про бурю на iPhone не працюють -->
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <!-- з головного екрана — окремим застосунком без рядка адреси (src/lib/pwa.ts, public/sw.js); смуга стану — звичайна:
+         вміст починається під нею, тож відступів під «чубчик» не треба -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Sandwalkers" />
+    <meta name="application-name" content="Sandwalkers" />
+    <!-- колір смуги браузера — під тему сайту: скрипт нижче (до першого кадру) і src/lib/theme.ts (при перемиканні) -->
     <meta name="theme-color" content="#ece9e3" />
     <title>Sandwalkers · Dune: Awakening</title>
     <!-- загальний опис; на робочому сайті сервер підставляє свій для бази, роадмапу, людини, гільдії (server/lib/og.mjs) -->

@@ -9,7 +9,7 @@ import { Download, Plus, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { SnButton, SnDataTable } from '@/components/sn'
 import { ErrorAlert } from '@/components/states'
-import { t } from '@/lib/i18n'
+import { locale, t } from '@/lib/i18n'
 import { adminApi, actionShown, download, goAdmin, siteHref, type ListQuery, type Resource, type Row } from './api'
 import { removeRows, runAction } from './actions'
 import { columns, filters, requestFromUrl, tableLabels, tableRows, toQuery } from './table'
@@ -23,10 +23,12 @@ import { cn } from '@/lib/utils'
 const NS = 't'
 /** сховані людиною стовпці — у браузері, для кожного розділу свої */
 const hiddenKey = (name: string) => `admin:cols:${name}`
+/** «340» чи, з пошуком і фільтрами, «12 з 340» */
+export const countText = (total: number, all?: number) => (all != null && all !== total ? t('{n} з {all}', { n: total.toLocaleString(locale()), all: all.toLocaleString(locale()) }) : total.toLocaleString(locale()))
 const readHidden = (name: string): string[] | null => { try { const v = localStorage.getItem(hiddenKey(name)); return v ? JSON.parse(v) : null } catch { return null } }
 
-export function ResourceList({ r, fixed, embedded }: { r: Resource; fixed?: Record<string, string>; embedded?: boolean }) {
-  const [data, setData] = useState<{ rows: Row[]; total: number }>({ rows: [], total: 0 })
+export function ResourceList({ r, fixed, embedded }: { r: Resource; fixed?: Record<string, unknown>; embedded?: boolean }) {
+  const [data, setData] = useState<{ rows: Row[]; total: number; all?: number }>({ rows: [], total: 0 })
   const [loading, setLoading] = useState(true)
   /** перший раз — ще нема рядків: тоді скелет таблиці; далі (пошук, фільтри, сторінки) — таблиця лишається, а поруч індикатор */
   const [loadedOnce, setLoadedOnce] = useState(false)
@@ -45,7 +47,7 @@ export function ResourceList({ r, fixed, embedded }: { r: Resource; fixed?: Reco
     setLoading(true)
     try {
       const res = await adminApi.list(r.name, { ...q, fixed: fixed && Object.keys(fixed).length ? fixed : undefined })
-      if (n === seq.current) { setData({ rows: res.rows, total: res.total }); setError(''); setLoadedOnce(true) }
+      if (n === seq.current) { setData({ rows: res.rows, total: res.total, all: res.all }); setError(''); setLoadedOnce(true) }
     } catch (e) {
       if (n === seq.current) setError((e as Error).message)
     } finally {
@@ -138,7 +140,7 @@ export function ResourceList({ r, fixed, embedded }: { r: Resource; fixed?: Reco
 
   return (
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3">
-      {!embedded && <PageHeader title={t(r.label)} about={r.about ? t(r.about) : undefined} actions={actions} />}
+      {!embedded && <PageHeader title={t(r.label)} about={r.about ? t(r.about) : undefined} actions={actions} count={loadedOnce ? countText(data.total, data.all) : undefined} />}
       {error && <ErrorAlert title={t('Список не завантажився')} message={error} />}
       <div className={cn('relative min-w-0 overflow-x-auto transition-opacity', loading && loadedOnce && 'opacity-70')} aria-busy={loading}>
         {loading && loadedOnce && (

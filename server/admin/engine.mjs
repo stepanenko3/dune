@@ -4,16 +4,20 @@
  * таблиці й форми (опис іде йому через /api/admin/meta, без функцій).
  *
  * Поле: { key, label, type, sql?, list?, search?, sort?, filter?, form?, readonly?, required?, options?, resource?,
- *   help?, mono?, tones?, max?, create? }
+ *   help?, mono?, tones?, max?, create?, image?, refs?, labels?, dependsOn? }
  *   type: text | textarea | code (довгий текст, моноширинний) | email | url | color | slug | int | num | bool (0/1) |
  *         flag (NULL / мітка часу) | datetime (мс) | select | relation (id іншого ресурсу) | owner (людина чи гільдія:
  *         kindField — поле з видом) | json | pairs ([[id, к-сть]…]) | list (масив рядків) | permissions (дозволи ролі)
  *   sql — вираз для SELECT/WHERE/ORDER (для полів з приєднаних таблиць); form: false — не в формі; readonly — лише показ.
+ *   image — значення поля є адресою зображення (клієнт показує картинку, дає завантажити нову в сховище); refs — для
+ *   pairs/list: id яких записів там лежать (розділ) — список віддає <key>__refs { id: [назва, іконка] }; labels — як
+ *   клієнт підписує варіанти (словник сайту); dependsOn — варіанти select залежать від іншого поля (option.parent).
  * Ресурс: { name, label, one, group, icon, table, from?, key (рядок чи масив), fields, sort, view, write, create?,
  *   remove?, hooks: { list?, get?, create?, update?, remove?, rows? }, actions: [{ key, label, tone?, bulk?, row?,
  *   fields?, confirm?, show?, run }] }
  *   create/remove: false — без цих дій; relations — пов'язані записи інших розділів для картки запису:
- *   [{ resource, field } | { resource, match: { поле: '$id' | значення } }].
+ *   [{ resource, field } | { resource, match: { поле: '$id' | значення } } | { resource, has: поле-список }] (has — у
+ *   списку чи парах того розділу є id цього запису).
  * Права — дозволи ролі (server/lib/roles.mjs): '<розділ>.view|create|edit|delete' і '<розділ>.<дія>'.
  * Кожна зміна — у журнал (audit) і в історію версій запису (revisions).
  */
@@ -51,7 +55,8 @@ export function coerce(f, v) {
       if (typeof v === 'string') { try { x = JSON.parse(v) } catch { throw fail('поле «{field}» — хибний JSON', 400, { field: f.label, fieldKey: f.key }) } }
       if (f.type === 'pairs' && !(Array.isArray(x) && x.every((p) => Array.isArray(p) && p.length === 2 && Number.isFinite(Number(p[1]))))) throw fail('поле «{field}» — список пар [id, кількість]', 400, { field: f.label, fieldKey: f.key })
       if ((f.type === 'list' || f.type === 'permissions') && !(Array.isArray(x) && x.every((s) => typeof s === 'string'))) throw fail('поле «{field}» — список рядків', 400, { field: f.label, fieldKey: f.key })
-      return JSON.stringify(f.type === 'pairs' ? x.map(([a, b]) => [String(a), Number(b)]) : x)
+      // порожні рядки (додали, але нічого не вибрали) — геть
+      return JSON.stringify(f.type === 'pairs' ? x.filter(([a]) => String(a ?? '').trim()).map(([a, b]) => [String(a), Number(b)]) : f.type === 'list' ? x.filter((s) => s.trim()) : x)
     }
     case 'select': {
       const s = String(v)
@@ -125,22 +130,69 @@ export function createEngine({ db, auth, roles, revisions, resources }) {
   const shape = (r, row) => {
     const o = { _id: idOf(r, row) }
     for (const f of r.fields) if (f.key in row) o[f.key] = out(f, row[f.key])
-    for (const [k, v] of Object.entries(row)) if (!(k in o) && (k.endsWith('__label') || k.endsWith('__ref') || k.endsWith('__tr'))) o[k] = v
+    for (const [k, v] of Object.entries(row)) if (!(k in o) && /__(label|ref|tr|icon|refs)$/.test(k)) o[k] = v
     return o
   }
 
-  /** підписи зв'язків: поле relation → «назва» з іншого ресурсу (key__label) */
-  async function labels(r, rows) {
+  /** стовпець розділу з назвою таблиці (для запитів з приєднаними таблицями, де «id» чи «name» є в обох) */
+  const qual = (o, k) => {
+    const f = o.fields.find((x) => x.key === k)
+    if (f?.sql) return f.colOf()
+    return `${o.alias || o.table || o.from}.${k}`
+  }
+  /**
+   * назва запису для підписів і пошуку: у даних гри — мовою людини (game_texts), якщо є переклад; порожня — id.
+   * { join, args (для join), col (назва), kc (ключ), tc (поле-назва), ic (зображення, якщо є) }
+   */
+  function nameSql(o, lang) {
+    const kc = qual(o, o.keys[0])
+    const tc = o.title ? qual(o, o.title) : kc
+    const imgF = o.fields.find((x) => x.image)
+    const ic = imgF ? qual(o, imgF.key) : null
+    const base = `COALESCE(NULLIF(CAST(${tc} AS TEXT), ''), CAST(${kc} AS TEXT))`
+    if (o.texts && lang && /^[\w-]{2,8}$/.test(lang)) {
+      return { join: ` LEFT JOIN game_texts gtx ON gtx.kind = '${o.texts}' AND gtx.id = ${kc} AND gtx.lang = ?`, args: [lang], col: `COALESCE(NULLIF(gtx.name, ''), ${base})`, kc, tc, ic, tx: 'gtx.name' }
+    }
+    return { join: '', args: [], col: base, kc, tc, ic, tx: null }
+  }
+  /** назви й іконки записів розділу за id: Map id → [назва, іконка|null] */
+  async function namesOf(o, ids, lang) {
+    const m = new Map()
+    if (!o || o.hooks.list || !o.from || !ids.length) return m
+    const N = nameSql(o, lang)
+    for (let i = 0; i < ids.length; i += 500) {
+      const part = ids.slice(i, i + 500).map(String)
+      const got = await db.all(`SELECT ${N.kc} AS k, ${N.col} AS t${N.ic ? `, ${N.ic} AS i` : ''} FROM ${o.from}${N.join} WHERE CAST(${N.kc} AS TEXT) IN (${part.map(() => '?').join(', ')})`, ...N.args, ...part)
+      for (const g of got) m.set(String(g.k), [g.t == null ? String(g.k) : String(g.t), g.i || null])
+    }
+    return m
+  }
+
+  /**
+   * підписи зв'язків: поле relation → «назва» з іншого ресурсу (key__label, і key__icon, якщо в нього є зображення);
+   * pairs / list з refs — назви й іконки кожного id (key__refs { id: [назва, іконка] }; нема такого запису — нема ключа)
+   */
+  async function labels(r, rows, lang) {
     for (const f of r.fields.filter((x) => x.type === 'relation' && x.resource)) {
       const o = map.get(f.resource)
       if (!o?.title) continue
       const ids = [...new Set(rows.map((x) => x[f.key]).filter((v) => v != null && v !== ''))]
       if (!ids.length) continue
-      const kc = keyCol(o, o.keys[0])
-      const tc = o.fields.find((x) => x.key === o.title)?.colOf() || o.title
-      const got = await db.all(`SELECT ${kc} AS k, ${tc} AS t FROM ${o.from} WHERE ${kc} IN (${ids.map(() => '?').join(', ')})`, ...ids)
-      const m = new Map(got.map((g) => [String(g.k), g.t]))
-      for (const x of rows) if (x[f.key] != null) x[f.key + '__label'] = m.get(String(x[f.key])) ?? null
+      const m = await namesOf(o, ids, lang)
+      for (const x of rows) if (x[f.key] != null) { const n = m.get(String(x[f.key])); x[f.key + '__label'] = n?.[0] ?? null; if (n?.[1]) x[f.key + '__icon'] = n[1] }
+    }
+    for (const f of r.fields.filter((x) => x.refs && (x.type === 'pairs' || x.type === 'list'))) {
+      const o = map.get(f.refs)
+      if (!o) continue
+      const idsOf = (v) => {
+        let a = v
+        if (typeof a === 'string') { try { a = JSON.parse(a) } catch { a = [] } }
+        return Array.isArray(a) ? a.map((p) => (f.type === 'pairs' ? (Array.isArray(p) ? p[0] : null) : p)).filter((x) => x != null && x !== '').map(String) : []
+      }
+      const ids = [...new Set(rows.flatMap((x) => idsOf(x[f.key])))]
+      if (!ids.length) continue
+      const m = await namesOf(o, ids, lang)
+      for (const x of rows) { const own = idsOf(x[f.key]); if (own.length) x[f.key + '__refs'] = Object.fromEntries(own.filter((id) => m.has(id)).map((id) => [id, m.get(id)])) }
     }
     return rows
   }
@@ -153,6 +205,8 @@ export function createEngine({ db, auth, roles, revisions, resources }) {
       const f = r.fields.find((x) => x.key === k)
       if (!f) continue
       if (v === null) w.push(`${f.colOf()} IS NULL`)
+      // { has: id } — список чи пари (JSON) містять цей id: рецепти, де предмет потрібен, що виготовляє пристрій
+      else if (typeof v === 'object' && v && 'has' in v) { w.push(`CAST(${f.colOf()} AS TEXT) ${LIKE}`); a.push(pat(JSON.stringify(String(v.has)))) }
       else { w.push(`${f.colOf()} = ?`); a.push(String(v)) }
     }
     const s = String(search || '').trim()
@@ -246,9 +300,21 @@ export function createEngine({ db, auth, roles, revisions, resources }) {
     const order = sf ? `${sf.colOf()} ${q.desc ? 'DESC' : 'ASC'}${db.kind === 'pg' ? (q.desc ? ' NULLS LAST' : ' NULLS FIRST') : ''}` : r.sort || r.keys.map((k) => keyCol(r, k)).join(', ')
     const rows = await db.all(`SELECT ${selectList(r)} FROM ${r.from} ${W.sql} ORDER BY ${order} LIMIT ? OFFSET ?`, ...W.args, size, page * size)
     const total = Number((await db.get(`SELECT COUNT(*) AS n FROM ${r.from} ${W.sql}`, ...W.args)).n)
-    let list = await labels(r, rows)
+    let list = await labels(r, rows, q.lang)
     if (r.hooks.rows) list = await r.hooks.rows(list, user, rowsApi)
-    return { rows: list.map((x) => shape(r, x)), total, page, size }
+    // з пошуком чи фільтрами — ще й скільки всього (без них): «12 з 340» над таблицею
+    const narrowed = String(q.search || '').trim() || Object.values(q.filters || {}).some((v) => v != null && v !== '' && !(Array.isArray(v) && !v.length))
+    const all = narrowed ? await count(name, user, q.fixed) : total
+    return { rows: list.map((x) => shape(r, x)), total, all, page, size }
+  }
+
+  /** скільки записів у розділі (з закріпленими умовами fixed — для вкладок картки); null — розділу людині не видно */
+  async function count(name, user, fixed = {}) {
+    const r = map.get(name)
+    if (!r || !allowed(await permsOf(user), r, 'view')) return null
+    if (r.hooks.list) return Number((await r.hooks.list({ size: 1, page: 0, fixed }, user)).total) || 0
+    const W = where(r, { fixed }, await scopeOf(r, user))
+    return Number((await db.get(`SELECT COUNT(*) AS n FROM ${r.from} ${W.sql}`, ...W.args)).n)
   }
 
   async function getRow(r, id) {
@@ -256,7 +322,7 @@ export function createEngine({ db, auth, roles, revisions, resources }) {
     return db.get(`SELECT ${select(r)} FROM ${r.from} WHERE ${W.sql}`, ...W.args)
   }
   const raw = (r, id, user) => (r.hooks.get ? r.hooks.get(id, user) : getRow(r, id))
-  async function get(name, user, id) {
+  async function get(name, user, id, lang) {
     const r = await res(name, user)
     let row = await raw(r, id, user)
     if (!row) throw fail('немає такого запису', 404)
@@ -265,7 +331,7 @@ export function createEngine({ db, auth, roles, revisions, resources }) {
       const W = whereKey(r, id)
       if (!(await db.get(`SELECT 1 AS x FROM ${r.from} WHERE ${W.sql} AND (${S.sql})`, ...W.args, ...S.args))) throw fail('немає такого запису', 404)
     }
-    row = (await labels(r, [row]))[0]
+    row = (await labels(r, [row], lang))[0]
     if (r.hooks.rows) row = (await r.hooks.rows([row], user, rowsApi))[0]
     return shape(r, row)
   }
@@ -303,7 +369,7 @@ export function createEngine({ db, auth, roles, revisions, resources }) {
     await r.hooks.after?.()
     await auth.log(user.id, `admin.create`, `${name}/${id}`, JSON.stringify(data).slice(0, 400))
     await revisions?.record(name, String(id), 'create', null, snap(r, await raw(r, String(id), user)), user.id)
-    return get(name, user, String(id))
+    return get(name, user, String(id), data?._lang)
   }
 
   async function update(name, user, id, data) {
@@ -326,7 +392,7 @@ export function createEngine({ db, auth, roles, revisions, resources }) {
     await auth.log(user.id, 'admin.update', `${name}/${id}`, JSON.stringify(data).slice(0, 400))
     const nid = r.keys.length === 1 && d[r.keys[0]] != null ? String(d[r.keys[0]]) : id
     await revisions?.record(name, nid, 'update', snap(r, old), snap(r, await raw(r, nid, user)), user.id)
-    return get(name, user, nid)
+    return get(name, user, nid, data?._lang)
   }
 
   async function remove(name, user, ids) {
@@ -415,19 +481,27 @@ export function createEngine({ db, auth, roles, revisions, resources }) {
     return got.flat()
   }
 
-  /** для пошуку в полях relation: [{value, label}] — щонайбільше 30, з пошуком на сервері */
-  async function options(name, user, q = '', ids = []) {
+  /**
+   * для пошуку в полях relation і списках записів: [{ value, label, icon? }] — щонайбільше 30, з пошуком на сервері
+   * (в id, назві й — у даних гри — назві мовою людини); ids — підписи вже вибраних
+   */
+  async function options(name, user, q = '', ids = [], lang) {
     const r = await res(name, user)
     if (r.hooks.list || !r.from) return [] // розділ без таблиці (переклади) — варіантів нема
-    const kc = keyCol(r, r.keys[0])
-    const tc = r.fields.find((x) => x.key === r.title)?.colOf() || kc
+    const N = nameSql(r, lang)
+    const cols = `${N.kc} AS v, ${N.col} AS l${N.ic ? `, ${N.ic} AS i` : ''}`
+    const S = await scopeOf(r, user)
+    const and = S ? ` AND (${S.sql})` : ''
     const s = String(q || '').trim()
-    const rows = ids.length
-      ? await db.all(`SELECT ${kc} AS v, ${tc} AS l FROM ${r.from} WHERE CAST(${kc} AS TEXT) IN (${ids.map(() => '?').join(', ')})`, ...ids.map(String))
-      : s
-        ? await db.all(`SELECT ${kc} AS v, ${tc} AS l FROM ${r.from} WHERE CAST(${kc} AS TEXT) ${LIKE} OR CAST(${tc} AS TEXT) ${LIKE} ORDER BY ${tc} LIMIT 30`, pat(s), pat(s))
-        : await db.all(`SELECT ${kc} AS v, ${tc} AS l FROM ${r.from} ORDER BY ${tc} LIMIT 30`)
-    return rows.map((x) => ({ value: String(x.v), label: x.l == null ? String(x.v) : String(x.l) }))
+    let rows
+    if (ids.length) rows = await db.all(`SELECT ${cols} FROM ${r.from}${N.join} WHERE CAST(${N.kc} AS TEXT) IN (${ids.map(() => '?').join(', ')})${and}`, ...N.args, ...ids.map(String), ...(S?.args || []))
+    else if (s) {
+      const look = [N.kc, N.tc, ...(N.tx ? [N.tx] : [])]
+      // точний id — першим, далі за назвою
+      rows = await db.all(`SELECT ${cols} FROM ${r.from}${N.join} WHERE (${look.map((c) => `CAST(${c} AS TEXT) ${LIKE}`).join(' OR ')})${and} ORDER BY CASE WHEN CAST(${N.kc} AS TEXT) = ? THEN 0 ELSE 1 END, l LIMIT 30`,
+        ...N.args, ...look.map(() => pat(s)), ...(S?.args || []), s)
+    } else rows = await db.all(`SELECT ${cols} FROM ${r.from}${N.join}${S ? ` WHERE (${S.sql})` : ''} ORDER BY l LIMIT 30`, ...N.args, ...(S?.args || []))
+    return rows.map((x) => ({ value: String(x.v), label: x.l == null ? String(x.v) : String(x.l), ...(x.i ? { icon: String(x.i) } : {}) }))
   }
 
   /** опис ресурсів для клієнта (без функцій, лише доступні людині; варіанти полів з бази — розгорнуті) */
@@ -458,5 +532,5 @@ export function createEngine({ db, auth, roles, revisions, resources }) {
     actions: Object.fromEntries(r.actions.map((a) => [a.perm || a.key, a.label])),
   }))
 
-  return { list, listAll, search, get, create, update, remove, action, options, meta, catalog, permsOf, titles, allowed: async (user, name, ability) => { const r = map.get(name); return !!r && allowed(await permsOf(user), r, ability) }, has: (n) => map.has(n), resource: (n) => map.get(n) }
+  return { list, listAll, count, search, get, create, update, remove, action, options, meta, catalog, permsOf, titles, allowed: async (user, name, ability) => { const r = map.get(name); return !!r && allowed(await permsOf(user), r, ability) }, has: (n) => map.has(n), resource: (n) => map.get(n) }
 }

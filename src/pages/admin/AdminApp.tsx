@@ -15,11 +15,11 @@ import { SnBreadcrumb, SnBreadcrumbItem, SnBreadcrumbLink, SnBreadcrumbList, SnB
 import '@/components/sn/admin'
 import { Loading, PageError } from '@/components/states'
 import { useAuth, loginHref } from '@/lib/auth'
-import { t } from '@/lib/i18n'
+import { locale, t } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { useStore } from '@/store'
 import { plainClick } from '@/lib/urlState'
-import { adminHref, adminLink, hasPerm, useAdmin, type Resource } from './api'
+import { adminApi, adminHref, adminLink, hasPerm, useAdmin, type Resource } from './api'
 import { ActionHost } from './actions'
 import { Dashboard } from './Dashboard'
 import { ResourceList } from './ResourceList'
@@ -113,12 +113,18 @@ function Crumbs({ items, onMenu }: { items: { label: string; to?: string[] }[]; 
   )
 }
 
-/** група панелі: її розділи картками (значок, назва, що в ньому) */
+/** група панелі: її розділи картками (значок, назва, скільки записів, що в ньому) */
 function GroupPage({ group, list }: { group: string | null; list: Resource[] }) {
+  const [counts, setCounts] = useState<Record<string, number | null>>({})
+  const names = list.map((x) => x.name).join(',')
+  useEffect(() => {
+    if (!list.length) return
+    adminApi.counts(list.map((x) => [x.name])).then((c) => setCounts(Object.fromEntries(list.map((x, i) => [x.name, c[i]])))).catch(() => setCounts({}))
+  }, [names])
   if (!group || !list.length) return <PageError title={t('Немає такого розділу')} message={t('Можливо, у твоєї ролі нема до нього доступу.')} />
   return (
     <div className="grid gap-4">
-      <PageHeader title={t(group)} />
+      <PageHeader title={t(group)} count={t('розділів: {n}', { n: list.length })} />
       <ul className="grid grid-cols-[minmax(0,1fr)] gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
         {list.map((x) => {
           const I = ICONS[x.icon] ?? Database
@@ -126,8 +132,11 @@ function GroupPage({ group, list }: { group: string | null; list: Resource[] }) 
             <li key={x.name}>
               <a href={adminHref([x.name])} onClick={adminLink([x.name])} className="group flex h-full items-start gap-3 rounded-xl border border-line bg-panel px-4 py-3.5 shadow-sm transition-colors hover:border-spice/50">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-spice/10 text-spice"><I size={17} /></span>
-                <span className="min-w-0">
-                  <span className="block font-semibold group-hover:text-spice">{t(x.label)}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-baseline justify-between gap-x-2">
+                    <span className="font-semibold group-hover:text-spice">{t(x.label)}</span>
+                    {counts[x.name] != null && <span className="text-[12.5px] tabular-nums text-muted">{counts[x.name]!.toLocaleString(locale())}</span>}
+                  </span>
                   {x.about && <span className="mt-0.5 block text-[12.5px] leading-snug text-muted">{t(x.about)}</span>}
                 </span>
               </a>

@@ -92,3 +92,20 @@ describe('API ігрових даних', () => {
     expect(reapplied).toBe('buildables')
   })
 })
+
+describe('журнал змін ігрових даних мовою людини', () => {
+  it('приклади записів — назвою гри мовою запиту (предмети, пристрої, рецепти, модулі, вміння, типи міток); нема перекладу — як було', async () => {
+    const registry = { changes: async () => ({ items: [{ id: 1, section: 'items', summary: { examples: [{ id: 'AzuriteOre', name: 'Copper Ore', op: '+' }, { id: 'X', name: 'Thing', op: '-' }] } }, { id: 2, section: 'resources', summary: { examples: [{ id: 'p1', name: null, op: '+' }] } }], next: null }) }
+    const asked = []
+    const game = { names: async (lang, kind, ids) => { asked.push([lang, kind, ids]); return new Map([['AzuriteOre', 'Мідна руда']]) } }
+    const app = express()
+    app.use((req, _res, next) => { req.t = (s) => s; req.lang = 'uk'; next() })
+    app.use(createGameDataRoutes({ sources: { registry, drivers: {} }, roles: { can: async () => false }, game }))
+    const s = await new Promise((r) => { const x = app.listen(0, '127.0.0.1', () => r(x)) })
+    const j = await (await fetch(`http://127.0.0.1:${s.address().port}/api/gamedata/changes`)).json()
+    s.close()
+    expect(j.items[0].summary.examples.map((x) => x.name)).toEqual(['Мідна руда', 'Thing'])
+    expect(j.items[1].summary.examples[0].name).toBeNull()
+    expect(asked).toEqual([['uk', 'item', ['AzuriteOre', 'X']]])
+  })
+})

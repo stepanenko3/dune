@@ -86,8 +86,8 @@ function BaseView({ env, rescue }: { env: BaseEnvelope; rescue?: React.ReactNode
     setBusy(true)
     downloadBase(base).then(() => toast.success(t('Файл бази збережено — його можна імпортувати на сторінці «Бази»')), (e) => toast.error((e as Error).message)).finally(() => setBusy(false))
   }
-  // версії — тим, хто може змінювати (сервер інакше їх не дає), і давні версії з коду
-  const versions = !!can?.edit || VERSIONS.some((v) => v.base === base)
+  // версії — тим, кому відкрито історію бази (право «хто бачить історію»; сервер інакше їх не дає), і давні версії з коду
+  const versions = !!(can?.history ?? can?.edit) || VERSIONS.some((v) => v.base === base)
   // поточна версія — значок біля назви; є історія версій нижче — клік гортає до неї
   const vCls = 'ml-2 inline-flex translate-y-[-0.2em] items-center whitespace-nowrap rounded-full border border-line bg-panel2 px-2 py-0.5 align-middle font-mono text-[12px] font-medium tracking-normal text-muted'
   const vBadge = versions

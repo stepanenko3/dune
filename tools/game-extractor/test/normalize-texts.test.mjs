@@ -71,3 +71,37 @@ describe('переклади мапи', () => {
   })
 })
 
+
+describe('назви фракцій NPC і ключів мапи', () => {
+  const loc = { uk: { ST_Localization_Items: { 'ITEMS/KEYCODE_GREEN': 'Зелений браслет' } }, en: { ST_Localization_Items: { 'ITEMS/KEYCODE_GREEN': 'Green ID Band' } } }
+  const rows = { items: {}, placeables: {}, building: {}, factions: { Atreides: { m_DisplayName: { CultureInvariantString: 'Atreides' } }, Ixian: { m_DisplayName: {} } }, keyCodes: { Code_EcoLab_Green: { m_DisplayName: { TableId: '/Game/Dune/Localization/ST_Localization_Items.ST_Localization_Items', Key: 'ITEMS/KEYCODE_GREEN' } } } }
+  const m = Object.fromEntries(normalizeTexts({ loc, rows, records: { items: [], placeables: [], recipes: [], buildables: [], markerTypes: [{ id: 'Atreides', kind: 'npc' }, { id: 'Ixian', kind: 'npc' }, { id: 'Code_EcoLab_Green', kind: 'key' }] } }).map((x) => [x.id, x.name]))
+  it('фракція — назва гри (однакова всіма мовами), ключ — переклад рядка; без назви — нема запису', () => {
+    expect(m['markerType:Atreides:uk']).toBe('Atreides')
+    expect(m['markerType:Code_EcoLab_Green:uk']).toBe('Зелений браслет')
+    expect(m['markerType:Code_EcoLab_Green:en']).toBe('Green ID Band')
+    expect(m['markerType:Ixian:uk']).toBeUndefined()
+  })
+})
+
+describe('назви типів міток без рядка таблиці', () => {
+  const loc = { uk: { ST_Localization_Items: { 'ITEMS/COPPER_ORE': 'Мідна руда' } }, en: { ST_Localization_Items: { 'ITEMS/COPPER_ORE': 'Copper Ore' } } }
+  const rows = {
+    items: { AzuriteOre: { StaticData: { Name: { TableId: '/Game/Dune/Localization/ST_Localization_Items.ST_Localization_Items', Key: 'ITEMS/COPPER_ORE' } } } },
+    placeables: {}, building: {},
+    markerTypes: {
+      AzuritePickup: { m_MarkerDisplayName: { Namespace: 'DT_FullscreenMapMarkers', Key: '6614', SourceString: 'XX_Copper Ore' } },
+      EnemyLaborOutpost: { m_MarkerDisplayName: { Namespace: '', Key: 'B391', SourceString: 'Enemy Labor Outpost' } },
+      LootContainer: { m_MarkerDisplayName: { Namespace: '', Key: '40F3', SourceString: 'LOC_LootContainer' } },
+    },
+  }
+  const records = { items: [], placeables: [], recipes: [], buildables: [], markerTypes: [{ id: 'AzuritePickup', item: 'AzuriteOre' }, { id: 'EnemyLaborOutpost' }, { id: 'LootContainer' }] }
+  const m = Object.fromEntries(normalizeTexts({ loc, rows, records }).map((x) => [x.id, x.name]))
+  it('підбирання (заглушка XX_) — назва предмета, який воно дає; текст без таблиці — англійський оригінал гри; LOC_ — нічого', () => {
+    expect(m['markerType:AzuritePickup:uk']).toBe('Мідна руда')
+    expect(m['markerType:AzuritePickup:en']).toBe('Copper Ore')
+    expect(m['markerType:EnemyLaborOutpost:en']).toBe('Enemy Labor Outpost')
+    expect(m['markerType:EnemyLaborOutpost:uk']).toBeUndefined()
+    expect(m['markerType:LootContainer:en']).toBeUndefined()
+  })
+})

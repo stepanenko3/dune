@@ -15,8 +15,8 @@ const DEFAULT_ON = new Set([
   'vehiclevendor', 'structurevendor', 'spicevendor', 'survivalvendor', 'resourcevendor', 'barkeepvendor', 'weaponsvendor', 'landsraadvendor',
 ])
 
-/** Групи, вимкнені на свіжій мапі будь-якого розміру: «Підбирання з землі» — дрібниця, що лише засмічує мапу. */
-const OFF_BY_DEFAULT = new Set(['resources_pickup'])
+/** Групи, вимкнені на свіжій мапі будь-якого розміру: «Підбирання з землі» (TH.GL) і «Підбирання руками» (файли гри) — дрібниця, що лише засмічує мапу. */
+const OFF_BY_DEFAULT = new Set(['resources_pickup', 'hand'])
 
 /**
  * Типові шари: на великих мапах (Хагга, Глибока пустеля) — місця й люди, без густих шарів; на малих
@@ -27,12 +27,24 @@ export const defaultOn = (groups: GroupDef[], small = false) => {
   return (small ? all : all.filter((t) => t.on ?? DEFAULT_ON.has(t.id))).map((t) => t.id)
 }
 
+/**
+ * Шари з адреси чи збереженого вибору — лише ті типи, що є в даних мапи. Мапа могла перейти на інше джерело (TH.GL →
+ * файли гри) з іншими id типів: тоді жодного відомого — null (типові шари, а не порожня мапа). Порожній вибір (людина
+ * сама все вимкнула) лишається порожнім.
+ */
+export function knownLayers(list: string[], groups: GroupDef[]): string[] | null {
+  if (!list.length) return []
+  const ids = new Set(groups.flatMap((g) => g.types.map((t) => t.id)))
+  const ok = list.filter((x) => ids.has(x))
+  return ok.length ? ok : null
+}
+
 // вибір шарів малих мап — окремим ключем: давні збережені вибори не перекривають «усе відразу»
 const onKey = (small: boolean) => (small ? 'map:onSmall' : 'map:on')
 export function enabledFor(map: string, groups: GroupDef[], small = false): string[] {
   dropOldPickups(groups)
-  const all = prefGet<Record<string, string[]>>(onKey(small), {})
-  return all[map] ?? defaultOn(groups, small)
+  const saved = prefGet<Record<string, string[]>>(onKey(small), {})[map]
+  return (saved && knownLayers(saved, groups)) ?? defaultOn(groups, small)
 }
 /**
  * Раз: «Підбирання з землі» в збереженому виборі малих мап — спадок давнього «усе відразу», а не вибір людини (тоді
@@ -51,30 +63,30 @@ export function saveEnabled(map: string, types: string[], small = false) {
   prefSet(onKey(small), { ...prefGet<Record<string, string[]>>(onKey(small), {}), [map]: types })
 }
 
-/** Ключ позначок «зібрано»: у Deep Desert — окремо на кожну розкладку тижня. */
-export const doneKey = (map: string, layout: number | null) => (layout == null ? map : `${map}#${layout}`)
-export const pointKey = (x: number, y: number) => `${x},${y}`
-
-export function loadDone(key: string): Record<string, string[]> {
-  return prefGet<Record<string, Record<string, string[]>>>('map:done', {})[key] ?? {}
-}
-export function saveDone(key: string, v: Record<string, string[]>) {
-  prefSet('map:done', { ...prefGet<Record<string, Record<string, string[]>>>('map:done', {}), [key]: v })
-}
+/**
+ * Порядок груп шарів (поля меланжу — окремим блоком над ними): локації, ресурси, рослини, лут, підбирання руками, ключі;
+ * решта (NPC, інше) — далі у своєму порядку. TH.GL: locations і resources — так само на початку.
+ */
+const RANK: [RegExp, number][] = [[/^locations$|Map_Legend_Category_Location$/, 1], [/^(cutteray|resources)$/, 2], [/^plants$/, 3], [/^loot$/, 4], [/^hand$/, 5], [/^keys$/, 6]]
+const rankOf = (id: string) => RANK.find(([re]) => re.test(id))?.[1] ?? 7
+export const orderGroups = <G extends { id: string }>(groups: G[]) => groups.map((g, i) => [g, i] as const).sort((a, b) => rankOf(a[0].id) - rankOf(b[0].id) || a[1] - b[1]).map(([g]) => g)
 
 /**
- * Коли вузол руди позначили «зібрано» — «тип|x,y» → мс. За цим часом рахується відновлення:
- * мине respawnMin() хвилин — позначка знімається сама. Старі позначки без часу — назавжди, як і були.
+ * «Де найкраще» — лише там, де точок багато й вони розкидані: руда, рослини, лут, підбирання. Локаціям, ключам, NPC,
+ * торговцям шукати «найкраще місце» нема сенсу, як і типу з кількома точками
  */
-export function loadDoneAt(key: string): Record<string, number> {
-  return prefGet<Record<string, Record<string, number>>>('map:doneAt', {})[key] ?? {}
-}
-export function saveDoneAt(key: string, v: Record<string, number>) {
-  prefSet('map:doneAt', { ...prefGet<Record<string, Record<string, number>>>('map:doneAt', {}), [key]: v })
-}
-/** скільки хвилин відновлюється вузол (у PvE Глибокої пустелі — 45) */
-export const respawnMin = () => prefGet<number>('map:respawn', 45)
-export const setRespawnMin = (m: number) => prefSet('map:respawn', m)
+const FINDABLE = /^(cutteray|resources|resources_pickup|plants|loot|hand)$/
+export const FIND_MIN = 10
+export const findable = (group: string, count: number) => FINDABLE.test(group) && count >= FIND_MIN
+
+/** скільки місць типу з шансом руди від min % — з розподілу часток кроками 5 % (зведення мапи); min 0 — усі */
+export const countFromShare = (hist: number[], min: number) => hist.slice(Math.floor(min / 5)).reduce((a, b) => a + b, 0)
+
+/**
+ * непрозорість точки руди за шансом руди в місці, %: чисті острівці (уся руда одна, 100 %) — повні, пояс титан/стравідій
+ * (50 %) — блідіші, змішані острівці (руда з 4–6 можливих, ~10–25 %) — бліді: на мапі одразу видно, де руда напевно
+ */
+export const shareAlpha = (p: number) => 0.3 + 0.7 * Math.min(1, Math.max(0, p) / 100)
 
 export interface UrlState {
   m?: string
@@ -96,7 +108,8 @@ export function readUrl(): UrlState {
   const m = p.get('m')
   if (m && /^[a-z0-9_]+$/.test(m)) out.m = m
   const l = p.get('l')
-  if (l) out.l = l.split(',').filter((x) => /^[a-z0-9_]+$/.test(x))
+  // id типів: TH.GL — snake_case, файли гри — CamelCase (Cave, TitaniumOre)
+  if (l) out.l = l.split(',').filter((x) => /^[A-Za-z0-9_]+$/.test(x))
   const r = p.get('r')
   if (r && /^[\w-]{1,40}$/.test(r)) out.r = r
   const w = p.get('w')

@@ -7,11 +7,14 @@ import { useEffect, useState } from 'react'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Empty, ErrorAlert, Loading } from '@/components/states'
-import { bySectionOrder, getChanges, sourceText, sectionLabel, summaryText, useGdStatus, type GdChange } from '@/lib/gamedata'
+import { bySectionOrder, getChanges, sourceText, sectionLabel, summaryText, useGdStatus, type GdChange, type GdSource } from '@/lib/gamedata'
 import { locale, t } from '@/lib/i18n'
 import { useAuth } from '@/lib/auth'
 import { plainClick } from '@/lib/urlState'
 import { useStore } from '@/store'
+
+/** джерело для відвідувачів: файли гри — з версією й збіркою; сторонні сайти не називаємо */
+const publicSource = (src: GdSource | null | undefined, driver: string | null) => ((src?.id ?? driver) === 'gamefiles' ? sourceText(src, driver) : t('дані спільноти'))
 
 const fmt = (ms: number) => new Date(ms).toLocaleString(locale(), { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 
@@ -62,7 +65,7 @@ export default function DataUpdates() {
                   <h2 className="break-words font-display text-[15px] font-bold">{sectionLabel(s.id)}</h2>
                   {s.count != null && <span className="font-mono text-[12px] text-muted">{s.count}</span>}
                 </div>
-                <p className="text-[13px] text-muted">{t('Джерело: {source}', { source: sourceText(s.source, s.driver) })}</p>
+                <p className="text-[13px] text-muted">{t('Джерело: {source}', { source: publicSource(s.source, s.driver) })}</p>
                 <p className="text-[13px] text-muted">
                   {s.changedAt ? t('змінено {date}', { date: fmt(s.changedAt) }) : t('без змін, відколи почали стежити')}
                 </p>
@@ -87,7 +90,7 @@ export default function DataUpdates() {
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
                     <span className="font-display text-[14px] font-bold">{sectionLabel(c.section)}</span>
                     <span className="font-mono text-[13px]">{summaryText(c.summary)}</span>
-                    <span className="text-[12px] text-muted">{fmt(c.at)} · {sourceText({ id: c.driver, names: c.names ?? [], build: c.build }, c.driver)}</span>
+                    <span className="text-[12px] text-muted">{fmt(c.at)} · {publicSource({ id: c.driver, names: c.names ?? [], build: c.build }, c.driver)}</span>
                   </div>
                   {c.summary.examples.length > 0 && (
                     <p className="break-words text-[13px] text-muted">

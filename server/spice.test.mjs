@@ -146,7 +146,7 @@ describe.each(ENGINES)('%s', (_name, pgCfg) => {
     expect(fieldAt((await eve.get('/api/map/spice/survival_1')).body, S)).toMatchObject({ n: 1, names: ['Eve'] })
   })
 
-  it('Глибока пустеля: лише зі своєю розкладкою; велике поле прилипає до відомого місця і стає «вивченим» місцем', async () => {
+  it('Глибока пустеля: лише зі своєю розкладкою; велике поле прилипає до відомого місця, деінде — не можна', async () => {
     const near = { map: 'deepdesert_1', size: 'large', x: -1016000 + 4000, y: 914400 - 3000, visibility: 'public' }
     expect((await bob.post('/api/map/spice', near)).status).toBe(400)
     const r = await bob.post('/api/map/spice', { ...near, layout: 2 })
@@ -154,10 +154,12 @@ describe.each(ENGINES)('%s', (_name, pgCfg) => {
     expect(fieldAt(r.body, { size: 'large', x: -1016000, y: 914400 })).toMatchObject({ n: 1 })
     const known = (await anon.get('/api/map/spice/deepdesert_1?layout=2')).body.spots
     expect(known.filter((s) => s.src === 'known')).toHaveLength(6)
-    // далеко від відомих — нове місце, з позначки
+    // далеко від відомих — місця великих полів фіксовані (з гри), нового не з'являється
     const far = { ...near, layout: 2, x: 100000, y: 100000 }
-    await bob.post('/api/map/spice', far)
-    expect((await anon.get('/api/map/spice/deepdesert_1?layout=2')).body.spots).toContainEqual({ x: 100000, y: 100000, src: 'marked' })
+    expect((await bob.post('/api/map/spice', far)).status).toBe(400)
+    const spots = (await anon.get('/api/map/spice/deepdesert_1?layout=2')).body.spots
+    expect(spots).toHaveLength(6)
+    expect(spots.every((s) => s.src === 'known')).toBe(true)
     expect((await anon.get('/api/map/spice/deepdesert_1?layout=5')).body.spots.filter((s) => s.src === 'known')).toHaveLength(0)
     expect((await bob.post('/api/map/spice', { ...far, size: 'huge' })).status).toBe(400)
     expect((await bob.post('/api/map/spice', { ...far, visibility: 'friends' })).status).toBe(400)

@@ -64,3 +64,49 @@ describe('мапа: TH.GL чи файли гри', () => {
     ready = true
   })
 })
+
+describe('мапа з файлів гри: шари й лут на всіх мапах', () => {
+  let srv, base
+  const asked = []
+  const MAPS2 = [...MAPS, { id: 'deepdesert_1', title: 'DD', tiles: 'd', bounds: [[0, 0], [1, 1]], transformation: [1, 0, 1, 0], nodes: null, layout: 11, layouts: [{ id: 11, tiles: 'd11' }] }]
+  const box = (desc) => ({ pts: [5, 5, 0], info: { 0: [null, desc, null, desc] } })
+  const pts = {
+    survival_1: { map: 'survival_1', layout: null, types: { TitaniumOre: { pts: [1, 1, 0, 2, 2, 0, 3, 3, 0], info: { 0: [null, 'Титанова руда — 40 %<br>Мідна руда — 60 %', null, null] }, share: [10, 20, 100], pick: [0, 1, 1] }, BasicContainer: box('Солярії (100%)<br>Титанова руда (12%) ×3') } },
+    deepdesert_1: { map: 'deepdesert_1', layout: 11, types: { SmallUltraRare: box('Солярії (100%)<br>Їжачий нагрудник (5.7%)'), RareContainer: box('Їжачий нагрудник (2%)') } },
+  }
+  beforeAll(async () => {
+    primary = 'gamefiles'
+    const app = express()
+    app.use((req, res, next) => { req.lang = 'uk'; req.t = (s) => s; next() })
+    const gm2 = { ...gamemap, source: async () => ({ syncedAt: 'T', maps: MAPS2, groups: [], sprite: '' }), points: async (m) => pts[m] ?? null, lootMaps: async (q, lang, layout) => (asked.push([q, lang, layout]), [{ map: 'deepdesert_1', layout: 11, n: 2, best: 5.7 }]) }
+    app.use(createMapRoutes({ mapData: { ...mapData, source: { ...mapData.source, maps: MAPS2 } }, game, gamemap: gm2 }))
+    srv = app.listen(0)
+    base = `http://127.0.0.1:${srv.address().port}`
+  })
+  afterAll(() => srv?.close())
+  const get = async (p) => (await fetch(base + p)).json()
+
+  it('зведення мапи — і розподіл часток руди за кроком 5 % (лічильники шару для будь-якого порогу повзунка)', async () => {
+    const ix = await get('/api/map/index/survival_1')
+    expect(ix.counts.TitaniumOre).toBe(3)
+    const h = new Array(21).fill(0)
+    h[2] = 1; h[4] = 1; h[20] = 1
+    expect(ix.shares).toEqual({ TitaniumOre: h })
+    // очікувана кількість: лише місця, де жереб випав на цю руду, — так само кроками 5 %
+    const hp = new Array(21).fill(0)
+    hp[4] = 1; hp[20] = 1
+    expect(ix.picks).toEqual({ TitaniumOre: hp })
+    expect((await get('/api/map/points/survival_1/TitaniumOre')).pick).toEqual([0, 1, 1])
+  })
+
+  it('предмет з довідника: на яких мапах він випадає — з луту файлів гри (без завантаження точок усіх мап); розкладка ГП — вибрана', async () => {
+    expect(await get('/api/map/loot-maps?q=' + encodeURIComponent('Їжачий нагрудник') + '&layout=3')).toEqual({ maps: [{ map: 'deepdesert_1', layout: 11, n: 2, best: 5.7 }] })
+    expect(asked).toEqual([['їжачий нагрудник', 'uk', 3]])
+    expect(await get('/api/map/loot-maps?q=ab')).toEqual({ maps: [] })
+  })
+
+  it('пошук луту — лише рядки луту контейнерів («предмет (шанс %)»), не перелік руд вузла', async () => {
+    const r = await get('/api/map/loot/survival_1?q=' + encodeURIComponent('титанова'))
+    expect(r.hits.map((h) => [h.type, h.chance])).toEqual([['BasicContainer', 12]])
+  })
+})

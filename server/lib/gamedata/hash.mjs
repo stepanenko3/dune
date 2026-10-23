@@ -16,13 +16,14 @@ export function stableStringify(v) {
 
 const byId = (a, b) => (String(a.id) < String(b.id) ? -1 : String(a.id) > String(b.id) ? 1 : 0)
 
-/** без невипущеного, записи за id; count — скільки записів (blob — один) */
+/** без невипущеного, записи за id; count — скільки записів (blob — один, чи blob.count) */
 export function normalizeSection(data) {
   if (Array.isArray(data?.records)) {
     const records = data.records.filter((r) => r && r.released !== false).sort(byId)
     return { records, count: records.length }
   }
-  return { blob: data?.blob ?? null, count: 1 }
+  // blob-перелік (ресурси ГП: файли розкладок) несе свою кількість — щоб і на ньому працював запобіжник обсягу
+  return { blob: data?.blob ?? null, count: typeof data?.blob?.count === 'number' ? data.blob.count : 1 }
 }
 
 export function sectionHash(data) {

@@ -38,12 +38,23 @@ export function openBuild(ix: CatalogIndex, key: string) {
  * а не вписана в квадрат
  */
 export const TIER_BG = ['rgb(var(--c-panel2))', '#3b4a35', '#2e4a3a', '#2c3f57', '#4a3460', '#5a4520', '#6a3a1c']
+/** спроби адрес іконки: спершу кольоровий рендер (…R_D), якщо його немає — базова */
+const iconTries = (src: string | null | undefined) => [src?.startsWith('/catalog-icons/') ? src.replace(/_D\.webp$/, 'R_D.webp') : null, src].filter(Boolean) as string[]
+/** завантажити іконку наперед (тим самим порядком спроб, що й Icon) — щоб картка з'явилась уже з картинкою */
+export function preloadIcon(src: string | null | undefined): Promise<void> {
+  const tries = iconTries(src)
+  const one = (i: number): Promise<void> => (i >= tries.length ? Promise.resolve() : new Promise((ok) => {
+    const im = new Image()
+    im.onload = () => ok()
+    im.onerror = () => ok(one(i + 1))
+    im.src = tries[i]
+  }))
+  return one(0)
+}
+
 export function Icon({ src, size, grade, wide }: { src: string | null; size: number; grade?: number; wide?: boolean }) {
   // спершу кольоровий рендер (…R_D), якщо його немає — базова іконка, далі — заглушка
-  const tries = useMemo(() => {
-    const r = src?.startsWith('/catalog-icons/') ? src.replace(/_D\.webp$/, 'R_D.webp') : null
-    return [r, src].filter(Boolean) as string[]
-  }, [src])
+  const tries = useMemo(() => iconTries(src), [src])
   const [k, setK] = useState(0)
   useEffect(() => setK(0), [src])
   const url = tries[k]

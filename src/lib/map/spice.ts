@@ -28,12 +28,21 @@ export interface SpiceField {
   vis: SpiceVis
   mine: { id: number; visibility: SpiceVis } | null
 }
-export interface SpiceSpot { x: number; y: number; src: 'known' | 'marked' }
+export interface SpiceSpot { x: number; y: number; src: 'known' }
 interface View { ttl: Record<SpiceSize, number>; now: number; spots: SpiceSpot[]; fields: SpiceField[] }
 
-/** тип точок мапи ↔ величина поля */
-export const SIZE_OF: Record<string, SpiceSize> = { spice_field_small: 'small', spice_field_medium: 'medium', spice_field_large: 'large' }
-export const TYPE_OF: Record<SpiceSize, string> = { small: 'spice_field_small', medium: 'spice_field_medium', large: 'spice_field_large' }
+/** типи полів меланжу в даних мапи: TH.GL — spice_field_*, файли гри — типи міток гри (величина — у самому типі) */
+const SPICE_TYPES: Record<'th' | 'game', Record<SpiceSize, string>> = {
+  th: { small: 'spice_field_small', medium: 'spice_field_medium', large: 'spice_field_large' },
+  game: { small: 'SpiceFieldSmall', medium: 'SpiceFieldMedium', large: 'SpiceFieldLarge' },
+}
+/** тип точок мапи ↔ величина поля (обидва джерела) */
+export const SIZE_OF: Record<string, SpiceSize> = Object.fromEntries(Object.values(SPICE_TYPES).flatMap((m) => Object.entries(m).map(([s, id]) => [id, s as SpiceSize])))
+/** типи полів у даних мапи: файли гри — коли серед типів є їхні поля, інакше TH.GL */
+export function spiceTypesOf(ids: Iterable<string>): Record<SpiceSize, string> {
+  const have = new Set(ids)
+  return Object.values(SPICE_TYPES.game).some((id) => have.has(id)) ? SPICE_TYPES.game : SPICE_TYPES.th
+}
 /** ключ поля: величина й округлені координати (так їх зберігає сервер) */
 export const fieldKey = (size: string, x: number, y: number) => `${size}@${Math.round(x)}:${Math.round(y)}`
 
@@ -46,13 +55,10 @@ interface S {
   byKey: Map<string, SpiceField>
   /** різниця годинника сервера й браузера (щоб «через N хв» не брехало) */
   skew: number
-  /** вибір місця великого поля на мапі */
-  picking: boolean
   busy: boolean
   load: (map?: string | null, layout?: number | null) => Promise<void>
   mark: (p: { map: string; layout: number | null; size: SpiceSize; x: number; y: number; visibility: SpiceVis }) => Promise<SpiceField | null>
   unmark: (id: number) => Promise<void>
-  setPicking: (on: boolean) => void
 }
 
 /** «14:32» */
@@ -82,7 +88,6 @@ export const useSpice = create<S>((set, get_) => {
     spots: [],
     byKey: new Map(),
     skew: 0,
-    picking: false,
     busy: false,
     load: async (map, layout) => {
       const m = map === undefined ? get_().map : map
@@ -112,7 +117,6 @@ export const useSpice = create<S>((set, get_) => {
         apply(n, await del<View>(`/api/map/spice/${id}`))
       } finally { set({ busy: false }) }
     },
-    setPicking: (picking) => set({ picking }),
   }
 })
 

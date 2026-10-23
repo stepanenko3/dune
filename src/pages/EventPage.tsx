@@ -7,7 +7,7 @@
  */
 import { forwardRef, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  CalendarCheck, CalendarDays, CalendarPlus, Check, ChevronDown, Clock, Copy, Crown, Download, Eye, ExternalLink, Link2, LogOut, Map as MapIcon, Medal,
+  CalendarCheck, CalendarDays, CalendarPlus, Check, ChevronDown, Clock, Copy, Crown, Download, Eye, ExternalLink, Link2, LogIn, LogOut, Map as MapIcon, Medal,
   MessageSquare, Pencil, Radio, RotateCcw, Share2, Shield, Trash2, Trophy, UserPlus, Users, X, XCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -118,12 +118,13 @@ export function EventPage({ id }: { id: string }) {
       : { label: t('Скасувати подію'), icon: <XCircle size={14} />, onSelect: () => setDialog('cancel') },
     { label: t('Створити схожу'), icon: <Copy size={14} />, onSelect: () => setView('events', { param: 'new', search: `?from=${ev.id}` }) },
     ...(ev.rights.manage ? [{ kind: 'separator' as const }, { label: t('Видалити'), icon: <Trash2 size={14} />, danger: true, onSelect: () => void remove() }] : []),
-  ] : [{ label: t('Створити схожу'), icon: <Copy size={14} />, onSelect: () => setView('events', { param: 'new', search: `?from=${ev.id}` }) }]
+  ] : me ? [{ label: t('Створити схожу'), icon: <Copy size={14} />, onSelect: () => setView('events', { param: 'new', search: `?from=${ev.id}` }) }] : []
 
   const regBtn = myTeam ? (
     <Button variant="secondary" onClick={() => teamsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}><Check size={15} className="text-ok" />{ev.reg.teamSize > 1 ? t('Моя команда') : t('Ти береш участь')}</Button>
   ) : ev.regState === 'open' ? (
-    <Button onClick={register}><UserPlus size={15} />{ev.reg.teamSize > 1 ? t('Зареєструвати команду') : t('Зареєструватися')}</Button>
+    me ? <Button onClick={register}><UserPlus size={15} />{ev.reg.teamSize > 1 ? t('Зареєструвати команду') : t('Зареєструватися')}</Button>
+      : <Button onClick={register}><LogIn size={15} />{t('Увійди, щоб зареєструватися')}</Button>
   ) : null
 
   return (
@@ -137,11 +138,11 @@ export function EventPage({ id }: { id: string }) {
             <>
               {regBtn}
               {phase !== 'ended' && !ev.cancelled && (
-                <Button variant="secondary" onClick={watch} aria-pressed={ev.me.watching}><Eye size={15} className={ev.me.watching ? 'text-spice' : ''} />{ev.me.watching ? t('Ти серед глядачів') : t('Піду дивитись')}</Button>
+                <Button variant="secondary" onClick={watch} aria-pressed={ev.me.watching} title={me ? undefined : t('Увійди, щоб тебе порахували серед глядачів')}>{me ? <Eye size={15} className={ev.me.watching ? 'text-spice' : ''} /> : <LogIn size={15} />}{ev.me.watching ? t('Ти серед глядачів') : t('Піду дивитись')}</Button>
               )}
               <Menu trigger={<Button variant="secondary" size="sm"><Share2 size={14} />{t('Поділитись')}<ChevronDown size={14} className="opacity-70" /></Button>} items={share} />
               {ev.item.can?.manage && <ItemActions item={ev.item} onChange={(it) => setEv({ ...ev, item: it })} onCopy={null} />}
-              <Menu trigger={<ActionsTrigger />} items={manage} />
+              {manage.length > 0 && <Menu trigger={<ActionsTrigger />} items={manage} />}
             </>
           }
         />
@@ -321,7 +322,9 @@ const TeamsSection = forwardRef<HTMLElement, { ev: EventFull; onChange: (e: Even
         <h2 id="h-teams" className="font-display text-[16px] font-bold">{teamWord(ev.reg.teamSize)} <span className="font-sans text-[14px] font-normal tabular-nums text-muted">{counts}</span></h2>
         {ev.counts.reserve > 0 && <span className="text-[12.5px] text-muted">{t('у резерві: {n}', { n: ev.counts.reserve })}</span>}
         {ev.rights.edit && ev.counts.pending > 0 && <span className="rounded-full bg-spice/15 px-2 py-0.5 text-[12px] font-semibold text-spice">{t('чекають рішення: {n}', { n: ev.counts.pending })}</span>}
-        {ev.regState === 'open' && !ev.me.team && <Button size="sm" className="ml-auto" onClick={onRegister}><UserPlus size={14} />{solo ? t('Зареєструватися') : t('Зареєструвати команду')}</Button>}
+        {ev.regState === 'open' && !ev.me.team && (me
+          ? <Button size="sm" className="ml-auto" onClick={onRegister}><UserPlus size={14} />{solo ? t('Зареєструватися') : t('Зареєструвати команду')}</Button>
+          : <Button size="sm" className="ml-auto" onClick={onRegister}><LogIn size={14} />{t('Увійди, щоб зареєструватися')}</Button>)}
       </div>
       <p className="mt-1 text-[13px] leading-snug text-muted">
         {[
@@ -438,6 +441,7 @@ function Where({ ev }: { ev: EventFull }) {
 }
 
 function Spectators({ ev, onWatch }: { ev: EventFull; onWatch: () => void }) {
+  const me = useAuth((s) => s.user)
   const open = !ev.cancelled && phaseOf(ev) !== 'ended'
   return (
     <Section title={t('Глядачам')}>
@@ -447,7 +451,9 @@ function Spectators({ ev, onWatch }: { ev: EventFull; onWatch: () => void }) {
           <div className="font-mono text-[20px] font-semibold leading-none tabular-nums">{ev.counts.watchers}</div>
           <div className="text-[12.5px] text-muted">{t('ідуть дивитись')}</div>
         </div>
-        {open && <Button size="sm" variant={ev.me.watching ? 'secondary' : 'default'} onClick={onWatch} aria-pressed={ev.me.watching}>{ev.me.watching ? <><Check size={14} />{t('Іду')}</> : t('Піду дивитись')}</Button>}
+        {open && (me
+          ? <Button size="sm" variant={ev.me.watching ? 'secondary' : 'default'} onClick={onWatch} aria-pressed={ev.me.watching}>{ev.me.watching ? <><Check size={14} />{t('Іду')}</> : t('Піду дивитись')}</Button>
+          : <Button size="sm" variant="secondary" onClick={onWatch}><LogIn size={14} />{t('Увійди, щоб піти дивитись')}</Button>)}
       </div>
       {ev.watchNote && <p className="mt-3 whitespace-pre-line border-t border-line pt-3 text-[13px] leading-snug">{ev.watchNote}</p>}
       {ev.watch && <div className="mt-2"><PointLink p={ev.watch} label={t('Зона для глядачів на мапі')} /></div>}

@@ -19,6 +19,7 @@ import { baseHistory, historyDoc, restoreBase, type Author, type BaseDoc, type B
 import { ErrorAlert, Loading } from '@/components/states'
 import { Confirm } from './Ask'
 import { levelName } from './tr'
+import { Img } from '@/components/ui/img'
 
 /** скільки версій видно одразу */
 const SHOWN = 10
@@ -133,7 +134,9 @@ export function Versions({ env }: { env: BaseEnvelope }) {
   const legacy = VERSIONS.filter((v) => v.base === env.id)
   const name = env.doc.ui?.name ?? t('База')
   const canEdit = !!env.item?.can?.edit
-  const [rows, setRows] = useState<BaseRevision[] | null>(canEdit ? null : [])
+  // історію бачать за правом «хто бачить історію» (давні відповіді без нього — як ті, хто змінює); відновлюють — ті, хто ще й змінює
+  const canSee = env.item?.can?.history ?? canEdit
+  const [rows, setRows] = useState<BaseRevision[] | null>(canSee ? null : [])
   const [busy, setBusy] = useState<number | null>(null)
   const [more, setMore] = useState(false)
   const [ask, setAsk] = useState<BaseRevision | null>(null)
@@ -142,11 +145,11 @@ export function Versions({ env }: { env: BaseEnvelope }) {
   const [, tick] = useState(0)
   useEffect(() => { const h = setInterval(() => tick((x) => x + 1), 60_000); return () => clearInterval(h) }, [])
   useEffect(() => {
-    if (!canEdit) { setRows([]); return }
+    if (!canSee) { setRows([]); return }
     let live = true
     baseHistory(env.id).then((r) => live && setRows(r ?? []))
     return () => { live = false }
-  }, [env.id, env.version, canEdit])
+  }, [env.id, env.version, canSee])
   const restore = async (r: BaseRevision) => {
     setBusy(r.hid)
     try {
@@ -196,7 +199,7 @@ export function Versions({ env }: { env: BaseEnvelope }) {
           <ul className="mb-2.5 grid list-disc gap-1 pl-4 text-muted">
             {v.changes.map((x, i) => <li key={i}>{tr(x)}</li>)}
           </ul>
-          <img src={'/' + v.img} alt={t('{name}, версія {n}, вигляд 3D', { name, n: v.n })} width={960} height={655} loading="lazy" className="block h-auto w-full max-w-[640px] rounded-md border border-line bg-panel2" />
+          <Img src={'/' + v.img} alt={t('{name}, версія {n}, вигляд 3D', { name, n: v.n })} width={960} height={655} className="block h-auto w-full max-w-[640px] rounded-md border border-line bg-panel2" />
         </div>
       ),
     })),

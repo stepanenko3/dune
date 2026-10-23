@@ -9,6 +9,7 @@
  */
 import crypto from 'node:crypto'
 import { color, fail, newId, paletteFor, plain, slugify, withLock } from './util.mjs'
+import { HOUSES } from './decree.mjs'
 
 export const RANK = { recruit: 1, member: 2, officer: 3, leader: 4 }
 export const GUILD_ROLES = Object.keys(RANK)
@@ -27,6 +28,11 @@ function cleanGuild(p, partial) {
   if ('about' in p) out.about = plain(p.about, 1000, true)
   if ('color' in p) { out.color = color(p.color); if (!out.color) throw fail('хибний колір') }
   if ('open' in p) out.open = p.open ? 1 : 0
+  // Великий дім гільдії (союз у Ландсрааді): atreides | harkonnen | порожньо — від нього залежить, чи діє указ тижня
+  if ('house' in p) {
+    out.house = p.house === null || p.house === '' ? null : String(p.house)
+    if (out.house && !HOUSES.includes(out.house)) throw fail('невідомий дім')
+  }
   return out
 }
 
@@ -49,6 +55,8 @@ export async function createGuilds(db) {
   `)
   // з якою роллю вступає той, хто відкрив запрошення (давні — учасником)
   await db.addColumn('invites', 'role', 'TEXT')
+  // дім гільдії в Ландсрааді (lib/decree.mjs)
+  await db.addColumn('guilds', 'house', 'TEXT')
   /** назва й тег — неповторні (без різниці великих і малих літер): «[SW] Sandwalkers» не підробити другою гільдією */
   async function assertUnique(c, self = '') {
     if (c.name && (await db.get('SELECT id FROM guilds WHERE lower(name) = ? AND id <> ?', c.name.toLowerCase(), self))) throw fail('гільдія з такою назвою вже є', 409)
@@ -104,7 +112,7 @@ export async function createGuilds(db) {
   const get = async (idOrSlug) => (idOrSlug ? (await db.get('SELECT * FROM guilds WHERE id = ?', idOrSlug)) || (await db.get('SELECT * FROM guilds WHERE slug = ?', idOrSlug)) || null : null)
   const memberCount = async (gid) => (await db.get('SELECT COUNT(*) AS n FROM members WHERE guild_id = ?', gid)).n
   /** гільдія для клієнта; n — число учасників, якщо вже відоме (список) */
-  const view = async (g, n) => (g ? { id: g.id, slug: g.slug, name: g.name, tag: g.tag, about: g.about, color: g.color, open: !!g.open, created: g.created, members: n ?? (await memberCount(g.id)) } : null)
+  const view = async (g, n) => (g ? { id: g.id, slug: g.slug, name: g.name, tag: g.tag, about: g.about, color: g.color, open: !!g.open, house: HOUSES.includes(g.house) ? g.house : null, created: g.created, members: n ?? (await memberCount(g.id)) } : null)
   const current = async (uid) => (uid ? (await db.get('SELECT guild_id, role FROM members WHERE user_id = ?', uid)) || null : null)
   /** людина вже в якійсь гільдії — вступати, подавати заявку чи створювати нову не можна */
   const assertFree = async (uid) => { if (await current(uid)) throw fail('Спершу вийди з поточної гільдії', 409) }

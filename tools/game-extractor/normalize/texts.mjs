@@ -33,7 +33,22 @@ export function normalizeTexts({ loc, rows, records }) {
       if (skillOk.has(id)) push('skill', id, text(m.DisplayName), text(descText(m)))
     }
     // мапа: назви типів міток і назви місць («таблиця рядків:ключ», одна на ключ)
-    for (const [id, r] of Object.entries(rows.markerTypes ?? {})) push('markerType', id, text(r.m_MarkerDisplayName), null)
+    // тип мітки: рядок таблиці; заглушка гри («XX_…» — підбирання) — назва предмета, який точка дає; текст без таблиці
+    // (простір імен і ключ-хеш, яких у .locres нема) — англійський оригінал гри (інші мови — з нього на сайті)
+    const itemOf = new Map((records.markerTypes ?? []).filter((r) => r.item).map((r) => [r.id, r.item]))
+    for (const [id, r] of Object.entries(rows.markerTypes ?? {})) {
+      const ft = r.m_MarkerDisplayName
+      const src = String(ft?.SourceString ?? '')
+      if (/^XX_/.test(src) && itemOf.has(id)) { push('markerType', id, text(rows.items?.[itemOf.get(id)]?.StaticData?.Name), null); continue }
+      const own = text(ft)
+      if (own) { push('markerType', id, own, null); continue }
+      if (!ft?.TableId && lang === 'en' && src && !/^(XX_|LOC_)/.test(src)) push('markerType', id, src, null)
+    }
+    // фракції NPC (назва гри однакова всіма мовами) і ключі мапи (рядок гри) — ті, що є серед типів точок
+    for (const r of records.markerTypes ?? []) {
+      if (r.kind === 'npc') push('markerType', r.id, rows.factions?.[r.id]?.m_DisplayName?.CultureInvariantString || null, null)
+      if (r.kind === 'key') push('markerType', r.id, text(rows.keyCodes?.[r.id]?.m_DisplayName), null)
+    }
     const cats = new Map(Object.values(rows.legend ?? {}).map((l) => l.m_MarkerCategoryDisplayName).filter((c) => c?.Key).map((c) => [`${namespaceOf(c)}:${c.Key}`, c]))
     for (const [id, c] of cats) push('legend', id, text(c), null)
     const places = new Set((records.markers ?? []).map((r) => r.name).filter(Boolean))

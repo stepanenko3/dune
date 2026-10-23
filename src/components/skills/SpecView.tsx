@@ -20,6 +20,7 @@ import { locale, t } from '@/lib/i18n'
 import { GT_IMG, SPEC_MAX, TRACKS, atLevel, fmtKey, fmtPassive, keepGot, useSpecs, type Keystone, type Specs, type Track } from '@/lib/specs'
 import { ErrorAlert, Loading } from '@/components/states'
 import { useAnchor } from './anchor'
+import { Img as UiImg } from '@/components/ui/img'
 
 const ICON = { craftingtrack: Hammer, gatheringtrack: Pickaxe, explorationtrack: Compass, combattrack: Swords, sabotagetrack: Bomb } as const
 type Id = keyof typeof ICON
@@ -29,11 +30,10 @@ const FADE = 130
 const W = 320
 type Tip = { ti: number; ki: number; el: HTMLElement; pin: boolean }
 
-/** іконка з CDN gaming.tools; не вантажиться — значок треку */
+/** іконка риси (через наш сайт); нема чи не вантажиться — значок треку */
 function Img({ src, Fallback, className }: { src: string | null; Fallback: typeof Hammer; className: string }) {
-  const [bad, setBad] = useState(false)
-  if (!src || bad) return <Fallback className={className} strokeWidth={1.6} />
-  return <img src={GT_IMG + src} alt="" loading="lazy" onError={() => setBad(true)} className={cn(className, 'object-contain')} />
+  const fb = <Fallback className={className} strokeWidth={1.6} />
+  return src ? <UiImg src={GT_IMG + src} className={cn(className, 'object-contain')} fallback={fb} /> : fb
 }
 
 /**

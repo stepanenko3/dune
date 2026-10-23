@@ -6,7 +6,7 @@ import { html } from 'lit'
 import { t } from '@/lib/i18n'
 import { plainClick } from '@/lib/urlState'
 import { adminHref, goAdmin, type Field, type ListQuery, type Resource, type Row } from './api'
-import { linkOf, textOf } from './fields'
+import { imageSrc, linkOf, textOf } from './fields'
 
 /** у таблиці ключ рядка — _id (у деяких розділах «id» не унікальний), тож колонки — з префіксом */
 export const colKey = (k: string) => 'f_' + k
@@ -23,7 +23,12 @@ export function columns(r: Resource) {
     const c: Record<string, unknown> = { key: colKey(f.key), header: t(f.label), sortable: !!f.sort, toggleable: true, mono: !!f.mono, ...(f.hidden ? { defaultHidden: true } : {}) }
     // так / ні: галочка й прочерк (вбудована іконка таблиці «dash» у наборі іконок — логотип Dash, літера «D»)
     // посилання на інший запис (людина, гільдія, власник, запис у журналі) — у самій комірці; рядок при цьому не відкривається
-    if (f.ref || f.type === 'relation' || f.type === 'owner') c.cell = ({ row }: { row: Record<string, unknown> }) => {
+    // зображення — мініатюрою (нема чи не завантажилось — порожньо)
+    if (f.image) Object.assign(c, { cell: ({ value }: { value: unknown }) => {
+      const src = imageSrc(value)
+      return src ? html`<img src=${src} alt="" loading="lazy" decoding="async" title=${t(f.label)} style="width:32px;height:32px;object-fit:contain;display:block" @error=${(e: Event) => { (e.target as HTMLElement).style.visibility = 'hidden' }} />` : ''
+    } })
+    else if (f.ref || f.type === 'relation' || f.type === 'owner') c.cell = ({ row }: { row: Record<string, unknown> }) => {
       const r = row.__row as Row, s = cellText(f, r), to = linkOf(f, r)
       return to && s ? html`<a href=${adminHref(to)} style="color:rgb(var(--c-spice))" @click=${(e: MouseEvent) => { if (!plainClick(e)) return; e.preventDefault(); goAdmin(to) }}>${s}</a>` : s
     }
@@ -38,7 +43,8 @@ export function columns(r: Resource) {
       c.cell = ({ value }: { value: unknown }) => (value ? html`<sn-badge tone="warning" variant="soft">${textOf(f, { [f.key]: value })}</sn-badge>` : '')
     } else if (f.type === 'color') {
       c.cell = ({ value }: { value: unknown }) => (value ? html`<span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:999px;background:${String(value)};border:1px solid var(--border)"></span>${String(value)}</span>` : '')
-    } else if (f.type === 'int' || f.type === 'num') c.format = 'numeric'
+    } else if (f.format === 'duration') c.cell = ({ row }: { row: Record<string, unknown> }) => html`<span style="white-space:nowrap">${textOf(f, row.__row as Row)}</span>`
+    else if (f.type === 'int' || f.type === 'num') c.format = 'numeric'
     // короткі ключі, розклади й дати — одним рядком (перенос посеред «catalog-sync» чи «0 4 * * 3» читається як два
     // значення); довгі id (адреси баз) хай переносяться, інакше стискають назви
     else if (f.mono || f.type === 'datetime') c.cell = ({ row }: { row: Record<string, unknown> }) => {
@@ -62,7 +68,8 @@ export function filters(r: Resource, relationOptions: Record<string, { value: st
   return r.fields.filter((f) => f.filter).map((f) => {
     const base = { key: colKey(f.key), label: t(f.label) }
     switch (f.type) {
-      case 'select': return { ...base, type: 'multiselect', options: (f.options || []).map((o) => ({ value: o.value, label: t(o.label) })) }
+      // варіанти без повторів (підкатегорія з однаковим значенням у кількох категоріях)
+      case 'select': return { ...base, type: 'multiselect', options: [...new Map((f.options || []).map((o) => [o.value, { value: o.value, label: t(o.label) }])).values()] }
       // зв'язки (людина, гільдія, власник) — текстом: сервер шукає за іменем, поштою, назвою (не тягнемо весь список)
       case 'relation': return relationOptions[f.key]?.length ? { ...base, type: 'select', options: relationOptions[f.key] } : { ...base, type: 'text' }
       case 'owner': return { ...base, type: 'text' }

@@ -1,6 +1,6 @@
 /**
  * Налаштування профілю: ім'я, адреса сторінки, нік у грі, про себе, колір; мова сайту; пошта (вхід — кодом на неї);
- * моя гільдія (одна, як у грі: перехід на її сторінку й вихід; без гільдії — пошук); вхід і безпека (паскеї, двофакторна
+ * мій Великий дім у Ландсрааді (від нього залежить, чи діє на мене указ тижня; не вказано — дім гільдії); моя гільдія (одна, як у грі: перехід на її сторінку й вихід; без гільдії — пошук); вхід і безпека (паскеї, двофакторна
  * перевірка — components/account/Security); сеанси (де ти увійшов) з
  * виходом; видалення облікового запису.
  */
@@ -23,6 +23,7 @@ import { plainClick } from '@/lib/urlState'
 import { DuneLoader } from '@/components/ui/dune-loader'
 import { useUnsaved } from '@/components/UnsavedBar'
 import { Security } from '@/components/account/Security'
+import { decreeOf, HOUSES, houseOf, useDecree, type House } from '@/lib/decree'
 
 const COLORS = ['#d9481f', '#ee8a2c', '#c9a227', '#5f9e4b', '#2f9e8f', '#2f6fd0', '#6a5acd', '#a855a8', '#c2410c', '#0e7490', '#6b7280', '#1f2937']
 
@@ -144,6 +145,51 @@ function MyGuild() {
   )
 }
 
+/**
+ * Мій дім у Ландсрааді: Атріди, Харконнени чи «як у гільдії» (дім гільдії вказує її лідер) — усе картками; зберігається
+ * одразу. Під ними — чи діє на мене указ тижня.
+ */
+function MyHouse() {
+  const { me, id, house, reach, loaded, load, setMine } = useDecree()
+  const [busy, setBusy] = useState(false)
+  useEffect(() => { if (!loaded) void load() }, [loaded, load])
+  if (!loaded) return <Loading lines={2} />
+  const own = me?.own ?? null
+  const guildHouse = houseOf(me?.guild)
+  const pick = async (h: House | null) => { if (busy || h === own) return; setBusy(true); await setMine(h); setBusy(false) }
+  const card = (on: boolean) => cn('grid gap-1 rounded-lg border px-3 py-2.5 text-left transition-colors disabled:cursor-wait', on ? 'border-spice/70 bg-spice/10' : 'border-line bg-panel2/40 hover:border-spice/40')
+  const d = decreeOf(id), win = houseOf(house)
+  return (
+    <div className="grid gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-3" role="radiogroup" aria-label={t('Мій дім')}>
+        {HOUSES.map((h) => (
+          <button key={h.id} type="button" role="radio" aria-checked={own === h.id} disabled={busy} onClick={() => void pick(h.id)} className={card(own === h.id)}>
+            <span className="flex items-center gap-2 text-[13.5px] font-semibold">
+              <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: h.color }} aria-hidden />
+              <span className="min-w-0 flex-1">{h.name}</span>
+              {own === h.id && <Check size={15} className="shrink-0 text-spice" aria-hidden />}
+            </span>
+          </button>
+        ))}
+        <button type="button" role="radio" aria-checked={!own} disabled={busy} onClick={() => void pick(null)} className={card(!own)}>
+          <span className="flex items-center gap-2 text-[13.5px] font-semibold">
+            <span className="min-w-0 flex-1">{t('Як у гільдії')}</span>
+            {!own && <Check size={15} className="shrink-0 text-spice" aria-hidden />}
+          </span>
+          <span className="text-[12.5px] leading-snug text-muted">{guildHouse ? guildHouse.name : t('у гільдії дім не вказано')}</span>
+        </button>
+      </div>
+      {d && win && (
+        <p className={cn('rounded-md px-2.5 py-1.5 text-[13px]', reach === 'on' ? 'bg-ok/10 text-ok' : 'bg-panel2 text-muted')}>
+          {reach === 'on' ? t('Указ тижня «{name}» діє на тебе.', { name: d.name })
+            : reach === 'off' ? t('Указ тижня «{name}» діє лише для {house} — на тебе не поширюється.', { name: d.name, house: win.of })
+              : t('Указ тижня «{name}» діє для {house}. Вкажи свій дім, щоб знати, чи діє він на тебе.', { name: d.name, house: win.of })}
+        </p>
+      )}
+    </div>
+  )
+}
+
 export function Account() {
   const { user, ready } = useAuth()
   const setView = useStore((s) => s.setView)
@@ -233,7 +279,11 @@ export function Account() {
           </div>
         </Section>
 
-        <Section title={t('Моя гільдія')} hint={t('Гільдія в людини одна, як у грі. Її указ тижня бере калькулятор; її гільдійське відкривається першим.')}>
+        <Section title={t('Мій дім у Ландсрааді')} hint={t('Указ тижня діє лише на людей дому, що виграв Ландсраад. Не вказано — береться дім твоєї гільдії.')}>
+          <MyHouse />
+        </Section>
+
+        <Section title={t('Моя гільдія')} hint={t('Гільдія в людини одна, як у грі. Її гільдійське відкривається першим.')}>
           <MyGuild />
         </Section>
 

@@ -9,6 +9,7 @@ import { createApp } from './app.mjs'
 import { nextRun, parseCron } from './lib/cron.mjs'
 import { jsonDiff } from './lib/revisions.mjs'
 import { openDb } from './lib/sql.mjs'
+import sharp from 'sharp'
 
 describe('розклад задач (cron)', () => {
   const at = (s) => new Date(s).getTime()
@@ -83,6 +84,11 @@ describe.each(ENGINES)('%s', (_name, pgCfg) => {
     const a = {
       /** відповідь як є (файли: CSV) */
       raw: (u) => fetch(base + u, { headers: { 'sec-fetch-site': 'same-origin', ...(cookie ? { cookie } : {}) } }),
+      /** файл тілом запиту (зображення) */
+      async send(method, u, buf, type = 'image/png') {
+        const r = await fetch(base + u, { method, headers: { 'content-type': type, 'sec-fetch-site': 'same-origin', ...(cookie ? { cookie } : {}) }, body: buf })
+        return { status: r.status, body: await r.json().catch(() => null) }
+      },
       get: (u) => call('GET', u),
       post: (u, b = {}) => call('POST', u, b),
       put: (u, b) => call('PUT', u, b),
@@ -370,11 +376,108 @@ describe.each(ENGINES)('%s', (_name, pgCfg) => {
     })
   })
 
+  describe('кількість, вибір зі списку, зображення, журнал наживо', () => {
+    const png = () => sharp({ create: { width: 40, height: 30, channels: 4, background: { r: 200, g: 120, b: 40, alpha: 1 } } }).png().toBuffer()
+    beforeAll(async () => {
+      const t = Date.now()
+      await db.run("INSERT INTO game_items (id, name, icon, cat, sub, updated) VALUES ('Iron', 'Iron Ingot', 'assets/x/T_UI_Iron_D', 'misc', 'base', ?), ('Rod', 'Steel Rod', NULL, 'misc', 'extra', ?), ('Gun', 'Gun', NULL, 'weapon', 'pistol', ?)", t, t, t)
+      await db.run("INSERT INTO game_placeables (id, name, icon, cat, sub, updated) VALUES ('Fab_Placeable', 'Fabricator', 'assets/x/T_UI_Fab_D', 'fabricator', 'tier0', ?)", t)
+      await db.run(`INSERT INTO game_recipes (id, name, time, stations, inputs, outputs, updated) VALUES ('RodRecipe', '', 20, '["Fab_Placeable"]', '[["Iron",2]]', '[["Rod",1]]', ?), ('GunRecipe', 'Gun', 40, '["Fab_Placeable"]', '[["Rod",3],["Nope",1]]', '[["Gun",1]]', ?)`, t, t)
+      await db.run("INSERT INTO game_texts (kind, id, lang, name, source, updated) VALUES ('item', 'Iron', 'uk', 'Залізний злиток', 'game', ?)", t)
+    })
+
+    it('кількість: загальна в списку з пошуком («з»), лічильники розділів і вкладок', async () => {
+      const all = (await admin.get('/api/admin/r/game-items')).body
+      expect(all).toMatchObject({ total: 3, all: 3 })
+      const found = (await admin.get('/api/admin/r/game-items?search=rod')).body
+      expect(found).toMatchObject({ total: 1, all: 3 })
+      const q = encodeURIComponent(JSON.stringify([['game-items'], ['game-recipes', { inputs: { has: 'Iron' } }], ['game-recipes', { stations: { has: 'Fab_Placeable' } }], ['translations'], ['немає']]))
+      const { counts } = (await admin.get(`/api/admin/counts?q=${q}`)).body
+      expect(counts[0]).toBe(3)
+      expect(counts[1]).toBe(1)
+      expect(counts[2]).toBe(2)
+      expect(counts[3]).toBeGreaterThan(0)
+      expect(counts[4]).toBe(null)
+      // у кого розділу не видно — null, а не число
+      expect((await bob.get(`/api/admin/counts?q=${q}`)).status).toBe(403)
+      // вкладка «Де потрібен»: рецепти, що містять предмет (точний id у лапках, а не частина іншого)
+      const rel = (await admin.get(`/api/admin/r/game-recipes?fixed=${f({ inputs: { has: 'Rod' } })}`)).body.rows
+      expect(rel.map((x) => x.id)).toEqual(['GunRecipe'])
+    })
+
+    it('вибір зі списку: назва мовою людини, іконка; назви й іконки id у парах і списках', async () => {
+      const opts = (await admin.get('/api/admin/r/game-items/options?q=злиток', { lang: 'uk' })).body
+      expect(Array.isArray(opts)).toBe(true)
+      const byId = (await admin.get('/api/admin/r/game-items/options?ids=Iron,Rod')).body
+      expect(byId.find((o) => o.value === 'Iron')).toMatchObject({ icon: 'assets/x/T_UI_Iron_D' })
+      expect(byId.find((o) => o.value === 'Rod').label).toBe('Steel Rod')
+      const r = (await admin.get('/api/admin/r/game-recipes/one?id=GunRecipe')).body
+      expect(r.inputs__refs.Rod[0]).toBe('Steel Rod')
+      expect(r.inputs__refs.Nope).toBeUndefined()
+      expect(r.stations__refs.Fab_Placeable).toEqual(['Fabricator', 'assets/x/T_UI_Fab_D'])
+      // рецепт без власної назви — зветься тим, що з нього виходить
+      expect((await admin.get('/api/admin/r/game-recipes/one?id=RodRecipe')).body.name__label).toBe('Steel Rod')
+      // категорії — варіантами з гри; підкатегорія знає свою категорію
+      const meta = (await admin.get('/api/admin/meta')).body.resources.find((x) => x.name === 'game-items')
+      expect(meta.fields.find((x) => x.key === 'cat').options.map((o) => o.value)).toEqual(['misc', 'weapon'])
+      expect(meta.fields.find((x) => x.key === 'sub').options).toEqual(expect.arrayContaining([{ value: 'pistol', label: 'pistol', parent: 'weapon' }]))
+      expect(meta.fields.find((x) => x.key === 'icon').image).toBe(true)
+      // стовпці даних гри — зрозумілими словами
+      const rec = (await admin.get('/api/admin/meta')).body.resources.find((x) => x.name === 'game-recipes')
+      expect(rec.fields.find((x) => x.key === 'time').label).toBe('Час на виготовлення, с')
+    })
+
+    it('зображення: у сховище за відбитком вмісту; не зображення — 415; без права — 403', async () => {
+      const up = await admin.send('POST', '/api/admin/upload?res=game-items', await png())
+      expect(up.status).toBe(200)
+      expect(up.body.url).toMatch(/^\/media\/uploads\/[0-9a-f]{24}\.webp$/)
+      const img = await admin.raw(up.body.url)
+      expect(img.status).toBe(200)
+      expect(img.headers.get('content-type')).toMatch(/image\/webp/)
+      expect((await admin.send('POST', '/api/admin/upload?res=game-items', Buffer.from('не картинка'))).status).toBe(415)
+      expect((await bob.send('POST', '/api/admin/upload?res=game-items', await png())).status).toBe(403)
+      // нова іконка — звичайною зміною поля
+      expect((await admin.patch('/api/admin/r/game-items/one?id=Gun', { icon: up.body.url })).body.icon).toBe(up.body.url)
+    })
+
+    it('фото бази: своє замість знімка (тією ж адресою для всього сайту), прибрати — знову знімок', async () => {
+      const doc = { format: 2, claims: [{ x: -5, y: 0, w: 10, d: 10 }], pieces: [], items: [], zones: [], levels: [{ key: 'g', name: 'Рівень 0', sub: '', z0: 0, z1: 99 }], heights: {}, ui: { name: 'Фото', lead: '', facts: [] } }
+      const b = (await admin.post('/api/bases', { doc, visibility: 'public' })).body
+      expect(b.id).toBeTruthy()
+      expect((await admin.get(`/api/admin/bases/${b.id}/photo`)).body.custom).toBe(false)
+      const set = await admin.send('POST', `/api/admin/bases/${b.id}/photo`, await png())
+      expect(set.status).toBe(200)
+      expect(set.body).toMatchObject({ custom: true })
+      expect(set.body.url).toMatch(/thumb\.jpg\?v=c-[0-9a-f]{8}$/)
+      const jpg = await anon.raw(set.body.url)
+      expect(jpg.status).toBe(200)
+      expect(jpg.headers.get('content-type')).toMatch(/jpeg/)
+      expect((await bob.send('POST', `/api/admin/bases/${b.id}/photo`, await png())).status).toBe(403)
+      const back = await admin.send('DELETE', `/api/admin/bases/${b.id}/photo`, Buffer.alloc(0), 'application/octet-stream')
+      expect(back.body.custom).toBe(false)
+      // у журналі — людською мовою, з посиланням на базу
+      const log = (await admin.get(`/api/admin/r/audit?f=${f({ action: ['admin.base-photo'] })}`)).body.rows
+      expect(log[0].target__ref).toEqual(['bases', b.id])
+    })
+
+    it('журнал запуску: SSE — те, що вже є, і кінець', async () => {
+      const runs = (await admin.get(`/api/admin/r/cron-runs?fixed=${f({ job: 'cleanup' })}`)).body.rows
+      expect(runs.length).toBeGreaterThan(0)
+      const res = await admin.raw(`/api/admin/cron-runs/${runs[0].id}/stream`)
+      expect(res.headers.get('content-type')).toMatch(/text\/event-stream/)
+      const text = await res.text()
+      expect(text).toMatch(/event: lines/)
+      expect(text).toMatch(/event: done\ndata: \{"status":"ok"/)
+      expect(await (await admin.raw('/api/admin/cron-runs/999999/stream')).text()).toMatch(/event: gone/)
+      expect((await bob.raw(`/api/admin/cron-runs/${runs[0].id}/stream`)).status).toBe(403)
+    })
+  })
+
   describe('указ Ландсрааду', () => {
     it('один на сайт: виставляє адміністрація, бачать усі', async () => {
       expect((await anon.get('/api/decree')).body).toMatchObject({ canSet: false })
       expect((await admin.get('/api/decree')).body.canSet).toBe(true)
-      expect((await admin.put('/api/decree', { id: 'production', until: Date.now() + 3 * 86400_000 })).status).toBe(200)
+      expect((await admin.put('/api/decree', { id: 'production', house: 'atreides', until: Date.now() + 3 * 86400_000 })).status).toBe(200)
       expect((await admin.put('/api/decree', { id: 'nonsense', until: Date.now() + 86400_000 })).status).toBe(400)
       expect((await anon.get('/api/decree')).body.id).toBe('production')
       expect((await bob.get('/api/decree')).body).toMatchObject({ id: 'production', canSet: false })

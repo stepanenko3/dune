@@ -13,6 +13,8 @@ import { t } from '@/lib/i18n'
 import { KIND, typeOf, rankCost, type Skill } from '@/lib/skills'
 import { fmtStat, locRanks, partIds, skillName, useLoc } from '@/lib/skillsUk'
 import { useAnchor } from './anchor'
+import { iconUrl } from '@/lib/catalog'
+import { Img } from '@/components/ui/img'
 
 const W = 380
 const GAP = 10 // від вузла до картки: курсор перетинає його за мить
@@ -107,7 +109,7 @@ export function SkillTip({
     >
       <div className="flex items-start gap-3">
         <span className="grid h-12 w-12 shrink-0 place-items-center rounded-lg border border-line bg-panel">
-          {s.icon && <img src={`/catalog-icons/${s.icon}.webp`} alt="" className="h-9 w-9 object-contain" />}
+          {s.icon && <Img src={iconUrl(s.icon)} width={36} height={36} className="h-9 w-9 object-contain" />}
         </span>
         <div className="min-w-0 flex-1">
           <h2 className="font-display text-[15.5px] font-bold leading-snug">{name}</h2>

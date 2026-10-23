@@ -1,23 +1,20 @@
 /**
- * Режим камери будівельника (пам'ятається): «Навколо центру» — як було (крутити навколо точки; перемикання сюди —
- * назад у стартове положення), «Від першої особи» — погляд з місця, ходити WASD, як у грі. Звичайний перегляд бази —
- * лише навколо центру. Тут же — підказка, як керувати.
+ * Режим камери будівельника: «Навколо центру» — за замовчуванням щоразу (центр стоїть на місці — лише обертати й
+ * ближче/далі; перемикання сюди — назад у стартове положення), «Від першої особи» — погляд з місця, ходити WASD, як у
+ * грі (лише до кінця сеансу на сторінці, не запам'ятовується). Звичайний перегляд бази — лише навколо центру.
+ * Тут же — підказка, як керувати.
  */
 import { useSyncExternalStore } from 'react'
 import { Orbit, PersonStanding } from 'lucide-react'
 import { Seg } from '@/components/ui/seg'
 import type { CamMode } from '@/lib/engine'
 import { t } from '@/lib/i18n'
-import { prefGet, prefSet } from '@/lib/prefs'
-
-const KEY = 'base:cam'
-let mode: CamMode = prefGet<CamMode>(KEY, 'orbit') === 'fly' ? 'fly' : 'orbit'
+let mode: CamMode = 'orbit'
 const subs = new Set<() => void>()
 
 export function setCamMode(m: CamMode) {
   if (m === mode) return
   mode = m
-  prefSet(KEY, m)
   for (const f of subs) f()
 }
 export const camModeNow = (): CamMode => mode
@@ -36,7 +33,7 @@ export function CamModeSwitch({ size = 'md', compact = false }: { size?: 'sm' | 
       value={m}
       onChange={setCamMode}
       items={[
-        { id: 'orbit', label: compact ? <Orbit size={14} aria-label={orbit} /> : orbit, tip: `${compact ? orbit + ': ' : ''}${t('Крутити камеру навколо точки, як раніше')}` },
+        { id: 'orbit', label: compact ? <Orbit size={14} aria-label={orbit} /> : orbit, tip: `${compact ? orbit + ': ' : ''}${t('Крутити камеру навколо центру бази — центр не зсувається')}` },
         { id: 'fly', label: compact ? <PersonStanding size={14} aria-label={fly} /> : fly, tip: `${compact ? fly + ': ' : ''}${t('Дивитися з місця й ходити WASD, як у грі')}` },
       ]}
     />
@@ -47,5 +44,5 @@ export function CamModeSwitch({ size = 'md', compact = false }: { size?: 'sm' | 
 export function camHint(m: CamMode): string {
   return m === 'fly'
     ? t('Права кнопка — роззирнутися, WASD — іти, Q/E — нижче/вище, Shift — швидше, колесо — крок до курсора, пробіл + тягни — зсув.')
-    : t('Права кнопка — обертати, колесо — до курсора, пробіл + тягни чи середня — зсув. Ходити WASD — від першої особи.')
+    : t('Права кнопка — обертати навколо центру, колесо — ближче чи далі. Рухатися й ходити WASD — від першої особи.')
 }

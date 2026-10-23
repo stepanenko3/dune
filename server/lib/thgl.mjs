@@ -78,7 +78,7 @@ export function extractConfig(html) {
   const chunks = [...html.matchAll(/self\.__next_f\.push\(\[1,("(?:[^"\\]|\\.)*")\]\)/g)].map((m) => JSON.parse(m[1]))
   const txt = chunks.join('')
   const at = txt.indexOf('"tilesConfig"')
-  if (at < 0) throw new Error('на сторінці TH.GL немає tilesConfig')
+  if (at < 0) throw new Error('на сторінці мапи немає tilesConfig')
   let i = at, depth = 0
   for (; i > 0; i--) {
     const c = txt[i]
@@ -128,7 +128,7 @@ export function toSource(cfg) {
 
 export async function fetchSource() {
   const res = await fetch(PAGE, { headers: { 'user-agent': UA, accept: 'text/html' }, signal: AbortSignal.timeout(TIMEOUT_MS) })
-  if (!res.ok) throw new Error(`TH.GL: HTTP ${res.status}`)
+  if (!res.ok) throw new Error(`мапа: HTTP ${res.status}`)
   return toSource(extractConfig(await res.text()))
 }
 
@@ -190,7 +190,7 @@ export function createMapData({ dataDir, log = console }) {
         memLoc.clear()
         return s
       })
-      .catch((e) => { failedAt = Date.now(); log.warn?.('[map] не вдалося оновити опис з TH.GL:', e.message); return source })
+      .catch((e) => { failedAt = Date.now(); log.warn?.('[map] не вдалося оновити опис мап:', e.message); return source })
       .finally(() => { refreshing = null })
     return refreshing
   }

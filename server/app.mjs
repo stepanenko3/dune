@@ -54,6 +54,10 @@ import { actorStore, createRevisions, track } from './lib/revisions.mjs'
 import { createCron } from './lib/cron.mjs'
 import { createGameDataSources } from './lib/gamedata/index.mjs'
 import { createGameDataRoutes } from './routes/gamedata.mjs'
+import { createWorldRoutes } from './routes/world.mjs'
+import { createWorld } from './lib/world.mjs'
+import { createStorage, mediaRoute } from './lib/storage.mjs'
+import { createMedia } from './lib/media.mjs'
 import { fail, withLock } from './lib/util.mjs'
 import { auditMiddleware, dropLegacyDuplicates } from './lib/audit.mjs'
 
@@ -70,6 +74,9 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   const db = given || (await openDb({ dataDir }))
   log.info?.(`[db] ${db.label || db.kind}`)
   const mailer = givenMailer || createMailer(process.env, log)
+  // файли (зображення гри, завантажені в панелі): RustFS із Snotax console за S3_* у .env, інакше тека <dataDir>/files
+  const storage = createStorage({ dataDir })
+  log.info?.(`[storage] ${storage.kind} ${storage.where}`)
   const places = await createPlacesStore(db)
   const roadmaps = await createRoadmaps(db)
   const progress = await createProgress(db)
@@ -86,7 +93,8 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   const items = await createItems(db)
   const roles = await createRoles(db)
   const revisions = await createRevisions(db)
-  const cron = await createCron(db, { log })
+  // capture — те, що задача (і модулі, які вона викликає) пише в журнал сервера, іде й у журнал її запуску в панелі
+  const cron = await createCron(db, { log, capture: true })
   const access = createAccess({ auth, guilds, roles })
   // ---------- версії змін із сайту (панель пише свої сама): хто — з контексту запиту ----------
   {
@@ -130,7 +138,9 @@ export async function createApp({ dataDir, serveDist = false, background = true,
       return after
     }
   }
-  const thumbs = createThumbs({ dataDir, bases, log })
+  // знімки баз — у сховищі (private/…: лише маршрутом бази з перевіркою доступу)
+  const thumbs = createThumbs({ dataDir, bases, log, storage })
+  await thumbs.ready
   // річ стерто назавжди — разом із нею її знімки й історія змін (там лежали повні документи)
   const KIND_ENTITY = { base: 'bases', roadmap: 'roadmaps', build: 'builds', calc: 'calcs', marker: 'markers', place: 'places', event: 'events' }
   content.afterPurge(async (kind, id) => {
@@ -142,15 +152,17 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   const push = await createPush({ db, dataDir, log, i18n })
   const mapData = createMapData({ dataDir, log })
   const game = await createGameData(db, { dataDir, log })
-  const catalog = createCatalog({ dataDir, game })
-  const skills = createSkills({ game })
+  // медіатека: картинки з чужих джерел — один раз у сховище, сайт віддає їх як /media/<ключ>
+  const media = await createMedia({ db, storage, dataDir, log })
+  const catalog = createCatalog({ dataDir, game, media })
+  const skills = createSkills({ game, media })
   const announcements = await createAnnouncements(db)
   const hubs = { base: createHub(access), roadmap: createHub(access), place: createHub(access), marker: createHub(access), spice: createHub(access), event: createHub(access) }
   // активні поля меланжу — позначки гравців
   const spice = await createSpice({ db, guilds })
   // джерела ігрових даних і журнал змін (індикатор оновлень); без GAMEDATA=1 — null, у базу нічого не пише
   // мапа з файлів гри (план 5b): точки, типи міток і розклад ГП застосовує реєстр, мапа сайту бере їх після перемикання
-  const gamemap = await createGameMap({ db, mapData, dataDir })
+  const gamemap = await createGameMap({ db, mapData, dataDir, t: (lang, k) => i18n.t(lang, k) })
   const gamedata = await createGameDataSources({ db, dataDir, game, mapData, spice, gamemap, log })
 
   // ---------- давні дані: з SQLite у щойно підключений Postgres (раз), потім — початковий вміст порожньої бази ----------
@@ -323,14 +335,17 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   app.use(createGuildRoutes({ auth, guilds, items, deleteGuild, decrees }))
   app.use(createItemRoutes({ items, content, hubs, auth, roadmapService, progress, revisions }))
   app.use(createSiteRoutes({ i18n, announcements, auth }))
-  app.use(createAdminRoutes({ db, auth, guilds, items, content, bases, roadmaps, builds, calcs, markers, places, events, game, i18n, announcements, catalog, skills, removeUser, deleteGuild, mapData, roles, revisions, cron }))
+  app.use(createAdminRoutes({ db, auth, guilds, items, content, bases, roadmaps, builds, calcs, markers, places, events, game, i18n, announcements, catalog, skills, removeUser, deleteGuild, mapData, roles, revisions, cron, thumbs, storage }))
   app.use(createPlacesRoutes({ places, mapData, items, content, hub: hubs.place }))
   app.use(createSpiceRoutes({ spice, mapData, hub: hubs.spice }))
   app.use(createMapRoutes({ mapData, game, gamemap }))
-  app.use(createHomeRoutes({ mapData, places, items }))
-  app.use(createCatalogRoutes({ catalog, game }))
+  app.use(createHomeRoutes({ mapData, places, items, spice, game, gamemap }))
+  app.use(createCatalogRoutes({ catalog, game, media }))
   app.use(createSkillsRoutes({ skills }))
   app.use(createGameDataRoutes({ sources: gamedata, roles, game }))
+  // карта світу: місця карти поверхні гри й переходи між мапами (data/world.json — з файлів гри)
+  const world = createWorld({ storage, log })
+  app.use(createWorldRoutes({ world }))
   app.use(createRoadmapRoutes({ roadmaps, items, content, hub: hubs.roadmap, progress, service: roadmapService, guilds, revisions }))
   app.use(createBasesRoutes({ bases, thumbs, items, content, hub: hubs.base }))
   app.use(createDocRoutes({ kind: 'build', path: 'builds', store: builds, clean: cleanBuild, items, content, label: 'білду' }))
@@ -340,6 +355,7 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   app.use(createDecreeRoutes({ decrees, roles }))
   app.use(createPushRoutes({ push }))
   app.use('/versions', express.static(path.join(root, 'versions'), { maxAge: '1d' }))
+  app.use('/media', mediaRoute(storage))
   // жива не лише програма, а й база (інакше перевірка бачить «усе гаразд», коли жодна сторінка не відкривається)
   app.get('/api/health', async (req, res) => {
     try {
@@ -358,7 +374,7 @@ export async function createApp({ dataDir, serveDist = false, background = true,
     app.use('/assets', express.static(path.join(dist, 'assets'), { maxAge: '1y', immutable: true, index: false }), (req, res) => res.status(404).end())
     app.use(express.static(dist, { maxAge: '1d', index: false }))
     // сторінка сайту: відомі розділи — 200; невідома адреса — та сама сторінка (вона скаже «не знайдено»), але з кодом 404
-    const KNOWN = new Set(['', 'bases', 'roadmap', 'map', 'catalog', 'calculator', 'skills', 'builds', 'calcs', 'library', 'login', 'register', 'reset', 'me', 'account', 'u', 'g', 'guilds', 'invite', 'admin', 'plan', 'dd', 'data', 'events'])
+    const KNOWN = new Set(['', 'bases', 'roadmap', 'map', 'catalog', 'calculator', 'skills', 'builds', 'calcs', 'library', 'login', 'register', 'reset', 'me', 'account', 'u', 'g', 'guilds', 'invite', 'admin', 'plan', 'dd', 'data', 'events', 'world'])
     // у сторінку — заголовок, опис і картинка того, на що веде адреса (прев'ю посилань у Discord, Telegram)
     const og = createOg({ file: path.join(dist, 'index.html'), db, items, auth, guilds, thumbs, access, events })
     app.get('*', (req, res, next) => Promise.resolve().then(async () => {
@@ -395,12 +411,21 @@ export async function createApp({ dataDir, serveDist = false, background = true,
   // ---------- фонові задачі (планувальник; розклад, запуски й журнали — у панелі керування) ----------
   // розкладка Глибокої пустелі: сервер сам питає TH.GL (у вікні бурі — кожні пів години, інакше раз на 6 год — це
   // вирішує refresh), а не чекає, доки хтось відкриє мапу: тоді й перший відвідувач після бурі бачить новий тиждень
-  await cron.register('map-refresh', { name: 'Мапа: свіжі дані TH.GL', description: 'Нова розкладка Глибокої пустелі після бурі, точки й словники', schedule: '*/5 * * * *',
-    run: async (say) => { const r = await mapData.refresh(); say(r?.syncedAt ? `дані TH.GL від ${r.syncedAt}` : 'без змін') } })
+  await cron.register('map-refresh', { name: 'Мапа: свіжі дані', description: 'Нова розкладка Глибокої пустелі після бурі, точки й словники', schedule: '*/5 * * * *',
+    run: async (say) => { const r = await mapData.refresh(); say(r?.syncedAt ? `дані мапи від ${r.syncedAt}` : 'без змін') } })
+  await cron.register('media-sync', { name: 'Медіатека: картинки', description: 'Завантажує картинки довідника, умінь і роадмапів у наше сховище й міняє адреси в документах на наші', schedule: '23 * * * *',
+    run: async (say) => { await media.sync(say) } })
   await cron.register('thumbs-warm', { name: 'Знімки баз', description: 'Малює прев’ю 3D для баз, у яких його ще нема', schedule: '7 * * * *',
-    run: async (say) => { await thumbs.warm(); say('перевірено') } })
+    run: async (say) => { const r = await thumbs.warm(); say(`баз: ${r.total}, нових знімків: ${r.drawn}${r.failed ? `, не вдалося: ${r.failed}` : ''}`) } })
   if (gamedata) await cron.register('gamedata-check', { name: 'Дані гри: перевірка змін', description: 'Порівнює кожен розділ даних із попереднім і пише журнал, лише коли щось справді змінилось', schedule: '*/10 * * * *',
-    run: async (say) => { const r = await gamedata.registry.check(); const ch = r.filter((x) => x.status === 'changed').map((x) => x.section); say(ch.length ? `змінено: ${ch.join(', ')}` : 'без змін') } })
+    run: async (say) => {
+      const r = await gamedata.registry.check()
+      // кожен розділ — рядком: що з ним і скільки записів
+      const ST = { same: 'без змін', changed: 'змінено', first: 'перше отримання', held: 'чекає підтвердження (підозріло менше даних)', error: 'помилка', fallback: 'із запасного джерела' }
+      for (const x of r) (x.status === 'error' || x.status === 'held' ? say.bind(null, '⚠') : say)(`${x.section}: ${ST[x.status] || x.status}${x.count != null ? ` · записів: ${x.count}` : ''}`)
+      const ch = r.filter((x) => x.status === 'changed').map((x) => x.section)
+      say(ch.length ? `змінено: ${ch.join(', ')}` : 'без змін')
+    } })
   await cron.register('cleanup', { name: 'Прибирання', description: 'Прострочені сеанси, коди входу й запрошення, давні заявки до гільдій, старий журнал дій та історія змін (скільки днів зберігати — у налаштуваннях сайту)', schedule: '15 * * * *',
     run: async (say) => {
       const now = Date.now()
@@ -421,9 +446,12 @@ export async function createApp({ dataDir, serveDist = false, background = true,
     mapData.refresh().catch(() => {})
     // знімки баз, яких ще нема (після оновлення сервера чи правок поза ним) — трохи згодом, щоб не гальмувати старт
     setTimeout(() => thumbs.warm().catch(() => {}), 3000).unref?.()
+    // картинка карти поверхні — у сховище, якщо її там ще нема
+    world.warm().catch((e) => log.warn?.(`[world] картинка карти: ${e.message}`))
   }
 
   app.locals.spice = spice
+  app.locals.storage = storage
   app.locals.close = async () => { cron.stop(); push.close(); if (!given) await db.close() }
   return app
 }

@@ -113,6 +113,8 @@ export function createRoadmapRoutes({ roadmaps, items, content, hub, progress, s
   r.post('/api/roadmaps/:id/history/:hid/restore', need(), wrap(async (req, res) => {
     const { d, it, access, rt } = await load(req)
     if (!rt.edit) throw fail('змінювати цей роадмап тобі не можна', 403)
+    // давню версію відновлює той, хто й бачить історію
+    if (!rt.history) throw fail('історію цього роадмапу тобі не відкрито', 403)
     const out = await roadmaps.restore(d.id, Number(req.params.hid))
     if (!out) throw fail('немає такої версії', 404)
     const now = (await touch(out, req, it, access)) || it
@@ -221,14 +223,24 @@ export function createRoadmapRoutes({ roadmaps, items, content, hub, progress, s
 }
 
 /** Указ тижня: GET — той, що діє для людини (основної гільдії чи особистий); PUT { id, until } — вибрати чи зняти. */
+/**
+ * Указ Ландсрааду (lib/decree.mjs): GET /api/decree — указ сайту з домом-переможцем, чи можна мені його міняти, мій дім
+ * (me: { own, guild, house } — свій, гільдії, який діє; анонім — null); PUT /api/decree { id, until, house } — вибрати
+ * (дозвіл site.decree); PUT /api/me/house { house } — свій дім (порожньо — як у гільдії).
+ */
 export function createDecreeRoutes({ decrees, roles }) {
   const r = express.Router()
-  r.get('/api/decree', wrap(async (req, res) => res.set('cache-control', 'no-store').json({ ...(await decrees.current()), canSet: !!req.user && (await roles.can(req.user, 'site.decree')) })))
-  // указ сайту виставляє адміністрація (дозвіл site.decree; адміністратор має всі)
+  const view = async (req, d) => ({ ...d, canSet: !!req.user && (await roles.can(req.user, 'site.decree')), me: await decrees.houseOf(req.user?.id) })
+  r.get('/api/decree', wrap(async (req, res) => res.set('cache-control', 'no-store').json(await view(req, await decrees.current()))))
+  // указ сайту виставляє адміністрація (дозвіл site.decree; адміністратор має всі) — разом із домом, що виграв
   r.put('/api/decree', need(), wrap(async (req, res) => {
     if (!(await roles.can(req.user, 'site.decree'))) throw fail('указ виставляє адміністрація сайту', 403)
-    const { id = null, until = null } = req.body || {}
-    res.json({ ...(await decrees.set(req.user, id, until)), canSet: true })
+    const { id = null, until = null, house = null } = req.body || {}
+    res.json(await view(req, await decrees.set(req.user, id, until, house)))
+  }))
+  r.put('/api/me/house', need(), wrap(async (req, res) => {
+    await decrees.setHouse(req.user.id, req.body?.house ?? null)
+    res.json(await view(req, await decrees.current()))
   }))
   return r
 }

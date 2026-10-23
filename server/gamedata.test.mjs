@@ -51,6 +51,12 @@ describe('дані гри', () => {
     expect((await game.catalog('de')).recipes[0].loc).toBe('Eisenbarren')
   })
 
+  it('назви записів одного виду мовою — лише перекладені', async () => {
+    await game.putTexts('de', [{ kind: 'item', id: 'IronBar', name: 'Eisenbarren' }], 'gamingtools')
+    expect([...(await game.names('de', 'item', ['IronBar', 'Nope']))]).toEqual([['IronBar', 'Eisenbarren']])
+    expect((await game.names('de', 'item', [])).size).toBe(0)
+  })
+
   it('збір не переписує закріплене вручну, а приховане сайт не бачить', async () => {
     await db.run("UPDATE game_items SET name = 'Iron Ore (fixed)', locked = 1 WHERE id = 'IronOre'")
     await db.run("UPDATE game_items SET hidden = 1 WHERE id = 'IronBar'")

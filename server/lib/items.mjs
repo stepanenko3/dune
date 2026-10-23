@@ -106,8 +106,8 @@ export async function createItems(db) {
       const e = pre ? pre.events.get(it.id) : await db.get('SELECT starts, ends FROM events WHERE id = ?', it.id).catch(() => null)
       out.when = e ? { starts: e.starts, ends: e.ends } : null
     }
-    // «змінювати» й «копіювати (куди)» — за правами самої речі (вікно «Доступ»), решта — за власником
-    if (ctx) { const rt = rightsOf(ctx, it); out.can = { ...can(ctx, it), edit: rt.edit, copy: rt.copy, copyTo: rt.copyTo } }
+    // «змінювати», «копіювати (куди)» й «бачити історію» — за правами самої речі (вікно «Доступ»), решта — за власником
+    if (ctx) { const rt = rightsOf(ctx, it); out.can = { ...can(ctx, it), edit: rt.edit, copy: rt.copy, copyTo: rt.copyTo, history: rt.history } }
     if (starred) out.starred = starred.has(`${it.kind}:${it.id}`)
     return out
   }

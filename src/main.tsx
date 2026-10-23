@@ -14,10 +14,13 @@ import { mountTooltips } from '@/lib/tooltips'
 import { initI18n, t } from '@/lib/i18n'
 import { reloadOnce } from '@/components/ErrorBoundary'
 import { installBusyFetch } from '@/lib/busy'
+import { initPwa } from '@/lib/pwa'
 
 mountTooltips()
 // усі запити сайту — у лічильник завантажень (смуга-дюна вгорі, components/TopLoader)
 installBusyFetch()
+// застосунок на головному екрані: service worker (без мережі — оболонка з кешу) і «Оновити» для нової збірки
+initPwa()
 
 // спершу мова (словник потрібен уже константам модулів), потім — сам застосунок; качається App-*.js разом зі словником
 // (modulepreload у index.html — плагін preloadApp у vite.config.mts), тут він лише виконується

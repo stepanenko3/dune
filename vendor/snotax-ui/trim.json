@@ -1279,9 +1279,9 @@
  "utilities": {
   "bytes": [
    141220,
-   104458
+   104490
   ],
-  "kept": 957,
+  "kept": 959,
   "of": 1315,
   "dropped": [
    "!w-full",
@@ -1433,7 +1433,6 @@
    "data-[size=sm]:size-6",
    "data-[state=open]:bg-accent/50",
    "data-[state=visible]:opacity-100",
-   "decoration-dotted",
    "duration-150",
    "ease-linear",
    "end-3",
@@ -1527,6 +1526,7 @@
    "marker:text-muted-foreground",
    "mask-left",
    "mask-right",
+   "max-h-48",
    "max-h-80",
    "max-h-[300px]",
    "max-h-[var(--sn-admin-block-max-height,32rem)]",
@@ -1600,7 +1600,6 @@
    "shadow-[var(--tg-shadow,none)]",
    "size-16",
    "sm:basis-1/2",
-   "sm:flex",
    "snap-mandatory",
    "snap-start",
    "snap-x",
@@ -1640,7 +1639,6 @@
    "w-44",
    "w-56",
    "z-100",
-   "z-[1]",
    "z-[9999]"
   ]
  }

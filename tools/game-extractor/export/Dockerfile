@@ -1,5 +1,5 @@
 # Експортер на CUE4Parse (рідна архітектура: на Маці — arm64, на сервері — x64; Oodle — керований, без нативних бібліотек).
-# Збирання: docker build -t sandwalkers/gd-export:2 tools/game-extractor/export
+# Збирання: docker build -t sandwalkers/gd-export:3 tools/game-extractor/export
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG CUE4PARSE_COMMIT=6f7b06eefa22f3cc259d03bb9901a384cb4fb538
 WORKDIR /src

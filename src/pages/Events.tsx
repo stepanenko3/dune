@@ -132,7 +132,9 @@ function EventsList() {
         <PageHeader
           title={t('Події спільноти')}
           lead={t('Бої 2 на 2, турніри, перегони, вилазки й збори — у визначений час, з призами, місцем на мапі й зоною для глядачів. Реєструйся командою, приходь дивитись або влаштуй свою.')}
-          actions={ready ? <Button onClick={() => newEvent(tab === 'guild' && guild ? `?guild=${guild.id}` : '')}><CalendarPlus size={15} />{t('Влаштувати подію')}</Button> : undefined}
+          actions={!ready ? undefined : user
+            ? <Button onClick={() => newEvent(tab === 'guild' && guild ? `?guild=${guild.id}` : '')}><CalendarPlus size={15} />{t('Влаштувати подію')}</Button>
+            : <Button onClick={() => openPath(loginHref())}><LogIn size={15} />{t('Увійди, щоб влаштувати подію')}</Button>}
         >
           <div className="flex flex-wrap items-center gap-2">
             <Seg label={t('Які події')} value={tab} onChange={setTab} href={tabHref} items={tabs} />

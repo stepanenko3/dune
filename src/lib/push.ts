@@ -2,7 +2,7 @@
  * Нагадування про бурю: підписка Web Push у цьому браузері. Вибір (за 24 чи 12 год, вимкнено) — у
  * налаштуваннях браузера; регіон береться з таймера, і при його зміні підписка оновлюється. «Увімкнено» звіряємо з
  * самою підпискою браузера (її могли відкликати) і раз на добу нагадуємо про неї серверу (він міг її забути).
- * Клік по нагадуванню (public/sw.js) не перезавантажує відкриту вкладку: служба шле їй адресу, і сайт сам переходить.
+ * Служба — спільна з роботою без мережі (src/lib/pwa.ts). Клік по нагадуванню (public/sw.js) не перезавантажує відкриту вкладку: служба шле їй адресу, і сайт сам переходить.
  */
 import { create } from 'zustand'
 import { toast } from 'sonner'
@@ -12,6 +12,7 @@ import { useDDRegion } from '@/lib/ddReset'
 import { goUrl } from '@/lib/urlState'
 import { fromLocation, useStore } from '@/store'
 import { useAuth } from '@/lib/auth'
+import { registerSW } from '@/lib/pwa'
 
 export type Lead = 0 | 12 | 24
 
@@ -30,7 +31,8 @@ const post = (url: string, body: unknown) =>
   })
 
 async function subscription(create: boolean) {
-  const reg = await navigator.serviceWorker.register('/sw.js')
+  // та сама служба, що й для роботи без мережі (src/lib/pwa.ts): інша адреса перереєструвала б її
+  const reg = await registerSW()
   await navigator.serviceWorker.ready
   let sub = await reg.pushManager.getSubscription()
   if (!sub && create) {
@@ -101,7 +103,7 @@ async function checkReminder() {
   // підписку підтверджуємо від імені людини — без входу нема від чийого
   if (!lead || !pushSupported() || !useAuth.getState().user) return
   try {
-    const reg = await navigator.serviceWorker.getRegistration('/sw.js')
+    const reg = await navigator.serviceWorker.getRegistration('/')
     const sub = Notification.permission === 'granted' ? await reg?.pushManager.getSubscription() : null
     if (!sub) { prefSet('storm:remind', 0); useReminder.setState({ lead: 0 }); return }
     if (Date.now() - prefGet<number>('storm:syncedUser', 0) < 24 * 3600_000) return

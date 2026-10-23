@@ -27,6 +27,7 @@ import { ColorPick, ConfirmDialog, Section, submitOnEnter } from './Account'
 import { useCrumb } from '@/components/Crumbs'
 import { useUnsaved } from '@/components/UnsavedBar'
 import { GuildEvents } from '@/components/events/bits'
+import { HOUSES, houseOf, useDecree } from '@/lib/decree'
 
 const run = async (fn: () => Promise<unknown>, ok?: string) => {
   try { await fn(); if (ok) toast.success(ok); return true } catch (e) { toast.error((e as Error).message); return false }
@@ -75,7 +76,7 @@ function GuildForm({ initial, submit, label, bar }: { initial?: Partial<Guild>; 
   const [g, setG] = useState<Partial<Guild>>(from)
   const [busy, setBusy] = useState(false)
   const go = async (e?: FormEvent) => { e?.preventDefault(); setBusy(true); await submit(g); setBusy(false) }
-  const dirty = !!bar && (['name', 'tag', 'about', 'color', 'open'] as const).some((k) => (g[k] ?? '') !== (from[k] ?? ''))
+  const dirty = !!bar && (['name', 'tag', 'about', 'color', 'open', 'house'] as const).some((k) => (g[k] ?? '') !== (from[k] ?? ''))
   useUnsaved(dirty, { save: () => go(), discard: () => setG(from), label: t('Налаштування гільдії не збережено') })
   return (
     <form onSubmit={go} onKeyDown={submitOnEnter} className="grid gap-3.5">
@@ -92,6 +93,21 @@ function GuildForm({ initial, submit, label, bar }: { initial?: Partial<Guild>; 
       </Field>
       <Field label={t('Колір')}><ColorPick value={g.color || '#2f6fd0'} onChange={(color) => setG({ ...g, color })} /></Field>
       <SnCheckbox modelValue={!!g.open} label={t('Приймати заявки на вступ (інакше — лише за запрошенням)')} onChange={(e: Event) => setG({ ...g, open: checkedOf(e) })} />
+      <Field label={t('Дім у Ландсрааді')} hint={t('Указ тижня діє лише на людей дому-переможця. Учасникам, які свій дім не вказали, береться цей.')}>
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-3" role="radiogroup" aria-label={t('Дім у Ландсрааді')}>
+          {[...HOUSES.map((h) => ({ id: h.id, name: h.name, color: h.color as string | null })), { id: null, name: t('Не вказано'), color: null }].map((h) => {
+            const on = (g.house ?? null) === h.id
+            return (
+              <button key={h.id ?? 'none'} type="button" role="radio" aria-checked={on} onClick={() => setG({ ...g, house: h.id })}
+                className={cn('flex items-center gap-2 rounded-lg border px-3 py-2.5 text-left text-[13.5px] font-semibold transition-colors', on ? 'border-spice/70 bg-spice/10' : 'border-line bg-panel2/40 hover:border-spice/40')}>
+                {h.color && <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: h.color }} aria-hidden />}
+                <span className="min-w-0 flex-1">{h.name}</span>
+                {on && <Check size={15} className="shrink-0 text-spice" aria-hidden />}
+              </button>
+            )
+          })}
+        </div>
+      </Field>
       <div className="flex items-center gap-2">
         <GuildTag tag={(g.tag || t('ТЕГ')).slice(0, 5)} color={g.color || '#2f6fd0'} />
         <span className="text-[13px] text-muted">{t('так виглядатиме тег на всьому гільдійському')}</span>
@@ -408,7 +424,7 @@ export function GuildPage() {
         {tab === 'settings' && leader && (
           <>
             <Section title={t('Налаштування гільдії')}>
-              <GuildForm bar initial={g} label={t('Зберегти')} submit={(x) => run(async () => { await patch(`/api/guilds/${g.slug}`, x); await refreshMe(); load() }, t('Збережено'))} />
+              <GuildForm bar initial={g} label={t('Зберегти')} submit={(x) => run(async () => { await patch(`/api/guilds/${g.slug}`, x); await refreshMe(); load(); void useDecree.getState().load() }, t('Збережено'))} />
             </Section>
             <DeleteGuild g={g} />
           </>
@@ -549,6 +565,7 @@ function GuildHome({ d, own, go }: { d: GuildData; own: Item[] | null; go: (t: T
               <div className="h-1.5 overflow-hidden rounded-full bg-panel2" aria-hidden><div className={cn('h-full rounded-full', pct >= 100 ? 'bg-bad' : 'bg-spice')} style={{ width: `${pct}%` }} /></div>
             </div>
             <div className="flex items-center justify-between gap-3"><dt className="text-muted">{t('Вступ')}</dt><dd className="font-medium">{g.open ? t('приймає заявки') : t('за запрошенням')}</dd></div>
+            <div className="flex items-center justify-between gap-3"><dt className="text-muted">{t('Дім у Ландсрааді')}</dt><dd className="flex items-center gap-1.5 text-right font-medium">{houseOf(g.house) ? <><span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: houseOf(g.house)!.color }} aria-hidden />{houseOf(g.house)!.name}</> : <span className="text-muted">{t('не вказано')}</span>}</dd></div>
           </dl>
         </Section>
         <Section title={t('Керівництво')}>

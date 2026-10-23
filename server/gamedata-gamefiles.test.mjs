@@ -57,3 +57,27 @@ describe('драйвер «файли гри»', () => {
     expect(createGamefilesDriver({ dir: null }).describe('items')).toBeNull()
   })
 })
+
+describe('драйвер «файли гри»: розділ з файлами (ресурси ГП)', () => {
+  it('дані — перелік розкладок; файл розкладки — files(розкладка), поза хешем розділу', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gd-gf-dd-'))
+    const b = path.join(dir, '7')
+    fs.mkdirSync(path.join(b, 'sections'), { recursive: true })
+    const gz = zlib.gzipSync(JSON.stringify({ types: { TitaniumOre: { kind: 'core', pts: [1, 2, 3, 40] } } }))
+    fs.writeFileSync(path.join(b, 'sections', 'ddResources-11.json.gz'), gz)
+    const idx = { blob: { layouts: { 11: { count: 1, hash: 'h11', file: 'sections/ddResources-11.json.gz' } } } }
+    fs.writeFileSync(path.join(b, 'sections', 'ddResources.json.gz'), zlib.gzipSync(JSON.stringify(idx)))
+    fs.writeFileSync(path.join(b, 'manifest.json'), JSON.stringify({ schema: 1, game: { build: '7' }, sections: { ddResources: { file: 'sections/ddResources.json.gz', schema: 1, hash: 'hd', count: 1 } } }))
+    fs.writeFileSync(path.join(dir, 'latest.json'), JSON.stringify({ build: '7', dir: b }))
+    const { data } = await createGamefilesDriver({ dir }).load('ddResources')
+    expect(data).toEqual(idx)
+    expect(Object.keys(data)).toEqual(['blob'])
+    expect(data.files('11')).toEqual(gz)
+    // читач — лише в розділу з файлами (розклад ГП теж має layouts, але файлів у нього нема)
+    fs.writeFileSync(path.join(b, 'sections', 'ddLayouts.json.gz'), zlib.gzipSync(JSON.stringify({ blob: { layouts: [0, 11] } })))
+    const m = JSON.parse(fs.readFileSync(path.join(b, 'manifest.json'), 'utf8'))
+    m.sections.ddLayouts = { file: 'sections/ddLayouts.json.gz', schema: 1, hash: 'hl', count: 1 }
+    fs.writeFileSync(path.join(b, 'manifest.json'), JSON.stringify(m))
+    expect((await createGamefilesDriver({ dir }).load('ddLayouts')).data.files).toBeUndefined()
+  })
+})

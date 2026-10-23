@@ -2,7 +2,7 @@
  * Шапка: окремі «пігулки» на фоні, як у Satisfactory — логотип, розділи, тема, мова, обліковий запис.
  * z-[900]: вище за панелі Leaflet (до 800).
  */
-import { useLayoutEffect, useRef, useState, useSyncExternalStore, type RefObject } from 'react'
+import { useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { BookOpen, Calculator, CalendarDays, Castle, Map as MapIcon, Monitor, Moon, MoreHorizontal, Sparkles, Sun, TrendingUp } from 'lucide-react'
 import { pathOf, useStore, type View } from '@/store'
 import { useBusyStore } from '@/lib/busy'
@@ -26,48 +26,57 @@ const NAV: { id: View; label: string; icon: typeof Castle; tip: string }[] = [
   { id: 'events', label: t('Події'), icon: CalendarDays, tip: t('Події спільноти: бої, турніри, перегони й збори — з часом, призами й реєстрацією') },
 ]
 
-/**
- * до великого екрана в рядку — перші розділи (на телефоні три, далі чотири), решта — у меню «Ще» (усі сім не влазять,
- * а прокрутка рядка непомітна): до md — іконками, далі — з підписами; від lg — усі сім (і назва біля знака): з підписами,
- * коли вони влазять (у кожній мові своя довжина — французькі й німецькі не влазять і на 1440), інакше — іконками
- */
-const phoneQuery = typeof matchMedia === 'function' ? matchMedia('(min-width: 640px)') : null
-const useInRow = () => useSyncExternalStore(
-  (cb) => { phoneQuery?.addEventListener('change', cb); return () => phoneQuery?.removeEventListener('change', cb) },
-  () => (phoneQuery?.matches ?? true ? 4 : 3),
-)
-
 /** сторінки, що належать розділу меню: планувальник — розділу «Уміння», калькулятор — «Калькулятор» (бібліотеки в меню нема —
  * вона в кожному розділі вкладкою «Публічні») */
 const PARENT: Partial<Record<View, View>> = { skills: 'builds', calculator: 'calcs' }
 
+/** з підписами — поки в рядку лишається більше за стільки розділів; менше — краще всі іконками */
+const MIN_LABELLED = 4
+const GAP = 2
+
 /**
- * чи влазять підписи всіх розділів (від lg): рядок із підписами ширший за місце — іконки, і запам'ятати, скільки треба;
- * місця стало стільки — знову підписи. Міряє ResizeObserver до малювання, тож підписи не блимають
+ * Скільки розділів влазить у рядок і чи з підписами. Ширини кожного розділу (з підписом і без) і кнопки «Ще» міряє
+ * невидимий рядок-лінійка; що не влазить — по одному, з кінця, іде в «Ще». З підписами — поки в рядку лишаються хоча б
+ * MIN_LABELLED розділи, інакше — усі іконками (їх влазить більше). Перераховує ResizeObserver до малювання: нічого не
+ * блимає й не прокручується
  */
-function useLabelsFit(nav: RefObject<HTMLElement>, row: RefObject<HTMLElement>) {
-  const [wide, setWide] = useState(true)
-  const need = useRef(0)
+function useNavFit(nav: RefObject<HTMLElement>, ruler: RefObject<HTMLElement>, n: number) {
+  const [fit, setFit] = useState<{ shown: number; labels: boolean }>({ shown: n, labels: true })
   useLayoutEffect(() => {
-    const n = nav.current, r = row.current
-    if (!n || !r) return
+    const box = nav.current, r = ruler.current
+    if (!box || !r) return
     const check = () => {
-      const st = getComputedStyle(n)
-      const room = n.clientWidth - parseFloat(st.paddingLeft) - parseFloat(st.paddingRight)
-      setWide((on) => {
-        if (on && r.scrollWidth > r.clientWidth + 1) { need.current = r.scrollWidth; return false }
-        if (!on && room >= need.current) return true
-        return on
-      })
+      const st = getComputedStyle(box)
+      const room = box.clientWidth - parseFloat(st.paddingLeft) - parseFloat(st.paddingRight)
+      const w = (sel: string) => [...r.querySelectorAll<HTMLElement>(sel)].map((e) => e.offsetWidth)
+      const wide = w('[data-m="label"]'), narrow = w('[data-m="icon"]'), more = (r.querySelector<HTMLElement>('[data-m="more"]')?.offsetWidth ?? 32) + GAP
+      // скільки перших розділів влазить (решта — у «Ще», тоді й вона має влізти)
+      const count = (ws: number[]) => {
+        let sum = 0
+        for (let k = 0; k < ws.length; k++) {
+          sum += ws[k] + (k ? GAP : 0)
+          const need = sum + (k + 1 < ws.length ? more : 0)
+          if (need > room + 0.5) return k
+        }
+        return ws.length
+      }
+      const withLabels = count(wide)
+      const next = withLabels === n || withLabels >= MIN_LABELLED ? { shown: withLabels, labels: true } : { shown: count(narrow), labels: false }
+      setFit((cur) => (cur.shown === next.shown && cur.labels === next.labels ? cur : next))
     }
     check()
     const ro = new ResizeObserver(check)
-    ro.observe(n)
+    ro.observe(box)
     ro.observe(r)
+    // шрифт підвантажився — підписи змінили ширину
+    void document.fonts?.ready.then(check)
     return () => ro.disconnect()
-  }, [nav, row])
-  return wide
+  }, [nav, ruler, n])
+  return fit
 }
+
+/** розділ у рядку шапки (і в лінійці — той самий вигляд, щоб ширини збігались) */
+const ITEM = 'flex h-8 shrink-0 items-center gap-1.5 rounded-md font-display text-[11px] font-semibold uppercase tracking-wide transition-colors'
 
 const THEMES: { id: ThemePref; icon: typeof Sun; tip: string }[] = [
   { id: 'system', icon: Monitor, tip: t('Тема як у системі') },
@@ -80,10 +89,9 @@ export function Header() {
   const setView = useStore((s) => s.setView)
   const { pref, setPref } = useTheme()
   const pill = 'flex h-12 items-center rounded-xl border border-line bg-panel shadow-lg'
-  const inRow = useInRow()
   const navRef = useRef<HTMLElement>(null)
-  const rowRef = useRef<HTMLDivElement>(null)
-  const labels = useLabelsFit(navRef, rowRef)
+  const rulerRef = useRef<HTMLDivElement>(null)
+  const { shown, labels } = useNavFit(navRef, rulerRef, NAV.length)
   // лого живе, поки щось вантажиться: розгойдується й затихає саме, плавно (components/ui/dune-loader)
   const busy = useBusyStore((s) => s.n > 0)
   const starts = useBusyStore((s) => s.starts)
@@ -99,10 +107,21 @@ export function Header() {
         <DuneLoader size={24} active={busy} kick={starts} />
         <span className="hidden font-display text-[13px] font-bold uppercase tracking-[0.12em] lg:inline">Sandwalkers</span>
       </a>
-      <nav ref={navRef} className={cn(pill, 'min-w-0 flex-1 px-1.5')} aria-label={t('Розділи')}>
-        {/* розділи прямо на панелі шапки (без другої рамки всередині — «блок у блоці»); активний — плашкою спайсу */}
-        <div ref={rowRef} className="flex min-w-0 gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {NAV.map((n, i) => {
+      <nav ref={navRef} className={cn(pill, 'relative min-w-0 flex-1 px-1.5')} aria-label={t('Розділи')}>
+        {/* лінійка для useNavFit: кожен розділ з підписом і без, кнопка «Ще» — невидимо, поза потоком */}
+        <div ref={rulerRef} aria-hidden className="pointer-events-none invisible absolute left-0 top-0 flex h-0 overflow-hidden whitespace-nowrap">
+          {NAV.map((n) => (
+            <span key={n.id} className="contents">
+              <span data-m="label" className={cn(ITEM, 'px-2.5')}><n.icon size={15} className="shrink-0" /><span>{n.label}</span></span>
+              <span data-m="icon" className={cn(ITEM, 'px-2.5')}><n.icon size={15} className="shrink-0" /></span>
+            </span>
+          ))}
+          <span data-m="more" className="flex h-8 w-8 shrink-0 items-center justify-center px-2"><MoreHorizontal size={15} /></span>
+        </div>
+        {/* розділи прямо на панелі шапки (без другої рамки всередині — «блок у блоці»); активний — плашкою спайсу;
+            що не влазить — по одному в «Ще» */}
+        <div className="flex min-w-0 gap-0.5">
+          {NAV.slice(0, shown).map((n) => {
             // сторінки розділу підсвічують сам розділ: «Білди» — «Уміння», «Розрахунки» — «Калькулятор»
             const on = n.id === (PARENT[view] ?? view)
             return (
@@ -113,31 +132,26 @@ export function Header() {
                 aria-current={on ? 'page' : undefined}
                 aria-label={n.label}
                 data-tip={n.tip}
-                className={cn(
-                  'flex h-8 shrink-0 items-center gap-1.5 rounded-md font-display text-[11px] font-semibold uppercase tracking-wide transition-colors',
-                  on ? 'bg-spice/10 px-2.5 text-spice' : 'px-2 text-muted hover:bg-ink/5 hover:text-ink sm:px-2.5',
-                  i >= inRow && 'max-lg:hidden',
-                )}
+                className={cn(ITEM, 'px-2.5', on ? 'bg-spice/10 text-spice' : 'text-muted hover:bg-ink/5 hover:text-ink')}
               >
                 <n.icon size={15} className="shrink-0" />
-                <span className={cn('hidden md:inline', !labels && 'lg:hidden')}>{n.label}</span>
+                {labels && <span>{n.label}</span>}
               </a>
             )
           })}
         </div>
-        {/* «Ще» — поза рядком із прокруткою: інакше той обрізав би випадне меню */}
-        {(() => {
-          const rest = NAV.slice(inRow)
+        {shown < NAV.length && (() => {
+          const rest = NAV.slice(shown)
           // планувальник і розрахунок — сторінки розділів «Уміння» й «Калькулятор»: «Ще» теж підсвічується
           const cur = rest.find((n) => n.id === (PARENT[view] ?? view))
           const Icon = cur?.icon ?? MoreHorizontal
           return (
             <Menu
-              className="ml-0.5 lg:hidden"
+              className="ml-0.5"
               align="end"
               trigger={
                 <button type="button" aria-label={cur ? t('Ще розділи (зараз: {name})', { name: cur.label }) : t('Ще розділи')}
-                  className={cn('flex h-8 shrink-0 items-center rounded-md px-2 transition-colors', cur ? 'bg-spice/10 text-spice' : 'text-muted hover:bg-ink/5 hover:text-ink')}>
+                  className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-md px-2 transition-colors', cur ? 'bg-spice/10 text-spice' : 'text-muted hover:bg-ink/5 hover:text-ink')}>
                   <Icon size={15} />
                 </button>
               }
